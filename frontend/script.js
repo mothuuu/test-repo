@@ -89,6 +89,9 @@ byId('sheetForm')?.submit(); // sends to your Apps Script in the hidden iframe
 async function analyzeWebsite(url) {
     showLoading();
     
+    // ✅ MARK THAT USER HAS SCANNED
+    localStorage.setItem('hasScanned', 'true');
+    
     try {
         // Step 1: Analyze website with the new backend
         updateProgress('Analyzing website structure...', 25);
