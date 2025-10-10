@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upgrade to Premium - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .checkout-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .plan-details {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .plan-price {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .plan-price span {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .features-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .features-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4DACA6;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Visibility Score</h1>
+        </div>
+
+        <div class="checkout-container">
+            <h2>Upgrade to Premium</h2>
+            
+            <div class="plan-details">
+                <h3>Premium Plan</h3>
+                <div class="plan-price">
+                    $29<span>/month</span>
+                </div>
+                <p>Get the complete AI visibility analysis for your domain</p>
+            </div>
+
+            <h3>What's Included:</h3>
+            <ul class="features-list">
+                <li>Deep multi-page scan (30+ pages analyzed)</li>
+                <li>Competitor benchmarking (up to 3 competitors)</li>
+                <li>AI Engine simulation & testing</li>
+                <li>Exportable PDF reports</li>
+                <li>Monthly tracking & progress charts</li>
+                <li>Priority support</li>
+            </ul>
+
+            <form id="checkoutForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required placeholder="you@company.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Domain to Analyze</label>
+                    <input type="url" id="domain" required placeholder="https://yourcompany.com">
+                </div>
+
+                <button type="submit" class="analyze-btn" style="width: 100%;">
+                    Continue to Payment
+                </button>
+            </form>
+
+            <p style="text-align: center; color: #666; margin-top: 20px; font-size: 0.9rem;">
+                🔒 Secure checkout powered by Stripe<br>
+                Cancel anytime • No long-term contract
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlDomain = urlParams.get('url');
+        if (urlDomain) {
+            document.getElementById('domain').value = urlDomain;
+        }
+
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const domain = document.getElementById('domain').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating checkout...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, domain })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Checkout failed');
+                }
+                
+                window.location.href = data.url;
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue to Payment';
+            }
+        });
+    </script>
+</body>
+</html>

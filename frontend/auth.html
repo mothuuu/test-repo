@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .auth-container {
+            max-width: 450px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .auth-tab.active {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+        }
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .auth-benefits {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .auth-benefits h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .auth-benefits ul {
+            list-style: none;
+            padding: 0;
+        }
+        .auth-benefits li {
+            padding: 8px 0;
+            color: #666;
+        }
+        .auth-benefits li:before {
+            content: "✓ ";
+            color: #4DACA6;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: #00B9DA;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" style="padding-bottom: 20px;">
+            <h1>AI Visibility Score</h1>
+        </div>
+
+        <div class="auth-container">
+            <h2 style="text-align: center; margin-bottom: 10px;">Welcome!</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                Sign in to access your AI visibility analysis
+            </p>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+            
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="you@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="analyze-btn" style="width: 100%;">
+                    Sign In
+                </button>
+            </form>
+            
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="you@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Min 8 characters" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="signupPasswordConfirm" placeholder="Re-enter password" required>
+                </div>
+                <button type="submit" class="analyze-btn" style="width: 100%;">
+                    Create Account
+                </button>
+                
+                <div class="auth-benefits">
+                    <h4>Free Account Includes:</h4>
+                    <ul>
+                        <li>2 website scans per month</li>
+                        <li>AI visibility score</li>
+                        <li>Top 3 recommendations</li>
+                        <li>No credit card required</li>
+                    </ul>
+                </div>
+            </form>
+
+            <a href="index.html" class="back-link">← Back to Home</a>
+        </div>
+    </div>
+    
+    <script src="auth.js"></script>
+</body>
+</html>
