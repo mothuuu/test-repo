@@ -1,7 +1,7 @@
 // backend/routes/ai-testing.js
 // Express router for AI Readiness / AEO analysis (V5 rubric)
 
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authenticateTokenOptional } = require('../middleware/auth');
 const { checkScanLimit } = require('../middleware/usageLimits');
 const db = require('../db/database');
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
@@ -937,31 +937,48 @@ function extractTextContent(html) {
 /* ===========================
    API ROUTES
 =========================== */
-router.post('/analyze-website', authenticateToken, checkScanLimit, async (req, res) => {
+router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
   try {
-    const { url, useAIDetection = true } = req.body || {}; // Add AI detection option
+    const { url, useAIDetection = true } = req.body || {};
     if (!url) return res.status(400).json({ error: 'URL is required' });
 
-    // Check if user has premium features
-    const isPremium = req.user.plan === 'premium';
+    // Check if user is premium
+    const isPremium = req.user && req.user.plan === 'premium';
+    
+    // For logged-in users ONLY, check and increment scan limit
+    if (req.user) {
+      const limits = req.user.plan === 'free' ? 2 : 50;
+      if (req.user.scans_used_this_month >= limits) {
+        return res.status(403).json({
+          error: 'Scan limit reached',
+          message: `You've used ${req.user.scans_used_this_month}/${limits} scans this month.`,
+          upgrade: req.user.plan === 'free' ? 'Upgrade to Pro for 50 scans/month' : null
+        });
+      }
+      
+      // Increment usage
+      await db.query(
+        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
+        [req.user.id]
+      );
+    }
+    
+    // Run analysis (homepage only for freemium)
     const { combinedHtml, discovery, origin, pagesFetched, sampledUrls } = await fetchMultiPageSample(url, isPremium);
     const websiteData = { html: combinedHtml || '', url };
-
-    console.log(`🔍 Scan - User Plan: ${req.user.plan}, isPremium: ${isPremium}, Pages Fetched: ${pagesFetched}`);
-
-    // Use AI-based industry detection if enabled (note: now awaiting async function)
     const analysis = await performDetailedAnalysis(websiteData, discovery, useAIDetection);
 
-    // Save scan to database
+    // Save scan (link to user if logged in, otherwise anonymous)
     await db.query(
       'INSERT INTO scans (user_id, url, score, industry, scan_data) VALUES ($1, $2, $3, $4, $5)',
-      [req.user.id, url, analysis.scores.total, analysis.industry.key, JSON.stringify(analysis)]
+      [req.user?.id || null, url, analysis.scores.total, analysis.industry.key, JSON.stringify(analysis)]
     );
 
     return res.json({
       success: true,
       data: {
         ...analysis,
+        isFreemium: !req.user, // Flag for frontend
         discovery: {
           origin, pagesFetched, sampledUrls,
           robots: discovery.robots, sitemaps: discovery.sitemaps, sitemapFound: discovery.sitemapFound
