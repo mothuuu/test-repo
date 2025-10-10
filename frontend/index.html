@@ -143,28 +143,51 @@
                 authCheck.style.display = 'none';
                 mainContent.style.display = 'block';
             }
-            
-            // Verify token is valid
-            fetch(`${API_BASE_URL}/auth/me`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Invalid token');
-                return res.json();
-            })
-            .then(data => {
-                localStorage.setItem('user', JSON.stringify(data.user));
+<script>
+    // Auth check before loading app
+    (function() {
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+        
+        const authCheck = document.getElementById('authCheck');
+        const mainContent = document.getElementById('mainContent');
+        const token = localStorage.getItem('authToken');
+        const hasScannedBefore = localStorage.getItem('hasScanned');
+        
+        // FREEMIUM LOGIC: Allow first scan without auth
+        if (!token) {
+            if (hasScannedBefore) {
+                // Returning freemium user → require signup for 2nd scan
+                window.location.href = 'auth.html?reason=limit';
+                return;
+            } else {
+                // First-time visitor → allow access
                 authCheck.style.display = 'none';
                 mainContent.style.display = 'block';
-            })
-            .catch(err => {
-                console.error('Auth check failed:', err);
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('user');
-                window.location.href = 'auth.html';
-            });
-        })();
-    </script>
-    <script src="script.js"></script>
-</body>
-</html>
+                return;
+            }
+        }
+        
+        // LOGGED-IN USER: Verify token
+        authCheck.style.display = 'block';
+        fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Invalid token');
+            return res.json();
+        })
+        .then(data => {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            authCheck.style.display = 'none';
+            mainContent.style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Auth check failed:', err);
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.location.href = 'auth.html';
+        });
+    })();
+</script>
