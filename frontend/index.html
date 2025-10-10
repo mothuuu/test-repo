@@ -7,16 +7,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <body>
     <!-- Auth Check -->
     <div id="authCheck" style="display: none; text-align: center; padding: 100px 20px;">
         <div class="loading-spinner"></div>
         <p>Checking authentication...</p>
     </div>
 
-    <!-- Existing content -->
+    <!-- Main content -->
     <div class="container" id="mainContent" style="display: none;">
-    <div class="container">
         <div class="header">
             <h1>AI Visibility Score</h1>
             <p>Real-time analysis of how AI assistants find and recommend your website</p>
@@ -107,17 +105,18 @@
             <p>Powered by Xeo AI Hub | AI Readiness Assessment Tool</p>
         </div>
     </div>
-<!-- Hidden iframe prevents page redirect on sidecar submit -->
-<iframe name="gsheet_silent_target" style="display:none;"></iframe>
 
-<!-- Hidden form that posts to your Google Sheet Apps Script -->
-<form id="sheetForm" method="POST" action="https://script.google.com/macros/s/AKfycby39Oc9Q_MhbFNTuV0telbuRC8ffb7Ts_TG2oaArxuDFxtW_w4tpjuab0x5YC4uBqjPew/exec" target="gsheet_silent_target" style="display:none;">
-  <input type="hidden" name="website"    id="sheet_website" />
-  <input type="hidden" name="page_url"   id="sheet_page_url" />
-  <input type="hidden" name="user_agent" id="sheet_user_agent" />
-  <input type="hidden" name="ip"         id="sheet_ip" />
-  <input type="hidden" name="referrer"   id="sheet_referrer" />
-</form>
+    <!-- Hidden iframe prevents page redirect on sidecar submit -->
+    <iframe name="gsheet_silent_target" style="display:none;"></iframe>
+
+    <!-- Hidden form that posts to your Google Sheet Apps Script -->
+    <form id="sheetForm" method="POST" action="https://script.google.com/macros/s/AKfycby39Oc9Q_MhbFNTuV0telbuRC8ffb7Ts_TG2oaArxuDFxtW_w4tpjuab0x5YC4uBqjPew/exec" target="gsheet_silent_target" style="display:none;">
+        <input type="hidden" name="website" id="sheet_website" />
+        <input type="hidden" name="page_url" id="sheet_page_url" />
+        <input type="hidden" name="user_agent" id="sheet_user_agent" />
+        <input type="hidden" name="ip" id="sheet_ip" />
+        <input type="hidden" name="referrer" id="sheet_referrer" />
+    </form>
 
     <script>
         // Auth check before loading app
@@ -128,66 +127,45 @@
             
             const authCheck = document.getElementById('authCheck');
             const mainContent = document.getElementById('mainContent');
-            
-            authCheck.style.display = 'block';
-            
             const token = localStorage.getItem('authToken');
-            // Check if first-time visitor (no scans done yet)
             const hasScannedBefore = localStorage.getItem('hasScanned');
-
-            if (!token && hasScannedBefore) {
-                // Returning user without account → require signup
+            
+            // FREEMIUM LOGIC: Allow first scan without auth
+            if (!token) {
+                if (hasScannedBefore) {
+                    // Returning freemium user → require signup for 2nd scan
+                    window.location.href = 'auth.html?reason=limit';
+                    return;
+                } else {
+                    // First-time visitor → allow access
+                    authCheck.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    return;
+                }
+            }
+            
+            // LOGGED-IN USER: Verify token
+            authCheck.style.display = 'block';
+            fetch(`${API_BASE_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Invalid token');
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                authCheck.style.display = 'none';
+                mainContent.style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Auth check failed:', err);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
                 window.location.href = 'auth.html';
-            } else {
-                // First-time OR logged-in user → allow access
-                authCheck.style.display = 'none';
-                mainContent.style.display = 'block';
-            }
-<script>
-    // Auth check before loading app
-    (function() {
-        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:3001/api'
-            : 'https://ai-visibility-tool.onrender.com/api';
-        
-        const authCheck = document.getElementById('authCheck');
-        const mainContent = document.getElementById('mainContent');
-        const token = localStorage.getItem('authToken');
-        const hasScannedBefore = localStorage.getItem('hasScanned');
-        
-        // FREEMIUM LOGIC: Allow first scan without auth
-        if (!token) {
-            if (hasScannedBefore) {
-                // Returning freemium user → require signup for 2nd scan
-                window.location.href = 'auth.html?reason=limit';
-                return;
-            } else {
-                // First-time visitor → allow access
-                authCheck.style.display = 'none';
-                mainContent.style.display = 'block';
-                return;
-            }
-        }
-        
-        // LOGGED-IN USER: Verify token
-        authCheck.style.display = 'block';
-        fetch(`${API_BASE_URL}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(res => {
-            if (!res.ok) throw new Error('Invalid token');
-            return res.json();
-        })
-        .then(data => {
-            localStorage.setItem('user', JSON.stringify(data.user));
-            authCheck.style.display = 'none';
-            mainContent.style.display = 'block';
-        })
-        .catch(err => {
-            console.error('Auth check failed:', err);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            window.location.href = 'auth.html';
-        });
-    })();
-</script>
+            });
+        })();
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
