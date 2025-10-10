@@ -11,6 +11,22 @@ const pool = new Pool({
 async function setupDatabase() {
   try {
     console.log('🔄 Setting up database tables...');
+
+        // Brand facts table (for identity layer)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS brand_facts (
+        brand_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_name VARCHAR(255),
+        domain VARCHAR(255) UNIQUE NOT NULL,
+        same_as JSONB DEFAULT '[]',
+        wikidata_id VARCHAR(100),
+        crunchbase_url VARCHAR(255),
+        socials JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Brand facts table created');
     
     // Users table
     await pool.query(`
@@ -32,6 +48,7 @@ async function setupDatabase() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS scans (
         id SERIAL PRIMARY KEY,
+        brand_id UUID REFERENCES brand_facts(brand_id),
         user_id INTEGER REFERENCES users(id),
         url VARCHAR(500) NOT NULL,
         score INTEGER,
