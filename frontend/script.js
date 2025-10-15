@@ -1,70 +1,38 @@
 // ===== AUTH HELPERS =====
 function getAuthToken() {
-    return localStorage.getItem('authToken');
+    try {
+        return localStorage.getItem('authToken');
+    } catch (e) {
+        console.warn('localStorage not available:', e);
+        return null;
+    }
 }
 
 function getUser() {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
-}
-
-function logout() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    window.location.href = 'auth.html';
-}
-
-// ===== ADD USER MENU TO PAGE =====
-document.addEventListener('DOMContentLoaded', () => {
-    const user = getUser();
-    if (user) {
-        const header = document.querySelector('.header');
-        const userMenu = document.createElement('div');
-        userMenu.style.cssText = 'position: absolute; top: 20px; right: 20px; color: white; display: flex; align-items: center; gap: 15px;';
-        userMenu.innerHTML = `
-            <div style="text-align: right;">
-                <div style="font-weight: 600;">${user.email}</div>
-                <div style="font-size: 0.85rem; opacity: 0.9;">${user.plan} plan • ${user.scans_used_this_month || 0} scans used</div>
-            </div>
-            <button onclick="logout()" style="padding: 8px 20px; border: 2px solid white; background: transparent; color: white; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;">
-                Logout
-            </button>
-        `;
-        header.style.position = 'relative';
-        header.appendChild(userMenu);
+    try {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+        console.warn('Error reading user data:', e);
+        return null;
     }
-});
+}
 
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3001/api'
-    : 'https://ai-visibility-tool.onrender.com/api';
+// Add this after the existing getUser() function in script.js
 
-// Industry-specific test queries (keep existing)
-const TEST_QUERIES = {
-    msp: [
-        "Best managed service providers for cybersecurity",
-        "Top IT support companies for small business",
-        "Reliable MSP for remote work solutions"
-    ],
-    telecom: [
-        "Best internet service providers in Ontario",
-        "Reliable fiber internet companies",
-        "Top telecommunications providers for business"
-    ],
-    startup: [
-        "AI automation solutions for startups",
-        "Best technology platforms for scaling",
-        "Startup-friendly software solutions"
-    ],
-    professional_services: [
-        "Best consulting firms for business strategy",
-        "Top professional service providers",
-        "Business advisory services near me"
-    ]
-};
+// Check if user has DIY or Pro plan
+function hasPaidPlan() {
+    const user = getUser();
+    return user && ['diy', 'pro'].includes(user.plan);
+}
 
-// Main form handler (keep existing)
-document.getElementById('urlForm').addEventListener('submit', async (e) => {
+// Show page selector for DIY/Pro users
+function showPageSelector(url) {
+    window.location.href = `page-selector.html?url=${encodeURIComponent(url)}`;
+}
+
+// Update the form handler to check for DIY users
+document.getElementById('urlForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const url = document.getElementById('websiteUrl').value.trim();
@@ -73,29 +41,80 @@ document.getElementById('urlForm').addEventListener('submit', async (e) => {
         alert('Please enter a valid URL (e.g., https://example.com)');
         return;
     }
-  // --- Sidecar submit to Google Sheets (uses your hidden form in index.html) ---
-const byId = (id) => document.getElementById(id);
-byId('sheet_website').value    = url;
-byId('sheet_page_url').value   = window.location.href;
-byId('sheet_user_agent').value = navigator.userAgent;
-byId('sheet_referrer').value   = document.referrer || '';
-byId('sheetForm')?.submit(); // sends to your Apps Script in the hidden iframe
-// ---------------------------------------------------------------------------
-  
+    
+    const user = getUser();
+    
+    // If user has DIY or Pro plan, show page selector
+    if (user && ['diy', 'pro'].includes(user.plan)) {
+        const choice = confirm(
+            'You have a ' + user.plan.toUpperCase() + ' plan!\n\n' +
+            'Would you like to select specific pages to scan?\n\n' +
+            'Click OK to choose pages, or Cancel to scan just the homepage.'
+        );
+        
+        if (choice) {
+            showPageSelector(url);
+            return;
+        }
+    }
+    
+    // Sidecar submit to Google Sheets
+    const byId = (id) => document.getElementById(id);
+    const sheetWebsite = byId('sheet_website');
+    const sheetPageUrl = byId('sheet_page_url');
+    const sheetUserAgent = byId('sheet_user_agent');
+    const sheetReferrer = byId('sheet_referrer');
+    const sheetForm = byId('sheetForm');
+    
+    if (sheetWebsite) sheetWebsite.value = url;
+    if (sheetPageUrl) sheetPageUrl.value = window.location.href;
+    if (sheetUserAgent) sheetUserAgent.value = navigator.userAgent;
+    if (sheetReferrer) sheetReferrer.value = document.referrer || '';
+    if (sheetForm) sheetForm.submit();
+    
     await analyzeWebsite(url);
 });
 
-// Website analysis function (keep existing)
-async function analyzeWebsite(url) {
+// Check for scan parameter from page selector
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldScan = urlParams.get('scan');
+    const url = urlParams.get('url');
+    const pagesParam = urlParams.get('pages');
+    
+    if (shouldScan && url) {
+        const pages = pagesParam ? JSON.parse(pagesParam) : [];
+        
+        // Pre-fill URL
+        const urlInput = document.getElementById('websiteUrl');
+        if (urlInput) {
+            urlInput.value = url;
+        }
+        
+        // Start analysis with selected pages
+        analyzeWebsite(url, pages);
+    }
+});
+
+// Updated analyzeWebsite function with pages parameter
+async function analyzeWebsite(url, selectedPages = []) {
     showLoading();
     
-    // ✅ MARK THAT USER HAS SCANNED
-    localStorage.setItem('hasScanned', 'true');
+    // Mark that user has scanned
+    try {
+        localStorage.setItem('hasScanned', 'true');
+    } catch (e) {
+        console.warn('Could not set hasScanned flag:', e);
+    }
     
     try {
-        // Step 1: Analyze website with the new backend
+        // Step 1: Analyze website with selected pages
         updateProgress('Analyzing website structure...', 25);
-        const analysisData = await fetchTechnicalAnalysis(url);
+        const analysisData = await fetchTechnicalAnalysis(url, selectedPages);
+        
+        if (!analysisData) {
+            return;
+        }
         
         // Step 2: Test AI visibility (if needed)
         updateProgress('Testing AI assistant visibility...', 75);
@@ -125,21 +144,262 @@ async function analyzeWebsite(url) {
     }
 }
 
-// Updated API call function (keep existing)
-async function fetchTechnicalAnalysis(url) {
+// Updated API call with pages parameter
+async function fetchTechnicalAnalysis(url, pages = []) {
     const token = getAuthToken();
     
-    if (!token) {
-        window.location.href = 'auth.html';
-        return;
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
     
     const response = await fetch(`${API_BASE_URL}/analyze-website`, {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
+        body: JSON.stringify({ 
+            url, 
+            pages: pages.length > 0 ? pages : undefined 
+        })
+    });
+    
+    if (response.status === 401 || response.status === 403) {
+        const data = await response.json();
+        if (data.error === 'Scan limit reached') {
+            alert(data.message + '\n\n' + (data.upgrade || 'Please upgrade your plan.'));
+            window.location.href = 'auth.html?reason=limit';
+        }
+        return null;
+    }
+    
+    if (!response.ok) {
+        throw new Error(`Technical analysis failed: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.data;
+}
+
+// Add user menu with plan badge
+document.addEventListener('DOMContentLoaded', () => {
+    const user = getUser();
+    if (user) {
+        const header = document.querySelector('.header');
+        if (header) {
+            const planBadge = user.plan === 'diy' ? '🎯 DIY' : 
+                            user.plan === 'pro' ? '⭐ PRO' : 
+                            '🆓 Free';
+            
+            const userMenu = document.createElement('div');
+            userMenu.style.cssText = 'position: absolute; top: 20px; right: 20px; color: white; display: flex; align-items: center; gap: 15px;';
+            userMenu.innerHTML = `
+                <div style="text-align: right;">
+                    <div style="font-weight: 600;">${user.email}</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">
+                        ${planBadge} • ${user.scans_used_this_month || 0} scans used
+                    </div>
+                </div>
+                <button onclick="logout()" style="padding: 8px 20px; border: 2px solid white; background: transparent; color: white; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;">
+                    Logout
+                </button>
+            `;
+            header.style.position = 'relative';
+            header.appendChild(userMenu);
+        }
+    }
+});
+
+// Add page-level recommendations display for DIY/Pro
+function displayPageRecommendations(scanData) {
+    if (!scanData.scannedPages || scanData.scannedPages.length <= 1) {
+        return; // Only homepage scanned
+    }
+    
+    const recommendationsSection = document.querySelector('.recommendations');
+    if (!recommendationsSection) return;
+    
+    const pageRecSection = document.createElement('div');
+    pageRecSection.className = 'page-recommendations';
+    pageRecSection.style.cssText = 'margin-top: 30px; padding: 30px; background: white; border-radius: 15px;';
+    
+    pageRecSection.innerHTML = `
+        <h3>📄 Page-by-Page Recommendations</h3>
+        <p style="color: #666; margin-bottom: 20px;">Specific improvements for each scanned page</p>
+        <div id="pageRecList"></div>
+    `;
+    
+    recommendationsSection.appendChild(pageRecSection);
+    
+    const pageRecList = document.getElementById('pageRecList');
+    
+    scanData.scannedPages.forEach(pageUrl => {
+        const pageDiv = document.createElement('div');
+        pageDiv.style.cssText = 'margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;';
+        
+        pageDiv.innerHTML = `
+            <h4 style="margin-bottom: 10px;">${pageUrl}</h4>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 8px 0;">✅ Add FAQ schema for voice search</li>
+                <li style="padding: 8px 0;">⚡ Optimize images for faster loading</li>
+                <li style="padding: 8px 0;">🎯 Add clear CTAs for AI assistants</li>
+            </ul>
+        `;
+        
+        pageRecList.appendChild(pageDiv);
+    });
+}
+
+function logout() {
+    try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+    } catch (e) {
+        console.warn('Error clearing storage:', e);
+    }
+    window.location.href = 'auth.html';
+}
+
+// ===== ADD USER MENU TO PAGE =====
+document.addEventListener('DOMContentLoaded', () => {
+    const user = getUser();
+    if (user) {
+        const header = document.querySelector('.header');
+        if (header) {
+            const userMenu = document.createElement('div');
+            userMenu.style.cssText = 'position: absolute; top: 20px; right: 20px; color: white; display: flex; align-items: center; gap: 15px;';
+            userMenu.innerHTML = `
+                <div style="text-align: right;">
+                    <div style="font-weight: 600;">${user.email}</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">${user.plan} plan • ${user.scans_used_this_month || 0} scans used</div>
+                </div>
+                <button onclick="logout()" style="padding: 8px 20px; border: 2px solid white; background: transparent; color: white; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;">
+                    Logout
+                </button>
+            `;
+            header.style.position = 'relative';
+            header.appendChild(userMenu);
+        }
+    }
+});
+
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001/api'
+    : 'https://ai-visibility-tool.onrender.com/api';
+
+// Industry-specific test queries
+const TEST_QUERIES = {
+    msp: [
+        "Best managed service providers for cybersecurity",
+        "Top IT support companies for small business",
+        "Reliable MSP for remote work solutions"
+    ],
+    telecom: [
+        "Best internet service providers in Ontario",
+        "Reliable fiber internet companies",
+        "Top telecommunications providers for business"
+    ],
+    startup: [
+        "AI automation solutions for startups",
+        "Best technology platforms for scaling",
+        "Startup-friendly software solutions"
+    ],
+    professional_services: [
+        "Best consulting firms for business strategy",
+        "Top professional service providers",
+        "Business advisory services near me"
+    ]
+};
+
+// Main form handler
+document.getElementById('urlForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const url = document.getElementById('websiteUrl').value.trim();
+    
+    if (!isValidUrl(url)) {
+        alert('Please enter a valid URL (e.g., https://example.com)');
+        return;
+    }
+    
+    // --- Sidecar submit to Google Sheets ---
+    const byId = (id) => document.getElementById(id);
+    const sheetWebsite = byId('sheet_website');
+    const sheetPageUrl = byId('sheet_page_url');
+    const sheetUserAgent = byId('sheet_user_agent');
+    const sheetReferrer = byId('sheet_referrer');
+    const sheetForm = byId('sheetForm');
+    
+    if (sheetWebsite) sheetWebsite.value = url;
+    if (sheetPageUrl) sheetPageUrl.value = window.location.href;
+    if (sheetUserAgent) sheetUserAgent.value = navigator.userAgent;
+    if (sheetReferrer) sheetReferrer.value = document.referrer || '';
+    if (sheetForm) sheetForm.submit();
+    // ---------------------------------------------------------------------------
+    
+    await analyzeWebsite(url);
+});
+
+// Website analysis function
+async function analyzeWebsite(url) {
+    showLoading();
+    
+    // Mark that user has scanned
+    try {
+        localStorage.setItem('hasScanned', 'true');
+    } catch (e) {
+        console.warn('Could not set hasScanned flag:', e);
+    }
+    
+    try {
+        // Step 1: Analyze website with the new backend
+        updateProgress('Analyzing website structure...', 25);
+        const analysisData = await fetchTechnicalAnalysis(url);
+        
+        // If no data returned (auth issue), stop here
+        if (!analysisData) {
+            return;
+        }
+        
+        // Step 2: Test AI visibility (if needed)
+        updateProgress('Testing AI assistant visibility...', 75);
+        let aiVisibilityData = null;
+        try {
+            aiVisibilityData = await testAIVisibility(url, analysisData.industry);
+        } catch (error) {
+            console.log('AI visibility testing failed, continuing without it:', error);
+        }
+        
+        // Step 3: Combine results
+        updateProgress('Finalizing results...', 100);
+        
+        const results = {
+            ...analysisData,
+            aiVisibilityResults: aiVisibilityData
+        };
+        
+        // Display results
+        setTimeout(() => {
+            showResults(results);
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        showError(error.message || 'Analysis failed. Please try again.');
+    }
+}
+
+// Updated API call function - ALLOWS ANONYMOUS USERS
+async function fetchTechnicalAnalysis(url) {
+    const token = getAuthToken();
+    
+    // Build headers - include token only if user is logged in
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/analyze-website`, {
+        method: 'POST',
+        headers: headers,
         body: JSON.stringify({ url })
     });
     
@@ -147,10 +407,9 @@ async function fetchTechnicalAnalysis(url) {
         const data = await response.json();
         if (data.error === 'Scan limit reached') {
             alert(data.message + '\n\n' + (data.upgrade || 'Please upgrade your plan.'));
-        } else {
-            logout();
+            window.location.href = 'auth.html?reason=limit';
         }
-        return;
+        return null;
     }
     
     if (!response.ok) {
@@ -178,7 +437,7 @@ async function testAIVisibility(url, industry) {
     return data.data;
 }
 
-// Utility functions (keep existing)
+// Utility functions
 function isValidUrl(string) {
     try {
         new URL(string);
@@ -188,45 +447,94 @@ function isValidUrl(string) {
     }
 }
 
-// UI functions (keep existing)
+function createElementFromHTML(htmlString) {
+    const div = document.createElement('div');
+    div.innerHTML = htmlString.trim();
+    return div.firstChild;
+}
+
+// UI functions
 function showLoading() {
-    document.getElementById('inputSection').style.display = 'none';
-    document.getElementById('loadingSection').style.display = 'block';
-    document.getElementById('errorSection').style.display = 'none';
-    document.getElementById('resultsSection').style.display = 'none';
+    const inputSection = document.getElementById('inputSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const errorSection = document.getElementById('errorSection');
+    const resultsSection = document.getElementById('resultsSection');
+    
+    if (inputSection) inputSection.style.display = 'none';
+    if (loadingSection) loadingSection.style.display = 'block';
+    if (errorSection) errorSection.style.display = 'none';
+    if (resultsSection) resultsSection.style.display = 'none';
 }
 
 function updateProgress(text, percentage) {
-    document.getElementById('loadingText').textContent = text;
-    document.getElementById('progressFill').style.width = percentage + '%';
+    const loadingText = document.getElementById('loadingText');
+    const progressFill = document.getElementById('progressFill');
+    
+    if (loadingText) loadingText.textContent = text;
+    if (progressFill) progressFill.style.width = percentage + '%';
 }
 
 function showError(message) {
-    document.getElementById('inputSection').style.display = 'none';
-    document.getElementById('loadingSection').style.display = 'none';
-    document.getElementById('errorSection').style.display = 'block';
-    document.getElementById('resultsSection').style.display = 'none';
-    document.getElementById('errorMessage').textContent = message;
+    const inputSection = document.getElementById('inputSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const errorSection = document.getElementById('errorSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (inputSection) inputSection.style.display = 'none';
+    if (loadingSection) loadingSection.style.display = 'none';
+    if (errorSection) errorSection.style.display = 'block';
+    if (resultsSection) resultsSection.style.display = 'none';
+    if (errorMessage) errorMessage.textContent = message;
 }
 
 function showResults(results) {
-    document.getElementById('inputSection').style.display = 'none';
-    document.getElementById('loadingSection').style.display = 'none';
-    document.getElementById('errorSection').style.display = 'none';
-    document.getElementById('resultsSection').style.display = 'block';
+    const inputSection = document.getElementById('inputSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const errorSection = document.getElementById('errorSection');
+    const resultsSection = document.getElementById('resultsSection');
+    
+    if (inputSection) inputSection.style.display = 'none';
+    if (loadingSection) loadingSection.style.display = 'none';
+    if (errorSection) errorSection.style.display = 'none';
+    if (resultsSection) resultsSection.style.display = 'block';
     
     displayResults(results);
 }
 
 function displayResults(results) {
+    if (!results) {
+        showError('No results to display');
+        return;
+    }
+    
+    // Check if user is freemium (anonymous)
+    const isFreemium = results.isFreemium || !getUser();
+    
     // Update industry detection
-    document.getElementById('detectedIndustry').textContent = results.industry?.name || 'Professional Services';
-    document.getElementById('websiteStats').textContent = 
-        `Domain: ${new URL(results.url).hostname} | Analyzed: ${new Date(results.analyzedAt).toLocaleDateString()}`;
+    const detectedIndustry = document.getElementById('detectedIndustry');
+    const websiteStats = document.getElementById('websiteStats');
+    
+    if (detectedIndustry) {
+        detectedIndustry.textContent = results.industry?.name || 'Professional Services';
+    }
+    
+    if (websiteStats && results.url) {
+        try {
+            const hostname = new URL(results.url).hostname;
+            const analyzedDate = results.analyzedAt ? new Date(results.analyzedAt).toLocaleDateString() : 'Today';
+            websiteStats.textContent = `Domain: ${hostname} | Analyzed: ${analyzedDate}`;
+        } catch (e) {
+            console.warn('Error parsing URL:', e);
+        }
+    }
     
     // Update total score
     const totalScore = Math.round(results.scores?.total || 0);
-    document.getElementById('totalScore').textContent = totalScore;
+    const totalScoreElement = document.getElementById('totalScore');
+    if (totalScoreElement) {
+        totalScoreElement.textContent = totalScore;
+    }
     
     const scoreCircle = document.getElementById('scoreCircle');
     const scoreTitle = document.getElementById('scoreTitle');
@@ -234,20 +542,139 @@ function displayResults(results) {
     
     // Update score styling and messages based on total score
     if (totalScore < 30) {
-        scoreCircle.className = 'score-circle score-poor';
-        scoreTitle.textContent = 'Critical AI Visibility Issues';
-        scoreDescription.textContent = 'Your website has significant barriers preventing AI systems from finding and recommending you.';
+        if (scoreCircle) scoreCircle.className = 'score-circle score-poor';
+        if (scoreTitle) scoreTitle.textContent = 'Critical AI Visibility Issues';
+        if (scoreDescription) scoreDescription.textContent = 'Your website has significant barriers preventing AI systems from finding and recommending you.';
     } else if (totalScore < 60) {
-        scoreCircle.className = 'score-circle score-fair';
-        scoreTitle.textContent = 'Moderate AI Visibility';
-        scoreDescription.textContent = 'Your website appears in some AI results but has room for substantial improvement.';
+        if (scoreCircle) scoreCircle.className = 'score-circle score-fair';
+        if (scoreTitle) scoreTitle.textContent = 'Moderate AI Visibility';
+        if (scoreDescription) scoreDescription.textContent = 'Your website appears in some AI results but has room for substantial improvement.';
     } else {
-        scoreCircle.className = 'score-circle score-good';
-        scoreTitle.textContent = 'Strong AI Visibility';
-        scoreDescription.textContent = 'Your website is well-optimized for AI discovery with minor optimization opportunities.';
+        if (scoreCircle) scoreCircle.className = 'score-circle score-good';
+        if (scoreTitle) scoreTitle.textContent = 'Strong AI Visibility';
+        if (scoreDescription) scoreDescription.textContent = 'Your website is well-optimized for AI discovery with minor optimization opportunities.';
     }
     
-    // Display category analysis
+    // FREEMIUM LOGIC: Show limited or full results
+    if (isFreemium) {
+        displayFreemiumResults(results);
+    } else {
+        displayFullResults(results);
+    }
+}
+
+// Display limited results for freemium users
+function displayFreemiumResults(results) {
+    // Show locked categories with upgrade CTA
+    const categoriesContainer = document.getElementById('scoreCategories');
+    if (categoriesContainer) {
+        categoriesContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, rgba(0,185,218,0.1) 0%, rgba(112,48,160,0.1) 100%); border-radius: 15px; border: 2px dashed #00B9DA;">
+                <h3 style="margin-bottom: 15px; color: #333;">🔒 See Your Detailed Breakdown</h3>
+                <p style="color: #666; margin-bottom: 25px;">
+                    Sign up free to see your scores across all 8 AI readiness categories
+                </p>
+                <button class="analyze-btn" onclick="window.location.href='auth.html'" style="margin: 0 auto;">
+                    Sign Up Free - No Credit Card
+                </button>
+            </div>
+        `;
+    }
+    
+    // Hide AI visibility results
+    const aiVisibilityResults = document.getElementById('aiVisibilityResults');
+    if (aiVisibilityResults) {
+        aiVisibilityResults.innerHTML = '';
+    }
+    
+    // Show only top 3 recommendations
+    displayRecommendations(results, 3);
+    
+    // Add upgrade banner
+    const resultsSection = document.getElementById('resultsSection');
+    const existingBanner = document.getElementById('freemiumUpgradeBanner');
+    
+    if (resultsSection && !existingBanner) {
+        const tierComparisonHTML = `
+            <div id="freemiumUpgradeBanner" class="tier-comparison-card" style="margin: 40px 0; padding: 40px; background: linear-gradient(135deg, rgba(0,185,218,0.05) 0%, rgba(112,48,160,0.05) 100%); border-radius: 20px; border: 2px solid #00B9DA;">
+                <h3 style="text-align: center; margin-bottom: 15px;">🚀 Get Your Full AI Visibility Report</h3>
+                <p style="text-align: center; color: #666; margin-bottom: 30px;">Choose the plan that fits your needs</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 30px;">
+                    <!-- FREE TIER -->
+                    <div style="background: white; padding: 30px; border-radius: 15px; border: 2px solid #e0e0e0;">
+                        <h4 style="margin-bottom: 10px;">Free</h4>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #00B9DA; margin-bottom: 20px;">$0<span style="font-size: 1rem; font-weight: normal;">/mo</span></div>
+                        <div style="margin-bottom: 25px;">
+                            <div style="margin-bottom: 12px;">✓ 2 scans per month</div>
+                            <div style="margin-bottom: 12px;">✓ Homepage only (1 page)</div>
+                            <div style="margin-bottom: 12px;">✓ Detailed category breakdowns</div>
+                            <div style="margin-bottom: 12px;">✓ Full recommendations list</div>
+                            <div style="margin-bottom: 12px;">✓ Progress tracking</div>
+                        </div>
+                        <button onclick="window.location.href='auth.html'" style="width: 100%; padding: 12px 24px; background: #f5f5f5; color: #333; border: 2px solid #00B9DA; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                            Sign Up Free
+                        </button>
+                    </div>
+                    
+                    <!-- DIY/STARTER TIER -->
+                    <div style="background: white; padding: 30px; border-radius: 15px; border: 3px solid #00B9DA; position: relative;">
+                        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00B9DA; color: white; padding: 4px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">MOST POPULAR</div>
+                        <h4 style="margin-bottom: 10px;">DIY / Starter</h4>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #00B9DA; margin-bottom: 20px;">$29<span style="font-size: 1rem; font-weight: normal;">/mo</span></div>
+                        <div style="margin-bottom: 25px;">
+                            <div style="margin-bottom: 12px;"><strong>✓ Homepage + 4 pages YOU choose</strong></div>
+                            <div style="margin-bottom: 12px;">✓ Pick any 4 additional pages to scan</div>
+                            <div style="margin-bottom: 12px;">✓ Page-level TODO lists</div>
+                            <div style="margin-bottom: 12px;">✓ Progress tracking over time</div>
+                            <div style="margin-bottom: 12px;">✓ Basic JSON-LD export</div>
+                            <div style="margin-bottom: 12px;">✓ Combined recommendations</div>
+                        </div>
+                        <button onclick="window.location.href='checkout.html?plan=diy&url=${encodeURIComponent(results.url || '')}'" style="width: 100%; padding: 12px 24px; background: #00B9DA; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                            Get Started
+                        </button>
+                    </div>
+                    
+                    <!-- PRO TIER -->
+                    <div style="background: white; padding: 30px; border-radius: 15px; border: 2px solid #7030A0;">
+                        <h4 style="margin-bottom: 10px;">Pro</h4>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #7030A0; margin-bottom: 20px;">$99<span style="font-size: 1rem; font-weight: normal;">/mo</span></div>
+                        <div style="margin-bottom: 25px;">
+                            <div style="margin-bottom: 12px;"><strong>✓ Up to 25 pages</strong> per scan</div>
+                            <div style="margin-bottom: 12px;"><strong>✓ Brand Visibility Index</strong></div>
+                            <div style="margin-bottom: 12px;"><strong>✓ Competitor benchmarking</strong> (3 domains)</div>
+                            <div style="margin-bottom: 12px;">✓ Knowledge Graph fields</div>
+                            <div style="margin-bottom: 12px;">✓ Advanced JSON-LD pack (5+ schemas)</div>
+                            <div style="margin-bottom: 12px;">✓ Outside-in crawl (PR, reviews, social)</div>
+                            <div style="margin-bottom: 12px;">✓ Live dashboard & analytics</div>
+                        </div>
+                        <button onclick="window.location.href='checkout.html?plan=pro&url=${encodeURIComponent(results.url || '')}'" style="width: 100%; padding: 12px 24px; background: #7030A0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                            Upgrade to Pro
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; color: #666; font-size: 0.9rem;">
+                    <p>💳 All plans include secure Stripe checkout • Cancel anytime</p>
+                </div>
+            </div>
+        `;
+        
+        const ctaSection = document.querySelector('.cta-section');
+        if (ctaSection && ctaSection.parentNode) {
+            ctaSection.parentNode.insertBefore(
+                createElementFromHTML(tierComparisonHTML),
+                ctaSection
+            );
+        } else {
+            resultsSection.insertAdjacentHTML('beforeend', tierComparisonHTML);
+        }
+    }
+}
+
+// Display full results for logged-in users
+function displayFullResults(results) {
+    // Display full category analysis
     displayCategoryAnalysis(results);
     
     // Display AI visibility results if available
@@ -255,11 +682,15 @@ function displayResults(results) {
         displayAIVisibilityResults(results.aiVisibilityResults);
     }
     
-    // Display recommendations
+    // Display all recommendations
     displayRecommendations(results);
+    
+    // Remove freemium banner if it exists
+    const banner = document.getElementById('freemiumUpgradeBanner');
+    if (banner) banner.remove();
 }
 
-// UPDATED V5 CATEGORY DISPLAY FUNCTION
+// V5 CATEGORY DISPLAY FUNCTION
 function displayCategoryAnalysis(results) {
     const scores = results.scores || {};
     const analysis = results.analysis || {};
@@ -290,7 +721,7 @@ function displayCategoryAnalysis(results) {
         {
             key: 'contentStructure',
             name: 'Content Structure & Entity Recognition',
-            icon: '🏗️', 
+            icon: '🗂️', 
             description: 'Semantic structure and entity clarity for AI understanding',
             maxContribution: 15
         },
@@ -325,6 +756,8 @@ function displayCategoryAnalysis(results) {
     ];
     
     const categoriesContainer = document.getElementById('scoreCategories');
+    if (!categoriesContainer) return;
+    
     categoriesContainer.innerHTML = '';
     
     categories.forEach(category => {
@@ -359,7 +792,6 @@ function displayCategoryAnalysis(results) {
         const categoryDiv = document.createElement('div');
         categoryDiv.className = `category ${categoryClass}`;
         
-        // Clean display without internal technical details
         categoryDiv.innerHTML = `
             <h4>
                 <span>${category.icon}</span>
@@ -381,6 +813,7 @@ function displayCategoryAnalysis(results) {
 
 function displayAIVisibilityResults(aiResults) {
     const aiResultsContainer = document.getElementById('aiVisibilityResults');
+    if (!aiResultsContainer) return;
     
     if (!aiResults || !aiResults.overall) {
         aiResultsContainer.innerHTML = `
@@ -413,9 +846,17 @@ function displayAIVisibilityResults(aiResults) {
     `;
 }
 
-function displayRecommendations(results) {
-    const recommendations = results.recommendations || [];
+function displayRecommendations(results, limit = null) {
+    let recommendations = results.recommendations || [];
+    
+    // Apply limit if specified
+    if (limit && limit > 0) {
+        recommendations = recommendations.slice(0, limit);
+    }
+    
     const quickWinsContainer = document.getElementById('quickWins');
+    if (!quickWinsContainer) return;
+    
     quickWinsContainer.innerHTML = '';
     
     if (recommendations.length === 0) {
@@ -442,7 +883,7 @@ function displayRecommendations(results) {
         recDiv.innerHTML = `
             <h4 style="display: flex; justify-content: space-between; align-items: center;">
                 ${rec.title}
-                <span style="background: ${colors[rec.impact]}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">
+                <span style="background: ${colors[rec.impact] || '#4DACA6'}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">
                     ${rec.impact}
                 </span>
             </h4>
@@ -454,15 +895,22 @@ function displayRecommendations(results) {
 }
 
 function resetForm() {
-    document.getElementById('inputSection').style.display = 'block';
-    document.getElementById('loadingSection').style.display = 'none';
-    document.getElementById('errorSection').style.display = 'none';
-    document.getElementById('resultsSection').style.display = 'none';
-    document.getElementById('websiteUrl').value = '';
-    document.getElementById('progressFill').style.width = '0%';
+    const inputSection = document.getElementById('inputSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const errorSection = document.getElementById('errorSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const websiteUrl = document.getElementById('websiteUrl');
+    const progressFill = document.getElementById('progressFill');
+    
+    if (inputSection) inputSection.style.display = 'block';
+    if (loadingSection) loadingSection.style.display = 'none';
+    if (errorSection) errorSection.style.display = 'none';
+    if (resultsSection) resultsSection.style.display = 'none';
+    if (websiteUrl) websiteUrl.value = '';
+    if (progressFill) progressFill.style.width = '0%';
 }
 
-// CTA handlers (keep existing)
+// CTA handlers
 document.addEventListener('DOMContentLoaded', function() {
     const getReportBtn = document.getElementById('getFullReportBtn');
     const bookCallBtn = document.getElementById('bookCallBtn');
@@ -482,13 +930,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-  var urlField = document.getElementById('page_url');
-  if (urlField) {
-    urlField.value = window.location.href;        // full URL (e.g., https://yoursite/page?x=1)
-    // Optional extras you can send later if you want:
-    // urlField.value = window.location.origin + window.location.pathname; // URL without query
-    // or store document.referrer in another hidden field if you add one
-  }
+document.addEventListener('DOMContentLoaded', function() {
+    const urlField = document.getElementById('page_url');
+    if (urlField) {
+        urlField.value = window.location.href;
+    }
 });
-

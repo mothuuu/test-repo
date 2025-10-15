@@ -88,51 +88,91 @@ async function extractSitemapUrls(sitemapUrl, max = 8) {
   return [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)].map(m => m[1]).slice(0, max);
 }
 
-async function fetchMultiPageSample(startUrl, isPremium = false) {
+async function fetchMultiPageSample(startUrl, userPlan = 'free', selectedPages = []) {
   const origin = new URL(startUrl).origin;
   const discovery = await fetchRobotsAndSitemaps(origin);
   
   // FREE USERS: Homepage only
-  if (!isPremium) {
+  if (userPlan === 'free' || !userPlan) {
     const r = await fetchText(startUrl);
     return { 
       combinedHtml: r.text || '', 
       discovery, 
       origin, 
       pagesFetched: 1, 
-      sampledUrls: [startUrl] 
+      sampledUrls: [startUrl],
+      planUsed: 'free'
     };
   }
   
-  // PREMIUM USERS: Multi-page crawl (30+ pages)
-  const corePaths = ['/insights','/news','/blog','/press','/resources','/solutions','/services','/about','/products','/platform'];
-  let sampledUrls = [startUrl, ...corePaths.map(p => origin.replace(/\/+$/, '') + p)];
-  
-  if (discovery.sitemapFound && discovery.sitemaps?.length) {
-    try {
-      const fromSitemap = await extractSitemapUrls(discovery.sitemaps[0], 25); // Increased to 25 for premium
-      sampledUrls = [...new Set(sampledUrls.concat(fromSitemap))];
-    } catch { /* ignore */ }
-  }
-  
-  const pages = [];
-  for (const u of sampledUrls.slice(0, 30)) { // Limit to 30 pages max
-    const r = await fetchText(u);
-    if (r.text && r.text.length > 500) pages.push(r.text);
-  }
-  
-  if (pages.length < 5) { // Try more sections if needed
-    const extras = ['/careers','/industries','/contact','/pricing','/features','/customers','/partners'].map(p => origin.replace(/\/+$/, '') + p);
-    for (const u of extras) {
-      if (pages.length >= 30) break;
+  // DIY USERS: Homepage + 4 user-selected pages (5 total)
+  if (userPlan === 'diy') {
+    const pages = [];
+    const urlsToFetch = [startUrl, ...selectedPages.slice(0, 4)]; // Max 5 pages
+    
+    for (const u of urlsToFetch) {
       const r = await fetchText(u);
       if (r.text && r.text.length > 500) pages.push(r.text);
     }
-    sampledUrls = [...new Set(sampledUrls.concat(extras))];
+    
+    const combinedHtml = pages.join('\n<!-- PAGE SPLIT -->\n');
+    return { 
+      combinedHtml, 
+      discovery, 
+      origin, 
+      pagesFetched: pages.length, 
+      sampledUrls: urlsToFetch.slice(0, pages.length),
+      planUsed: 'diy'
+    };
   }
   
-  const combinedHtml = pages.join('\n<!-- PAGE SPLIT -->\n');
-  return { combinedHtml, discovery, origin, pagesFetched: pages.length, sampledUrls };
+  // PRO USERS: Multi-page crawl (25 pages)
+  if (userPlan === 'pro' || userPlan === 'premium') {
+    const corePaths = ['/insights','/news','/blog','/press','/resources','/solutions','/services','/about','/products','/platform'];
+    let sampledUrls = [startUrl];
+    
+    // If user provided specific pages, use those first
+    if (selectedPages.length > 0) {
+      sampledUrls = [startUrl, ...selectedPages.slice(0, 24)];
+    } else {
+      // Auto-discover pages
+      sampledUrls = [startUrl, ...corePaths.map(p => origin.replace(/\/+$/, '') + p)];
+      
+      if (discovery.sitemapFound && discovery.sitemaps?.length) {
+        try {
+          const fromSitemap = await extractSitemapUrls(discovery.sitemaps[0], 20);
+          sampledUrls = [...new Set(sampledUrls.concat(fromSitemap))];
+        } catch { /* ignore */ }
+      }
+    }
+    
+    const pages = [];
+    for (const u of sampledUrls.slice(0, 25)) { // Limit to 25 pages
+      const r = await fetchText(u);
+      if (r.text && r.text.length > 500) pages.push(r.text);
+    }
+    
+    const combinedHtml = pages.join('\n<!-- PAGE SPLIT -->\n');
+    return { 
+      combinedHtml, 
+      discovery, 
+      origin, 
+      pagesFetched: pages.length, 
+      sampledUrls: sampledUrls.slice(0, pages.length),
+      planUsed: userPlan
+    };
+  }
+  
+  // Fallback to free
+  const r = await fetchText(startUrl);
+  return { 
+    combinedHtml: r.text || '', 
+    discovery, 
+    origin, 
+    pagesFetched: 1, 
+    sampledUrls: [startUrl],
+    planUsed: 'free'
+  };
 }
 /* ================================
    AI API CONFIGS (visibility tests)
@@ -939,20 +979,39 @@ function extractTextContent(html) {
 =========================== */
 router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
   try {
-    const { url, useAIDetection = true } = req.body || {};
+    const { url, useAIDetection = true, pages = [] } = req.body || {};
     if (!url) return res.status(400).json({ error: 'URL is required' });
 
-    // Check if user is premium
-    const isPremium = req.user && req.user.plan === 'premium';
+    const userPlan = req.user?.plan || 'free';
     
-    // For logged-in users ONLY, check and increment scan limit
+    // For logged-in users, check and increment scan limit
     if (req.user) {
-      const limits = req.user.plan === 'free' ? 2 : 50;
-      if (req.user.scans_used_this_month >= limits) {
+      const limits = PLAN_LIMITS[userPlan];
+      const scanLimit = limits?.scansPerMonth || 2;
+      
+      if (req.user.scans_used_this_month >= scanLimit) {
         return res.status(403).json({
           error: 'Scan limit reached',
-          message: `You've used ${req.user.scans_used_this_month}/${limits} scans this month.`,
-          upgrade: req.user.plan === 'free' ? 'Upgrade to Pro for 50 scans/month' : null
+          message: `You've used ${req.user.scans_used_this_month}/${scanLimit} scans this month.`,
+          currentPlan: userPlan,
+          upgrade: userPlan === 'free' 
+            ? 'Upgrade to DIY ($29/mo) for 10 scans/month' 
+            : userPlan === 'diy'
+            ? 'Upgrade to Pro ($99/mo) for 50 scans/month'
+            : null
+        });
+      }
+      
+      // Validate page count for plan
+      const pageLimit = limits?.pagesPerScan || 1;
+      const requestedPages = pages.length + 1; // +1 for homepage
+      
+      if (requestedPages > pageLimit) {
+        return res.status(403).json({
+          error: 'Page limit exceeded',
+          message: `Your ${userPlan} plan allows ${pageLimit} pages per scan. You requested ${requestedPages} pages.`,
+          limit: pageLimit,
+          upgrade: pageLimit < 5 ? 'Upgrade to DIY for 5 pages per scan' : 'Upgrade to Pro for 25 pages per scan'
         });
       }
       
@@ -963,25 +1022,43 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
       );
     }
     
-    // Run analysis (homepage only for freemium)
-    const { combinedHtml, discovery, origin, pagesFetched, sampledUrls } = await fetchMultiPageSample(url, isPremium);
+    // Run analysis with plan-appropriate page count
+    const { combinedHtml, discovery, origin, pagesFetched, sampledUrls } = 
+      await fetchMultiPageSample(url, userPlan, pages);
+      
     const websiteData = { html: combinedHtml || '', url };
     const analysis = await performDetailedAnalysis(websiteData, discovery, useAIDetection);
 
-    // Save scan (link to user if logged in, otherwise anonymous)
+    // Save scan with page tracking
     await db.query(
-      'INSERT INTO scans (user_id, url, score, industry, scan_data) VALUES ($1, $2, $3, $4, $5)',
-      [req.user?.id || null, url, analysis.scores.total, analysis.industry.key, JSON.stringify(analysis)]
+      `INSERT INTO scans (user_id, url, score, industry, scan_data, pages_scanned, page_count) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        req.user?.id || null, 
+        url, 
+        analysis.scores.total, 
+        analysis.industry.key, 
+        JSON.stringify(analysis),
+        JSON.stringify(sampledUrls),
+        pagesFetched
+      ]
     );
 
     return res.json({
       success: true,
       data: {
         ...analysis,
-        isFreemium: !req.user, // Flag for frontend
+        isFreemium: !req.user,
+        userPlan: userPlan,
+        pagesScanned: sampledUrls,
+        pagesFetched: pagesFetched,
         discovery: {
-          origin, pagesFetched, sampledUrls,
-          robots: discovery.robots, sitemaps: discovery.sitemaps, sitemapFound: discovery.sitemapFound
+          origin, 
+          pagesFetched, 
+          sampledUrls,
+          robots: discovery.robots, 
+          sitemaps: discovery.sitemaps, 
+          sitemapFound: discovery.sitemapFound
         }
       }
     });
@@ -990,13 +1067,6 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
     return res.status(500).json({ error: 'Website analysis failed', message: error.message });
   }
 });
-
-/* Optional: retained for legacy use */
-async function fetchWebsiteContent(url) {
-  const r = await fetchText(url);
-  if (!r.text) throw new Error(`Failed to fetch: ${url}`);
-  return { html: r.text, url, status: r.status || 200, headers: r.headers || {} };
-}
 
 /* ============== AI visibility harness (unchanged contract) ============== */
 router.post('/test-ai-visibility', async (req, res) => {

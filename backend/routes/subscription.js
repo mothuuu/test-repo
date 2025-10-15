@@ -1,61 +1,301 @@
 const express = require('express');
 const router = express.Router();
-const { stripe, PLANS } = require('../config/stripe');
-const { authenticateToken } = require('../middleware/auth');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../db/database');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Create checkout session
+// Price IDs from your Stripe dashboard
+const PRICE_IDS = {
+  diy: process.env.STRIPE_PRICE_DIY || 'price_diy_monthly',
+  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly'
+};
+
+// Create Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
   try {
-    const { email, domain } = req.body;
-    
+    const { email, domain, plan = 'diy' } = req.body;
+
     if (!email || !domain) {
       return res.status(400).json({ error: 'Email and domain required' });
     }
-    
+
+    if (!['diy', 'pro'].includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+
+    // Check if user exists
     let user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    
+    let userId = null;
+
     if (user.rows.length === 0) {
-      const bcrypt = require('bcryptjs');
+      // Create new user with temporary password
       const tempPassword = Math.random().toString(36).slice(-8);
       const passwordHash = await bcrypt.hash(tempPassword, 10);
       
       const newUser = await db.query(
-        'INSERT INTO users (email, password_hash, plan) VALUES ($1, $2, $3) RETURNING id',
+        'INSERT INTO users (email, password_hash, plan) VALUES ($1, $2, $3) RETURNING id, email',
         [email, passwordHash, 'free']
       );
-      user = newUser;
+      userId = newUser.rows[0].id;
+
+      // TODO: Send welcome email with temporary password
+    } else {
+      userId = user.rows[0].id;
     }
+
+    // Create or retrieve Stripe customer
+    let customerId = user.rows[0]?.stripe_customer_id;
     
-    const userId = user.rows[0].id;
-    
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: email,
+        metadata: { userId: userId.toString(), domain }
+      });
+      customerId = customer.id;
+      
+      await db.query(
+        'UPDATE users SET stripe_customer_id = $1 WHERE id = $2',
+        [customerId, userId]
+      );
+    }
+
+    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
+      customer: customerId,
       payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: `Premium Plan - ${domain}`,
-            description: 'Deep AI visibility analysis',
-          },
-          unit_amount: 2900,
-          recurring: { interval: 'month' },
+      line_items: [
+        {
+          price: PRICE_IDS[plan],
+          quantity: 1,
         },
-        quantity: 1,
-      }],
+      ],
       mode: 'subscription',
       success_url: `${process.env.FRONTEND_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/checkout.html?cancelled=true`,
-      customer_email: email,
-      client_reference_id: userId.toString(),
-      metadata: { userId: userId.toString(), domain: domain }
+      cancel_url: `${process.env.FRONTEND_URL}/checkout.html?plan=${plan}`,
+      metadata: {
+        userId: userId.toString(),
+        domain,
+        plan
+      },
+      subscription_data: {
+        metadata: {
+          userId: userId.toString(),
+          domain,
+          plan
+        }
+      }
     });
-    
-    res.json({ sessionId: session.id, url: session.url });
-    
+
+    res.json({ url: session.url });
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Checkout session creation failed:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Stripe Webhook Handler
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutComplete(event.data.object);
+        break;
+      
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        await handleSubscriptionChange(event.data.object);
+        break;
+      
+      case 'invoice.payment_succeeded':
+        await handlePaymentSuccess(event.data.object);
+        break;
+      
+      case 'invoice.payment_failed':
+        await handlePaymentFailed(event.data.object);
+        break;
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook handler error:', error);
+    res.status(500).json({ error: 'Webhook handler failed' });
+  }
+});
+
+// Webhook Handlers
+async function handleCheckoutComplete(session) {
+  const userId = session.metadata.userId;
+  const plan = session.metadata.plan;
+  const subscriptionId = session.subscription;
+
+  await db.query(
+    `UPDATE users 
+     SET plan = $1, 
+         stripe_subscription_id = $2,
+         scans_used_this_month = 0,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3`,
+    [plan, subscriptionId, userId]
+  );
+
+  console.log(`✅ User ${userId} upgraded to ${plan} plan`);
+}
+
+async function handleSubscriptionChange(subscription) {
+  const customerId = subscription.customer;
+  
+  const user = await db.query(
+    'SELECT id FROM users WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+
+  if (user.rows.length === 0) return;
+
+  const userId = user.rows[0].id;
+  const isActive = subscription.status === 'active';
+  const plan = isActive ? subscription.metadata.plan : 'free';
+
+  await db.query(
+    `UPDATE users 
+     SET plan = $1, 
+         stripe_subscription_id = $2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3`,
+    [plan, subscription.id, userId]
+  );
+
+  console.log(`🔄 Subscription updated for user ${userId}: ${plan}`);
+}
+
+async function handlePaymentSuccess(invoice) {
+  const customerId = invoice.customer;
+  
+  const user = await db.query(
+    'SELECT id FROM users WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+
+  if (user.rows.length === 0) return;
+
+  // Reset monthly scan counter on successful payment
+  await db.query(
+    'UPDATE users SET scans_used_this_month = 0 WHERE id = $1',
+    [user.rows[0].id]
+  );
+
+  console.log(`💳 Payment succeeded for user ${user.rows[0].id}`);
+}
+
+async function handlePaymentFailed(invoice) {
+  const customerId = invoice.customer;
+  
+  const user = await db.query(
+    'SELECT id, email FROM users WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+
+  if (user.rows.length === 0) return;
+
+  // TODO: Send payment failed email notification
+  console.log(`❌ Payment failed for user ${user.rows[0].id}`);
+}
+
+// Get subscription status
+router.get('/status', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const result = await db.query(
+      `SELECT plan, stripe_subscription_id, scans_used_this_month 
+       FROM users WHERE id = $1`,
+      [decoded.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    let subscriptionStatus = null;
+
+    if (user.stripe_subscription_id) {
+      const subscription = await stripe.subscriptions.retrieve(
+        user.stripe_subscription_id
+      );
+      subscriptionStatus = {
+        status: subscription.status,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end
+      };
+    }
+
+    res.json({
+      plan: user.plan,
+      scansUsed: user.scans_used_this_month,
+      subscription: subscriptionStatus
+    });
+  } catch (error) {
+    console.error('Status check failed:', error);
+    res.status(500).json({ error: 'Failed to get subscription status' });
+  }
+});
+
+// Cancel subscription
+router.post('/cancel', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const result = await db.query(
+      'SELECT stripe_subscription_id FROM users WHERE id = $1',
+      [decoded.userId]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].stripe_subscription_id) {
+      return res.status(404).json({ error: 'No active subscription' });
+    }
+
+    // Cancel at period end (don't cancel immediately)
+    const subscription = await stripe.subscriptions.update(
+      result.rows[0].stripe_subscription_id,
+      { cancel_at_period_end: true }
+    );
+
+    res.json({
+      message: 'Subscription will be cancelled at period end',
+      periodEnd: subscription.current_period_end
+    });
+  } catch (error) {
+    console.error('Cancellation failed:', error);
+    res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 });
 

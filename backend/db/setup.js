@@ -12,7 +12,7 @@ async function setupDatabase() {
   try {
     console.log('🔄 Setting up database tables...');
 
-        // Brand facts table (for identity layer)
+    // Brand facts table (for identity layer)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS brand_facts (
         brand_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,7 +44,7 @@ async function setupDatabase() {
     `);
     console.log('✅ Users table created');
 
-    // Scans table
+    // Scans table with page tracking
     await pool.query(`
       CREATE TABLE IF NOT EXISTS scans (
         id SERIAL PRIMARY KEY,
@@ -54,10 +54,49 @@ async function setupDatabase() {
         score INTEGER,
         industry VARCHAR(100),
         scan_data JSONB,
+        pages_scanned JSONB DEFAULT '[]',
+        page_count INTEGER DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     console.log('✅ Scans table created');
+    
+    // Add new columns to existing scans table (if they don't exist)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        -- Add pages_scanned column if it doesn't exist
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='scans' AND column_name='pages_scanned'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN pages_scanned JSONB DEFAULT '[]';
+        END IF;
+        
+        -- Add page_count column if it doesn't exist
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='scans' AND column_name='page_count'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN page_count INTEGER DEFAULT 1;
+        END IF;
+      END $$;
+    `);
+    console.log('✅ Scans table columns updated');
+
+    // Page-level analysis table for DIY/Pro
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS page_analysis (
+        id SERIAL PRIMARY KEY,
+        scan_id INTEGER REFERENCES scans(id) ON DELETE CASCADE,
+        page_url VARCHAR(500) NOT NULL,
+        page_score INTEGER,
+        page_data JSONB,
+        recommendations JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Page analysis table created');
 
     // Usage logs table
     await pool.query(`
@@ -76,6 +115,7 @@ async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_scans_user ON scans(user_id);
       CREATE INDEX IF NOT EXISTS idx_scans_created ON scans(created_at);
+      CREATE INDEX IF NOT EXISTS idx_page_analysis_scan ON page_analysis(scan_id);
     `);
     console.log('✅ Indexes created');
 
