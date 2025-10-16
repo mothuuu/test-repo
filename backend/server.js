@@ -12,6 +12,11 @@ const subscriptionRoutes = require('./routes/subscription');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Security middleware
 app.use(helmet());
 app.use(compression());
