@@ -108,36 +108,28 @@
         let isAuthenticated = false;
         let userEmail = '';
 
-        // IMMEDIATE AUTH CHECK - BLOCK EVERYTHING UNTIL VERIFIED
+        // Replace the enforceAuth function with:
         (async function enforceAuth() {
-            console.log('🔒 Enforcing authentication...');
-            
             const token = localStorage.getItem('authToken');
             
             if (!token) {
-                console.log('❌ No token - redirecting to login');
-                const currentUrl = window.location.href;
-                window.location.replace(`auth.html?redirect=${encodeURIComponent(currentUrl)}`);
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`auth.html?redirect=${currentUrl}`);
                 return;
             }
             
             try {
-                console.log('🔍 Verifying token with API...');
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Token validation failed');
-                }
+                if (!response.ok) throw new Error('Invalid token');
                 
                 const data = await response.json();
-                console.log('✅ User authenticated:', data.user.email);
-                
-                isAuthenticated = true;
                 userEmail = data.user.email;
+                isAuthenticated = true;
                 
-                // Pre-fill email (optional, keep hidden if you want)
+                // Pre-fill and lock email field
                 const emailField = document.getElementById('email');
                 if (emailField) {
                     emailField.value = userEmail;
@@ -145,26 +137,12 @@
                 }
                 
             } catch (error) {
-                console.error('❌ Auth failed:', error);
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
-                alert('Your session has expired. Please log in again.');
-                const currentUrl = window.location.href;
-                window.location.replace(`auth.html?redirect=${encodeURIComponent(currentUrl)}`);
+                alert('Session expired. Please log in.');
+                window.location.replace('auth.html');
             }
         })();
-
-        // Pre-fill domain from URL
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlDomain = urlParams.get('url');
-            if (urlDomain) {
-                const domainField = document.getElementById('domain');
-                if (domainField) {
-                    domainField.value = decodeURIComponent(urlDomain);
-                }
-            }
-        });
 
         // Form submission handler
         document.addEventListener('DOMContentLoaded', () => {
