@@ -181,5 +181,15 @@
     </div>
     
     <script src="auth.js"></script>
+    <script>
+        // Handle redirect after login
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect');
+        
+        if (redirectUrl) {
+            // Store redirect URL for after successful login
+            sessionStorage.setItem('loginRedirect', redirectUrl);
+        }
+    </script>
 </body>
 </html>

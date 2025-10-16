@@ -66,7 +66,14 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         showSuccess('Login successful! Redirecting...');
-        setTimeout(() => window.location.href = 'index.html', 1000);
+        
+        // Check for redirect URL
+        const redirectUrl = sessionStorage.getItem('loginRedirect');
+        sessionStorage.removeItem('loginRedirect');
+        
+        setTimeout(() => {
+            window.location.href = redirectUrl || 'index.html';
+        }, 1000);
         
     } catch (error) {
         showError(error.message);
@@ -111,7 +118,14 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         showSuccess('Account created! Redirecting...');
-        setTimeout(() => window.location.href = 'index.html', 1000);
+        
+        // Check for redirect URL
+        const redirectUrl = sessionStorage.getItem('loginRedirect');
+        sessionStorage.removeItem('loginRedirect');
+        
+        setTimeout(() => {
+            window.location.href = redirectUrl || 'index.html';
+        }, 1000);
         
     } catch (error) {
         showError(error.message);

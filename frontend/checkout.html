@@ -78,9 +78,9 @@
             </ul>
 
             <form id="checkoutForm">
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                     <label>Email</label>
-                    <input type="email" id="email" required placeholder="you@company.com">
+                    <input type="email" id="email" placeholder="you@company.com">
                 </div>
                 
                 <div class="form-group">
@@ -105,42 +105,135 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlDomain = urlParams.get('url');
-        if (urlDomain) {
-            document.getElementById('domain').value = urlDomain;
-        }
+        let isAuthenticated = false;
+        let userEmail = '';
 
-        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // CHECK AUTH IMMEDIATELY - BLOCK PAGE IF NOT AUTHENTICATED
+        (async function checkAuth() {
+            console.log('Checking authentication...');
+            const token = localStorage.getItem('authToken');
+            console.log('Token found:', token ? 'Yes' : 'No');
             
-            const email = document.getElementById('email').value;
-            const domain = document.getElementById('domain').value;
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating checkout...';
+            if (!token) {
+                console.log('No token - redirecting to login');
+                const currentUrl = window.location.href;
+                window.location.href = `auth.html?redirect=${encodeURIComponent(currentUrl)}`;
+                return;
+            }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, domain })
+                console.log('Verifying token with API...');
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                const data = await response.json();
-                
                 if (!response.ok) {
-                    throw new Error(data.error || 'Checkout failed');
+                    throw new Error('Token validation failed');
                 }
                 
-                window.location.href = data.url;
+                const data = await response.json();
+                console.log('User authenticated:', data.user.email);
+                isAuthenticated = true;
+                userEmail = data.user.email;
+                
+                // Pre-fill email
+                const emailField = document.getElementById('email');
+                if (emailField) {
+                    emailField.value = userEmail;
+                    emailField.readOnly = true;
+                }
                 
             } catch (error) {
-                alert('Error: ' + error.message);
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Continue to Payment';
+                console.error('Auth failed:', error);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                alert('Your session has expired. Please log in again.');
+                window.location.href = `auth.html?redirect=${encodeURIComponent(window.location.href)}`;
             }
+        })();
+
+        // Pre-fill domain from URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlDomain = urlParams.get('url');
+            if (urlDomain) {
+                const domainField = document.getElementById('domain');
+                if (domainField) {
+                    domainField.value = decodeURIComponent(urlDomain);
+                }
+            }
+        });
+
+        // Form submission handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('checkoutForm');
+            if (!form) return;
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!isAuthenticated) {
+                    alert('Please wait for authentication to complete or log in again.');
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    alert('Please log in first');
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                const domain = document.getElementById('domain').value;
+                if (!domain) {
+                    alert('Please enter a domain to analyze');
+                    return;
+                }
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const plan = urlParams.get('plan') || 'diy';
+                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating checkout...';
+                
+                try {
+                    console.log('Sending checkout request...');
+                    console.log('Domain:', domain);
+                    console.log('Plan:', plan);
+                    console.log('Token exists:', !!token);
+                    
+                    const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ domain, plan })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('Response:', data);
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || `Checkout failed (${response.status})`);
+                    }
+                    
+                    if (!data.url) {
+                        throw new Error('No checkout URL received');
+                    }
+                    
+                    console.log('Redirecting to Stripe...');
+                    window.location.href = data.url;
+                    
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    alert('Error creating checkout: ' + error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Continue to Payment';
+                }
+            });
         });
     </script>
 </body>

@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../db/database');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware/auth');
 
 // Price IDs from your Stripe dashboard
 const PRICE_IDS = {
@@ -11,41 +11,23 @@ const PRICE_IDS = {
   pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly'
 };
 
-// Create Checkout Session
-router.post('/create-checkout-session', async (req, res) => {
+// Create Checkout Session - NOW REQUIRES AUTHENTICATION
+router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
-    const { email, domain, plan = 'diy' } = req.body;
+    const { domain, plan = 'diy' } = req.body;
+    const userId = req.user.id;
+    const email = req.user.email;
 
-    if (!email || !domain) {
-      return res.status(400).json({ error: 'Email and domain required' });
+    if (!domain) {
+      return res.status(400).json({ error: 'Domain required' });
     }
 
     if (!['diy', 'pro'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
-    // Check if user exists
-    let user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    let userId = null;
-
-    if (user.rows.length === 0) {
-      // Create new user with temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-      const passwordHash = await bcrypt.hash(tempPassword, 10);
-      
-      const newUser = await db.query(
-        'INSERT INTO users (email, password_hash, plan) VALUES ($1, $2, $3) RETURNING id, email',
-        [email, passwordHash, 'free']
-      );
-      userId = newUser.rows[0].id;
-
-      // TODO: Send welcome email with temporary password
-    } else {
-      userId = user.rows[0].id;
-    }
-
-    // Create or retrieve Stripe customer
-    let customerId = user.rows[0]?.stripe_customer_id;
+    // Get or create Stripe customer
+    let customerId = req.user.stripe_customer_id;
     
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -211,7 +193,6 @@ async function handlePaymentFailed(invoice) {
 
   if (user.rows.length === 0) return;
 
-  // TODO: Send payment failed email notification
   console.log(`❌ Payment failed for user ${user.rows[0].id}`);
 }
 

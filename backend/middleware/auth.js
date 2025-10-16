@@ -6,6 +6,7 @@ async function authenticateToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.log('No token provided in request');
     return res.status(401).json({ error: 'Access token required' });
   }
 
@@ -14,7 +15,7 @@ async function authenticateToken(req, res, next) {
     
     // Get fresh user data
     const result = await db.query(
-      'SELECT id, email, plan, scans_used_this_month FROM users WHERE id = $1',
+      'SELECT id, email, plan, scans_used_this_month, stripe_customer_id FROM users WHERE id = $1',
       [decoded.userId]
     );
     
@@ -25,11 +26,10 @@ async function authenticateToken(req, res, next) {
     req.user = result.rows[0];
     next();
   } catch (error) {
+    console.error('Token verification failed:', error);
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 }
-
-module.exports = { authenticateToken };
 
 // Optional auth - allows anonymous users
 async function authenticateTokenOptional(req, res, next) {
@@ -37,7 +37,6 @@ async function authenticateTokenOptional(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    // No token = anonymous freemium user
     req.user = null;
     return next();
   }

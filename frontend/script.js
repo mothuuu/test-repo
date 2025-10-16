@@ -612,7 +612,7 @@ function displayFreemiumResults(results) {
                             <div style="margin-bottom: 12px;">✓ Full recommendations list</div>
                             <div style="margin-bottom: 12px;">✓ Progress tracking</div>
                         </div>
-                        <button onclick="window.location.href='auth.html'" style="width: 100%; padding: 12px 24px; background: #f5f5f5; color: #333; border: 2px solid #00B9DA; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                        <button onclick="upgradeToFreePlan()" style="width: 100%; padding: 12px 24px; background: #f5f5f5; color: #333; border: 2px solid #00B9DA; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                             Sign Up Free
                         </button>
                     </div>
@@ -630,7 +630,7 @@ function displayFreemiumResults(results) {
                             <div style="margin-bottom: 12px;">✓ Basic JSON-LD export</div>
                             <div style="margin-bottom: 12px;">✓ Combined recommendations</div>
                         </div>
-                        <button onclick="window.location.href='checkout.html?plan=diy&url=${encodeURIComponent(results.url || '')}'" style="width: 100%; padding: 12px 24px; background: #00B9DA; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                        <button onclick="upgradeToPlan('diy', '${results.url || ''}')" style="width: 100%; padding: 12px 24px; background: #00B9DA; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                             Get Started
                         </button>
                     </div>
@@ -648,7 +648,7 @@ function displayFreemiumResults(results) {
                             <div style="margin-bottom: 12px;">✓ Outside-in crawl (PR, reviews, social)</div>
                             <div style="margin-bottom: 12px;">✓ Live dashboard & analytics</div>
                         </div>
-                        <button onclick="window.location.href='checkout.html?plan=pro&url=${encodeURIComponent(results.url || '')}'" style="width: 100%; padding: 12px 24px; background: #7030A0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                        <button onclick="upgradeToPlan('pro', '${results.url || ''}')" style="width: 100%; padding: 12px 24px; background: #7030A0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                             Upgrade to Pro
                         </button>
                     </div>
@@ -892,6 +892,21 @@ function displayRecommendations(results, limit = null) {
         `;
         quickWinsContainer.appendChild(recDiv);
     });
+}
+
+function upgradeToFreePlan() {
+    window.location.href = 'auth.html';
+}
+
+function upgradeToPlan(plan, url) {
+    const token = getAuthToken();
+    if (!token) {
+        // Store intended destination
+        sessionStorage.setItem('loginRedirect', `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`);
+        window.location.href = 'auth.html';
+    } else {
+        window.location.href = `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`;
+    }
 }
 
 function resetForm() {
