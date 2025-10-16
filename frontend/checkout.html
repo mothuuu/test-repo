@@ -117,6 +117,13 @@
     </div>
 
     <div class="container" id="mainContainer" style="display: none;">
+    <!-- Auth Loading Overlay -->
+    <div class="auth-loading" id="authLoading">
+        <div class="auth-loading-spinner"></div>
+        <p>Verifying authentication...</p>
+    </div>
+
+    <div class="container" id="mainContainer" style="display: none;">
         <div class="header">
             <h1>AI Visibility Score</h1>
         </div>
@@ -135,6 +142,7 @@
 
             <form id="checkoutForm">
                 <div class="form-group">
+                    <label>Domain to Analyze</label>
                     <label>Domain to Analyze</label>
                     <input type="url" id="domain" required placeholder="https://yourcompany.com">
                 </div>
@@ -156,8 +164,10 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
+        // Global state
         let isAuthenticated = false;
         let userEmail = '';
+        let userPlan = 'free';
 
         // STEP 1: Enforce authentication
         (async function enforceAuth() {
@@ -165,19 +175,25 @@
             
             const token = localStorage.getItem('authToken');
             
+            // No token = redirect immediately
             if (!token) {
                 console.log('❌ No token - redirecting to login');
                 const currentUrl = encodeURIComponent(window.location.href);
                 window.location.replace(`auth.html?redirect=${currentUrl}`);
-                return;
+                return; // Stop execution
             }
             
+            // Verify token with API
             try {
+                console.log('🔍 Verifying token...');
                 console.log('🔍 Verifying token...');
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
+                if (!response.ok) {
+                    throw new Error('Token validation failed');
+                }
                 if (!response.ok) {
                     throw new Error('Token validation failed');
                 }
@@ -194,6 +210,7 @@
                 initializePage();
                 
             } catch (error) {
+                console.error('❌ Auth verification failed:', error);
                 console.error('❌ Auth verification failed:', error);
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
