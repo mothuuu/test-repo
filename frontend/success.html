@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Premium</title>
+    <title>Welcome to Premium - AI Visibility Score</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .success-container {
@@ -13,11 +13,60 @@
             background: white;
             border-radius: 20px;
             text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
+        
         .success-icon {
             font-size: 4rem;
             color: #4DACA6;
             margin-bottom: 20px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        
+        .loading-dots {
+            display: inline-block;
+        }
+        
+        .loading-dots span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #4DACA6;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -26,21 +75,47 @@
         <div class="header">
             <h1>AI Visibility Score</h1>
         </div>
+        
         <div class="success-container">
-            <div class="success-icon">✓</div>
-            <h2>Welcome to Premium!</h2>
-            <p id="loadingMessage">Activating your subscription...</p>
+            <div class="success-icon" id="successIcon">⏳</div>
+            <h2 id="statusTitle">Processing Your Subscription</h2>
+            <p id="statusMessage">
+                Please wait while we activate your account
+                <span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            </p>
+            
+            <!-- Success Content (hidden initially) -->
             <div id="successContent" style="display: none;">
-                <p>Your subscription is active. You now have access to:</p>
-                <ul style="text-align: left; display: inline-block; margin: 20px 0;">
-                    <li>Deep multi-page scans (up to 5 or 25 pages)</li>
-                    <li>Page-level recommendations</li>
-                    <li>Progress tracking</li>
-                    <li>Advanced JSON-LD export</li>
-                </ul>
-                <button class="analyze-btn" onclick="window.location.href='index.html'" style="margin-top: 20px;">
+                <h2>🎉 Welcome to Premium!</h2>
+                <p style="color: #666; margin: 20px 0;">
+                    Your subscription is now active. You have full access to:
+                </p>
+                
+                <div class="features-grid" id="featureGrid">
+                    <!-- Populated by JavaScript based on plan -->
+                </div>
+                
+                <button class="analyze-btn" onclick="window.location.href='index.html'" style="margin-top: 30px;">
                     Start Your First Premium Scan
                 </button>
+                
+                <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">
+                    🔗 Manage your subscription in <a href="#" onclick="openBillingPortal()" style="color: #00B9DA;">Billing Settings</a>
+                </p>
+            </div>
+            
+            <!-- Error Content (hidden initially) -->
+            <div id="errorContent" style="display: none;">
+                <h2>⚠️ Verification Issue</h2>
+                <p style="color: #666; margin: 20px 0;" id="errorText">
+                    We're having trouble verifying your subscription.
+                </p>
+                <button class="analyze-btn" onclick="retryVerification()" style="margin-top: 20px;">
+                    Retry Verification
+                </button>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">
+                    If the issue persists, please contact support@aivisibility.com
+                </p>
             </div>
         </div>
     </div>
@@ -50,20 +125,44 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
         
-        // Wait for webhook to process, then verify user status
+        let verificationAttempts = 0;
+        const MAX_ATTEMPTS = 10;
+        const RETRY_DELAY = 3000; // 3 seconds
+        
+        // Feature sets by plan
+        const PLAN_FEATURES = {
+            diy: [
+                { icon: '📊', title: '10 Scans/Month', desc: 'Track your progress' },
+                { icon: '📄', title: '5 Pages', desc: 'Homepage + 4 you choose' },
+                { icon: '✅', title: 'Page TODOs', desc: 'Action items per page' },
+                { icon: '📈', title: 'Progress Tracking', desc: 'See improvements' },
+                { icon: '🔗', title: 'JSON-LD Export', desc: 'Schema markup pack' }
+            ],
+            pro: [
+                { icon: '🚀', title: '50 Scans/Month', desc: 'Unlimited tracking' },
+                { icon: '📚', title: '25 Pages', desc: 'Comprehensive coverage' },
+                { icon: '🎯', title: 'Brand Index', desc: 'Visibility score' },
+                { icon: '🏆', title: 'Competitor Tracking', desc: 'Benchmark against 3' },
+                { icon: '📊', title: 'Advanced Analytics', desc: 'Deep insights' },
+                { icon: '📑', title: 'PDF Export', desc: 'Professional reports' }
+            ]
+        };
+        
+        // Main verification function
         async function verifySubscription() {
             const token = localStorage.getItem('authToken');
             
             if (!token) {
-                alert('Please log in to continue');
-                window.location.href = 'auth.html';
+                showError('Please log in to continue');
+                setTimeout(() => window.location.href = 'auth.html', 2000);
                 return;
             }
             
-            // Wait 3 seconds for webhook to process
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            verificationAttempts++;
             
             try {
+                console.log(`🔍 Verification attempt ${verificationAttempts}/${MAX_ATTEMPTS}`);
+                
                 // Refresh user data from backend
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -75,23 +174,107 @@
                 
                 const data = await response.json();
                 
-                // Update local storage with new user data
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // Show success content
-                document.getElementById('loadingMessage').style.display = 'none';
-                document.getElementById('successContent').style.display = 'block';
-                
-                console.log('✅ Subscription verified:', data.user.plan);
+                // Check if plan has been updated
+                if (data.user.plan !== 'free') {
+                    console.log('✅ Subscription verified:', data.user.plan);
+                    
+                    // Update local storage
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    // Show success
+                    showSuccess(data.user.plan);
+                } else if (verificationAttempts < MAX_ATTEMPTS) {
+                    // Still processing, retry
+                    console.log('⏳ Still processing, retrying...');
+                    setTimeout(verifySubscription, RETRY_DELAY);
+                } else {
+                    // Max attempts reached
+                    console.warn('⚠️ Max attempts reached');
+                    showError('Verification is taking longer than expected. Your subscription may still be processing.');
+                }
                 
             } catch (error) {
-                console.error('❌ Verification failed:', error);
-                alert('There was an issue verifying your subscription. Please contact support.');
+                console.error('❌ Verification error:', error);
+                
+                if (verificationAttempts < MAX_ATTEMPTS) {
+                    // Retry on error
+                    setTimeout(verifySubscription, RETRY_DELAY);
+                } else {
+                    showError('There was an issue verifying your subscription. Please contact support.');
+                }
             }
         }
         
-        // Run verification on page load
-        verifySubscription();
+        // Show success state
+        function showSuccess(plan) {
+            document.getElementById('successIcon').textContent = '✓';
+            document.getElementById('statusTitle').style.display = 'none';
+            document.getElementById('statusMessage').style.display = 'none';
+            
+            // Populate features
+            const features = PLAN_FEATURES[plan] || PLAN_FEATURES.diy;
+            const featureGrid = document.getElementById('featureGrid');
+            
+            featureGrid.innerHTML = features.map(f => `
+                <div class="feature-card">
+                    <div class="feature-icon">${f.icon}</div>
+                    <h4 style="margin: 10px 0 5px 0;">${f.title}</h4>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">${f.desc}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('successContent').style.display = 'block';
+        }
+        
+        // Show error state
+        function showError(message) {
+            document.getElementById('successIcon').textContent = '⚠️';
+            document.getElementById('successIcon').style.color = '#FFA726';
+            document.getElementById('statusTitle').style.display = 'none';
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorContent').style.display = 'block';
+        }
+        
+        // Retry verification
+        function retryVerification() {
+            document.getElementById('errorContent').style.display = 'none';
+            document.getElementById('statusTitle').style.display = 'block';
+            document.getElementById('statusMessage').style.display = 'block';
+            document.getElementById('successIcon').textContent = '⏳';
+            document.getElementById('successIcon').style.color = '#4DACA6';
+            verificationAttempts = 0;
+            verifySubscription();
+        }
+        
+        // Open billing portal
+        async function openBillingPortal() {
+            const token = localStorage.getItem('authToken');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                } else {
+                    alert('Unable to open billing portal. Please contact support.');
+                }
+            } catch (error) {
+                console.error('Error opening billing portal:', error);
+                alert('Unable to open billing portal. Please contact support.');
+            }
+        }
+        
+        // Start verification on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait 2 seconds before first check to give webhook time to process
+            setTimeout(verifySubscription, 2000);
+        });
     </script>
 </body>
 </html>

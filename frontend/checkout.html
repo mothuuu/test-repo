@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upgrade to Premium - AI Visibility Score</title>
+    <title>Upgrade - AI Visibility Score</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .checkout-container {
@@ -14,6 +14,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
+        
         .plan-details {
             background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
             color: white;
@@ -21,25 +22,30 @@
             border-radius: 15px;
             margin-bottom: 30px;
         }
+        
         .plan-price {
             font-size: 3rem;
             font-weight: bold;
             margin: 20px 0;
         }
+        
         .plan-price span {
             font-size: 1.5rem;
             opacity: 0.9;
         }
+        
         .features-list {
             list-style: none;
             padding: 0;
             margin: 20px 0;
         }
+        
         .features-list li {
             padding: 10px 0;
             padding-left: 30px;
             position: relative;
         }
+        
         .features-list li:before {
             content: "✓";
             position: absolute;
@@ -48,43 +54,88 @@
             font-weight: bold;
             font-size: 1.2rem;
         }
+        
+        .auth-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .auth-loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00B9DA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Auth Loading Overlay -->
+    <div class="auth-loading" id="authLoading">
+        <div class="auth-loading-spinner"></div>
+        <p>Verifying authentication...</p>
+    </div>
+
+    <div class="container" id="mainContainer" style="display: none;">
         <div class="header">
             <h1>AI Visibility Score</h1>
         </div>
 
         <div class="checkout-container">
-            <h2>Upgrade to Premium</h2>
+            <h2>Upgrade Your Plan</h2>
             
-            <div class="plan-details">
-                <h3>Premium Plan</h3>
-                <div class="plan-price">
-                    $29<span>/month</span>
-                </div>
-                <p>Get the complete AI visibility analysis for your domain</p>
+            <div class="plan-details" id="planDetails">
+                <!-- Populated by JavaScript -->
             </div>
 
             <h3>What's Included:</h3>
-            <ul class="features-list">
-                <li>Deep multi-page scan (30+ pages analyzed)</li>
-                <li>Competitor benchmarking (up to 3 competitors)</li>
-                <li>AI Engine simulation & testing</li>
-                <li>Exportable PDF reports</li>
-                <li>Monthly tracking & progress charts</li>
-                <li>Priority support</li>
+            <ul class="features-list" id="featuresList">
+                <!-- Populated by JavaScript -->
             </ul>
 
             <form id="checkoutForm">
-                <div class="form-group" style="display: none;">
-                    <label>Email</label>
-                    <input type="email" id="email" placeholder="you@company.com">
-                </div>
-                
                 <div class="form-group">
-                    <label>Domain to Analyze29578482937689</label>
+                    <label>Domain to Analyze</label>
                     <input type="url" id="domain" required placeholder="https://yourcompany.com">
                 </div>
 
@@ -108,110 +159,170 @@
         let isAuthenticated = false;
         let userEmail = '';
 
-        // Replace the enforceAuth function with:
+        // STEP 1: Enforce authentication
         (async function enforceAuth() {
+            console.log('🔒 Checking authentication...');
+            
             const token = localStorage.getItem('authToken');
             
             if (!token) {
+                console.log('❌ No token - redirecting to login');
                 const currentUrl = encodeURIComponent(window.location.href);
                 window.location.replace(`auth.html?redirect=${currentUrl}`);
                 return;
             }
             
             try {
+                console.log('🔍 Verifying token...');
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
-                if (!response.ok) throw new Error('Invalid token');
-                
-                const data = await response.json();
-                userEmail = data.user.email;
-                isAuthenticated = true;
-                
-                // Pre-fill and lock email field
-                const emailField = document.getElementById('email');
-                if (emailField) {
-                    emailField.value = userEmail;
-                    emailField.readOnly = true;
+                if (!response.ok) {
+                    throw new Error('Token validation failed');
                 }
                 
+                const data = await response.json();
+                console.log('✅ User authenticated:', data.user.email);
+                
+                isAuthenticated = true;
+                userEmail = data.user.email;
+                
+                document.getElementById('authLoading').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+                
+                initializePage();
+                
             } catch (error) {
+                console.error('❌ Auth verification failed:', error);
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
-                alert('Session expired. Please log in.');
-                window.location.replace('auth.html');
+                alert('Session expired. Please log in again.');
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`auth.html?redirect=${currentUrl}`);
             }
         })();
 
-        // Form submission handler
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('checkoutForm');
-            if (!form) return;
+        // STEP 2: Initialize page after auth
+        function initializePage() {
+            console.log('🎨 Initializing checkout page');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan') || 'diy';
+            const urlDomain = urlParams.get('url');
+            
+            updatePlanDetails(plan);
+            
+            if (urlDomain) {
+                document.getElementById('domain').value = decodeURIComponent(urlDomain);
+            }
+            
+            document.getElementById('checkoutForm').addEventListener('submit', handleCheckoutSubmit);
+        }
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
+        // STEP 3: Update plan details
+        function updatePlanDetails(plan) {
+            const planDetails = document.getElementById('planDetails');
+            const featuresList = document.getElementById('featuresList');
+            
+            if (plan === 'diy') {
+                planDetails.innerHTML = `
+                    <h3>DIY / Starter Plan</h3>
+                    <div class="plan-price">$29<span>/month</span></div>
+                    <p>Perfect for teams managing their own optimization</p>
+                `;
                 
-                // Double-check auth before submission
-                if (!isAuthenticated) {
-                    alert('Authentication required. Redirecting to login...');
-                    window.location.href = 'auth.html';
-                    return;
-                }
+                featuresList.innerHTML = `
+                    <li>10 scans per month</li>
+                    <li>Homepage + 4 pages YOU choose (5 total)</li>
+                    <li>Page-level TODO lists</li>
+                    <li>Progress tracking over time</li>
+                    <li>Basic JSON-LD export</li>
+                    <li>Combined recommendations</li>
+                `;
+            } else if (plan === 'pro') {
+                planDetails.innerHTML = `
+                    <h3>Pro Plan</h3>
+                    <div class="plan-price">$99<span>/month</span></div>
+                    <p>Complete AI visibility solution</p>
+                `;
                 
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    alert('Please log in first');
-                    window.location.href = 'auth.html';
-                    return;
-                }
-                
-                const domain = document.getElementById('domain').value;
-                if (!domain) {
-                    alert('Please enter a domain to analyze');
-                    return;
-                }
+                featuresList.innerHTML = `
+                    <li>50 scans per month</li>
+                    <li>Up to 25 pages per scan</li>
+                    <li>Brand Visibility Index</li>
+                    <li>Competitor benchmarking (3 domains)</li>
+                    <li>Outside-in crawl (PR, reviews, social)</li>
+                    <li>Advanced JSON-LD pack</li>
+                    <li>Knowledge Graph fields</li>
+                    <li>Live dashboard & analytics</li>
+                    <li>PDF export</li>
+                `;
+            }
+        }
 
-                const urlParams = new URLSearchParams(window.location.search);
-                const plan = urlParams.get('plan') || 'diy';
+        // STEP 4: Handle form submission
+        async function handleCheckoutSubmit(e) {
+            e.preventDefault();
+            
+            if (!isAuthenticated) {
+                alert('Authentication error. Please log in again.');
+                window.location.href = 'auth.html';
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please log in first');
+                window.location.href = 'auth.html';
+                return;
+            }
+            
+            const domain = document.getElementById('domain').value.trim();
+            if (!domain) {
+                alert('Please enter a domain to analyze');
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan') || 'diy';
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating checkout session...';
+            
+            try {
+                console.log('📤 Creating Stripe checkout session...');
                 
-                const submitBtn = e.target.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Creating checkout...';
+                const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ domain, plan })
+                });
                 
-                try {
-                    console.log('📤 Sending checkout request...');
-                    
-                    const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ domain, plan })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(data.error || `Checkout failed (${response.status})`);
-                    }
-                    
-                    if (!data.url) {
-                        throw new Error('No checkout URL received');
-                    }
-                    
-                    console.log('✅ Redirecting to Stripe...');
-                    window.location.href = data.url;
-                    
-                } catch (error) {
-                    console.error('❌ Checkout error:', error);
-                    alert('Error creating checkout: ' + error.message);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Continue to Payment';
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `Checkout failed (${response.status})`);
                 }
-            });
-        });
+                
+                if (!data.url) {
+                    throw new Error('No checkout URL received');
+                }
+                
+                console.log('✅ Redirecting to Stripe...');
+                window.location.href = data.url;
+                
+            } catch (error) {
+                console.error('❌ Checkout error:', error);
+                alert('Error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue to Payment';
+            }
+        }
     </script>
 </body>
 </html>

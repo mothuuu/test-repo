@@ -14,11 +14,13 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
+        
         .auth-tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 30px;
         }
+        
         .auth-tab {
             flex: 1;
             padding: 12px;
@@ -29,25 +31,31 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
+        
         .auth-tab.active {
             background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
             color: white;
         }
+        
         .auth-form {
             display: none;
         }
+        
         .auth-form.active {
             display: block;
         }
+        
         .form-group {
             margin-bottom: 20px;
         }
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: #333;
         }
+        
         .form-group input {
             width: 100%;
             padding: 12px 16px;
@@ -56,50 +64,58 @@
             font-size: 1rem;
             transition: border-color 0.3s ease;
         }
+        
         .form-group input:focus {
             outline: none;
             border-color: #00B9DA;
         }
+        
+        .error-message, .success-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
         .error-message {
             background: #fee;
             color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
         }
+        
         .success-message {
             background: #efe;
             color: #3c3;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
         }
+        
         .auth-benefits {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
         }
+        
         .auth-benefits h4 {
             margin-bottom: 10px;
             color: #333;
         }
+        
         .auth-benefits ul {
             list-style: none;
             padding: 0;
         }
+        
         .auth-benefits li {
             padding: 8px 0;
             color: #666;
         }
+        
         .auth-benefits li:before {
             content: "✓ ";
             color: #4DACA6;
             font-weight: bold;
             margin-right: 8px;
         }
+        
         .back-link {
             display: block;
             text-align: center;
@@ -107,6 +123,7 @@
             color: #666;
             text-decoration: none;
         }
+        
         .back-link:hover {
             color: #00B9DA;
         }
@@ -121,7 +138,7 @@
         <div class="auth-container">
             <h2 style="text-align: center; margin-bottom: 10px;">Welcome!</h2>
             <p style="text-align: center; color: #666; margin-bottom: 30px;">
-                Sign in to access your AI visibility analysis
+                Sign in to track your AI visibility progress
             </p>
             
             <div class="auth-tabs">
@@ -162,16 +179,17 @@
                     <input type="password" id="signupPasswordConfirm" placeholder="Re-enter password" required>
                 </div>
                 <button type="submit" class="analyze-btn" style="width: 100%;">
-                    Create Account
+                    Create Free Account
                 </button>
                 
                 <div class="auth-benefits">
                     <h4>Free Account Includes:</h4>
                     <ul>
                         <li>2 website scans per month</li>
-                        <li>AI visibility score</li>
-                        <li>Top 3 recommendations</li>
-                        <li>No credit card required</li>
+                        <li>Full AI visibility score (X/1000)</li>
+                        <li>8 pillar breakdown</li>
+                        <li>All recommendations</li>
+                        <li>Progress tracking</li>
                     </ul>
                 </div>
             </form>
@@ -181,15 +199,5 @@
     </div>
     
     <script src="auth.js"></script>
-    <script>
-        // Handle redirect after login
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectUrl = urlParams.get('redirect');
-        
-        if (redirectUrl) {
-            // Store redirect URL for after successful login
-            sessionStorage.setItem('loginRedirect', redirectUrl);
-        }
-    </script>
 </body>
 </html>

@@ -46,8 +46,6 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
       console.log(`✅ Stripe customer created: ${customerId}`);
     }
 
-    // ... rest of the function
-
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -75,9 +73,10 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
       }
     });
 
+    console.log(`✅ Checkout session created: ${session.id}`);
     res.json({ url: session.url });
   } catch (error) {
-    console.error('Checkout session creation failed:', error);
+    console.error('❌ Checkout session creation failed:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -94,112 +93,194 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('⚠️ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  console.log(`📥 Webhook received: ${event.type} [${event.id}]`);
+
   try {
+    let result;
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutComplete(event.data.object);
+        result = await handleCheckoutComplete(event.data.object);
         break;
       
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
-        await handleSubscriptionChange(event.data.object);
+        result = await handleSubscriptionChange(event.data.object);
         break;
       
       case 'invoice.payment_succeeded':
-        await handlePaymentSuccess(event.data.object);
+        result = await handlePaymentSuccess(event.data.object);
         break;
       
       case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object);
+        result = await handlePaymentFailed(event.data.object);
         break;
+      
+      default:
+        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+        return res.json({ received: true });
     }
 
-    res.json({ received: true });
+    console.log(`✅ Webhook ${event.type} processed successfully`);
+    res.json({ received: true, result });
+
   } catch (error) {
-    console.error('Webhook handler error:', error);
-    res.status(500).json({ error: 'Webhook handler failed' });
+    console.error('❌ Webhook handler error:', error);
+    res.status(500).json({ error: 'Webhook handler failed', details: error.message });
   }
 });
 
 // Webhook Handlers
 async function handleCheckoutComplete(session) {
+  console.log('🎉 Processing checkout.session.completed');
+  console.log('Session ID:', session.id);
+  console.log('Session metadata:', session.metadata);
+  
   const userId = session.metadata.userId;
   const plan = session.metadata.plan;
   const subscriptionId = session.subscription;
 
-  await db.query(
-    `UPDATE users 
-     SET plan = $1, 
-         stripe_subscription_id = $2,
-         scans_used_this_month = 0,
-         updated_at = CURRENT_TIMESTAMP
-     WHERE id = $3`,
-    [plan, subscriptionId, userId]
-  );
+  if (!userId) {
+    console.error('❌ No userId in session metadata!');
+    return { error: 'No userId found' };
+  }
 
-  console.log(`✅ User ${userId} upgraded to ${plan} plan`);
+  if (!plan) {
+    console.error('❌ No plan in session metadata!');
+    return { error: 'No plan found' };
+  }
+
+  try {
+    // Update user plan in database
+    const result = await db.query(
+      `UPDATE users 
+       SET plan = $1, 
+           stripe_subscription_id = $2,
+           scans_used_this_month = 0,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING id, email, plan`,
+      [plan, subscriptionId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      console.error('❌ User not found:', userId);
+      return { error: 'User not found' };
+    }
+
+    const updatedUser = result.rows[0];
+    console.log('✅ User plan updated successfully:');
+    console.log('   User ID:', updatedUser.id);
+    console.log('   Email:', updatedUser.email);
+    console.log('   New Plan:', updatedUser.plan);
+    console.log('   Subscription ID:', subscriptionId);
+
+    return { userId, success: true };
+
+  } catch (error) {
+    console.error('❌ Database update failed:', error);
+    throw error;
+  }
 }
 
 async function handleSubscriptionChange(subscription) {
+  console.log('🔄 Processing subscription change');
+  console.log('Subscription ID:', subscription.id);
+  console.log('Status:', subscription.status);
+  
   const customerId = subscription.customer;
   
-  const user = await db.query(
-    'SELECT id FROM users WHERE stripe_customer_id = $1',
-    [customerId]
-  );
-
-  if (user.rows.length === 0) return;
-
-  const userId = user.rows[0].id;
-  const isActive = subscription.status === 'active';
-  const plan = isActive ? subscription.metadata.plan : 'free';
-
-  await db.query(
-    `UPDATE users 
-     SET plan = $1, 
-         stripe_subscription_id = $2,
-         updated_at = CURRENT_TIMESTAMP
-     WHERE id = $3`,
-    [plan, subscription.id, userId]
-  );
-
-  console.log(`🔄 Subscription updated for user ${userId}: ${plan}`);
-}
-
-async function handlePaymentSuccess(invoice) {
-  const customerId = invoice.customer;
-  
-  const user = await db.query(
-    'SELECT id FROM users WHERE stripe_customer_id = $1',
-    [customerId]
-  );
-
-  if (user.rows.length === 0) return;
-
-  // Reset monthly scan counter on successful payment
-  await db.query(
-    'UPDATE users SET scans_used_this_month = 0 WHERE id = $1',
-    [user.rows[0].id]
-  );
-
-  console.log(`💳 Payment succeeded for user ${user.rows[0].id}`);
-}
-
-async function handlePaymentFailed(invoice) {
-  const customerId = invoice.customer;
-  
-  const user = await db.query(
+  const userResult = await db.query(
     'SELECT id, email FROM users WHERE stripe_customer_id = $1',
     [customerId]
   );
 
-  if (user.rows.length === 0) return;
+  if (userResult.rows.length === 0) {
+    console.error('❌ No user found for customer:', customerId);
+    return { error: 'User not found' };
+  }
 
-  console.log(`❌ Payment failed for user ${user.rows[0].id}`);
+  const userId = userResult.rows[0].id;
+  const userEmail = userResult.rows[0].email;
+  const isActive = subscription.status === 'active';
+  const plan = isActive ? (subscription.metadata.plan || 'free') : 'free';
+
+  try {
+    const result = await db.query(
+      `UPDATE users 
+       SET plan = $1, 
+           stripe_subscription_id = $2,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING id, email, plan`,
+      [plan, subscription.id, userId]
+    );
+
+    console.log('✅ Subscription updated for user:', userEmail);
+    console.log('   New plan:', plan);
+    console.log('   Status:', subscription.status);
+
+    return { userId, success: true };
+
+  } catch (error) {
+    console.error('❌ Subscription update failed:', error);
+    throw error;
+  }
+}
+
+async function handlePaymentSuccess(invoice) {
+  console.log('💳 Processing payment success');
+  console.log('Invoice ID:', invoice.id);
+  
+  const customerId = invoice.customer;
+  
+  const userResult = await db.query(
+    'SELECT id, email FROM users WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+
+  if (userResult.rows.length === 0) {
+    console.error('❌ No user found for customer:', customerId);
+    return { error: 'User not found' };
+  }
+
+  const userId = userResult.rows[0].id;
+
+  await db.query(
+    'UPDATE users SET scans_used_this_month = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+    [userId]
+  );
+
+  console.log('✅ Payment processed for user:', userResult.rows[0].email);
+  console.log('   Scans counter reset to 0');
+
+  return { userId, success: true };
+}
+
+async function handlePaymentFailed(invoice) {
+  console.log('❌ Processing payment failure');
+  console.log('Invoice ID:', invoice.id);
+  
+  const customerId = invoice.customer;
+  
+  const userResult = await db.query(
+    'SELECT id, email FROM users WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+
+  if (userResult.rows.length === 0) {
+    console.error('❌ No user found for customer:', customerId);
+    return { error: 'User not found' };
+  }
+
+  console.log('⚠️ Payment failed for user:', userResult.rows[0].email);
+  // Don't downgrade immediately - give them grace period
+  // Stripe will retry payment automatically
+
+  return { userId: userResult.rows[0].id, success: true };
 }
 
 // Get subscription status
@@ -283,6 +364,41 @@ router.post('/cancel', async (req, res) => {
   } catch (error) {
     console.error('Cancellation failed:', error);
     res.status(500).json({ error: 'Failed to cancel subscription' });
+  }
+});
+
+// Add this endpoint to backend/routes/subscription.js if it doesn't exist
+
+// Get Stripe Customer Portal URL
+router.get('/portal', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user's Stripe customer ID
+    const result = await db.query(
+      'SELECT stripe_customer_id FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (result.rows.length === 0 || !result.rows[0].stripe_customer_id) {
+      return res.status(404).json({ 
+        error: 'No subscription found' 
+      });
+    }
+    
+    const customerId = result.rows[0].stripe_customer_id;
+    
+    // Create Stripe Customer Portal session
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${process.env.FRONTEND_URL}/index.html`,
+    });
+    
+    res.json({ url: session.url });
+    
+  } catch (error) {
+    console.error('Portal creation failed:', error);
+    res.status(500).json({ error: 'Failed to create portal session' });
   }
 });
 
