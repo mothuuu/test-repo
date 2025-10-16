@@ -29,18 +29,69 @@
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h2>Welcome to Premium!</h2>
-            <p>Your subscription is active. You now have access to:</p>
-            <ul style="text-align: left; display: inline-block; margin: 20px 0;">
-                <li>Deep multi-page scans (30+ pages)</li>
-                <li>Competitor benchmarking</li>
-                <li>AI Engine simulation</li>
-                <li>PDF export</li>
-                <li>Progress tracking</li>
-            </ul>
-            <button class="analyze-btn" onclick="window.location.href='index.html'" style="margin-top: 20px;">
-                Start Your First Premium Scan
-            </button>
+            <p id="loadingMessage">Activating your subscription...</p>
+            <div id="successContent" style="display: none;">
+                <p>Your subscription is active. You now have access to:</p>
+                <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+                    <li>Deep multi-page scans (up to 5 or 25 pages)</li>
+                    <li>Page-level recommendations</li>
+                    <li>Progress tracking</li>
+                    <li>Advanced JSON-LD export</li>
+                </ul>
+                <button class="analyze-btn" onclick="window.location.href='index.html'" style="margin-top: 20px;">
+                    Start Your First Premium Scan
+                </button>
+            </div>
         </div>
     </div>
+    
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+        
+        // Wait for webhook to process, then verify user status
+        async function verifySubscription() {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                alert('Please log in to continue');
+                window.location.href = 'auth.html';
+                return;
+            }
+            
+            // Wait 3 seconds for webhook to process
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            try {
+                // Refresh user data from backend
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to verify subscription');
+                }
+                
+                const data = await response.json();
+                
+                // Update local storage with new user data
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Show success content
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('successContent').style.display = 'block';
+                
+                console.log('✅ Subscription verified:', data.user.plan);
+                
+            } catch (error) {
+                console.error('❌ Verification failed:', error);
+                alert('There was an issue verifying your subscription. Please contact support.');
+            }
+        }
+        
+        // Run verification on page load
+        verifySubscription();
+    </script>
 </body>
 </html>

@@ -900,12 +900,28 @@ function upgradeToFreePlan() {
 
 function upgradeToPlan(plan, url) {
     const token = getAuthToken();
+    
     if (!token) {
-        // Store intended destination
-        sessionStorage.setItem('loginRedirect', `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`);
+        // Store intended destination so we can return after login
+        const redirectUrl = `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`;
+        sessionStorage.setItem('loginRedirect', redirectUrl);
+        alert('Please sign in to upgrade your plan');
         window.location.href = 'auth.html';
+        return; // Important: stop execution
+    }
+    
+    // User is authenticated, proceed to checkout
+    window.location.href = `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`;
+}
+
+function upgradeToFreePlan() {
+    const token = getAuthToken();
+    
+    if (token) {
+        // Already logged in
+        window.location.href = 'index.html';
     } else {
-        window.location.href = `checkout.html?plan=${plan}&url=${encodeURIComponent(url || '')}`;
+        window.location.href = 'auth.html';
     }
 }
 

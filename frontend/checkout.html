@@ -84,7 +84,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Domain to Analyze</label>
+                    <label>Domain to Analyze29578482937689</label>
                     <input type="url" id="domain" required placeholder="https://yourcompany.com">
                 </div>
 
@@ -108,21 +108,21 @@
         let isAuthenticated = false;
         let userEmail = '';
 
-        // CHECK AUTH IMMEDIATELY - BLOCK PAGE IF NOT AUTHENTICATED
-        (async function checkAuth() {
-            console.log('Checking authentication...');
+        // IMMEDIATE AUTH CHECK - BLOCK EVERYTHING UNTIL VERIFIED
+        (async function enforceAuth() {
+            console.log('🔒 Enforcing authentication...');
+            
             const token = localStorage.getItem('authToken');
-            console.log('Token found:', token ? 'Yes' : 'No');
             
             if (!token) {
-                console.log('No token - redirecting to login');
+                console.log('❌ No token - redirecting to login');
                 const currentUrl = window.location.href;
-                window.location.href = `auth.html?redirect=${encodeURIComponent(currentUrl)}`;
+                window.location.replace(`auth.html?redirect=${encodeURIComponent(currentUrl)}`);
                 return;
             }
             
             try {
-                console.log('Verifying token with API...');
+                console.log('🔍 Verifying token with API...');
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -132,11 +132,12 @@
                 }
                 
                 const data = await response.json();
-                console.log('User authenticated:', data.user.email);
+                console.log('✅ User authenticated:', data.user.email);
+                
                 isAuthenticated = true;
                 userEmail = data.user.email;
                 
-                // Pre-fill email
+                // Pre-fill email (optional, keep hidden if you want)
                 const emailField = document.getElementById('email');
                 if (emailField) {
                     emailField.value = userEmail;
@@ -144,11 +145,12 @@
                 }
                 
             } catch (error) {
-                console.error('Auth failed:', error);
+                console.error('❌ Auth failed:', error);
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
                 alert('Your session has expired. Please log in again.');
-                window.location.href = `auth.html?redirect=${encodeURIComponent(window.location.href)}`;
+                const currentUrl = window.location.href;
+                window.location.replace(`auth.html?redirect=${encodeURIComponent(currentUrl)}`);
             }
         })();
 
@@ -172,8 +174,9 @@
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
+                // Double-check auth before submission
                 if (!isAuthenticated) {
-                    alert('Please wait for authentication to complete or log in again.');
+                    alert('Authentication required. Redirecting to login...');
                     window.location.href = 'auth.html';
                     return;
                 }
@@ -199,10 +202,7 @@
                 submitBtn.textContent = 'Creating checkout...';
                 
                 try {
-                    console.log('Sending checkout request...');
-                    console.log('Domain:', domain);
-                    console.log('Plan:', plan);
-                    console.log('Token exists:', !!token);
+                    console.log('📤 Sending checkout request...');
                     
                     const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
                         method: 'POST',
@@ -214,7 +214,6 @@
                     });
                     
                     const data = await response.json();
-                    console.log('Response:', data);
                     
                     if (!response.ok) {
                         throw new Error(data.error || `Checkout failed (${response.status})`);
@@ -224,11 +223,11 @@
                         throw new Error('No checkout URL received');
                     }
                     
-                    console.log('Redirecting to Stripe...');
+                    console.log('✅ Redirecting to Stripe...');
                     window.location.href = data.url;
                     
                 } catch (error) {
-                    console.error('Checkout error:', error);
+                    console.error('❌ Checkout error:', error);
                     alert('Error creating checkout: ' + error.message);
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Continue to Payment';

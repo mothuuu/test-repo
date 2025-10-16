@@ -18,6 +18,8 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const email = req.user.email;
 
+    console.log(`🛒 Checkout request: User ${userId} (${email}) for ${plan} plan`);
+
     if (!domain) {
       return res.status(400).json({ error: 'Domain required' });
     }
@@ -30,6 +32,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
     let customerId = req.user.stripe_customer_id;
     
     if (!customerId) {
+      console.log(`📝 Creating new Stripe customer for user ${userId}`);
       const customer = await stripe.customers.create({
         email: email,
         metadata: { userId: userId.toString(), domain }
@@ -40,7 +43,10 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
         'UPDATE users SET stripe_customer_id = $1 WHERE id = $2',
         [customerId, userId]
       );
+      console.log(`✅ Stripe customer created: ${customerId}`);
     }
+
+    // ... rest of the function
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
