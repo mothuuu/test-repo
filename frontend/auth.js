@@ -38,6 +38,14 @@ function hideMessages() {
     document.getElementById('successMessage').style.display = 'none';
 }
 
+// Check for success message from password reset
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reset') === 'success') {
+        showSuccess('✅ Password reset successfully! You can now sign in with your new password.');
+    }
+});
+
 // Login handler
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -54,6 +62,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Important for cookies
             body: JSON.stringify({ email, password })
         });
         
@@ -63,18 +72,30 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             throw new Error(data.error || 'Login failed');
         }
         
-        // Store token and user data
-        localStorage.setItem('authToken', data.token);
+        // Store access token (short-lived, in memory is better but localStorage works for demo)
+        localStorage.setItem('authToken', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
         
         showSuccess('Login successful! Redirecting...');
         
-        // Check for redirect URL
-        const redirectUrl = sessionStorage.getItem('loginRedirect');
-        sessionStorage.removeItem('loginRedirect');
+        // Check if user needs to verify email
+        if (!data.user.email_verified) {
+            setTimeout(() => {
+                window.location.href = 'verify.html';
+            }, 1000);
+            return;
+        }
+        
+        // Check for redirect URL or scan URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const scanUrl = urlParams.get('scanUrl');
         
         setTimeout(() => {
-            window.location.href = redirectUrl || 'index.html';
+            if (scanUrl) {
+                window.location.href = `dashboard.html?scanUrl=${encodeURIComponent(scanUrl)}`;
+            } else {
+                window.location.href = 'dashboard.html';
+            }
         }, 1000);
         
     } catch (error) {
@@ -111,6 +132,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
         const response = await fetch(`${API_BASE_URL}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Important for cookies
             body: JSON.stringify({ email, password })
         });
         
@@ -120,19 +142,23 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
             throw new Error(data.error || 'Signup failed');
         }
         
-        // Store token and user data
-        localStorage.setItem('authToken', data.token);
+        // Store access token and user data
+        localStorage.setItem('authToken', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        showSuccess('Account created! Redirecting...');
+        showSuccess('Account created! Please check your email to verify your account.');
         
-        // Check for redirect URL
-        const redirectUrl = sessionStorage.getItem('loginRedirect');
-        sessionStorage.removeItem('loginRedirect');
-        
+        // Redirect to verification page after 2 seconds
         setTimeout(() => {
-            window.location.href = redirectUrl || 'index.html';
-        }, 1000);
+            const urlParams = new URLSearchParams(window.location.search);
+            const scanUrl = urlParams.get('scanUrl');
+            
+            if (scanUrl) {
+                window.location.href = `verify.html?scanUrl=${encodeURIComponent(scanUrl)}`;
+            } else {
+                window.location.href = 'verify.html';
+            }
+        }, 2000);
         
     } catch (error) {
         showError(error.message);
@@ -142,17 +168,29 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
 });
 
 // Check if already logged in on page load
-if (localStorage.getItem('authToken')) {
-    // Verify token is still valid
-    fetch(`${API_BASE_URL}/auth/me`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-    })
-    .then(res => {
-        if (res.ok) {
-            window.location.href = 'index.html';
+window.addEventListener('DOMContentLoaded', async () => {
+    const authToken = localStorage.getItem('authToken');
+    
+    if (authToken) {
+        // Verify token is still valid
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Check if verified
+                if (!data.user.email_verified) {
+                    window.location.href = 'verify.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        } catch (error) {
+            // Token invalid, stay on auth page
+            console.log('Token invalid, user needs to login');
         }
-    })
-    .catch(() => {
-        // Token invalid, stay on auth page
-    });
-}
+    }
+});

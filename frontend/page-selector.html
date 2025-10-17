@@ -3,196 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Pages to Scan - AI Visibility Score</title>
+    <title>Select Pages - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-            padding-top: 20px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        .page-selector-container {
+        .selector-container {
             max-width: 900px;
-            margin: 0 auto;
+            margin: 40px auto;
             padding: 40px;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
         
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+        .selector-header {
+            text-align: center;
             margin-bottom: 40px;
-            flex-wrap: wrap;
         }
         
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            border-radius: 50px;
-            background: #f8f9fa;
+        .selector-header h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
         }
         
-        .step.active {
+        .selector-header p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        .domain-display {
             background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
             color: white;
-        }
-        
-        .step-number {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        .selection-counter {
-            text-align: center;
             padding: 20px;
-            background: linear-gradient(135deg, rgba(0,185,218,0.1) 0%, rgba(112,48,160,0.1) 100%);
             border-radius: 15px;
-            margin: 20px 0;
-        }
-        
-        .counter-text {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .counter-subtext {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .loading-pages {
             text-align: center;
-            padding: 40px;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #00B9DA;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .page-list {
-            display: grid;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .page-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .page-item:hover {
-            border-color: #00B9DA;
-            background: rgba(0, 185, 218, 0.05);
-        }
-        
-        .page-item.selected {
-            border-color: #00B9DA;
-            background: rgba(0, 185, 218, 0.1);
-        }
-        
-        .page-item.homepage {
-            border-color: #4DACA6;
-            background: rgba(77, 172, 166, 0.1);
-            cursor: not-allowed;
-        }
-        
-        .page-checkbox {
-            width: 24px;
-            height: 24px;
-            margin-right: 15px;
-            cursor: pointer;
-        }
-        
-        .page-info {
-            flex: 1;
-        }
-        
-        .page-url {
+            margin-bottom: 30px;
+            font-size: 1.3rem;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
         }
         
-        .page-type {
-            font-size: 0.9rem;
-            color: #666;
+        .page-limit-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
         }
         
-        .custom-url-section {
-            margin: 30px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
+        .page-limit-info p {
+            margin: 0;
+            color: #1976D2;
+            font-weight: 600;
         }
         
-        .custom-url-input {
+        .page-input-section {
+            margin-bottom: 30px;
+        }
+        
+        .page-input-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-bottom: 15px;
         }
         
-        .custom-url-input input {
+        .page-input-group input {
             flex: 1;
             padding: 12px 16px;
             border: 2px solid #e1e5e9;
@@ -200,298 +75,216 @@
             font-size: 1rem;
         }
         
-        .add-url-btn, .analyze-btn, .secondary-btn {
+        .page-input-group input:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+        
+        .add-page-btn {
             padding: 12px 24px;
+            background: #4DACA6;
+            color: white;
             border: none;
             border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .add-url-btn {
-            background: #00B9DA;
-            color: white;
+            white-space: nowrap;
         }
         
-        .add-url-btn:hover {
-            background: #4DACA6;
+        .add-page-btn:hover {
+            background: #3d9c96;
         }
-
-        .analyze-btn {
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            min-width: 200px;
-        }
-
-        .analyze-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 185, 218, 0.3);
-        }
-
-        .analyze-btn:disabled {
-            opacity: 0.7;
+        
+        .add-page-btn:disabled {
+            background: #ccc;
             cursor: not-allowed;
         }
-
-        .secondary-btn {
-            background: transparent;
-            color: #7030A0;
-            border: 2px solid #7030A0;
-            border-radius: 50px;
-            padding: 15px 30px;
+        
+        .selected-pages {
+            margin-bottom: 30px;
         }
-
-        .secondary-btn:hover {
-            background: #7030A0;
-            color: white;
+        
+        .selected-pages h3 {
+            margin-bottom: 15px;
+            color: #333;
         }
-
-        .button-group {
+        
+        .page-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .page-item {
             display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
-
-        @media (max-width: 768px) {
-            .page-selector-container {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .step {
-                font-size: 0.9rem;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .analyze-btn, .secondary-btn {
-                width: 100%;
-            }
+        
+        .page-item span {
+            color: #333;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        
+        .remove-btn {
+            padding: 8px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .remove-btn:hover {
+            background: #c82333;
+        }
+        
+        .analyze-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(112, 48, 160, 0.3);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message, .info-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            border: 2px solid #fcc;
+        }
+        
+        .info-message {
+            background: #eff;
+            color: #366;
+            border: 2px solid #cff;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            color: #00B9DA;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #7030A0;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header" style="padding-bottom: 20px;">
             <h1>AI Visibility Score</h1>
-            <p>Select pages to scan</p>
         </div>
 
-        <div class="page-selector-container">
-            <div class="step-indicator">
-                <div class="step active">
-                    <div class="step-number">1</div>
-                    <span>Discover Pages</span>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <span>Select Pages</span>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <span>Analyze</span>
-                </div>
+        <div class="selector-container">
+            <div class="selector-header">
+                <h2>Select Pages to Analyze</h2>
+                <p>Choose up to 5 pages from your website for detailed AI visibility analysis</p>
             </div>
-
-            <h2 style="margin-bottom: 10px;">Choose Pages to Scan</h2>
-            <p style="color: #666; margin-bottom: 30px;">
-                Your DIY plan includes <strong>5 pages</strong> per scan (homepage + 4 additional pages)
-            </p>
-
-            <div class="selection-counter">
-                <div class="counter-text">
-                    <span id="selectedCount">1</span> / 5 pages selected
-                </div>
-                <div class="counter-subtext">
-                    Homepage is always included
-                </div>
+            
+            <div class="domain-display" id="domainDisplay">
+                Loading domain...
             </div>
-
-            <div class="loading-pages" id="loadingPages">
-                <div class="loading-spinner"></div>
-                <p>Discovering pages on your website...</p>
+            
+            <div class="page-limit-info">
+                <p>📄 <span id="pageCount">0</span> of 5 pages selected</p>
             </div>
-
-            <div class="page-discovery" id="pageDiscovery" style="display: none;">
-                <h3>Available Pages</h3>
-                <div class="page-list" id="pageList"></div>
-
-                <div class="custom-url-section">
-                    <h4>Don't see a page? Add it manually</h4>
-                    <div class="custom-url-input">
-                        <input 
-                            type="url" 
-                            id="customUrl" 
-                            placeholder="https://yoursite.com/page"
-                        >
-                        <button class="add-url-btn" onclick="addCustomUrl()">Add Page</button>
-                    </div>
-                </div>
-
-                <div class="button-group">
-                    <button class="analyze-btn" onclick="startAnalysis()">
-                        Analyze Selected Pages
-                    </button>
-                    <button class="secondary-btn" onclick="goBack()">
-                        Cancel
+            
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="infoMessage" class="info-message" style="display: none;"></div>
+            
+            <div class="page-input-section">
+                <h3 style="margin-bottom: 15px; color: #333;">Add Page URL</h3>
+                <div class="page-input-group">
+                    <input 
+                        type="text" 
+                        id="pageUrlInput" 
+                        placeholder="e.g., /about, /services, or full URL"
+                    >
+                    <button class="add-page-btn" onclick="addPage()">
+                        Add Page
                     </button>
                 </div>
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Enter a path (e.g., /about) or a full URL from the same domain
+                </small>
             </div>
+            
+            <div class="selected-pages">
+                <h3>Selected Pages (<span id="selectedCount">0</span>)</h3>
+                <ul class="page-list" id="pageList">
+                    <li class="empty-state">No pages selected yet. Add your first page above.</li>
+                </ul>
+            </div>
+            
+            <div class="analyze-section">
+                <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()" disabled>
+                    Start Analysis
+                </button>
+            </div>
+
+            <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
         </div>
     </div>
-
-    <script>
-        const API_BASE_URL = 'http://localhost:3001/api';
-        let selectedPages = [];
-        let websiteUrl = 'https://example.com'; // Demo URL
-        const MAX_PAGES = 5;
-
-        // Simulate page discovery for demo
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                displayDemoPages();
-            }, 1500);
-        });
-
-        function displayDemoPages() {
-            const demoPages = [
-                { url: 'https://example.com/about', title: 'About Us', type: 'page' },
-                { url: 'https://example.com/services', title: 'Services', type: 'page' },
-                { url: 'https://example.com/products', title: 'Products', type: 'page' },
-                { url: 'https://example.com/blog', title: 'Blog', type: 'blog' },
-                { url: 'https://example.com/contact', title: 'Contact', type: 'page' },
-                { url: 'https://example.com/pricing', title: 'Pricing', type: 'page' }
-            ];
-
-            const pageList = document.getElementById('pageList');
-            selectedPages = [websiteUrl];
-            
-            // Add homepage
-            pageList.innerHTML = createPageItem(websiteUrl, 'Homepage', 'homepage', true, true);
-            
-            // Add demo pages
-            demoPages.forEach(page => {
-                pageList.innerHTML += createPageItem(page.url, page.title, page.type, false, false);
-            });
-
-            document.getElementById('loadingPages').style.display = 'none';
-            document.getElementById('pageDiscovery').style.display = 'block';
-        }
-
-        function createPageItem(url, title, type, isHomepage, isSelected) {
-            const id = `page-${url.replace(/[^a-z0-9]/gi, '')}`;
-            return `
-                <div class="page-item ${isHomepage ? 'homepage' : ''} ${isSelected ? 'selected' : ''}" 
-                     onclick="${isHomepage ? '' : `togglePage('${url.replace(/'/g, "\\'")}', event)`}">
-                    <input 
-                        type="checkbox" 
-                        class="page-checkbox" 
-                        id="${id}"
-                        ${isSelected ? 'checked' : ''}
-                        ${isHomepage ? 'disabled' : ''}
-                    >
-                    <div class="page-info">
-                        <div class="page-url">${title || url}</div>
-                        <div class="page-type">${isHomepage ? '🏠 Homepage (Always included)' : url}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function togglePage(url, event) {
-            if (event) event.stopPropagation();
-            
-            const index = selectedPages.indexOf(url);
-            
-            if (index > -1) {
-                selectedPages.splice(index, 1);
-            } else {
-                if (selectedPages.length >= MAX_PAGES) {
-                    alert(`You can only select ${MAX_PAGES} pages total (including homepage)`);
-                    return;
-                }
-                selectedPages.push(url);
-            }
-
-            updateUI();
-        }
-
-        function addCustomUrl() {
-            const input = document.getElementById('customUrl');
-            const url = input.value.trim();
-
-            if (!url) return;
-
-            try {
-                new URL(url);
-                
-                if (selectedPages.includes(url)) {
-                    alert('This page is already selected');
-                    return;
-                }
-
-                if (selectedPages.length >= MAX_PAGES) {
-                    alert(`You can only select ${MAX_PAGES} pages total`);
-                    return;
-                }
-
-                selectedPages.push(url);
-                
-                const pageList = document.getElementById('pageList');
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = createPageItem(url, url, 'custom', false, true);
-                pageList.appendChild(tempDiv.firstChild);
-                
-                input.value = '';
-                updateUI();
-            } catch (e) {
-                alert('Please enter a valid URL');
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('selectedCount').textContent = selectedPages.length;
-            
-            document.querySelectorAll('.page-item:not(.homepage)').forEach(item => {
-                const urlText = item.querySelector('.page-type').textContent;
-                const checkbox = item.querySelector('.page-checkbox');
-                const isSelected = selectedPages.some(url => urlText.includes(url));
-                
-                if (isSelected) {
-                    item.classList.add('selected');
-                    if (checkbox) checkbox.checked = true;
-                } else {
-                    item.classList.remove('selected');
-                    if (checkbox) checkbox.checked = false;
-                }
-            });
-        }
-
-        function startAnalysis() {
-            if (selectedPages.length === 0) {
-                alert('Please select at least the homepage');
-                return;
-            }
-
-            alert(`Starting analysis for ${selectedPages.length} pages:\n\n${selectedPages.join('\n')}`);
-        }
-
-        function goBack() {
-            if (confirm('Are you sure you want to cancel? Your page selections will be lost.')) {
-                window.history.back();
-            }
-        }
-    </script>
+    
+    <script src="page-selector.js" defer></script>
 </body>
 </html>

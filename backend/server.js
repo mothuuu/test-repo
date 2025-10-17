@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const aiTestingRoutes = require('./routes/ai-testing');
 const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
+const scanRoutes = require('./routes/scan'); // ✅ ADD THIS LINE
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,8 +40,8 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  trustProxy: true,  // ADD THIS LINE - fixes Render proxy issues
-  skip: (req) => {   // ADD THIS - skip rate limiting for health checks
+  trustProxy: true,
+  skip: (req) => {
     return req.path === '/health';
   }
 });
@@ -53,6 +54,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api', aiTestingRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/scan', scanRoutes); // ✅ ADD THIS LINE
 
 // Health check
 app.get('/health', (req, res) => {

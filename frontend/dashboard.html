@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .dashboard-header {
+            background: white;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 20px 0;
+            margin-bottom: 40px;
+        }
+        
+        .dashboard-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .plan-badge {
+            padding: 6px 15px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .quota-badge {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .quota-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        
+        .quota-error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .new-scan-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+        
+        .scan-input-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .scan-input-group input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .scan-input-group input:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+        
+        .recent-scans-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .scan-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .scan-card:hover {
+            border-color: #00B9DA;
+            background: #f0f9ff;
+            transform: translateX(5px);
+        }
+        
+        .scan-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .scan-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .scan-score {
+            text-align: right;
+        }
+        
+        .scan-score .score-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00B9DA;
+            line-height: 1;
+        }
+        
+        .scan-score .score-label {
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .upgrade-banner {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .upgrade-banner h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .upgrade-banner p {
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        
+        .logout-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body style="background: #f5f5f5;">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 20px; font-weight: 600; color: #333;">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="dashboard-nav">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h1 style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    AI Visibility Score
+                </h1>
+                <span id="planBadge" class="plan-badge">Free Plan</span>
+            </div>
+            
+            <div class="user-info">
+                <span id="quotaBadge" class="quota-badge">0 / 2 scans used</span>
+                <span id="userEmail" style="color: #666; font-weight: 500;"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px;">
+        <!-- Welcome Section -->
+        <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 2.5rem; font-weight: bold; color: #333; margin-bottom: 10px;">
+                Welcome back, <span id="userName">User</span>!
+            </h2>
+            <p style="color: #666; font-size: 1.1rem;">
+                Start a new scan or view your recent results below
+            </p>
+        </div>
+
+        <!-- Quota Warning Banner -->
+        <div id="quotaWarning" style="display: none; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+            <p id="quotaWarningText" style="margin: 0; font-weight: 600;"></p>
+        </div>
+
+        <!-- New Scan Section -->
+        <div class="new-scan-section">
+            <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 20px;">
+                ➕ Start New Scan
+            </h3>
+            <form id="scanForm" class="scan-input-group">
+                <input 
+                    type="url" 
+                    id="scanUrl" 
+                    placeholder="https://yourwebsite.com" 
+                    required
+                >
+                <button type="submit" class="analyze-btn" id="scanBtn">
+                    Analyze Website
+                </button>
+            </form>
+            <p id="planInfo" style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                ✓ Free plan: Homepage scan only
+            </p>
+        </div>
+
+        <!-- Recent Scans Section -->
+        <div class="recent-scans-section">
+            <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 20px;">
+                🕒 Recent Scans
+            </h3>
+            
+            <div id="scansList">
+                <!-- Scans will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Upgrade Banner (for free users) -->
+        <div id="upgradeBanner" style="display: none;" class="upgrade-banner">
+            <h3>🚀 Unlock More Features</h3>
+            <p>Upgrade to DIY for 10 scans/month, 5 pages per scan, and page-level recommendations</p>
+            <button class="analyze-btn" onclick="window.location.href='checkout.html?plan=diy'">
+                Upgrade to DIY - $29/month
+            </button>
+        </div>
+    </div>
+
+    <script src="dashboard.js" defer></script>
+</body>
+</html>

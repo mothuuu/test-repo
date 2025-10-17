@@ -80,11 +80,13 @@
         .error-message {
             background: #fee;
             color: #c33;
+            border: 2px solid #fcc;
         }
         
         .success-message {
             background: #efe;
             color: #3c3;
+            border: 2px solid #cfc;
         }
         
         .auth-benefits {
@@ -127,6 +129,23 @@
         .back-link:hover {
             color: #00B9DA;
         }
+        
+        .forgot-link {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        
+        .forgot-link a {
+            color: #00B9DA;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .forgot-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -159,6 +178,11 @@
                     <label>Password</label>
                     <input type="password" id="loginPassword" placeholder="••••••••" required>
                 </div>
+                
+                <div class="forgot-link">
+                    <a href="forgot-password.html">Forgot password?</a>
+                </div>
+                
                 <button type="submit" class="analyze-btn" style="width: 100%;">
                     Sign In
                 </button>
@@ -198,6 +222,6 @@
         </div>
     </div>
     
-    <script src="auth.js"></script>
+    <script src="auth.js" defer></script>
 </body>
 </html>

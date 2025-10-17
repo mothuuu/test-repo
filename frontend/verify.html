@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .verify-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .verify-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 40px;
+        }
+        
+        .verify-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .verify-email {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 600;
+            color: #7030A0;
+        }
+        
+        .verify-instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 5px;
+        }
+        
+        .verify-instructions ol {
+            margin: 10px 0 10px 20px;
+            padding: 0;
+        }
+        
+        .verify-instructions li {
+            margin: 8px 0;
+            color: #1565C0;
+        }
+        
+        .resend-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #f5f5f5;
+            color: #333;
+            border: 2px solid #00B9DA;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .resend-btn:hover {
+            background: #00B9DA;
+            color: white;
+        }
+        
+        .resend-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error-message {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .verifying-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #00B9DA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" style="padding-bottom: 20px;">
+            <h1>AI Visibility Score</h1>
+        </div>
+
+        <div class="verify-container">
+            <!-- Verifying State (shown when token in URL) -->
+            <div id="verifyingState" class="verifying-spinner">
+                <div class="spinner"></div>
+                <p style="font-weight: 600; color: #333;">Verifying your email...</p>
+            </div>
+
+            <!-- Main Verification Content -->
+            <div id="mainContent">
+                <div class="verify-icon">📧</div>
+                
+                <h2 class="verify-title">Check Your Email</h2>
+                
+                <p style="color: #666; margin-bottom: 20px;">
+                    We sent a verification link to:
+                </p>
+                
+                <div class="verify-email" id="userEmail">
+                    <!-- Email will be inserted here -->
+                </div>
+
+                <!-- Success Message -->
+                <div id="successMessage" class="success-message">
+                    ✅ Email verified successfully! Redirecting to dashboard...
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message">
+                    <!-- Error text will be inserted here -->
+                </div>
+
+                <!-- Instructions -->
+                <div class="verify-instructions">
+                    <h3 style="margin-top: 0; color: #1565C0;">What to do next:</h3>
+                    <ol>
+                        <li>Open your email inbox</li>
+                        <li>Look for an email from AI Visibility Score</li>
+                        <li>Click the verification link</li>
+                        <li>You'll be redirected back automatically</li>
+                    </ol>
+                </div>
+
+                <!-- Resend Button -->
+                <div style="margin-top: 30px;">
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
+                        Didn't receive the email?
+                    </p>
+                    <button id="resendBtn" class="resend-btn">
+                        🔄 Resend Verification Email
+                    </button>
+                </div>
+
+                <!-- Help Text -->
+                <p style="margin-top: 30px; font-size: 0.85rem; color: #999;">
+                    Check your spam folder if you don't see the email.<br>
+                    Still having trouble? Contact support@aivisibilityscore.com
+                </p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index.html" style="color: white; text-decoration: none; font-weight: 600;">
+                ← Back to Home
+            </a>
+        </div>
+    </div>
+    
+    <script src="verify.js" defer></script>
+</body>
+</html>

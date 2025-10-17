@@ -443,3 +443,446 @@ body {
     background: white !important;
     color: #00B9DA !important;
 }
+
+/* ========================================
+   NEW STYLES - Guest Scan Flow & Modals
+   ======================================== */
+
+/* Signup Overlay Styles */
+.signup-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.7));
+    padding: 30px 20px 40px;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.signup-overlay.visible {
+    transform: translateY(0);
+}
+
+.signup-prompt {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.4);
+}
+
+.prompt-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.signup-prompt h3 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #1a202c;
+}
+
+.signup-prompt p {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin-bottom: 25px;
+}
+
+.prompt-benefits {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 25px 0;
+    text-align: left;
+}
+
+.benefit {
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #2d3748;
+}
+
+.prompt-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.prompt-actions .btn-primary,
+.prompt-actions .btn-secondary {
+    flex: 1;
+    max-width: 200px;
+}
+
+/* Modal Overlay Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-content h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #1a202c;
+}
+
+.coming-soon-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plan-price {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #1a202c;
+    margin: 20px 0;
+}
+
+.plan-price span {
+    font-size: 1.5rem;
+    color: #718096;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 25px 0;
+    text-align: left;
+}
+
+.plan-features li {
+    padding: 12px 0;
+    font-size: 1.05rem;
+    color: #2d3748;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.plan-features li:last-child {
+    border-bottom: none;
+}
+
+.limit-info {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.limit-usage {
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 8px;
+}
+
+.limit-reset {
+    color: #78350f;
+    font-size: 0.95rem;
+}
+
+.upgrade-offer {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 30px;
+    border-radius: 15px;
+    margin: 25px 0;
+}
+
+.upgrade-offer h3 {
+    color: #0c4a6e;
+    margin-bottom: 15px;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #e2e8f0;
+    border-top-color: #00B9DA;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 30px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state h3 {
+    font-size: 1.5rem;
+    color: #1a202c;
+    margin-bottom: 10px;
+}
+
+.loading-state p {
+    color: #718096;
+    margin: 5px 0;
+}
+
+.loading-detail {
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Error Banner */
+.error-banner {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fee;
+    color: #c33;
+    padding: 15px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 3000;
+    animation: slideDown 0.3s ease;
+    font-weight: 600;
+}
+
+@keyframes slideDown {
+    from { transform: translate(-50%, -100%); }
+    to { transform: translate(-50%, 0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Results Container Styles */
+.results-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.analyzed-url {
+    font-size: 0.95rem;
+    color: #718096;
+    margin-top: 10px;
+    font-family: monospace;
+}
+
+.score-display {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    margin-bottom: 40px;
+}
+
+.main-score {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.score-number {
+    font-size: 5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 2rem;
+    opacity: 0.9;
+}
+
+.score-description {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+.pillars-section,
+.recommendations-section {
+    margin: 40px 0;
+}
+
+.pillars-section h3,
+.recommendations-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #1a202c;
+}
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.pillar-score {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pillar-name {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.pillar-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.pillar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00B9DA, #4DACA6);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.pillar-value {
+    font-size: 0.9rem;
+    color: #718096;
+    text-align: right;
+}
+
+.recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.recommendation {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    align-items: start;
+}
+
+.rec-number {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #00B9DA, #4DACA6);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.recommendation p {
+    margin: 0;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.upgrade-prompt {
+    margin-top: 40px;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.upgrade-content h3 {
+    font-size: 1.8rem;
+    color: #0c4a6e;
+    margin-bottom: 15px;
+}
+
+.upgrade-content p {
+    color: #075985;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .signup-prompt {
+        padding: 30px 20px;
+    }
+    
+    .prompt-benefits {
+        grid-template-columns: 1fr;
+    }
+    
+    .prompt-actions {
+        flex-direction: column;
+    }
+    
+    .prompt-actions .btn-primary,
+    .prompt-actions .btn-secondary {
+        max-width: 100%;
+    }
+    
+    .modal-content {
+        padding: 30px 20px;
+    }
+    
+    .pillars-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .score-number {
+        font-size: 3.5rem;
+    }
+}

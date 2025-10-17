@@ -3,278 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Premium - AI Visibility Score</title>
+    <title>Payment Successful - AI Visibility Score</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .success-container {
-            max-width: 600px;
-            margin: 100px auto;
-            padding: 40px;
+            max-width: 700px;
+            margin: 60px auto;
+            padding: 60px 40px;
             background: white;
             border-radius: 20px;
-            text-align: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
         }
         
         .success-icon {
-            font-size: 4rem;
-            color: #4DACA6;
-            margin-bottom: 20px;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 50px;
             animation: scaleIn 0.5s ease-out;
         }
         
         @keyframes scaleIn {
-            from { transform: scale(0); }
-            to { transform: scale(1); }
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
-        .loading-dots {
-            display: inline-block;
+        .success-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
         }
         
-        .loading-dots span {
-            animation: blink 1.4s infinite;
-            animation-fill-mode: both;
+        .success-message {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
         }
         
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes blink {
-            0%, 80%, 100% { opacity: 0; }
-            40% { opacity: 1; }
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+        .status-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
             margin: 30px 0;
         }
         
-        .feature-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 4px solid #4DACA6;
+        .status-box.processing {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
         }
         
-        .feature-icon {
-            font-size: 2rem;
+        .status-box.verified {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .status-box h3 {
             margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .status-box p {
+            color: #666;
+            margin: 0;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #7030A0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-steps {
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .progress-step {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .progress-step.completed {
+            background: #d4edda;
+        }
+        
+        .progress-step.active {
+            background: #fff3cd;
+        }
+        
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        
+        .progress-step.completed .step-icon {
+            background: #28a745;
+            color: white;
+        }
+        
+        .progress-step.active .step-icon {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .progress-step .step-icon {
+            background: #e0e0e0;
+            color: #999;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(112, 48, 160, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #7030A0;
+            border: 2px solid #7030A0;
+        }
+        
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+            border-radius: 8px;
+        }
+        
+        .info-box h4 {
+            margin-bottom: 10px;
+            color: #1976D2;
+        }
+        
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header" style="padding-bottom: 20px;">
             <h1>AI Visibility Score</h1>
         </div>
-        
+
         <div class="success-container">
-            <div class="success-icon" id="successIcon">⏳</div>
-            <h2 id="statusTitle">Processing Your Subscription</h2>
-            <p id="statusMessage">
-                Please wait while we activate your account
-                <span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            <div class="success-icon">✓</div>
+            
+            <h1 class="success-title">Payment Successful!</h1>
+            <p class="success-message">
+                Thank you for upgrading to the DIY Plan. We're processing your subscription now.
             </p>
             
-            <!-- Success Content (hidden initially) -->
-            <div id="successContent" style="display: none;">
-                <h2>🎉 Welcome to Premium!</h2>
-                <p style="color: #666; margin: 20px 0;">
-                    Your subscription is now active. You have full access to:
-                </p>
-                
-                <div class="features-grid" id="featureGrid">
-                    <!-- Populated by JavaScript based on plan -->
-                </div>
-                
-                <button class="analyze-btn" onclick="window.location.href='index.html'" style="margin-top: 30px;">
-                    Start Your First Premium Scan
-                </button>
-                
-                <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">
-                    🔗 Manage your subscription in <a href="#" onclick="openBillingPortal()" style="color: #00B9DA;">Billing Settings</a>
-                </p>
+            <!-- Status Box (will update based on webhook) -->
+            <div class="status-box processing" id="statusBox">
+                <h3>🔄 Processing Subscription</h3>
+                <p>Please wait while we confirm your payment with our payment processor...</p>
+                <div class="loading-spinner"></div>
             </div>
             
-            <!-- Error Content (hidden initially) -->
-            <div id="errorContent" style="display: none;">
-                <h2>⚠️ Verification Issue</h2>
-                <p style="color: #666; margin: 20px 0;" id="errorText">
-                    We're having trouble verifying your subscription.
-                </p>
-                <button class="analyze-btn" onclick="retryVerification()" style="margin-top: 20px;">
-                    Retry Verification
+            <!-- Progress Steps -->
+            <div class="progress-steps" id="progressSteps">
+                <div class="progress-step completed">
+                    <div class="step-icon">✓</div>
+                    <div>
+                        <strong>Payment Received</strong>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">Your payment was successfully processed</p>
+                    </div>
+                </div>
+                <div class="progress-step active">
+                    <div class="step-icon">2</div>
+                    <div>
+                        <strong>Verifying Subscription</strong>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">Confirming with payment processor...</p>
+                    </div>
+                </div>
+                <div class="progress-step">
+                    <div class="step-icon">3</div>
+                    <div>
+                        <strong>Account Activation</strong>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">Your account will be upgraded shortly</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn btn-secondary" onclick="window.location.href='dashboard.html'">
+                    Go to Dashboard
                 </button>
-                <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">
-                    If the issue persists, please contact support@aivisibility.com
-                </p>
+                <button class="action-btn btn-primary" id="continueBtn" onclick="proceedToPageSelector()" disabled>
+                    Continue to Analysis
+                </button>
+            </div>
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <h4>What happens next?</h4>
+                <ul>
+                    <li>Your subscription is being verified (usually takes 5-10 seconds)</li>
+                    <li>Once confirmed, you can select up to 5 pages for analysis</li>
+                    <li>You'll receive an email confirmation shortly</li>
+                    <li>Access your subscription details anytime from your dashboard</li>
+                </ul>
             </div>
         </div>
     </div>
     
-    <script>
-        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:3001/api'
-            : 'https://ai-visibility-tool.onrender.com/api';
-        
-        let verificationAttempts = 0;
-        const MAX_ATTEMPTS = 10;
-        const RETRY_DELAY = 3000; // 3 seconds
-        
-        // Feature sets by plan
-        const PLAN_FEATURES = {
-            diy: [
-                { icon: '📊', title: '10 Scans/Month', desc: 'Track your progress' },
-                { icon: '📄', title: '5 Pages', desc: 'Homepage + 4 you choose' },
-                { icon: '✅', title: 'Page TODOs', desc: 'Action items per page' },
-                { icon: '📈', title: 'Progress Tracking', desc: 'See improvements' },
-                { icon: '🔗', title: 'JSON-LD Export', desc: 'Schema markup pack' }
-            ],
-            pro: [
-                { icon: '🚀', title: '50 Scans/Month', desc: 'Unlimited tracking' },
-                { icon: '📚', title: '25 Pages', desc: 'Comprehensive coverage' },
-                { icon: '🎯', title: 'Brand Index', desc: 'Visibility score' },
-                { icon: '🏆', title: 'Competitor Tracking', desc: 'Benchmark against 3' },
-                { icon: '📊', title: 'Advanced Analytics', desc: 'Deep insights' },
-                { icon: '📑', title: 'PDF Export', desc: 'Professional reports' }
-            ]
-        };
-        
-        // Main verification function
-        async function verifySubscription() {
-            const token = localStorage.getItem('authToken');
-            
-            if (!token) {
-                showError('Please log in to continue');
-                setTimeout(() => window.location.href = 'auth.html', 2000);
-                return;
-            }
-            
-            verificationAttempts++;
-            
-            try {
-                console.log(`🔍 Verification attempt ${verificationAttempts}/${MAX_ATTEMPTS}`);
-                
-                // Refresh user data from backend
-                const response = await fetch(`${API_BASE_URL}/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to verify subscription');
-                }
-                
-                const data = await response.json();
-                
-                // Check if plan has been updated
-                if (data.user.plan !== 'free') {
-                    console.log('✅ Subscription verified:', data.user.plan);
-                    
-                    // Update local storage
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    
-                    // Show success
-                    showSuccess(data.user.plan);
-                } else if (verificationAttempts < MAX_ATTEMPTS) {
-                    // Still processing, retry
-                    console.log('⏳ Still processing, retrying...');
-                    setTimeout(verifySubscription, RETRY_DELAY);
-                } else {
-                    // Max attempts reached
-                    console.warn('⚠️ Max attempts reached');
-                    showError('Verification is taking longer than expected. Your subscription may still be processing.');
-                }
-                
-            } catch (error) {
-                console.error('❌ Verification error:', error);
-                
-                if (verificationAttempts < MAX_ATTEMPTS) {
-                    // Retry on error
-                    setTimeout(verifySubscription, RETRY_DELAY);
-                } else {
-                    showError('There was an issue verifying your subscription. Please contact support.');
-                }
-            }
-        }
-        
-        // Show success state
-        function showSuccess(plan) {
-            document.getElementById('successIcon').textContent = '✓';
-            document.getElementById('statusTitle').style.display = 'none';
-            document.getElementById('statusMessage').style.display = 'none';
-            
-            // Populate features
-            const features = PLAN_FEATURES[plan] || PLAN_FEATURES.diy;
-            const featureGrid = document.getElementById('featureGrid');
-            
-            featureGrid.innerHTML = features.map(f => `
-                <div class="feature-card">
-                    <div class="feature-icon">${f.icon}</div>
-                    <h4 style="margin: 10px 0 5px 0;">${f.title}</h4>
-                    <p style="font-size: 0.9rem; color: #666; margin: 0;">${f.desc}</p>
-                </div>
-            `).join('');
-            
-            document.getElementById('successContent').style.display = 'block';
-        }
-        
-        // Show error state
-        function showError(message) {
-            document.getElementById('successIcon').textContent = '⚠️';
-            document.getElementById('successIcon').style.color = '#FFA726';
-            document.getElementById('statusTitle').style.display = 'none';
-            document.getElementById('statusMessage').style.display = 'none';
-            document.getElementById('errorText').textContent = message;
-            document.getElementById('errorContent').style.display = 'block';
-        }
-        
-        // Retry verification
-        function retryVerification() {
-            document.getElementById('errorContent').style.display = 'none';
-            document.getElementById('statusTitle').style.display = 'block';
-            document.getElementById('statusMessage').style.display = 'block';
-            document.getElementById('successIcon').textContent = '⏳';
-            document.getElementById('successIcon').style.color = '#4DACA6';
-            verificationAttempts = 0;
-            verifySubscription();
-        }
-        
-        // Open billing portal
-        async function openBillingPortal() {
-            const token = localStorage.getItem('authToken');
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                const data = await response.json();
-                
-                if (data.url) {
-                    window.open(data.url, '_blank');
-                } else {
-                    alert('Unable to open billing portal. Please contact support.');
-                }
-            } catch (error) {
-                console.error('Error opening billing portal:', error);
-                alert('Unable to open billing portal. Please contact support.');
-            }
-        }
-        
-        // Start verification on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            // Wait 2 seconds before first check to give webhook time to process
-            setTimeout(verifySubscription, 2000);
-        });
-    </script>
+    <script src="success.js" defer></script> 
 </body>
 </html>

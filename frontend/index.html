@@ -3,139 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Visibility Score - Test Your Website</title>
+    <title>AI Visibility Score - Optimize Your Site for AI Search</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Add hero-specific styles */
+        .hero-section {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+        
+        .hero-form {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .hero-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 18px 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 1.1rem;
+        }
+        
+        .hero-input:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+        
+        .hero-button {
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .hero-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 185, 218, 0.4);
+        }
+        
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-    <!-- Main content (always visible for guests and logged-in users) -->
-    <div class="container" id="mainContent">
-        <div class="header">
-            <h1>AI Visibility Score</h1>
-            <p>See how AI assistants find and recommend your website</p>
+    <div class="container" style="max-width: 1200px;">
+        <!-- Header -->
+        <div class="header" style="padding: 30px 0; display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #7030A0 0%, #7030A0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                AI Visibility Score
+            </h1>
+            <div style="display: flex; gap: 20px;">
+                <a href="auth.html" style="color: #ffffff; text-decoration: none; font-weight: 600;">Sign In</a>
+                <a href="auth.html" class="analyze-btn" style="padding: 10px 25px; text-decoration: none;">Get Started</a>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h2 class="hero-title">
+                Optimize Your Site for
+                <span class="hero-gradient">AI Answer Engines</span>
+            </h2>
+            <p class="hero-subtitle">
+                Get your AI Visibility Score and discover how to rank higher in ChatGPT, Perplexity, and other AI-powered search tools.
+            </p>
             
-            <!-- User menu (populated by JavaScript if logged in) -->
-            <div id="userMenu"></div>
-        </div>
+            <form class="hero-form" onsubmit="handleHeroScan(event)">
+                <input 
+                    type="url" 
+                    class="hero-input" 
+                    id="heroUrl" 
+                    placeholder="Enter your website URL (e.g., example.com)" 
+                    required
+                >
+                <button type="submit" class="hero-button">
+                    Analyze Now
+                </button>
+            </form>
+            
+            <p style="margin-top: 15px; color: #ffffff; font-size: 0.95rem;">
+                🎉 Free scan • No credit card required • Results in 30 seconds
+            </p>
+            
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <span style="color: #4caf50; font-size: 1.5rem;">✓</span>
+                    <span>1000+ Sites Analyzed</span>
+                </div>
+                <div class="trust-badge">
+                    <span style="color: #4caf50; font-size: 1.5rem;">✓</span>
+                    <span>No Signup Required</span>
+                </div>
+            </div>
+        </section>
 
-        <div class="main-content">
-            <!-- Input Section -->
-            <div class="input-section" id="inputSection">
-                <h2>Get Your AI Readiness Score</h2>
-                <p style="color: #666; margin-bottom: 30px;">
-                    Enter your website URL for instant analysis
-                </p>
+        <!-- Features Section -->
+        <section style="padding: 60px 0;">
+            <h3 style="text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 50px; color: #ffffff;">
+                8-Pillar AI Visibility Analysis
+            </h3>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Schema Markup</h4>
+                    <p style="color: #666;">Structured data optimization for AI understanding</p>
+                </div>
                 
-                <form class="url-form" id="urlForm">
-                    <input 
-                        type="url" 
-                        class="url-input" 
-                        id="websiteUrl" 
-                        placeholder="https://yourcompany.com"
-                        required
-                    >
-                    <button type="submit" class="analyze-btn" id="analyzeBtn">
-                        Analyze My Website
-                    </button>
-                </form>
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Entity Recognition</h4>
+                    <p style="color: #666;">Help AI identify your brand and offerings</p>
+                </div>
                 
-                <p class="disclaimer">
-                    ✓ Score out of 1000 ✓ 8 pillar breakdown ✓ Instant results
-                </p>
+                <div class="feature-card">
+                    <div class="feature-icon">❓</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">FAQ Optimization</h4>
+                    <p style="color: #666;">Q&A format for better AI responses</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Citations & Authority</h4>
+                    <p style="color: #666;">Build credibility with AI systems</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Crawlability</h4>
+                    <p style="color: #666;">Ensure AI bots can access your content</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Speed & Performance</h4>
+                    <p style="color: #666;">Fast sites rank better everywhere</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">Trust Signals</h4>
+                    <p style="color: #666;">Security and reliability indicators</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h4 style="font-weight: bold; margin-bottom: 10px;">AEO Content</h4>
+                    <p style="color: #666;">Answer Engine Optimization tactics</p>
+                </div>
             </div>
+        </section>
 
-            <!-- Loading Section -->
-            <div class="loading" id="loadingSection">
-                <div class="loading-spinner"></div>
-                <div class="loading-text" id="loadingText">Analyzing your website...</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <p style="color: #666; margin-top: 20px;">This may take 30-60 seconds</p>
-            </div>
-
-            <!-- Error Section -->
-            <div class="error-section" id="errorSection">
-                <h3>⚠️ Analysis Error</h3>
-                <p id="errorMessage">Unable to analyze the website. Please check the URL and try again.</p>
-                <button class="analyze-btn" onclick="resetForm()">Try Again</button>
-            </div>
-
-            <!-- Results Section -->
-            <div class="results" id="resultsSection">
-                <!-- Industry Detection -->
-                <div class="industry-detection" id="industryDetection">
-                    <h3>📊 Website Analysis</h3>
-                    <p style="font-size: 1.2rem; font-weight: 600; color: #00B9DA; margin: 10px 0;">
-                        <span id="detectedIndustry">Loading...</span>
-                    </p>
-                    <p id="websiteStats" style="color: #666; font-size: 0.9rem;"></p>
-                </div>
-
-                <!-- Score Header -->
-                <div class="score-header">
-                    <div class="score-circle" id="scoreCircle">
-                        <span id="totalScore">0</span><span style="font-size: 1.5rem;">/1000</span>
-                    </div>
-                    <h2 id="scoreTitle">Your AI Visibility Score</h2>
-                    <p id="scoreDescription">Loading results...</p>
-                </div>
-
-                <!-- 8 Pillar Category Breakdown -->
-                <div class="score-categories" id="scoreCategories">
-                    <!-- Populated by JavaScript -->
-                </div>
-
-                <!-- Page Count Info (for multi-page scans) -->
-                <div id="pageCountInfo" style="display: none; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin: 30px 0;">
-                    <h4>📄 Pages Analyzed</h4>
-                    <p id="pageCountText" style="color: #666; margin-top: 10px;"></p>
-                </div>
-
-                <!-- Recommendations -->
-                <div class="recommendations">
-                    <h3>🎯 Priority Improvements</h3>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Top recommendations to improve your AI visibility
-                    </p>
-                    <div class="quick-wins" id="quickWins">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                </div>
-
-                <!-- Upgrade CTA (shown based on user plan) -->
-                <div id="upgradeCTA"></div>
-
-                <!-- Analysis Details (Collapsible) -->
-                <details class="analysis-details" style="margin-top: 30px;">
-                    <summary style="cursor: pointer; font-weight: 600; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        🔍 View Detailed Breakdown
-                    </summary>
-                    <div id="analysisBreakdown" style="padding: 20px;"></div>
-                </details>
-            </div>
-        </div>
+        <!-- CTA Section -->
+        <section style="padding: 80px 20px; text-align: center; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); border-radius: 20px; color: white; margin: 60px 0;">
+            <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px;">
+                Ready to Dominate AI Search?
+            </h3>
+            <p style="font-size: 1.2rem; margin-bottom: 30px; opacity: 0.9;">
+                Start optimizing your website for AI-powered search engines today.
+            </p>
+            <button onclick="window.location.href='auth.html'" style="padding: 18px 40px; background: white; color: #7030A0; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
+                Get Started Free →
+            </button>
+        </section>
 
         <!-- Footer -->
-        <div class="footer">
-            <p>Powered by AI Visibility Score | 
-                <a href="auth.html" style="color: white; text-decoration: underline;">Sign In</a> | 
-                <a href="checkout.html?plan=diy" style="color: white; text-decoration: underline;">Pricing</a>
-            </p>
-        </div>
+        <footer style="text-align: center; padding: 40px 0; color: #999; border-top: 1px solid #e0e0e0;">
+            <p>© 2025 AI Visibility Score. Powered by Xeo AI Hub & Xeo Marketing All rights reserved.</p>
+        </footer>
     </div>
 
-    <!-- Hidden Google Sheets Form (for lead capture) -->
-    <iframe name="gsheet_silent_target" style="display:none;"></iframe>
-    <form id="sheetForm" method="POST" 
-          action="https://script.google.com/macros/s/AKfycby39Oc9Q_MhbFNTuV0telbuRC8ffb7Ts_TG2oaArxuDFxtW_w4tpjuab0x5YC4uBqjPew/exec" 
-          target="gsheet_silent_target" 
-          style="display:none;">
-        <input type="hidden" name="website" id="sheet_website" />
-        <input type="hidden" name="page_url" id="sheet_page_url" />
-        <input type="hidden" name="user_agent" id="sheet_user_agent" />
-        <input type="hidden" name="referrer" id="sheet_referrer" />
-    </form>
-
-    <script src="script.js"></script>
+    <script>
+        // Handle hero scan form
+        function handleHeroScan(event) {
+            event.preventDefault();
+            const url = document.getElementById('heroUrl').value;
+            
+            // Redirect to auth with scan URL
+            window.location.href = `auth.html?scanUrl=${encodeURIComponent(url)}`;
+        }
+    </script>
 </body>
 </html>
