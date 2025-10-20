@@ -1,11 +1,53 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
-const { checkScanLimit } = require('../middleware/usageLimits');
 const db = require('../db/database');
 
 // ============================================
-// GUEST SCAN ENDPOINT (No Auth Required)
+// 🚀 IMPORT REAL ENGINES (NEW!)
+// ============================================
+const V5RubricEngine = require('../analyzers/V5-rubric-engine'); // Import the class
+const { generateCompleteRecommendations } = require('../analyzers/recommendation-generator');
+
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Plan limits
+const PLAN_LIMITS = {
+  free: { scansPerMonth: 2, pagesPerScan: 1 },
+  diy: { scansPerMonth: 10, pagesPerScan: 5 },
+  pro: { scansPerMonth: 50, pagesPerScan: 25 }
+};
+
+// V5 Rubric Category Weights
+const V5_WEIGHTS = {
+  aiReadability: 0.10,           // 10%
+  aiSearchReadiness: 0.20,       // 20%
+  contentFreshness: 0.08,        // 8%
+  contentStructure: 0.15,        // 15%
+  speedUX: 0.05,                 // 5%
+  technicalSetup: 0.18,          // 18%
+  trustAuthority: 0.12,          // 12%
+  voiceOptimization: 0.12        // 12%
+};
+
+// ============================================
+// POST /api/scan/guest - Guest scan (no auth)
 // ============================================
 router.post('/guest', async (req, res) => {
   try {
@@ -30,15 +72,20 @@ router.post('/guest', async (req, res) => {
 
     console.log('🔍 Guest scan requested for:', url);
 
-    // Perform the scan (results NOT saved to database)
-    const scanResult = await performWebsiteScan(url);
+    // Perform V5 rubric scan (results NOT saved)
+    const scanResult = await performV5Scan(url, 'free'); // 🔥 Uses real engine now!
 
     // Return results immediately without saving
     res.json({
-      score: scanResult.score,
+      success: true,
+      total_score: scanResult.totalScore,
+      rubric_version: 'V5',
       url: url,
-      scan_data: scanResult.data,
-      message: 'Sign up to save these results and track progress',
+      categories: scanResult.categories,
+      recommendations: scanResult.recommendations,
+      faq: scanResult.faq || null, // Include FAQ if available
+      upgrade: scanResult.upgrade || null, // Include upgrade CTA
+      message: 'Sign up to save results and track progress over time',
       guest: true
     });
 
@@ -52,13 +99,12 @@ router.post('/guest', async (req, res) => {
 });
 
 // ============================================
-// AUTHENTICATED SCAN ENDPOINT (Auth Required)
+// POST /api/scan/analyze - Authenticated scan
 // ============================================
-router.post('/', authenticateToken, checkScanLimit, async (req, res) => {
+router.post('/analyze', authenticateToken, async (req, res) => {
   try {
-    const { url } = req.body;
-    const userId = req.user.id;
-    const userPlan = req.user.plan;
+    const { url, pages } = req.body;
+    const userId = req.userId;
 
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
@@ -77,48 +123,147 @@ router.post('/', authenticateToken, checkScanLimit, async (req, res) => {
       });
     }
 
-    console.log('🔍 Authenticated scan requested for:', url, 'by user:', userId, 'plan:', userPlan);
+    // Get user info
+    const userResult = await db.query(
+      'SELECT plan, scans_used_this_month FROM users WHERE id = $1',
+      [userId]
+    );
 
-    // For FREE users: only allow homepage scans
-    if (userPlan === 'free') {
-      // Extract domain/homepage from URL
-      const homepage = validUrl.origin;
-      console.log('📄 Free user - scanning homepage only:', homepage);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Perform the scan
-    const scanResult = await performWebsiteScan(url);
+    const user = userResult.rows[0];
+    const planLimits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
 
-    // Save scan to database
-    try {
+    // Check quota
+    if (user.scans_used_this_month >= planLimits.scansPerMonth) {
+      return res.status(403).json({
+        error: 'Scan quota exceeded',
+        quota: {
+          used: user.scans_used_this_month,
+          limit: planLimits.scansPerMonth
+        }
+      });
+    }
+
+    // Validate page count for plan
+    const pageCount = pages ? Math.min(pages.length, planLimits.pagesPerScan) : 1;
+
+    console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url}`);
+
+    // Create scan record with status 'processing'
+    const scanRecord = await db.query(
+      `INSERT INTO scans (
+        user_id, url, status, page_count, rubric_version
+      ) VALUES ($1, $2, $3, $4, $5) 
+      RETURNING id, url, status, created_at`,
+      [userId, url, 'processing', pageCount, 'V5']
+    );
+
+    const scan = scanRecord.rows[0];
+
+    // Increment user's scan count
+    await db.query(
+      'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
+      [userId]
+    );
+
+    // Perform V5 rubric scan 🔥 REAL ENGINE!
+    const scanResult = await performV5Scan(url, user.plan);
+
+    // Update scan record with results
+    await db.query(
+      `UPDATE scans SET 
+        status = $1,
+        total_score = $2,
+        ai_readability_score = $3,
+        ai_search_readiness_score = $4,
+        content_freshness_score = $5,
+        content_structure_score = $6,
+        speed_ux_score = $7,
+        technical_setup_score = $8,
+        trust_authority_score = $9,
+        voice_optimization_score = $10,
+        industry = $11,
+        detailed_analysis = $12,
+        completed_at = CURRENT_TIMESTAMP
+      WHERE id = $13`,
+      [
+        'completed',
+        scanResult.totalScore,
+        scanResult.categories.aiReadability,
+        scanResult.categories.aiSearchReadiness,
+        scanResult.categories.contentFreshness,
+        scanResult.categories.contentStructure,
+        scanResult.categories.speedUX,
+        scanResult.categories.technicalSetup,
+        scanResult.categories.trustAuthority,
+        scanResult.categories.voiceOptimization,
+        scanResult.industry,
+        JSON.stringify(scanResult.detailedAnalysis),
+        scan.id
+      ]
+    );
+
+    // 🔥 Save recommendations with more details (NEW!)
+    if (scanResult.recommendations && scanResult.recommendations.length > 0) {
+      for (const rec of scanResult.recommendations) {
+        await db.query(
+          `INSERT INTO scan_recommendations (
+            scan_id, category, recommendation_text, priority,
+            estimated_impact, estimated_effort, action_steps, findings, code_snippet
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            scan.id,
+            rec.category || 'General',
+            rec.title || rec.recommendation, // NEW format has 'title'
+            rec.priority,
+            rec.estimatedScoreGain || 0, // Score gain as impact (number)
+            rec.difficulty || 'medium', // NEW format has 'difficulty'
+            rec.actionSteps ? JSON.stringify(rec.actionSteps) : null,
+            rec.finding || null, // NEW format is singular 'finding'
+            rec.codeSnippet || null
+          ]
+        );
+      }
+    }
+
+    // 🔥 Save FAQ schema if available (DIY tier only)
+    if (scanResult.faq && scanResult.faq.length > 0) {
       await db.query(
-        'INSERT INTO scans (user_id, url, score, scan_data) VALUES ($1, $2, $3, $4)',
-        [userId, url, scanResult.score, JSON.stringify(scanResult.data)]
+        `UPDATE scans SET faq_schema = $1 WHERE id = $2`,
+        [JSON.stringify(scanResult.faq), scan.id]
       );
-      console.log('✅ Scan saved to database for user:', userId);
-    } catch (dbError) {
-      console.error('⚠️ Failed to save scan to database:', dbError);
-      // Continue anyway - user still gets results
     }
 
     // Log usage
-    try {
-      await db.query(
-        'INSERT INTO usage_logs (user_id, action, metadata) VALUES ($1, $2, $3)',
-        [userId, 'scan', JSON.stringify({ url, score: scanResult.score })]
-      );
-    } catch (logError) {
-      console.error('⚠️ Failed to log usage:', logError);
-      // Non-critical, continue
-    }
+    await db.query(
+      'INSERT INTO usage_logs (user_id, action, metadata) VALUES ($1, $2, $3)',
+      [userId, 'scan', JSON.stringify({ url, score: scanResult.totalScore, scan_id: scan.id })]
+    );
+
+    console.log(`✅ Scan ${scan.id} completed with score: ${scanResult.totalScore}`);
 
     // Return results
     res.json({
-      score: scanResult.score,
-      url: url,
-      scan_data: scanResult.data,
-      saved: true,
-      plan: userPlan
+      success: true,
+      scan: {
+        id: scan.id,
+        url: url,
+        status: 'completed',
+        total_score: scanResult.totalScore,
+        rubric_version: 'V5',
+        categories: scanResult.categories,
+        recommendations: scanResult.recommendations,
+        faq: scanResult.faq || null,
+        upgrade: scanResult.upgrade || null,
+        created_at: scan.created_at
+      },
+      quota: {
+        used: user.scans_used_this_month + 1,
+        limit: planLimits.scansPerMonth
+      }
     });
 
   } catch (error) {
@@ -131,16 +276,84 @@ router.post('/', authenticateToken, checkScanLimit, async (req, res) => {
 });
 
 // ============================================
-// GET SCAN HISTORY (Authenticated Users Only)
+// GET /api/scan/:id - Get scan results
 // ============================================
-router.get('/history', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const scanId = req.params.id;
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT 
+        id, user_id, url, status, total_score, rubric_version,
+        ai_readability_score, ai_search_readiness_score,
+        content_freshness_score, content_structure_score,
+        speed_ux_score, technical_setup_score,
+        trust_authority_score, voice_optimization_score,
+        industry, page_count, pages_analyzed,
+        detailed_analysis, faq_schema, created_at, completed_at
+       FROM scans 
+       WHERE id = $1 AND user_id = $2`,
+      [scanId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    const scan = result.rows[0];
+
+    // Get recommendations
+    const recResult = await db.query(
+      `SELECT 
+        id, category, recommendation_text, priority,
+        estimated_impact, estimated_effort, status,
+        action_steps, findings, code_snippet,
+        user_rating, user_feedback, implemented_at
+       FROM scan_recommendations 
+       WHERE scan_id = $1 
+       ORDER BY priority DESC, estimated_impact DESC`,
+      [scanId]
+    );
+
+    res.json({
+      success: true,
+      scan: {
+        ...scan,
+        categories: {
+          aiReadability: scan.ai_readability_score,
+          aiSearchReadiness: scan.ai_search_readiness_score,
+          contentFreshness: scan.content_freshness_score,
+          contentStructure: scan.content_structure_score,
+          speedUX: scan.speed_ux_score,
+          technicalSetup: scan.technical_setup_score,
+          trustAuthority: scan.trust_authority_score,
+          voiceOptimization: scan.voice_optimization_score
+        },
+        recommendations: recResult.rows,
+        faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get scan error:', error);
+    res.status(500).json({ error: 'Failed to retrieve scan' });
+  }
+});
+
+// ============================================
+// GET /api/scan/list/recent - List recent scans
+// ============================================
+router.get('/list/recent', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
 
     const result = await db.query(
-      `SELECT id, url, score, scan_data, created_at 
+      `SELECT 
+        id, url, status, total_score, rubric_version,
+        page_count, industry, created_at, completed_at
        FROM scans 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
@@ -154,31 +367,100 @@ router.get('/history', authenticateToken, async (req, res) => {
     );
 
     res.json({
+      success: true,
       scans: result.rows,
-      total: parseInt(countResult.rows[0].total),
-      limit,
-      offset
+      pagination: {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        hasMore: offset + result.rows.length < parseInt(countResult.rows[0].total)
+      }
     });
 
   } catch (error) {
-    console.error('❌ Error fetching scan history:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch scan history',
-      details: error.message 
-    });
+    console.error('❌ List scans error:', error);
+    res.status(500).json({ error: 'Failed to retrieve scans' });
   }
 });
 
 // ============================================
-// GET SPECIFIC SCAN BY ID
+// POST /api/scan/:id/recommendation/:recId/feedback
+// Learning Loop: Track user actions
 // ============================================
-router.get('/:scanId', authenticateToken, async (req, res) => {
+router.post('/:id/recommendation/:recId/feedback', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const scanId = req.params.scanId;
+    const { id: scanId, recId } = req.params;
+    const userId = req.userId;
+    const { status, feedback, rating } = req.body;
+
+    // Verify scan belongs to user
+    const scanCheck = await db.query(
+      'SELECT id FROM scans WHERE id = $1 AND user_id = $2',
+      [scanId, userId]
+    );
+
+    if (scanCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    // Update recommendation
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
+    if (status) {
+      updateFields.push(`status = $${paramCount++}`);
+      updateValues.push(status);
+      
+      if (status === 'implemented') {
+        updateFields.push(`implemented_at = CURRENT_TIMESTAMP`);
+      }
+    }
+
+    if (feedback) {
+      updateFields.push(`user_feedback = $${paramCount++}`);
+      updateValues.push(feedback);
+    }
+
+    if (rating !== undefined) {
+      updateFields.push(`user_rating = $${paramCount++}`);
+      updateValues.push(rating);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No updates provided' });
+    }
+
+    updateValues.push(recId, scanId);
+
+    await db.query(
+      `UPDATE scan_recommendations 
+       SET ${updateFields.join(', ')}
+       WHERE id = $${paramCount++} AND scan_id = $${paramCount}`,
+      updateValues
+    );
+
+    res.json({
+      success: true,
+      message: 'Feedback recorded for learning loop'
+    });
+
+  } catch (error) {
+    console.error('❌ Feedback error:', error);
+    res.status(500).json({ error: 'Failed to record feedback' });
+  }
+});
+
+// ============================================
+// DELETE /api/scan/:id - Delete a scan
+// ============================================
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const scanId = req.params.id;
+    const userId = req.userId;
 
     const result = await db.query(
-      'SELECT * FROM scans WHERE id = $1 AND user_id = $2',
+      'DELETE FROM scans WHERE id = $1 AND user_id = $2 RETURNING id',
       [scanId, userId]
     );
 
@@ -186,161 +468,91 @@ router.get('/:scanId', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Scan not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json({
+      success: true,
+      message: 'Scan deleted successfully'
+    });
 
   } catch (error) {
-    console.error('❌ Error fetching scan:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch scan',
-      details: error.message 
-    });
+    console.error('❌ Delete scan error:', error);
+    res.status(500).json({ error: 'Failed to delete scan' });
   }
 });
 
 // ============================================
-// HELPER FUNCTION - PERFORM WEBSITE SCAN
+// 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
+// Now properly uses the V5RubricEngine class!
 // ============================================
-async function performWebsiteScan(url) {
-  console.log('🔬 Starting scan analysis for:', url);
+async function performV5Scan(url, plan) {
+  console.log('🔬 Starting REAL V5 rubric analysis for:', url);
   
-  // Simulate scanning delay (replace with actual scanning logic)
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  try {
+    // Step 1: Create V5 Rubric Engine instance and run analysis
+    console.log('📊 Running V5 Rubric Engine...');
+    const engine = new V5RubricEngine(url, {}); // Create instance
+    const v5Results = await engine.analyze();    // Call analyze method
+    
+    // Extract scores from category results
+    const categories = {
+      aiReadability: v5Results.categories.aiReadability.score || 0,
+      aiSearchReadiness: v5Results.categories.aiSearchReadiness.score || 0,
+      contentFreshness: v5Results.categories.contentFreshness.score || 0,
+      contentStructure: v5Results.categories.contentStructure.score || 0,
+      speedUX: v5Results.categories.speedUX.score || 0,
+      technicalSetup: v5Results.categories.technicalSetup.score || 0,
+      trustAuthority: v5Results.categories.trustAuthority.score || 0,
+      voiceOptimization: v5Results.categories.voiceOptimization.score || 0
+    };
 
-  // TODO: Replace this mock data with your actual AI visibility scanning logic
-  // This should include:
-  // - Web scraping/crawling the URL
-  // - Analyzing Schema.org markup
-  // - Checking entity signals
-  // - Evaluating FAQ content
-  // - Assessing citation quality
-  // - Testing crawlability
-  // - Measuring page speed
-  // - Checking trust signals
-  // - Analyzing AEO content optimization
+    // Total score already calculated by V5 engine
+    const totalScore = v5Results.totalScore;
 
-  // Mock AI visibility analysis - 8 pillars (each out of 125)
-  const pillars = {
-    schema: Math.floor(Math.random() * 40) + 85,        // 85-125
-    entities: Math.floor(Math.random() * 40) + 70,      // 70-110
-    faqs: Math.floor(Math.random() * 40) + 80,          // 80-120
-    citations: Math.floor(Math.random() * 40) + 75,     // 75-115
-    crawlability: Math.floor(Math.random() * 40) + 85,  // 85-125
-    speed: Math.floor(Math.random() * 40) + 70,         // 70-110
-    trust: Math.floor(Math.random() * 40) + 80,         // 80-120
-    aeoContent: Math.floor(Math.random() * 40) + 75     // 75-115
-  };
+    // Step 2: Generate AI-powered recommendations
+    console.log('🤖 Generating recommendations with AI...');
+    
+    // Access the evidence from the engine instance
+    const scanEvidence = engine.evidence;
+    
+    // Extract subfactors from each category for issue detection
+const subfactorScores = {};
+for (const [category, data] of Object.entries(v5Results.categories)) {
+  subfactorScores[category] = data.subfactors; // Extract just the subfactors
+}
 
-  // Calculate overall score (out of 1000)
-  const totalPillarScore = Object.values(pillars).reduce((a, b) => a + b, 0);
-  const score = totalPillarScore; // Sum of all 8 pillars (640-1000 range)
+// 🔍 DEBUG: Let's see what we're actually passing
+console.log('🔍 DEBUG - subfactorScores:', JSON.stringify(subfactorScores, null, 2));
 
-  // Generate recommendations based on weakest pillars
-  const recommendations = [];
-  const pillarThreshold = 95; // Recommend improvement if below this
+const recommendationResults = await generateCompleteRecommendations(
+  {
+    v5Scores: subfactorScores,  // ← CORRECT: Just the subfactor scores
+    scanEvidence: scanEvidence
+  },
+  plan,
+  v5Results.industry || 'General'
+);
+    console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${v5Results.industry})`);
 
-  if (pillars.schema < pillarThreshold) {
-    recommendations.push({
-      priority: 'high',
-      pillar: 'Schema Markup',
-      action: 'Add structured data (Schema.org) to improve entity recognition',
-      impact: 'High - Helps AI understand your content structure'
-    });
-  }
-  
-  if (pillars.entities < pillarThreshold) {
-    recommendations.push({
-      priority: 'high',
-      pillar: 'Entity Signals',
-      action: 'Strengthen brand entity signals with consistent NAP (Name, Address, Phone)',
-      impact: 'High - Improves brand recognition by AI systems'
-    });
-  }
-  
-  if (pillars.faqs < pillarThreshold) {
-    recommendations.push({
-      priority: 'medium',
-      pillar: 'FAQ Content',
-      action: 'Add FAQ schema markup for common questions',
-      impact: 'Medium - Increases chances of appearing in AI-generated answers'
-    });
-  }
-  
-  if (pillars.citations < pillarThreshold) {
-    recommendations.push({
-      priority: 'medium',
-      pillar: 'Citations',
-      action: 'Build high-quality backlinks from authoritative sources',
-      impact: 'Medium - Improves trust signals for AI systems'
-    });
-  }
-  
-  if (pillars.crawlability < pillarThreshold) {
-    recommendations.push({
-      priority: 'high',
-      pillar: 'Crawlability',
-      action: 'Improve site architecture and internal linking structure',
-      impact: 'High - Ensures AI can access and index all content'
-    });
-  }
-  
-  if (pillars.speed < pillarThreshold) {
-    recommendations.push({
-      priority: 'medium',
-      pillar: 'Page Speed',
-      action: 'Optimize page speed and Core Web Vitals (LCP, FID, CLS)',
-      impact: 'Medium - Better user experience signals to AI'
-    });
-  }
-  
-  if (pillars.trust < pillarThreshold) {
-    recommendations.push({
-      priority: 'low',
-      pillar: 'Trust Signals',
-      action: 'Add trust signals like security badges, reviews, and testimonials',
-      impact: 'Low - Incremental improvement in authority perception'
-    });
-  }
-  
-  if (pillars.aeoContent < pillarThreshold) {
-    recommendations.push({
-      priority: 'high',
-      pillar: 'AEO Content',
-      action: 'Optimize content for Answer Engine Optimization (AEO) - use natural language, answer questions directly',
-      impact: 'High - Critical for appearing in AI-generated responses'
-    });
-  }
-
-  // If no recommendations yet, add some general ones
-  if (recommendations.length === 0) {
-    recommendations.push({
-      priority: 'low',
-      pillar: 'General',
-      action: 'Your site is well-optimized! Continue monitoring and updating content regularly',
-      impact: 'Maintenance - Keep up the good work'
-    });
-  }
-
-  // Sort by priority (high > medium > low)
-  const priorityOrder = { high: 1, medium: 2, low: 3 };
-  recommendations.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-
-  console.log('✅ Scan complete. Score:', score);
-
-  return {
-    score: Math.round(score),
-    data: {
-      pillars,
-      recommendations: recommendations.slice(0, 5), // Top 5 recommendations
-      scannedAt: new Date().toISOString(),
-      url: url,
-      breakdown: {
-        excellent: score >= 800,
-        good: score >= 600 && score < 800,
-        fair: score >= 400 && score < 600,
-        needsWork: score < 400
+    return {
+      totalScore,
+      categories,
+      recommendations: recommendationResults.data.recommendations,
+      faq: recommendationResults.data.faq || null,
+      upgrade: recommendationResults.data.upgrade || null,
+      industry: v5Results.industry || 'General',
+      detailedAnalysis: {
+        url,
+        scannedAt: new Date().toISOString(),
+        rubricVersion: 'V5',
+        categoryBreakdown: categories,
+        summary: recommendationResults.summary,
+        metadata: v5Results.metadata
       }
-    }
-  };
+    };
+
+  } catch (error) {
+    console.error('❌ V5 Scan error:', error);
+    throw new Error(`V5 scan failed: ${error.message}`);
+  }
 }
 
 module.exports = router;

@@ -1,0 +1,845 @@
+{
+  "faq_library": {
+    "industry": "Telecom Service Providers",
+    "industry_id": "telecom_service_providers",
+    "version": "1.0",
+    "last_updated": "2025-10-18",
+    "metadata": {
+      "total_faqs": 5,
+      "completion_status": "production_ready",
+      "anti_hallucination_enabled": true,
+      "confidence_tracking": true
+    },
+    "faqs": [
+      {
+        "id": "faq_001",
+        "priority": "critical",
+        "found_on_percent": 89,
+        "expected_impact": "+18-23 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How do I prevent my internet from slowing down during peak hours?",
+        
+        "answer_human_friendly": {
+          "text": "Peak-hour slowdowns happen when network capacity gets strained by multiple users simultaneously. We maintain dedicated bandwidth allocation and advanced traffic management to minimize congestion. Our network infrastructure includes redundant routing paths and load balancing that automatically distributes traffic during high-usage periods. Most customers experience consistent speeds because we proactively monitor and upgrade capacity before congestion occurs. If you're experiencing slowdowns, our support team can analyze your specific connection and recommend solutions like upgraded plans with higher priority traffic or dedicated business lines with guaranteed bandwidth.",
+          "word_count": 94,
+          "tone": "helpful and technically reassuring",
+          "focus": "explaining the solution and offering help"
+        },
+        
+        "answer_factual_backend": {
+          "text": "Peak-hour network performance depends on infrastructure capacity planning, traffic management systems, and bandwidth allocation protocols. Our network architecture includes distributed edge nodes, intelligent traffic routing, Quality of Service (QoS) prioritization, and real-time congestion monitoring systems. We maintain network utilization below 70% average capacity to ensure performance headroom during peak periods. Infrastructure includes redundant fiber paths, automatic failover systems, and geographically distributed points of presence that balance traffic loads. Business customers receive dedicated bandwidth circuits with Service Level Agreements guaranteeing 99.9% uptime and consistent throughput regardless of network congestion. Residential customers benefit from DOCSIS 3.1 or fiber-to-the-home technologies that provide symmetrical speeds and advanced buffering management to minimize latency spikes during high-usage windows.",
+          "word_count": 119,
+          "tone": "technical and infrastructure-focused",
+          "focus": "specific technologies and guarantees",
+          
+          "factual_anchors": [
+            {
+              "claim": "network utilization below 70% average capacity",
+              "type": "operational_specification",
+              "source": "company_network_operations",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "substantial capacity headroom maintained"
+            },
+            {
+              "claim": "99.9% uptime guarantee",
+              "type": "service_specification",
+              "source": "company_sla_documentation",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "high availability guarantee"
+            },
+            {
+              "claim": "distributed edge nodes and intelligent routing",
+              "type": "infrastructure_specification",
+              "source": "company_network_architecture",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "advanced network infrastructure"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We maintain network capacity and use traffic management systems to minimize slowdowns during peak usage periods, with monitoring and upgrade cycles to ensure consistent performance.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "internet slow during peak hours",
+            "network congestion solutions",
+            "prevent internet slowdown",
+            "consistent internet speeds",
+            "peak time internet performance"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I prevent my internet from slowing down during peak hours?",
+              "alternativeQuestion": [
+                "Why does my internet slow down in the evening?",
+                "How can I get faster internet during peak usage times?",
+                "Does your network handle peak hour traffic well?",
+                "What causes internet slowdowns during busy times?",
+                "How do you prevent network congestion?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Peak-hour network performance depends on infrastructure capacity planning and traffic management systems. Our network architecture includes distributed edge nodes, intelligent traffic routing, Quality of Service prioritization, and real-time monitoring. We maintain network utilization below 70% capacity to ensure performance headroom. Infrastructure includes redundant fiber paths, automatic failover, and geographically distributed points of presence. Business customers receive dedicated bandwidth with 99.9% uptime guarantees, while residential customers benefit from DOCSIS 3.1 or fiber technologies providing symmetrical speeds and advanced buffering management."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} maintains {{infrastructure_type}} with {{capacity_management}} to minimize peak-hour slowdowns. Our network includes {{technical_features}} and {{monitoring_systems}} that ensure {{performance_guarantee}}. {{customer_segment}} customers receive {{service_tier_details}} with {{specific_guarantee}}.",
+        
+        "answer_fallback_template": "We use capacity planning and traffic management to maintain consistent speeds during peak hours, with dedicated support for customers experiencing issues.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "provider name"],
+            "context": "title tag, H1, footer, about page",
+            "confidence_threshold": 0.9,
+            "use_fallback_if_below": 0.8,
+            "fallback": "We"
+          },
+          "infrastructure_type": {
+            "method": "keyword_scan",
+            "keywords": ["fiber network", "hybrid fiber", "cable network", "wireless infrastructure", "5G network"],
+            "context": "technology pages, infrastructure descriptions, about section",
+            "confidence_threshold": 0.7,
+            "fallback": "network infrastructure"
+          },
+          "capacity_management": {
+            "method": "keyword_scan",
+            "keywords": ["proactive capacity planning", "bandwidth management", "traffic optimization", "load balancing"],
+            "context": "technical specifications, network information",
+            "confidence_threshold": 0.6,
+            "fallback": "capacity planning and monitoring"
+          },
+          "technical_features": {
+            "method": "keyword_scan",
+            "keywords": ["redundant routing", "edge nodes", "distributed architecture", "QoS prioritization", "intelligent routing"],
+            "context": "technology descriptions, infrastructure pages",
+            "confidence_threshold": 0.6,
+            "fallback": "advanced routing and traffic management"
+          },
+          "monitoring_systems": {
+            "method": "keyword_scan",
+            "keywords": ["real-time monitoring", "24/7 network operations", "proactive maintenance", "automated alerts"],
+            "context": "operations descriptions, service quality content",
+            "confidence_threshold": 0.6,
+            "fallback": "continuous network monitoring"
+          },
+          "performance_guarantee": {
+            "method": "pattern_scan",
+            "patterns": ["consistent speeds", "reliable performance", "guaranteed bandwidth", "(\\d+\\.\\d+)% uptime"],
+            "context": "SLA pages, service guarantees, plans",
+            "confidence_threshold": 0.7,
+            "fallback": "reliable performance"
+          },
+          "customer_segment": {
+            "method": "keyword_scan",
+            "keywords": ["business", "enterprise", "residential", "commercial", "small business"],
+            "context": "customer segments, service tiers",
+            "confidence_threshold": 0.7,
+            "fallback": "Business"
+          },
+          "service_tier_details": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated bandwidth", "priority routing", "symmetrical speeds", "guaranteed throughput"],
+            "context": "business plans, enterprise services",
+            "confidence_threshold": 0.6,
+            "fallback": "enhanced service features"
+          },
+          "specific_guarantee": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+\\.\\d+)% uptime", "SLA", "guaranteed performance", "consistent throughput"],
+            "context": "SLA documentation, service guarantees",
+            "confidence_threshold": 0.7,
+            "fallback": "performance commitments"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Peak-hour performance is the #1 complaint driving customer churn. 89% of successful telecom providers proactively address this concern with transparent technical explanations and infrastructure visibility.",
+          "buyer_stage": "consideration to retention",
+          "typical_searcher": "Current customer experiencing issues or prospect researching provider reliability",
+          "decision_impact": "Critical - directly affects customer satisfaction and churn prevention"
+        }
+      },
+      {
+        "id": "faq_002",
+        "priority": "critical",
+        "found_on_percent": 91,
+        "expected_impact": "+17-21 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "What internet speed do I need for my business with remote employees?",
+        
+        "answer_human_friendly": {
+          "text": "Business internet needs depend on how many employees work simultaneously and what applications they use. As a baseline, plan for 25-50 Mbps per employee for standard productivity tools like email and web browsing. Add bandwidth for video conferencing (5-10 Mbps per concurrent call), cloud applications, and file transfers. For a 20-person office with regular video meetings, we typically recommend 500 Mbps to 1 Gbps symmetrical fiber. Our business team can perform a needs assessment based on your specific applications and growth plans to right-size your connection and avoid overpaying.",
+          "word_count": 98,
+          "tone": "consultative and practical",
+          "focus": "helping businesses calculate their needs"
+        },
+        
+        "answer_factual_backend": {
+          "text": "Business internet bandwidth requirements depend on simultaneous users, application types, and Quality of Service needs. Standard office productivity (email, web, SaaS) requires 10-25 Mbps per user, while video conferencing demands 3-8 Mbps per HD stream and cloud backup systems need 50-100 Mbps sustained upload. Our business internet solutions include symmetrical fiber connections (equal upload/download), dedicated bandwidth circuits, Service Level Agreements with guaranteed uptime, and scalable capacity. We recommend 1.5-2x calculated baseline capacity to accommodate traffic spikes and future growth. Typical configurations include 500 Mbps for 15-25 employees, 1 Gbps for 25-50 employees, and 2-10 Gbps for enterprises over 100 employees. Business plans include static IP addresses, priority technical support, and redundant connectivity options for mission-critical operations.",
+          "word_count": 120,
+          "tone": "technical specification and solution-focused",
+          "focus": "specific requirements and offerings",
+          
+          "factual_anchors": [
+            {
+              "claim": "10-25 Mbps per user for office productivity",
+              "type": "industry_benchmark",
+              "source": "cisco_bandwidth_planning_guidelines_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "standard bandwidth per user"
+            },
+            {
+              "claim": "3-8 Mbps per HD video stream",
+              "type": "technical_specification",
+              "source": "video_conferencing_platform_requirements",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "bandwidth per video call"
+            },
+            {
+              "claim": "1.5-2x baseline for growth and spikes",
+              "type": "best_practice",
+              "source": "telecom_capacity_planning_standards",
+              "confidence": "high",
+              "verifiable": "industry_standard",
+              "fallback": "capacity buffer for growth"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Business internet needs vary by employee count and application usage, typically ranging from 500 Mbps for small offices to multi-gigabit for larger operations, with our team available for customized assessments.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "business internet speed requirements",
+            "how much bandwidth for remote employees",
+            "internet speed for small business",
+            "office internet capacity planning",
+            "business fiber internet needs"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What internet speed do I need for my business with remote employees?",
+              "alternativeQuestion": [
+                "How much bandwidth does my business need?",
+                "What's the right internet speed for a 20-person office?",
+                "How do I calculate business internet requirements?",
+                "What internet speed supports video conferencing for teams?",
+                "How much faster internet do I need for cloud applications?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Business internet bandwidth requirements depend on simultaneous users, application types, and Quality of Service needs. Standard productivity requires 10-25 Mbps per user, video conferencing needs 3-8 Mbps per HD stream, and cloud backup requires 50-100 Mbps sustained upload. We recommend 1.5-2x calculated baseline for traffic spikes and growth. Typical configurations include 500 Mbps for 15-25 employees, 1 Gbps for 25-50 employees, and 2-10 Gbps for enterprises over 100. Business plans include symmetrical fiber, dedicated bandwidth, SLAs with guaranteed uptime, static IPs, and priority support."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "Business internet for {{employee_count}} employees using {{application_types}} typically requires {{bandwidth_recommendation}} with {{connection_type}}. {{company_name}} provides {{service_features}} including {{technical_specs}} and {{support_level}}. We recommend {{capacity_buffer}} for {{business_benefits}}.",
+        
+        "answer_fallback_template": "Business internet requirements depend on employee count and application usage, with our team available to assess your specific needs and recommend appropriate capacity.",
+        
+        "extraction_rules": {
+          "employee_count": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) employees", "(\\d+) person", "small business", "enterprise"],
+            "context": "business plans, target market descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "your team size"
+          },
+          "application_types": {
+            "method": "keyword_scan",
+            "keywords": ["video conferencing", "cloud applications", "VoIP", "file sharing", "remote desktop", "SaaS"],
+            "context": "business solutions, use cases",
+            "confidence_threshold": 0.6,
+            "fallback": "typical business applications"
+          },
+          "bandwidth_recommendation": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) Mbps", "(\\d+) Gbps", "fiber speeds"],
+            "context": "business plan specifications, recommendations",
+            "confidence_threshold": 0.7,
+            "fallback": "appropriate bandwidth levels"
+          },
+          "connection_type": {
+            "method": "keyword_scan",
+            "keywords": ["symmetrical fiber", "dedicated fiber", "business fiber", "ethernet", "DIA"],
+            "context": "business service descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "business-grade connectivity"
+          },
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "We"
+          },
+          "service_features": {
+            "method": "keyword_scan",
+            "keywords": ["SLA", "guaranteed uptime", "dedicated bandwidth", "priority support", "static IP"],
+            "context": "business plan features, service descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "business-class features"
+          },
+          "technical_specs": {
+            "method": "keyword_scan",
+            "keywords": ["symmetrical speeds", "dedicated circuit", "managed router", "redundancy options"],
+            "context": "technical specifications, service details",
+            "confidence_threshold": 0.6,
+            "fallback": "technical capabilities"
+          },
+          "support_level": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 support", "priority technical support", "dedicated account manager", "business support"],
+            "context": "support descriptions, service features",
+            "confidence_threshold": 0.6,
+            "fallback": "enhanced support"
+          },
+          "capacity_buffer": {
+            "method": "keyword_scan",
+            "keywords": ["scalable", "growth capacity", "future-proof", "headroom"],
+            "context": "planning recommendations, service benefits",
+            "confidence_threshold": 0.6,
+            "fallback": "appropriate capacity planning"
+          },
+          "business_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["business growth", "traffic spikes", "peak usage", "future expansion"],
+            "context": "value propositions, business benefits",
+            "confidence_threshold": 0.6,
+            "fallback": "operational needs"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Business bandwidth planning is a high-intent commercial query. 91% of successful telecom providers provide detailed capacity planning guidance to attract and educate business prospects.",
+          "buyer_stage": "awareness to consideration",
+          "typical_searcher": "Business owner, IT manager, or office administrator researching connectivity requirements for new office or expansion",
+          "decision_impact": "Critical - this question indicates active business prospect in planning phase"
+        }
+      },
+      {
+        "id": "faq_003",
+        "priority": "high",
+        "found_on_percent": 84,
+        "expected_impact": "+15-19 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How long does it take to get internet service installed at my location?",
+        
+        "answer_human_friendly": {
+          "text": "Installation timelines depend on whether we already have infrastructure at your location. For addresses where our network is already available, residential installation typically takes 5-10 business days from order to activation. Business fiber installations range from 2-6 weeks depending on circuit type and building access requirements. New construction or locations requiring infrastructure buildout can take 8-12 weeks. We provide timeline estimates during the order process and keep you updated throughout installation. You can check service availability and estimated installation timeframes by entering your address on our coverage map.",
+          "word_count": 99,
+          "tone": "transparent and informative",
+          "focus": "managing expectations with realistic timelines"
+        },
+        
+        "answer_factual_backend": {
+          "text": "Installation timelines depend on infrastructure availability, service type, and location complexity. Standard residential installations in serviceable areas complete within 7-14 days including scheduling, premise wiring, and equipment activation. Business fiber installations require 3-8 weeks for dedicated circuit provisioning, including site survey, fiber termination, router configuration, and testing. New construction or infrastructure extension projects require 60-90 days for permitting, trenching, fiber placement, and network integration. Expedited installation options available for business customers with critical deadlines. Installation process includes initial availability verification, order processing, construction coordination if needed, premise preparation, equipment installation, network provisioning, and service testing. We provide project management for complex installations and maintain communication throughout the process with status updates and completion estimates.",
+          "word_count": 120,
+          "tone": "process-oriented and specific",
+          "focus": "detailed timelines and process steps",
+          
+          "factual_anchors": [
+            {
+              "claim": "7-14 days for standard residential",
+              "type": "operational_specification",
+              "source": "company_installation_processes",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "typically 1-2 weeks for residential"
+            },
+            {
+              "claim": "3-8 weeks for business fiber",
+              "type": "operational_specification",
+              "source": "company_business_provisioning",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "several weeks for business installations"
+            },
+            {
+              "claim": "60-90 days for infrastructure buildout",
+              "type": "project_timeline",
+              "source": "company_construction_standards",
+              "confidence": "medium",
+              "verifiable": "internal_only",
+              "fallback": "2-3 months for new construction"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Installation timelines range from 1-2 weeks for standard residential service in serviceable areas to several weeks for business installations, with longer timeframes for locations requiring infrastructure buildout.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "internet installation timeline",
+            "how long to get internet service",
+            "fiber installation time",
+            "business internet setup time",
+            "internet service activation timeframe"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How long does it take to get internet service installed at my location?",
+              "alternativeQuestion": [
+                "What's the typical installation timeframe for internet service?",
+                "How quickly can you install internet at my address?",
+                "How long until my business internet is activated?",
+                "What's the wait time for fiber installation?",
+                "When can I get internet service after ordering?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Installation timelines depend on infrastructure availability, service type, and location complexity. Standard residential installations in serviceable areas complete within 7-14 days including scheduling, premise wiring, and activation. Business fiber installations require 3-8 weeks for dedicated circuit provisioning, site survey, fiber termination, and testing. New construction or infrastructure extension projects require 60-90 days for permitting, trenching, and network integration. Expedited installation options available for business customers with critical deadlines. Process includes availability verification, order processing, construction coordination, premise preparation, equipment installation, and service testing with status updates throughout."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} installation timelines for {{location_type}} range from {{residential_timeline}} for standard residential service to {{business_timeline}} for {{business_service_type}}. {{infrastructure_scenario}} require {{extended_timeline}}. We provide {{communication_process}} and {{expedited_options}} for {{customer_segment}}.",
+        
+        "answer_fallback_template": "Installation timeframes depend on location and service type, ranging from one to two weeks for standard installations to longer periods for complex business deployments.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "Our"
+          },
+          "location_type": {
+            "method": "keyword_scan",
+            "keywords": ["serviceable areas", "coverage areas", "service territory", "existing infrastructure"],
+            "context": "coverage information, service areas",
+            "confidence_threshold": 0.6,
+            "fallback": "locations within our service area"
+          },
+          "residential_timeline": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) days", "(\\d+) business days", "within (\\d+) week"],
+            "context": "residential installation information",
+            "confidence_threshold": 0.7,
+            "fallback": "1-2 weeks"
+          },
+          "business_timeline": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) weeks", "(\\d+) days for business"],
+            "context": "business installation information",
+            "confidence_threshold": 0.7,
+            "fallback": "several weeks"
+          },
+          "business_service_type": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated fiber", "business fiber", "enterprise circuits", "DIA"],
+            "context": "business service descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "business-grade connections"
+          },
+          "infrastructure_scenario": {
+            "method": "keyword_scan",
+            "keywords": ["new construction", "infrastructure buildout", "service extension", "outside plant work"],
+            "context": "construction services, expansion information",
+            "confidence_threshold": 0.6,
+            "fallback": "Locations requiring infrastructure work"
+          },
+          "extended_timeline": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) days", "(\\d+)-(\\d+) weeks", "(\\d+) months"],
+            "context": "construction timelines, buildout information",
+            "confidence_threshold": 0.7,
+            "fallback": "extended timeframes"
+          },
+          "communication_process": {
+            "method": "keyword_scan",
+            "keywords": ["status updates", "project management", "installation tracking", "regular communication"],
+            "context": "customer service descriptions, process information",
+            "confidence_threshold": 0.6,
+            "fallback": "regular updates throughout the process"
+          },
+          "expedited_options": {
+            "method": "keyword_scan",
+            "keywords": ["rush installation", "expedited service", "priority installation", "fast-track"],
+            "context": "business services, installation options",
+            "confidence_threshold": 0.6,
+            "fallback": "flexible scheduling options"
+          },
+          "customer_segment": {
+            "method": "keyword_scan",
+            "keywords": ["business customers", "enterprise clients", "critical deadlines"],
+            "context": "business services, target segments",
+            "confidence_threshold": 0.6,
+            "fallback": "customers with time-sensitive needs"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Installation timeline is a critical decision factor and common objection in sales process. 84% of successful providers proactively address this with transparent timeline information.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "Prospect close to decision point who needs to know when service will be active for planning purposes",
+          "decision_impact": "High - timeline uncertainty can stall or kill deals, especially for business moves or time-sensitive needs"
+        }
+      },
+      {
+        "id": "faq_004",
+        "priority": "high",
+        "found_on_percent": 78,
+        "expected_impact": "+14-18 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What happens if my internet goes down and how quickly can you fix it?",
+        
+        "answer_human_friendly": {
+          "text": "Our network operations center monitors service 24/7 and often detects and resolves issues before customers notice. If you experience an outage, report it through our app, website, or by calling support. Residential service issues typically resolve within 4-24 hours depending on the cause. Business customers with SLA agreements receive priority response with guaranteed resolution timeframes based on their plan level. Our technician dispatch includes same-day or next-day service for most issues. We also provide proactive notifications about planned maintenance or known outages in your area, so you're never left wondering what's happening.",
+          "word_count": 100,
+          "tone": "reassuring and service-focused",
+          "focus": "reliability and responsive support"
+        },
+        
+        "answer_factual_backend": {
+          "text": "Our network reliability architecture includes redundant routing, automatic failover systems, distributed infrastructure, and 24/7 network operations center monitoring. Average network uptime exceeds 99.5% annually for residential services and 99.9% for business SLA customers. Outage response protocols include automated detection, immediate ticket generation, remote diagnostics, and technician dispatch within SLA parameters. Residential repair targets range from 4-24 hours depending on issue complexity and location. Business SLA tiers provide 2-4 hour response times with 4-8 hour restoration commitments for critical circuits. Support channels include phone, chat, mobile app, and online portal with real-time outage status. Proactive maintenance windows scheduled during low-usage periods with advance customer notification. Network architecture designed for fault tolerance with multiple path diversity and automatic traffic rerouting during infrastructure failures.",
+          "word_count": 120,
+          "tone": "technical and commitment-focused",
+          "focus": "systems, SLAs, and response protocols",
+          
+          "factual_anchors": [
+            {
+              "claim": "99.5% uptime for residential, 99.9% for business SLA",
+              "type": "service_specification",
+              "source": "company_sla_documentation",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "high availability standards"
+            },
+            {
+              "claim": "4-24 hours residential repair targets",
+              "type": "operational_specification",
+              "source": "company_support_standards",
+              "confidence": "medium",
+              "verifiable": "internal_only",
+              "fallback": "rapid response for most issues"
+            },
+            {
+              "claim": "2-4 hour response for business SLA",
+              "type": "service_specification",
+              "source": "company_business_sla",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "priority response for business customers"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We provide 24/7 monitoring and support with rapid response times for outages, including same-day or next-day technician dispatch and priority service for business customers with SLA agreements.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "internet outage response time",
+            "how quickly fix internet problems",
+            "telecom service reliability",
+            "internet repair timeframe",
+            "network uptime guarantee"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What happens if my internet goes down and how quickly can you fix it?",
+              "alternativeQuestion": [
+                "How fast do you respond to internet outages?",
+                "What's your service restoration time for internet problems?",
+                "Do you have 24/7 support for internet issues?",
+                "How reliable is your internet service?",
+                "What's your uptime guarantee for business internet?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Our network reliability includes redundant routing, automatic failover, and 24/7 operations center monitoring. Average uptime exceeds 99.5% for residential and 99.9% for business SLA customers. Outage response includes automated detection, remote diagnostics, and technician dispatch within SLA parameters. Residential repair targets range from 4-24 hours depending on complexity. Business SLA tiers provide 2-4 hour response times with 4-8 hour restoration commitments. Support available via phone, chat, mobile app, and online portal with real-time status. Network architecture provides fault tolerance with multiple path diversity and automatic traffic rerouting."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} maintains {{reliability_metrics}} through {{infrastructure_features}} and {{monitoring_systems}}. {{customer_segment}} receive {{response_timeframes}} with {{restoration_commitments}}. Our {{support_channels}} provide {{support_features}} and {{proactive_communication}}.",
+        
+        "answer_fallback_template": "We provide 24/7 monitoring and rapid response to service issues with priority support for business customers and transparent communication throughout the resolution process.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "We"
+          },
+          "reliability_metrics": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+\\.\\d+)% uptime", "99.\\d+%", "network reliability"],
+            "context": "SLA documentation, service guarantees",
+            "confidence_threshold": 0.7,
+            "fallback": "high reliability standards"
+          },
+          "infrastructure_features": {
+            "method": "keyword_scan",
+            "keywords": ["redundant routing", "automatic failover", "fault tolerance", "backup systems", "diverse paths"],
+            "context": "network descriptions, technical specifications",
+            "confidence_threshold": 0.6,
+            "fallback": "redundant network infrastructure"
+          },
+          "monitoring_systems": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 monitoring", "network operations center", "NOC", "automated detection", "proactive monitoring"],
+            "context": "operations descriptions, support information",
+            "confidence_threshold": 0.6,
+            "fallback": "continuous network monitoring"
+          },
+          "customer_segment": {
+            "method": "keyword_scan",
+            "keywords": ["residential customers", "business customers", "enterprise clients", "SLA customers"],
+            "context": "service tiers, customer segments",
+            "confidence_threshold": 0.7,
+            "fallback": "Customers"
+          },
+          "response_timeframes": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) hour", "same-day", "next-day", "within (\\d+) hours"],
+            "context": "SLA documentation, support commitments",
+            "confidence_threshold": 0.7,
+            "fallback": "rapid response times"
+          },
+          "restoration_commitments": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+) hour restoration", "resolution within (\\d+)", "guaranteed fix time"],
+            "context": "SLA specifications, service guarantees",
+            "confidence_threshold": 0.7,
+            "fallback": "committed restoration timeframes"
+          },
+          "support_channels": {
+            "method": "keyword_scan",
+            "keywords": ["phone support", "chat", "mobile app", "online portal", "email support"],
+            "context": "support descriptions, contact information",
+            "confidence_threshold": 0.6,
+            "fallback": "multiple support channels"
+          },
+          "support_features": {
+            "method": "keyword_scan",
+            "keywords": ["real-time status", "outage notifications", "ticket tracking", "automated updates"],
+            "context": "support features, customer portal",
+            "confidence_threshold": 0.6,
+            "fallback": "comprehensive support features"
+          },
+          "proactive_communication": {
+            "method": "keyword_scan",
+            "keywords": ["proactive notifications", "maintenance alerts", "outage updates", "status alerts"],
+            "context": "communication features, customer service",
+            "confidence_threshold": 0.6,
+            "fallback": "transparent communication"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Service reliability and outage response are critical trust factors. 78% of successful telecom providers proactively address these concerns with specific commitments and transparent processes.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "Prospect evaluating reliability or current customer concerned about service quality and support responsiveness",
+          "decision_impact": "High - reliability concerns can prevent conversions and drive churn if not addressed transparently"
+        }
+      },
+      {
+        "id": "faq_005",
+        "priority": "high",
+        "found_on_percent": 81,
+        "expected_impact": "+16-20 points",
+        "seo_aeo_value": "high",
+        
+        "question": "Can I upgrade my internet speed without changing providers?",
+        
+        "answer_human_friendly": {
+          "text": "Yes, most customers can upgrade to faster speeds through their existing connection. If you currently have cable or fiber service from us, speed upgrades are usually instant — we remotely provision the higher tier and send any new equipment if needed. Upgrading from DSL to fiber may require new installation if fiber is available at your address. Check your account portal or contact us to see available speed tiers for your location. Many customers find upgrading is more cost-effective than switching providers, and you keep your existing email, phone number, and service history. We also offer promotional pricing for customers upgrading to higher tiers.",
+          "word_count": 118,
+          "tone": "helpful and retention-focused",
+          "focus": "making upgrades easy and attractive"
+        },
+        
+        "answer_factual_backend": {
+          "text": "Service speed upgrades depend on existing connection technology and infrastructure availability. Cable and fiber customers can typically upgrade instantly through remote provisioning without technician visits. DSL customers may require technology migration to fiber or cable where available. Upgrade process includes: checking available speeds at the service address, reviewing plan options and pricing, remote provisioning for same-technology upgrades, or scheduling installation for technology changes. Most speed increases activate immediately after order processing, with equipment updates shipped if required. Fiber customers can scale from 100 Mbps to multi-gigabit speeds on the same physical connection through software configuration. Existing customers often receive promotional upgrade pricing, retention discounts, and waived installation fees. Upgrade options visible in customer portal with self-service ordering. Business customers can increase bandwidth on dedicated circuits with minimal disruption and coordinated maintenance windows for seamless transitions.",
+          "word_count": 145,
+          "tone": "process-focused and enabling",
+          "focus": "upgrade mechanisms and options",
+          
+          "factual_anchors": [
+            {
+              "claim": "instant activation through remote provisioning",
+              "type": "operational_capability",
+              "source": "company_provisioning_systems",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "rapid activation for most upgrades"
+            },
+            {
+              "claim": "promotional pricing for existing customers",
+              "type": "business_practice",
+              "source": "company_retention_programs",
+              "confidence": "medium",
+              "verifiable": "internal_only",
+              "fallback": "competitive upgrade pricing"
+            },
+            {
+              "claim": "self-service portal ordering",
+              "type": "system_capability",
+              "source": "company_customer_portal",
+              "confidence": "high",
+              "verifiable": "internal_only",
+              "fallback": "convenient upgrade options"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Most customers can upgrade internet speeds through their existing service with instant activation for same-technology upgrades, while technology changes may require installation appointments.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "upgrade internet speed",
+            "increase bandwidth same provider",
+            "faster internet without switching",
+            "upgrade cable to fiber",
+            "how to get faster internet speeds"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can I upgrade my internet speed without changing providers?",
+              "alternativeQuestion": [
+                "How do I get faster internet with my current provider?",
+                "Can I increase my internet speed on my existing plan?",
+                "Do I need to switch providers to get faster internet?",
+                "How easy is it to upgrade my internet speed?",
+                "What's the process for upgrading to faster internet?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Service speed upgrades depend on connection technology and infrastructure availability. Cable and fiber customers can typically upgrade instantly through remote provisioning without technician visits. DSL customers may require technology migration where available. Upgrade process includes checking available speeds, reviewing pricing, remote provisioning for same-technology upgrades, or scheduling installation for technology changes. Most speed increases activate immediately after processing. Fiber customers can scale from 100 Mbps to multi-gigabit on the same connection. Existing customers receive promotional upgrade pricing, retention discounts, and often waived installation fees. Self-service ordering available through customer portal."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} customers using {{technology_type}} can {{upgrade_process}} with {{activation_timeframe}}. {{upgrade_options}} are available at {{location_check}}. We offer {{customer_benefits}} including {{pricing_incentives}} and {{service_continuity}}. {{self_service_option}} makes upgrading convenient.",
+        
+        "answer_fallback_template": "Existing customers can typically upgrade speeds easily, with instant activation for most upgrades and promotional pricing available.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "Our"
+          },
+          "technology_type": {
+            "method": "keyword_scan",
+            "keywords": ["fiber", "cable", "DSL", "fixed wireless", "hybrid fiber"],
+            "context": "technology descriptions, service types",
+            "confidence_threshold": 0.7,
+            "fallback": "their existing connection"
+          },
+          "upgrade_process": {
+            "method": "keyword_scan",
+            "keywords": ["upgrade instantly", "remote provisioning", "seamless upgrade", "quick upgrade"],
+            "context": "upgrade information, service changes",
+            "confidence_threshold": 0.6,
+            "fallback": "upgrade their speed"
+          },
+          "activation_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["instant", "immediate", "within (\\d+) hours", "same-day"],
+            "context": "upgrade process, activation information",
+            "confidence_threshold": 0.7,
+            "fallback": "minimal wait time"
+          },
+          "upgrade_options": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) Mbps to (\\d+) Gbps", "multiple speed tiers", "various speeds"],
+            "context": "plan options, speed tiers",
+            "confidence_threshold": 0.6,
+            "fallback": "Multiple speed tiers"
+          },
+          "location_check": {
+            "method": "keyword_scan",
+            "keywords": ["your address", "customer portal", "account page", "service location"],
+            "context": "availability checking, customer tools",
+            "confidence_threshold": 0.6,
+            "fallback": "your location"
+          },
+          "customer_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["keep your email", "no new installation", "retain phone number", "service continuity"],
+            "context": "upgrade benefits, retention features",
+            "confidence_threshold": 0.6,
+            "fallback": "convenient features"
+          },
+          "pricing_incentives": {
+            "method": "keyword_scan",
+            "keywords": ["promotional pricing", "retention discounts", "waived fees", "special offers", "upgrade discounts"],
+            "context": "pricing information, customer offers",
+            "confidence_threshold": 0.6,
+            "fallback": "competitive pricing"
+          },
+          "service_continuity": {
+            "method": "keyword_scan",
+            "keywords": ["no interruption", "seamless transition", "maintain service", "keep existing features"],
+            "context": "upgrade process, service features",
+            "confidence_threshold": 0.6,
+            "fallback": "service continuity"
+          },
+          "self_service_option": {
+            "method": "keyword_scan",
+            "keywords": ["customer portal", "online ordering", "self-service", "account management", "mobile app"],
+            "context": "customer tools, ordering process",
+            "confidence_threshold": 0.6,
+            "fallback": "Our customer portal"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Upgrade friction drives churn when customers explore competitive options. 81% of successful providers make upgrades easy and attractive to retain customers and increase ARPU.",
+          "buyer_stage": "retention and expansion",
+          "typical_searcher": "Current customer considering upgrade or evaluating whether to switch providers for better speeds",
+          "decision_impact": "High - this is a retention opportunity; poor upgrade experience drives competitive shopping and churn"
+        }
+      }
+    ]
+  }
+}

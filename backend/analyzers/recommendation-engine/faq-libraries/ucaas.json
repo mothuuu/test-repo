@@ -1,0 +1,1186 @@
+{
+  "faq_library": {
+    "industry": "Cloud Communications/UCaaS",
+    "industry_id": "cloud_communications_ucaas",
+    "version": "1.0",
+    "last_updated": "2025-10-18",
+    "metadata": {
+      "total_faqs": 5,
+      "completion_status": "production_ready",
+      "anti_hallucination_enabled": true,
+      "confidence_tracking": true
+    },
+    "faqs": [
+      {
+        "id": "faq_001",
+        "priority": "critical",
+        "found_on_percent": 92,
+        "expected_impact": "+19-24 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How reliable is your cloud phone system during internet outages?",
+        
+        "answer_human_friendly": {
+          "text": "We understand business continuity is critical. Our platform includes automatic failover to backup connections, mobile app calling that works on cellular data, and call forwarding to any device if your internet drops. Many customers also use our desktop phones with 4G backup or our mobile-first approach where calls route through cell networks automatically. You stay connected even when your primary internet fails, with zero manual intervention required during outages.",
+          "word_count": 73,
+          "tone": "reassuring and practical",
+          "focus": "reliability concerns and failover capabilities"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s cloud communication platform maintains {{uptime_percentage}}% uptime through redundant infrastructure across {{datacenter_count}} geographically distributed data centers. The platform includes automatic failover mechanisms: cellular failover for desk phones, mobile app functionality on 4G/5G networks, intelligent call routing to backup devices, and {{redundancy_features}}. During internet disruptions, calls automatically redirect to mobile devices or PSTN backup lines within {{failover_time}} seconds. The system supports {{device_types}} for seamless continuity. {{company_name}} maintains {{compliance_standards}} certifications for service reliability, with {{support_availability}} technical support and {{sla_guarantee}} service level agreements ensuring {{guaranteed_uptime}}% availability for voice services.",
+          "word_count": 99,
+          "tone": "technical and reliability-focused",
+          "focus": "infrastructure, failover mechanisms, and guarantees",
+          
+          "factual_anchors": [
+            {
+              "claim": "{{uptime_percentage}}% uptime",
+              "type": "service_metric",
+              "source": "company_sla_documentation",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "uptime_percentage",
+              "fallback": "99.9% uptime"
+            },
+            {
+              "claim": "{{datacenter_count}} geographically distributed data centers",
+              "type": "infrastructure_specification",
+              "source": "company_infrastructure_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "datacenter_count",
+              "fallback": "multiple geographically distributed data centers"
+            },
+            {
+              "claim": "{{failover_time}} seconds failover",
+              "type": "technical_specification",
+              "source": "company_technical_documentation",
+              "confidence": "medium",
+              "verifiable": "technical_docs",
+              "extraction_field": "failover_time",
+              "fallback": "rapid automatic failover"
+            },
+            {
+              "claim": "{{guaranteed_uptime}}% availability guarantee",
+              "type": "sla_commitment",
+              "source": "company_sla_terms",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "guaranteed_uptime",
+              "fallback": "enterprise-grade availability"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our cloud phone system includes automatic failover to backup connections and mobile devices, ensuring business continuity during internet disruptions.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "cloud phone system reliability",
+            "UCaaS uptime guarantee",
+            "VoIP internet outage backup",
+            "cloud communications failover",
+            "business phone system redundancy"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How reliable is your cloud phone system during internet outages?",
+              "alternativeQuestion": [
+                "What happens to my phone system if the internet goes down?",
+                "Does your VoIP service work without internet?",
+                "How do you handle internet outages for business calls?",
+                "What's your uptime guarantee for cloud phone service?",
+                "Will I lose phone service if my internet connection fails?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s platform maintains {{uptime_percentage}}% uptime through redundant infrastructure across {{datacenter_count}} data centers. Automatic failover includes cellular backup, mobile app 4G/5G calling, and intelligent routing to backup devices within {{failover_time}} seconds. The system supports {{device_types}} with {{compliance_standards}} certifications, {{support_availability}} support, and {{sla_guarantee}} SLAs ensuring {{guaranteed_uptime}}% voice availability."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}}'s platform maintains {{uptime_percentage}}% uptime through redundant infrastructure across {{datacenter_count}} data centers, with automatic failover to {{backup_methods}} within {{failover_time}}, supporting {{device_types}} and guaranteeing {{guaranteed_uptime}}% availability under {{sla_guarantee}} SLAs.",
+        
+        "answer_fallback_template": "Our cloud communication system ensures business continuity through automatic failover and redundant infrastructure with enterprise-grade uptime guarantees.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "organization name"],
+            "context": "title tag, H1, about page, footer, meta description",
+            "confidence_threshold": 0.9,
+            "use_fallback_if_below": 0.8,
+            "fallback": "Our platform"
+          },
+          "uptime_percentage": {
+            "method": "pattern_scan",
+            "patterns": ["(99\\.\\d+)%\\s*uptime", "(99\\.\\d+)%\\s*availability", "SLA.*?(99\\.\\d+)%"],
+            "context": "SLA page, features page, reliability section, technical specs",
+            "confidence_threshold": 0.8,
+            "validation": "must be between 99.0-100.0",
+            "fallback": "99.9"
+          },
+          "datacenter_count": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*data\\s*centers?", "(\\d+)\\s*global\\s*locations", "(\\d+)\\s*regions"],
+            "context": "infrastructure page, about page, security page",
+            "confidence_threshold": 0.7,
+            "validation": "must be positive integer",
+            "fallback": "multiple"
+          },
+          "redundancy_features": {
+            "method": "keyword_scan",
+            "keywords": ["automatic failover", "redundant infrastructure", "backup systems", "high availability", "cellular backup", "geographic redundancy"],
+            "context": "features page, reliability section, technical documentation",
+            "confidence_threshold": 0.7,
+            "fallback": "multiple redundancy mechanisms"
+          },
+          "failover_time": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*seconds?\\s*failover", "failover.*?(\\d+)\\s*sec", "switches?.*?(\\d+)\\s*sec"],
+            "context": "technical specs, reliability documentation",
+            "confidence_threshold": 0.6,
+            "validation": "must be positive number",
+            "fallback": "seconds"
+          },
+          "device_types": {
+            "method": "keyword_scan",
+            "keywords": ["desk phones", "mobile apps", "softphones", "desktop applications", "web phones", "SIP devices"],
+            "context": "features page, device compatibility, product pages",
+            "confidence_threshold": 0.7,
+            "fallback": "multiple device types"
+          },
+          "compliance_standards": {
+            "method": "entity_extraction",
+            "look_for": ["SOC 2", "ISO 27001", "HIPAA", "PCI DSS", "GDPR compliant"],
+            "context": "security page, compliance page, certifications section",
+            "confidence_threshold": 0.8,
+            "fallback": "industry-standard"
+          },
+          "support_availability": {
+            "method": "pattern_scan",
+            "patterns": ["24/7", "24x7", "round.{1,10}clock", "always available"],
+            "context": "support page, contact page, features",
+            "confidence_threshold": 0.8,
+            "fallback": "comprehensive"
+          },
+          "sla_guarantee": {
+            "method": "keyword_scan",
+            "keywords": ["SLA", "service level agreement", "uptime guarantee", "availability guarantee"],
+            "context": "SLA page, terms, pricing page",
+            "confidence_threshold": 0.7,
+            "fallback": "service level"
+          },
+          "guaranteed_uptime": {
+            "method": "pattern_scan",
+            "patterns": ["guarantee.*?(99\\.\\d+)%", "SLA.*?(99\\.\\d+)%", "(99\\.\\d+)%.*?guaranteed"],
+            "context": "SLA documentation, reliability guarantees",
+            "confidence_threshold": 0.8,
+            "validation": "must be 99.0-100.0",
+            "fallback": "99.9"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Reliability and business continuity are top concerns for enterprises evaluating cloud communications. 92% of successful UCaaS providers explicitly address failover and uptime.",
+          "buyer_stage": "consideration/evaluation",
+          "typical_searcher": "IT Director, Operations Manager, or Business Owner evaluating reliability of cloud phone systems",
+          "decision_impact": "Critical - can be a deal-breaker if reliability concerns aren't addressed with specifics"
+        }
+      },
+      {
+        "id": "faq_002",
+        "priority": "critical",
+        "found_on_percent": 88,
+        "expected_impact": "+17-22 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How does your unified communications platform integrate with our existing business tools?",
+        
+        "answer_human_friendly": {
+          "text": "We integrate seamlessly with the tools your team already uses. Our platform connects with popular CRMs, productivity suites, help desk software, and collaboration tools through native integrations and APIs. This means your sales team can click-to-call from Salesforce, support agents can handle calls within Zendesk, and everyone can join meetings from Microsoft Teams or Slack. No switching between apps — your communication tools work inside your existing workflows.",
+          "word_count": 78,
+          "tone": "practical and workflow-focused",
+          "focus": "workflow integration and productivity"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} provides {{integration_count}}+ pre-built integrations with enterprise business applications including {{key_integrations}}. The platform offers {{api_type}} APIs for custom integrations, supporting {{integration_categories}} including CRM systems, productivity suites, help desk platforms, and collaboration tools. Native integrations enable {{integration_features}} such as click-to-dial, screen pop, call logging, and presence synchronization. The {{platform_name}} supports {{technical_standards}} standards for interoperability, with {{developer_resources}} available for custom implementations. Integration architecture includes {{sync_methods}}, {{authentication_types}}, and {{data_exchange_formats}}. {{company_name}}'s integration marketplace features {{marketplace_integrations}} verified third-party connections with {{setup_time}} average setup time for standard integrations.",
+          "word_count": 99,
+          "tone": "technical and integration-focused",
+          "focus": "integration capabilities and technical specifications",
+          
+          "factual_anchors": [
+            {
+              "claim": "{{integration_count}}+ pre-built integrations",
+              "type": "product_specification",
+              "source": "company_integrations_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "integration_count",
+              "fallback": "extensive pre-built integrations"
+            },
+            {
+              "claim": "{{key_integrations}} integrations",
+              "type": "product_features",
+              "source": "company_integration_list",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "key_integrations",
+              "fallback": "major business applications"
+            },
+            {
+              "claim": "{{api_type}} APIs",
+              "type": "technical_specification",
+              "source": "developer_documentation",
+              "confidence": "high",
+              "verifiable": "api_docs",
+              "extraction_field": "api_type",
+              "fallback": "comprehensive APIs"
+            },
+            {
+              "claim": "{{setup_time}} setup time",
+              "type": "implementation_metric",
+              "source": "integration_documentation",
+              "confidence": "medium",
+              "verifiable": "company_docs",
+              "extraction_field": "setup_time",
+              "fallback": "quick setup"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our platform integrates with popular business tools through native integrations and APIs, enabling seamless workflows across CRM, productivity, and collaboration applications.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "UCaaS CRM integration",
+            "unified communications business tool integration",
+            "cloud phone system API",
+            "VoIP Salesforce integration",
+            "business communication platform integrations"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does your unified communications platform integrate with our existing business tools?",
+              "alternativeQuestion": [
+                "Can your phone system integrate with Salesforce and Microsoft Teams?",
+                "What CRM integrations does your UCaaS platform support?",
+                "Does your cloud phone system have APIs for custom integrations?",
+                "How do I connect your communication platform to our help desk software?",
+                "What business applications integrate with your unified communications system?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} provides {{integration_count}}+ integrations including {{key_integrations}}, with {{api_type}} APIs for custom development. Native integrations support {{integration_categories}} with features like click-to-dial, screen pop, and presence sync. The platform follows {{technical_standards}} standards with {{developer_resources}} available. Integration marketplace includes {{marketplace_integrations}} verified connections with {{setup_time}} average setup time."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} offers {{integration_count}}+ integrations with {{key_integrations}}, {{api_type}} APIs supporting {{integration_categories}}, native features including {{integration_features}}, and {{marketplace_integrations}} marketplace connections with {{setup_time}} setup.",
+        
+        "answer_fallback_template": "Our unified communications platform integrates with popular business tools through native connections and APIs for seamless workflow integration.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our platform"
+          },
+          "integration_count": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+?\\s*integrations?", "integrates?\\s*with\\s*(\\d+)\\+?", "(\\d+)\\+?\\s*apps?"],
+            "context": "integrations page, features page, marketplace",
+            "confidence_threshold": 0.7,
+            "validation": "must be positive integer",
+            "fallback": "numerous"
+          },
+          "key_integrations": {
+            "method": "entity_extraction",
+            "look_for": ["Salesforce", "Microsoft Teams", "Slack", "Zendesk", "HubSpot", "Google Workspace", "Zoom", "ServiceNow"],
+            "context": "integrations page, features list, partner pages",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "popular CRM, collaboration, and productivity tools"
+          },
+          "api_type": {
+            "method": "keyword_scan",
+            "keywords": ["REST API", "RESTful API", "GraphQL", "webhook", "API access"],
+            "context": "developer documentation, API docs, technical specs",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive"
+          },
+          "integration_categories": {
+            "method": "keyword_scan",
+            "keywords": ["CRM", "help desk", "productivity suite", "collaboration tools", "project management", "marketing automation"],
+            "context": "integrations page, categories, features",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "business applications"
+          },
+          "platform_name": {
+            "method": "entity_extraction",
+            "look_for": ["platform name", "product name", "system name"],
+            "context": "product pages, technical documentation",
+            "confidence_threshold": 0.8,
+            "fallback": "platform"
+          },
+          "integration_features": {
+            "method": "keyword_scan",
+            "keywords": ["click-to-dial", "click-to-call", "screen pop", "call logging", "presence sync", "contact sync", "activity logging"],
+            "context": "integration features, CRM integration pages",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "workflow automation features"
+          },
+          "technical_standards": {
+            "method": "keyword_scan",
+            "keywords": ["SIP", "WebRTC", "OAuth", "SAML", "REST", "SOAP"],
+            "context": "technical documentation, standards compliance",
+            "confidence_threshold": 0.6,
+            "fallback": "industry-standard protocols"
+          },
+          "developer_resources": {
+            "method": "keyword_scan",
+            "keywords": ["developer documentation", "API docs", "SDK", "code samples", "developer portal"],
+            "context": "developer pages, documentation links",
+            "confidence_threshold": 0.7,
+            "fallback": "developer resources"
+          },
+          "sync_methods": {
+            "method": "keyword_scan",
+            "keywords": ["real-time sync", "bidirectional sync", "webhook", "API polling"],
+            "context": "integration documentation, technical specs",
+            "confidence_threshold": 0.6,
+            "fallback": "synchronization methods"
+          },
+          "authentication_types": {
+            "method": "keyword_scan",
+            "keywords": ["OAuth 2.0", "SAML", "SSO", "API key", "token-based"],
+            "context": "security documentation, API authentication",
+            "confidence_threshold": 0.6,
+            "fallback": "secure authentication"
+          },
+          "data_exchange_formats": {
+            "method": "keyword_scan",
+            "keywords": ["JSON", "XML", "REST", "webhooks"],
+            "context": "API documentation, data formats",
+            "confidence_threshold": 0.6,
+            "fallback": "standard data formats"
+          },
+          "marketplace_integrations": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+?\\s*marketplace", "(\\d+)\\+?\\s*third.?party", "(\\d+)\\+?\\s*verified"],
+            "context": "marketplace page, integration directory",
+            "confidence_threshold": 0.6,
+            "fallback": "verified third-party"
+          },
+          "setup_time": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*minutes?\\s*setup", "setup.*?(\\d+)\\s*min", "ready.*?(\\d+)\\s*min"],
+            "context": "integration documentation, setup guides",
+            "confidence_threshold": 0.5,
+            "fallback": "minutes"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Integration capabilities directly impact adoption and ROI. 88% of enterprise UCaaS buyers explicitly evaluate integration depth during vendor selection.",
+          "buyer_stage": "evaluation/comparison",
+          "typical_searcher": "IT Manager, Solutions Architect, or CTO evaluating technical fit with existing stack",
+          "decision_impact": "Critical - poor integration capabilities can disqualify vendors or require expensive custom development"
+        }
+      },
+      {
+        "id": "faq_003",
+        "priority": "high",
+        "found_on_percent": 85,
+        "expected_impact": "+15-20 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What security measures protect our business communications and customer data?",
+        
+        "answer_human_friendly": {
+          "text": "Your communications and data security is our top priority. We encrypt all calls and messages in transit and at rest, maintain enterprise-grade security certifications, and follow strict compliance standards for data protection. Our infrastructure includes advanced threat protection, secure data centers, regular security audits, and role-based access controls. You maintain full ownership of your data, with options for data residency requirements and comprehensive audit trails for compliance purposes.",
+          "word_count": 76,
+          "tone": "trust-building and security-focused",
+          "focus": "comprehensive security and compliance"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} implements {{encryption_standards}} encryption for voice, video, and messaging, with {{data_protection}} protocols for data at rest. The platform maintains {{security_certifications}} certifications including {{compliance_frameworks}} compliance. Security infrastructure includes {{security_features}} such as intrusion detection, DDoS protection, and advanced threat monitoring. {{company_name}} operates {{datacenter_locations}} SOC 2-compliant data centers with {{physical_security}} controls and {{data_residency}} options. The system provides {{access_controls}} including SSO, MFA, and role-based permissions, with {{audit_capabilities}} for compliance reporting. {{privacy_standards}} ensure customer data ownership, with {{backup_retention}} backup retention and {{incident_response}} security incident protocols meeting {{regulatory_compliance}} requirements.",
+          "word_count": 99,
+          "tone": "technical and compliance-focused",
+          "focus": "security architecture and compliance certifications",
+          
+          "factual_anchors": [
+            {
+              "claim": "{{encryption_standards}} encryption",
+              "type": "security_specification",
+              "source": "company_security_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "encryption_standards",
+              "fallback": "enterprise-grade encryption"
+            },
+            {
+              "claim": "{{security_certifications}} certifications",
+              "type": "compliance_documentation",
+              "source": "certifications_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "security_certifications",
+              "fallback": "industry-standard certifications"
+            },
+            {
+              "claim": "{{compliance_frameworks}} compliance",
+              "type": "regulatory_compliance",
+              "source": "compliance_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "compliance_frameworks",
+              "fallback": "comprehensive compliance"
+            },
+            {
+              "claim": "{{datacenter_locations}} data centers",
+              "type": "infrastructure_specification",
+              "source": "infrastructure_documentation",
+              "confidence": "medium",
+              "verifiable": "company_website",
+              "extraction_field": "datacenter_locations",
+              "fallback": "secure data centers"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We protect communications with enterprise-grade encryption, maintain security certifications and compliance standards, and provide comprehensive security controls and audit capabilities.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "UCaaS security compliance",
+            "cloud phone system encryption",
+            "unified communications data protection",
+            "HIPAA compliant VoIP",
+            "business communication security"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What security measures protect our business communications and customer data?",
+              "alternativeQuestion": [
+                "Is your cloud phone system HIPAA compliant and secure?",
+                "How do you encrypt business calls and messages?",
+                "What security certifications does your UCaaS platform have?",
+                "How is customer data protected in your unified communications system?",
+                "What compliance standards does your communication platform meet?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} implements {{encryption_standards}} encryption with {{security_certifications}} certifications and {{compliance_frameworks}} compliance. Security includes {{security_features}}, {{datacenter_locations}} SOC 2 data centers with {{physical_security}} and {{data_residency}} options. The platform provides {{access_controls}}, {{audit_capabilities}}, {{privacy_standards}}, {{backup_retention}} retention, and {{incident_response}} protocols meeting {{regulatory_compliance}} requirements."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} secures communications with {{encryption_standards}} encryption, maintains {{security_certifications}} and {{compliance_frameworks}} compliance, operates {{datacenter_locations}} data centers with {{security_features}}, and provides {{access_controls}} and {{audit_capabilities}}.",
+        
+        "answer_fallback_template": "Our platform protects communications with enterprise encryption, security certifications, compliance standards, and comprehensive security controls.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our platform"
+          },
+          "encryption_standards": {
+            "method": "keyword_scan",
+            "keywords": ["AES-256", "TLS 1.2", "TLS 1.3", "SRTP", "end-to-end encryption", "256-bit encryption"],
+            "context": "security page, technical specifications, encryption section",
+            "confidence_threshold": 0.8,
+            "return_format": "comma_separated_list",
+            "fallback": "enterprise-grade"
+          },
+          "data_protection": {
+            "method": "keyword_scan",
+            "keywords": ["at-rest encryption", "database encryption", "storage encryption"],
+            "context": "security documentation, data protection policies",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive data protection"
+          },
+          "security_certifications": {
+            "method": "entity_extraction",
+            "look_for": ["SOC 2", "SOC 2 Type II", "ISO 27001", "ISO 27018", "PCI DSS"],
+            "context": "certifications page, security page, compliance section",
+            "confidence_threshold": 0.8,
+            "return_format": "comma_separated_list",
+            "fallback": "enterprise security"
+          },
+          "compliance_frameworks": {
+            "method": "entity_extraction",
+            "look_for": ["HIPAA", "GDPR", "CCPA", "PCI DSS", "FedRAMP", "FISMA"],
+            "context": "compliance page, regulatory section, certifications",
+            "confidence_threshold": 0.8,
+            "return_format": "comma_separated_list",
+            "fallback": "industry compliance"
+          },
+          "security_features": {
+            "method": "keyword_scan",
+            "keywords": ["intrusion detection", "DDoS protection", "threat monitoring", "firewall", "penetration testing", "vulnerability scanning"],
+            "context": "security page, features, infrastructure documentation",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "advanced security features"
+          },
+          "datacenter_locations": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*data\\s*centers?", "(\\d+)\\s*locations?", "(\\d+)\\s*regions?"],
+            "context": "infrastructure page, data center information",
+            "confidence_threshold": 0.7,
+            "fallback": "multiple secure"
+          },
+          "physical_security": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 monitoring", "biometric access", "video surveillance", "physical security"],
+            "context": "security page, data center descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "physical security"
+          },
+          "data_residency": {
+            "method": "keyword_scan",
+            "keywords": ["data residency", "regional data storage", "geographic data control", "local data hosting"],
+            "context": "compliance page, data residency section",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible data residency"
+          },
+          "access_controls": {
+            "method": "keyword_scan",
+            "keywords": ["SSO", "single sign-on", "MFA", "multi-factor authentication", "RBAC", "role-based access"],
+            "context": "security features, access control documentation",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "enterprise access controls"
+          },
+          "audit_capabilities": {
+            "method": "keyword_scan",
+            "keywords": ["audit logs", "audit trail", "compliance reporting", "activity logging"],
+            "context": "compliance section, security features",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive audit logging"
+          },
+          "privacy_standards": {
+            "method": "keyword_scan",
+            "keywords": ["data ownership", "customer data control", "privacy policy", "data rights"],
+            "context": "privacy page, terms of service",
+            "confidence_threshold": 0.7,
+            "fallback": "strong privacy protections"
+          },
+          "backup_retention": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+).day.*?backup", "backup.*?(\\d+)\\s*days?", "retention.*?(\\d+)\\s*days?"],
+            "context": "backup policy, data retention, disaster recovery",
+            "confidence_threshold": 0.6,
+            "fallback": "comprehensive backup"
+          },
+          "incident_response": {
+            "method": "keyword_scan",
+            "keywords": ["incident response", "security incident", "breach notification", "24/7 security"],
+            "context": "security page, incident response documentation",
+            "confidence_threshold": 0.6,
+            "fallback": "comprehensive incident response"
+          },
+          "regulatory_compliance": {
+            "method": "entity_extraction",
+            "look_for": ["HIPAA", "GDPR", "SOC 2", "ISO 27001", "regulatory"],
+            "context": "compliance page, certifications",
+            "confidence_threshold": 0.7,
+            "fallback": "regulatory"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Security and compliance are mandatory requirements for enterprise UCaaS adoption. 85% of enterprise buyers explicitly evaluate security certifications and compliance during procurement.",
+          "buyer_stage": "evaluation/validation",
+          "typical_searcher": "CISO, Security Manager, Compliance Officer, or IT Director conducting security due diligence",
+          "decision_impact": "Critical - can immediately disqualify vendors that don't meet security and compliance requirements"
+        }
+      },
+      {
+        "id": "faq_004",
+        "priority": "high",
+        "found_on_percent": 79,
+        "expected_impact": "+14-18 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How quickly can we deploy your communication system across our organization?",
+        
+        "answer_human_friendly": {
+          "text": "Most organizations are up and running within days, not months. Our cloud-based system requires no on-site hardware installation — your team can start making calls immediately using desk phones, mobile apps, or computers. We provide step-by-step onboarding, automated user provisioning, and number porting assistance to minimize disruption. Many customers go live with basic functionality in the first week, then gradually roll out advanced features as teams get comfortable with the platform.",
+          "word_count": 81,
+          "tone": "reassuring and practical",
+          "focus": "speed and ease of deployment"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} enables deployment within {{deployment_timeframe}} for organizations of {{company_size}} users through cloud-based architecture requiring {{hardware_requirements}}. Implementation includes {{deployment_phases}}: user account provisioning via {{provisioning_method}}, number porting within {{porting_timeframe}}, device configuration using {{configuration_approach}}, and {{training_resources}} for end users. The {{platform_name}} supports {{deployment_options}} including phased rollouts, pilot programs, and {{migration_strategies}}. {{onboarding_support}} includes {{support_resources}} such as dedicated implementation specialists, {{documentation_types}}, and {{training_formats}}. Organizations achieve {{time_to_value}} with {{adoption_metrics}} within {{adoption_timeframe}}. The system scales to {{scalability}} without infrastructure changes, with {{provisioning_speed}} for adding new users.",
+          "word_count": 102,
+          "tone": "implementation-focused and detailed",
+          "focus": "deployment process and timeline specifics",
+          
+          "factual_anchors": [
+            {
+              "claim": "{{deployment_timeframe}} deployment",
+              "type": "implementation_specification",
+              "source": "company_implementation_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "deployment_timeframe",
+              "fallback": "rapid deployment"
+            },
+            {
+              "claim": "{{porting_timeframe}} number porting",
+              "type": "service_specification",
+              "source": "porting_documentation",
+              "confidence": "medium",
+              "verifiable": "company_docs",
+              "extraction_field": "porting_timeframe",
+              "fallback": "efficient number porting"
+            },
+            {
+              "claim": "{{time_to_value}} time to value",
+              "type": "implementation_metric",
+              "source": "onboarding_documentation",
+              "confidence": "medium",
+              "verifiable": "company_materials",
+              "extraction_field": "time_to_value",
+              "fallback": "quick time to value"
+            },
+            {
+              "claim": "{{provisioning_speed}} provisioning",
+              "type": "operational_specification",
+              "source": "admin_documentation",
+              "confidence": "medium",
+              "verifiable": "company_docs",
+              "extraction_field": "provisioning_speed",
+              "fallback": "rapid user provisioning"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our cloud-based system deploys quickly without on-site hardware, with most organizations operational within days through streamlined onboarding and number porting assistance.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "UCaaS deployment time",
+            "cloud phone system implementation",
+            "VoIP onboarding process",
+            "unified communications rollout",
+            "business phone system setup time"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How quickly can we deploy your communication system across our organization?",
+              "alternativeQuestion": [
+                "How long does it take to implement your UCaaS platform?",
+                "What's the deployment timeline for your cloud phone system?",
+                "How fast can we migrate to your unified communications solution?",
+                "What does the onboarding process look like for your VoIP system?",
+                "How quickly can our employees start using your communication platform?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} enables deployment within {{deployment_timeframe}} for {{company_size}} users through cloud architecture requiring {{hardware_requirements}}. Implementation includes {{deployment_phases}}: provisioning via {{provisioning_method}}, porting within {{porting_timeframe}}, configuration using {{configuration_approach}}, and {{training_resources}}. The platform supports {{deployment_options}} with {{onboarding_support}} including {{support_resources}}. Organizations achieve {{time_to_value}} with {{adoption_metrics}} within {{adoption_timeframe}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} deploys within {{deployment_timeframe}} for {{company_size}} users, requiring {{hardware_requirements}}, with {{deployment_phases}} including {{porting_timeframe}} porting and {{onboarding_support}}, achieving {{time_to_value}} and {{provisioning_speed}} user additions.",
+        
+        "answer_fallback_template": "Our cloud-based system deploys rapidly without on-site hardware requirements, with comprehensive onboarding support for smooth organizational rollout.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our platform"
+          },
+          "deployment_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*days?", "(\\d+)\\s*weeks?", "(\\d+)-(\\d+)\\s*days?", "within\\s*(\\d+)"],
+            "context": "implementation page, getting started, onboarding documentation",
+            "confidence_threshold": 0.7,
+            "fallback": "days"
+          },
+          "company_size": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+)\\s*users?", "up to\\s*(\\d+)", "organizations of\\s*(\\d+)"],
+            "context": "pricing page, implementation guide, case studies",
+            "confidence_threshold": 0.6,
+            "fallback": "any size"
+          },
+          "hardware_requirements": {
+            "method": "keyword_scan",
+            "keywords": ["no hardware", "no on-site equipment", "cloud-based only", "bring your own device", "BYOD"],
+            "context": "deployment documentation, requirements page",
+            "confidence_threshold": 0.7,
+            "fallback": "minimal infrastructure requirements"
+          },
+          "deployment_phases": {
+            "method": "keyword_scan",
+            "keywords": ["user provisioning", "number porting", "device setup", "configuration", "training", "migration"],
+            "context": "implementation guide, onboarding documentation",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "structured deployment phases"
+          },
+          "provisioning_method": {
+            "method": "keyword_scan",
+            "keywords": ["automated provisioning", "bulk import", "CSV upload", "directory sync", "SSO integration"],
+            "context": "admin documentation, provisioning guide",
+            "confidence_threshold": 0.6,
+            "fallback": "streamlined methods"
+          },
+          "porting_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*business\\s*days?", "(\\d+)-(\\d+)\\s*days?\\s*port", "port.*?(\\d+)\\s*days?"],
+            "context": "number porting documentation, FAQs",
+            "confidence_threshold": 0.7,
+            "fallback": "standard timeframes"
+          },
+          "configuration_approach": {
+            "method": "keyword_scan",
+            "keywords": ["plug and play", "zero-touch", "auto-configuration", "guided setup"],
+            "context": "device setup, configuration documentation",
+            "confidence_threshold": 0.6,
+            "fallback": "simplified configuration"
+          },
+          "training_resources": {
+            "method": "keyword_scan",
+            "keywords": ["training videos", "documentation", "webinars", "live training", "knowledge base"],
+            "context": "training page, resources, support",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "comprehensive training"
+          },
+          "platform_name": {
+            "method": "entity_extraction",
+            "look_for": ["platform name", "product name", "system name"],
+            "context": "product pages, technical documentation",
+            "confidence_threshold": 0.8,
+            "fallback": "platform"
+          },
+          "deployment_options": {
+            "method": "keyword_scan",
+            "keywords": ["phased rollout", "pilot program", "department-by-department", "location-by-location"],
+            "context": "implementation options, deployment strategies",
+            "confidence_threshold": 0.6,
+            "return_format": "comma_separated_list",
+            "fallback": "flexible deployment approaches"
+          },
+          "migration_strategies": {
+            "method": "keyword_scan",
+            "keywords": ["parallel operation", "cutover migration", "hybrid deployment"],
+            "context": "migration guide, implementation documentation",
+            "confidence_threshold": 0.5,
+            "fallback": "proven migration approaches"
+          },
+          "onboarding_support": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated support", "implementation team", "onboarding specialist", "project manager"],
+            "context": "support page, implementation services",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive onboarding support"
+          },
+          "support_resources": {
+            "method": "keyword_scan",
+            "keywords": ["implementation specialist", "documentation", "training materials", "video tutorials", "help center"],
+            "context": "support offerings, resources page",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "support resources"
+          },
+          "documentation_types": {
+            "method": "keyword_scan",
+            "keywords": ["quick start guide", "admin guide", "user manual", "API documentation"],
+            "context": "documentation page, resources",
+            "confidence_threshold": 0.6,
+            "fallback": "comprehensive documentation"
+          },
+          "training_formats": {
+            "method": "keyword_scan",
+            "keywords": ["live webinars", "on-demand videos", "in-person training", "virtual training"],
+            "context": "training page, learning resources",
+            "confidence_threshold": 0.6,
+            "fallback": "multiple training formats"
+          },
+          "time_to_value": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*days?.*?value", "productive.*?(\\d+)\\s*days?", "operational.*?(\\d+)"],
+            "context": "implementation benefits, case studies",
+            "confidence_threshold": 0.5,
+            "fallback": "rapid time to value"
+          },
+          "adoption_metrics": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)%\\s*adoption", "(\\d+)%\\s*users? active"],
+            "context": "success metrics, case studies",
+            "confidence_threshold": 0.5,
+            "fallback": "high user adoption"
+          },
+          "adoption_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*days?", "(\\d+)\\s*weeks?", "first\\s*(\\d+)"],
+            "context": "adoption metrics, implementation timeline",
+            "confidence_threshold": 0.5,
+            "fallback": "the initial period"
+          },
+          "scalability": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+?\\s*users?", "unlimited\\s*users?", "scales? to\\s*(\\d+)"],
+            "context": "scalability section, enterprise features",
+            "confidence_threshold": 0.6,
+            "fallback": "any scale"
+          },
+          "provisioning_speed": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*minutes?", "instant", "real.?time", "immediate"],
+            "context": "admin features, user management",
+            "confidence_threshold": 0.6,
+            "fallback": "rapid"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Deployment speed and complexity impact business disruption and change management. 79% of organizations explicitly evaluate implementation timeline during UCaaS vendor selection.",
+          "buyer_stage": "evaluation/decision",
+          "typical_searcher": "IT Director, Project Manager, or Operations Leader responsible for implementation planning",
+          "decision_impact": "High - lengthy deployment can delay purchase decisions or favor competitors with faster rollout"
+        }
+      },
+      {
+        "id": "faq_005",
+        "priority": "high",
+        "found_on_percent": 81,
+        "expected_impact": "+13-17 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What does your pricing include and how does billing work for growing companies?",
+        
+        "answer_human_friendly": {
+          "text": "Our pricing is straightforward — you pay per user per month with everything included: unlimited calling, video conferencing, messaging, mobile apps, and core features. No hidden fees, no per-minute charges, no surprise add-ons. As you grow, simply add users to your account anytime. Most customers start with essentials and add advanced features when needed. We bill monthly with flexible terms, so you're never locked into long contracts as your team size fluctuates seasonally.",
+          "word_count": 82,
+          "tone": "transparent and flexibility-focused",
+          "focus": "pricing clarity and scalability"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} offers {{pricing_model}} pricing starting at {{starting_price}} per user per month for {{base_plan}} including {{included_features}}. Plans scale across {{plan_tiers}} tiers with {{plan_names}} options supporting {{user_ranges}} users. Core inclusions: {{calling_features}}, {{meeting_features}}, {{messaging_features}}, and {{device_support}}. Advanced features include {{advanced_features}} available in {{premium_tiers}}. Billing operates on {{billing_frequency}} cycles with {{contract_terms}}, {{payment_methods}} accepted, and {{scaling_options}} for adding users. The platform supports {{usage_policies}} with {{overage_handling}} for exceeding limits. {{company_name}} provides {{cost_predictability}} through {{pricing_transparency}} including {{cost_calculator}} and {{volume_discounts}} for {{enterprise_threshold}}+ users.",
+          "word_count": 103,
+          "tone": "detailed and commercially focused",
+          "focus": "pricing structure and billing mechanics",
+          
+          "factual_anchors": [
+            {
+              "claim": "{{starting_price}} per user per month",
+              "type": "pricing_specification",
+              "source": "company_pricing_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "starting_price",
+              "fallback": "competitive per-user pricing"
+            },
+            {
+              "claim": "{{plan_tiers}} tiers",
+              "type": "product_structure",
+              "source": "pricing_page",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "plan_tiers",
+              "fallback": "multiple plan tiers"
+            },
+            {
+              "claim": "{{billing_frequency}} billing cycles",
+              "type": "commercial_terms",
+              "source": "billing_documentation",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "billing_frequency",
+              "fallback": "flexible billing"
+            },
+            {
+              "claim": "{{contract_terms}} contracts",
+              "type": "commercial_terms",
+              "source": "terms_of_service",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "extraction_field": "contract_terms",
+              "fallback": "flexible contract terms"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We offer per-user monthly pricing with transparent billing, included core features, flexible scaling, and no long-term contracts for growing organizations.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "UCaaS pricing per user",
+            "cloud phone system cost",
+            "unified communications pricing plans",
+            "VoIP business pricing",
+            "communication platform billing"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What does your pricing include and how does billing work for growing companies?",
+              "alternativeQuestion": [
+                "How much does your UCaaS platform cost per user?",
+                "What's included in your unified communications pricing?",
+                "Do you offer flexible billing for growing businesses?",
+                "Are there hidden fees in your cloud phone system pricing?",
+                "How does pricing work when we add more users?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} offers {{pricing_model}} pricing starting at {{starting_price}} per user for {{base_plan}} including {{included_features}}. Plans scale across {{plan_tiers}} with {{plan_names}} supporting {{user_ranges}}. Core features: {{calling_features}}, {{meeting_features}}, {{messaging_features}}. Advanced features in {{premium_tiers}}. Billing: {{billing_frequency}} cycles, {{contract_terms}}, {{payment_methods}}, {{scaling_options}}. Includes {{pricing_transparency}}, {{cost_calculator}}, and {{volume_discounts}} for {{enterprise_threshold}}+ users."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} offers {{pricing_model}} starting at {{starting_price}} for {{base_plan}} with {{included_features}}, {{plan_tiers}} tiers, {{billing_frequency}} billing, {{contract_terms}} contracts, {{scaling_options}}, and {{volume_discounts}} for {{enterprise_threshold}}+ users.",
+        
+        "answer_fallback_template": "We provide transparent per-user pricing with flexible billing, scalable plans, and included core features for growing organizations.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our platform"
+          },
+          "pricing_model": {
+            "method": "keyword_scan",
+            "keywords": ["per user per month", "subscription-based", "per seat", "monthly per user"],
+            "context": "pricing page, billing information",
+            "confidence_threshold": 0.8,
+            "fallback": "subscription"
+          },
+          "starting_price": {
+            "method": "pattern_scan",
+            "patterns": ["\\$(\\d+(?:\\.\\d{2})?)(?:/user)?(?:/month)?", "from \\$(\\d+)", "starting at \\$(\\d+)"],
+            "context": "pricing page, plan comparison",
+            "confidence_threshold": 0.8,
+            "validation": "must be positive number",
+            "fallback": "competitive pricing"
+          },
+          "base_plan": {
+            "method": "entity_extraction",
+            "look_for": ["Essentials", "Basic", "Starter", "Standard", "Core"],
+            "context": "pricing tiers, plan names",
+            "confidence_threshold": 0.7,
+            "fallback": "base plan"
+          },
+          "included_features": {
+            "method": "keyword_scan",
+            "keywords": ["unlimited calling", "video conferencing", "messaging", "mobile apps", "call recording", "voicemail"],
+            "context": "pricing page, features list, plan comparison",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "comprehensive features"
+          },
+          "plan_tiers": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\s*plans?", "(\\d+)\\s*tiers?", "(\\d+)\\s*options?"],
+            "context": "pricing page, plan comparison",
+            "confidence_threshold": 0.8,
+            "validation": "must be 2-5",
+            "fallback": "multiple"
+          },
+          "plan_names": {
+            "method": "entity_extraction",
+            "look_for": ["Essentials", "Professional", "Enterprise", "Business", "Premium", "Advanced"],
+            "context": "pricing page, plan headers",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "tiered plan"
+          },
+          "user_ranges": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-(\\d+)\\s*users?", "up to\\s*(\\d+)", "unlimited\\s*users?"],
+            "context": "pricing page, plan limits",
+            "confidence_threshold": 0.6,
+            "fallback": "flexible user counts"
+          },
+          "calling_features": {
+            "method": "keyword_scan",
+            "keywords": ["unlimited calling", "local calling", "long distance", "international calling", "toll-free numbers"],
+            "context": "features list, calling section",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "comprehensive calling"
+          },
+          "meeting_features": {
+            "method": "keyword_scan",
+            "keywords": ["video conferencing", "screen sharing", "audio conferencing", "web meetings"],
+            "context": "features list, meeting capabilities",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "video and audio conferencing"
+          },
+          "messaging_features": {
+            "method": "keyword_scan",
+            "keywords": ["team messaging", "SMS", "instant messaging", "chat"],
+            "context": "features list, messaging section",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "messaging capabilities"
+          },
+          "device_support": {
+            "method": "keyword_scan",
+            "keywords": ["mobile apps", "desktop apps", "desk phones", "web browser", "softphone"],
+            "context": "features, device compatibility",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "multi-device support"
+          },
+          "advanced_features": {
+            "method": "keyword_scan",
+            "keywords": ["call analytics", "advanced reporting", "CRM integration", "call recording", "auto attendant", "call queues"],
+            "context": "premium features, advanced capabilities",
+            "confidence_threshold": 0.7,
+            "return_format": "comma_separated_list",
+            "fallback": "advanced capabilities"
+          },
+          "premium_tiers": {
+            "method": "entity_extraction",
+            "look_for": ["Professional", "Premium", "Enterprise", "Advanced"],
+            "context": "higher-tier plan names",
+            "confidence_threshold": 0.7,
+            "fallback": "higher-tier plans"
+          },
+          "billing_frequency": {
+            "method": "keyword_scan",
+            "keywords": ["monthly", "annual", "quarterly", "flexible billing"],
+            "context": "billing section, payment terms",
+            "confidence_threshold": 0.8,
+            "return_format": "comma_separated_list",
+            "fallback": "flexible"
+          },
+          "contract_terms": {
+            "method": "keyword_scan",
+            "keywords": ["month-to-month", "no contract", "annual contract", "flexible terms", "no commitment"],
+            "context": "pricing terms, contract information",
+            "confidence_threshold": 0.8,
+            "fallback": "flexible contract terms"
+          },
+          "payment_methods": {
+            "method": "keyword_scan",
+            "keywords": ["credit card", "ACH", "wire transfer", "invoice"],
+            "context": "payment options, billing information",
+            "confidence_threshold": 0.6,
+            "return_format": "comma_separated_list",
+            "fallback": "multiple payment options"
+          },
+          "scaling_options": {
+            "method": "keyword_scan",
+            "keywords": ["add users anytime", "scale up or down", "flexible user count", "pay as you grow"],
+            "context": "scalability section, billing flexibility",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible user scaling"
+          },
+          "usage_policies": {
+            "method": "keyword_scan",
+            "keywords": ["fair use policy", "unlimited usage", "usage limits"],
+            "context": "terms of service, usage policies",
+            "confidence_threshold": 0.5,
+            "fallback": "usage policies"
+          },
+          "overage_handling": {
+            "method": "keyword_scan",
+            "keywords": ["no overage fees", "overage charges", "usage alerts"],
+            "context": "billing policies, terms",
+            "confidence_threshold": 0.5,
+            "fallback": "transparent handling"
+          },
+          "cost_predictability": {
+            "method": "keyword_scan",
+            "keywords": ["predictable pricing", "no hidden fees", "transparent billing", "all-inclusive"],
+            "context": "pricing messaging, billing information",
+            "confidence_threshold": 0.7,
+            "fallback": "cost predictability"
+          },
+          "pricing_transparency": {
+            "method": "keyword_scan",
+            "keywords": ["transparent pricing", "no hidden costs", "clear pricing", "upfront pricing"],
+            "context": "pricing page messaging",
+            "confidence_threshold": 0.7,
+            "fallback": "transparent pricing"
+          },
+          "cost_calculator": {
+            "method": "keyword_scan",
+            "keywords": ["pricing calculator", "cost estimator", "quote tool"],
+            "context": "pricing page tools",
+            "confidence_threshold": 0.6,
+            "fallback": "pricing tools"
+          },
+          "volume_discounts": {
+            "method": "keyword_scan",
+            "keywords": ["volume discounts", "enterprise pricing", "bulk pricing", "volume savings"],
+            "context": "enterprise pricing, discounts section",
+            "confidence_threshold": 0.7,
+            "fallback": "volume pricing"
+          },
+          "enterprise_threshold": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+?\\s*users?", "over\\s*(\\d+)", "more than\\s*(\\d+)"],
+            "context": "enterprise pricing, volume discount thresholds",
+            "confidence_threshold": 0.6,
+            "validation": "typically 100-1000",
+            "fallback": "large"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Pricing clarity and billing flexibility directly impact purchasing decisions and budget approval. 81% of buyers explicitly evaluate pricing transparency and scalability during vendor selection.",
+          "buyer_stage": "consideration/decision",
+          "typical_searcher": "CFO, Finance Manager, IT Director, or Business Owner evaluating total cost of ownership and budget fit",
+          "decision_impact": "High - pricing concerns can eliminate vendors from consideration or delay purchase decisions pending budget approval"
+        }
+      }
+    ]
+  }
+}

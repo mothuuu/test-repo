@@ -2,6 +2,74 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     ? 'http://localhost:3001/api'
     : 'https://ai-visibility-tool.onrender.com/api';
 
+/**
+ * Convert backend score (0-100) to display score (0-1000)
+ */
+function getDisplayScore(backendScore) {
+  return Math.round(backendScore * 10);
+}
+
+async function loadRecentScans() {
+    const scansList = document.getElementById('scansList');
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+        // TODO: Replace with actual API call when backend is ready
+        const response = await fetch(`${API_BASE_URL}/scan/list/recent`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load scans');
+        }
+        
+        const data = await response.json();
+        const scans = data.scans || [];
+        
+        if (scans.length === 0) {
+            scansList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 10px;">No scans yet</p>
+                    <p>Start your first scan above to see your AI visibility score!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        scansList.innerHTML = scans.map(scan => {
+            const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            // IMPORTANT: Convert backend score (0-100) to display score (0-1000)
+            const displayScore = getDisplayScore(scan.total_score || 0);
+            
+            return `
+                <div class="scan-card" onclick="window.location.href='results.html?id=${scan.id}'">
+                    <div class="scan-info">
+                        <h4>${scan.url}</h4>
+                        <p>Scanned on ${date}</p>
+                    </div>
+                    <div class="scan-score">
+                        <div class="score-number">${displayScore}</div>
+                        <div class="score-label">/ 1000</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading scans:', error);
+        scansList.innerHTML = `
+            <div class="empty-state">
+                <p style="color: #dc3545;">Failed to load recent scans. Please try again.</p>
+            </div>
+        `;
+    }
+}
 // Global state
 let user = null;
 let quota = { used: 0, limit: 2 };

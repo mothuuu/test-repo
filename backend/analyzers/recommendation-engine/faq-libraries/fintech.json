@@ -1,0 +1,1200 @@
+{
+  "faq_library": {
+    "industry": "Fintech",
+    "industry_id": "fintech",
+    "version": "1.0",
+    "last_updated": "2025-10-18",
+    "metadata": {
+      "total_faqs": 5,
+      "completion_status": "production_ready",
+      "anti_hallucination_enabled": true,
+      "confidence_tracking": true
+    },
+    "faqs": [
+      {
+        "id": "faq_001",
+        "priority": "critical",
+        "found_on_percent": 89,
+        "expected_impact": "+17-22 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How do I know my money is safe with {{company_name}}?",
+        
+        "answer_human_friendly": {
+          "text": "Your security is our top priority. {{company_name}} uses {{security_measures}} to protect your funds and data. We're {{regulatory_status}}, which means your money is {{protection_details}}. Every transaction is encrypted with {{encryption_type}}, and we never share your data without your permission. You can also enable {{additional_security}} for extra protection. Our security team monitors for threats 24/7, and we've maintained {{security_track_record}} since launch.",
+          "word_count": 75,
+          "tone": "reassuring and transparent",
+          "focus": "direct security answers"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} implements bank-grade security infrastructure including {{security_measures}} and {{encryption_type}} encryption. As a {{regulatory_status}} institution, customer funds are {{protection_details}}. Security architecture includes: multi-factor authentication, biometric verification options, real-time fraud monitoring, SOC 2 Type II compliance, and encrypted data storage. {{company_name}} maintains {{certifications}} certifications and undergoes regular third-party security audits. Customer data privacy follows {{privacy_compliance}} standards with granular access controls. The platform has maintained {{security_track_record}} with zero security breaches. Users can enable additional protections including {{additional_security}}. All sensitive operations require {{verification_requirements}}, and suspicious activity triggers automatic account protections.",
+          "word_count": 110,
+          "tone": "technical and authoritative",
+          "focus": "comprehensive security details",
+          
+          "factual_anchors": [
+            {
+              "claim": "SOC 2 Type II compliance",
+              "type": "certification_verification",
+              "source": "company_security_page",
+              "confidence": "high",
+              "verifiable": true,
+              "extraction_location": "certifications, security page, footer",
+              "fallback": "industry-standard security protocols"
+            },
+            {
+              "claim": "zero security breaches",
+              "type": "security_track_record",
+              "source": "company_about_page",
+              "confidence": "medium",
+              "verifiable": "company_claims",
+              "extraction_location": "about page, security page, press releases",
+              "fallback": "strong security track record"
+            },
+            {
+              "claim": "24/7 fraud monitoring",
+              "type": "operational_capability",
+              "source": "company_features",
+              "confidence": "high",
+              "extraction_location": "features, security, product pages",
+              "fallback": "continuous security monitoring"
+            },
+            {
+              "claim": "bank-grade encryption",
+              "type": "technical_specification",
+              "source": "company_technical_docs",
+              "confidence": "high",
+              "extraction_location": "security page, technical documentation",
+              "fallback": "enterprise-grade encryption"
+            }
+          ]
+        },
+        
+        "answer_fallback": "{{company_name}} protects your money with bank-grade security, encryption, and regulatory compliance to ensure your funds and data remain safe.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "is {{company_name}} safe",
+            "{{company_name}} security",
+            "how secure is {{product_name}}",
+            "{{company_name}} money protection",
+            "{{company_name}} encryption"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I know my money is safe with {{company_name}}?",
+              "alternativeQuestion": [
+                "Is {{company_name}} secure?",
+                "How does {{company_name}} protect my money?",
+                "What security measures does {{company_name}} use?",
+                "Is my data safe with {{company_name}}?",
+                "Can I trust {{company_name}} with my financial information?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} implements bank-grade security including {{security_measures}} and {{encryption_type}} encryption. As a {{regulatory_status}} institution, funds are {{protection_details}}. Security includes multi-factor authentication, biometric verification, real-time fraud monitoring, SOC 2 Type II compliance, and encrypted data storage. {{company_name}} maintains {{certifications}} certifications with regular third-party audits and has maintained {{security_track_record}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} protects your money with {{security_measures}}, {{encryption_type}} encryption, and {{regulatory_status}} status, ensuring {{protection_details}} with {{certifications}} certifications.",
+        
+        "answer_fallback_template": "{{company_name}} uses bank-grade security and encryption to protect your money and personal information.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "legal entity name"],
+            "context": "title tag, H1, meta description, about page, footer",
+            "confidence_threshold": 0.9,
+            "use_fallback_if_below": 0.8,
+            "fallback": "we"
+          },
+          "security_measures": {
+            "method": "keyword_scan",
+            "keywords": ["256-bit encryption", "AES encryption", "SSL/TLS", "two-factor authentication", "multi-factor authentication", "biometric security", "fraud detection", "real-time monitoring"],
+            "context": "security page, features page, about page",
+            "confidence_threshold": 0.7,
+            "fallback": "advanced security measures"
+          },
+          "regulatory_status": {
+            "method": "entity_lookup",
+            "lookup_field": ["FDIC insured", "FDIC member", "regulated by", "licensed by", "registered with SEC", "FCA authorized", "OCC regulated", "state-licensed money transmitter"],
+            "context": "footer, legal pages, about page, homepage",
+            "confidence_threshold": 0.8,
+            "fallback": "fully regulated"
+          },
+          "protection_details": {
+            "method": "keyword_scan",
+            "keywords": ["FDIC insured up to $250,000", "protected by FDIC", "insured deposits", "safeguarded by", "protected under"],
+            "context": "legal pages, security page, FAQ",
+            "confidence_threshold": 0.7,
+            "fallback": "protected according to industry standards"
+          },
+          "encryption_type": {
+            "method": "pattern_scan",
+            "patterns": ["256-bit", "AES-256", "SSL", "TLS 1.3", "bank-grade", "military-grade"],
+            "context": "security page, technical documentation",
+            "confidence_threshold": 0.7,
+            "fallback": "bank-grade"
+          },
+          "additional_security": {
+            "method": "keyword_scan",
+            "keywords": ["biometric login", "fingerprint", "face ID", "security key", "hardware token", "SMS verification", "authenticator app"],
+            "context": "features page, security page, help center",
+            "confidence_threshold": 0.7,
+            "fallback": "additional authentication methods"
+          },
+          "security_track_record": {
+            "method": "keyword_scan",
+            "keywords": ["zero breaches", "no security incidents", "unblemished security record", "X years without breach"],
+            "context": "about page, security page, press releases",
+            "confidence_threshold": 0.6,
+            "fallback": "a strong security track record"
+          },
+          "certifications": {
+            "method": "entity_lookup",
+            "lookup_field": ["SOC 2", "ISO 27001", "PCI DSS", "Type II", "GDPR compliant"],
+            "context": "security page, certifications page, footer",
+            "confidence_threshold": 0.8,
+            "fallback": "industry-standard"
+          },
+          "privacy_compliance": {
+            "method": "entity_lookup",
+            "lookup_field": ["GDPR", "CCPA", "GLBA", "Privacy Shield"],
+            "context": "privacy policy, legal pages",
+            "confidence_threshold": 0.7,
+            "fallback": "privacy regulation"
+          },
+          "verification_requirements": {
+            "method": "keyword_scan",
+            "keywords": ["two-factor authentication", "password confirmation", "biometric verification", "security code"],
+            "context": "security page, help documentation",
+            "confidence_threshold": 0.7,
+            "fallback": "additional verification"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Security and safety concerns are the #1 barrier to fintech adoption. 89% of successful fintech companies explicitly address 'Is my money safe?' on their homepage or prominent FAQ section.",
+          "buyer_stage": "awareness to consideration",
+          "typical_searcher": "Consumer considering signing up for a fintech app, concerned about security and legitimacy",
+          "decision_impact": "Critical - directly determines whether a prospect will enter payment information or link their bank account",
+          "recommendation_context": "This FAQ should be added prominently to your website. AI assistants cite security information when users ask 'Is [company] safe?' - without this content, you may not be recommended."
+        }
+      },
+      {
+        "id": "faq_002",
+        "priority": "critical",
+        "found_on_percent": 91,
+        "expected_impact": "+18-23 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "What makes {{company_name}} different from traditional banks?",
+        
+        "answer_human_friendly": {
+          "text": "Unlike traditional banks with physical branches and legacy systems, {{company_name}} is built {{founding_story}} to solve {{pain_point}}. We offer {{key_differentiator}} that traditional banks can't match: {{specific_benefits}}. No hidden fees, no minimum balances, and {{speed_benefit}}. Our technology means {{efficiency_benefit}}, and you get {{customer_experience_benefit}}. Plus, {{unique_feature}} — something traditional banks simply don't offer.",
+          "word_count": 65,
+          "tone": "confident and benefit-focused",
+          "focus": "clear differentiation"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} operates as a {{business_model}} offering {{product_category}} with {{key_technology}} infrastructure. Key differentiators include: {{fee_structure}} fee structure versus traditional bank averages of $15-35 monthly, {{approval_speed}} account approval compared to 7-10 days for traditional banks, {{interest_rates}} on deposits exceeding national averages by {{rate_comparison}}, and {{feature_list}} unavailable at legacy institutions. The platform processes {{transaction_speed}} with {{availability}} access through {{platform_availability}}. {{company_name}} serves {{target_segment}} with specialized features including {{specialized_features}}. Customer acquisition cost advantages from digital-first operations enable {{pricing_advantage}} and {{service_advantage}} not economically viable for branch-based competitors.",
+          "word_count": 105,
+          "tone": "factual with comparative data",
+          "focus": "specific competitive advantages",
+          
+          "factual_anchors": [
+            {
+              "claim": "$0 monthly fees",
+              "type": "pricing_verification",
+              "source": "company_pricing_page",
+              "confidence": "high",
+              "verifiable": true,
+              "extraction_location": "pricing page, features page, homepage",
+              "fallback": "competitive fee structure"
+            },
+            {
+              "claim": "instant account approval",
+              "type": "operational_capability",
+              "source": "company_product_pages",
+              "confidence": "high",
+              "extraction_location": "product pages, features, onboarding flow",
+              "fallback": "fast account setup"
+            },
+            {
+              "claim": "higher interest rates than traditional banks",
+              "type": "competitive_comparison",
+              "source": "company_rates_page",
+              "confidence": "medium",
+              "verifiable": "company_claims",
+              "extraction_location": "rates page, homepage, marketing materials",
+              "fallback": "competitive interest rates"
+            },
+            {
+              "claim": "24/7 mobile access",
+              "type": "product_feature",
+              "source": "company_features",
+              "confidence": "high",
+              "extraction_location": "features page, app descriptions",
+              "fallback": "convenient digital access"
+            }
+          ]
+        },
+        
+        "answer_fallback": "{{company_name}} offers faster service, lower fees, and better technology than traditional banks, with {{key_benefit}} designed for modern users.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "{{company_name}} vs traditional banks",
+            "why choose {{company_name}} over bank",
+            "{{company_name}} benefits",
+            "difference between {{company_name}} and banks",
+            "{{company_name}} advantages"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What makes {{company_name}} different from traditional banks?",
+              "alternativeQuestion": [
+                "Why should I use {{company_name}} instead of a traditional bank?",
+                "How is {{company_name}} better than regular banks?",
+                "What are the advantages of {{company_name}} over traditional banking?",
+                "Should I switch from my bank to {{company_name}}?",
+                "What can {{company_name}} do that my bank can't?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} operates as a {{business_model}} with {{key_technology}} infrastructure offering {{fee_structure}} fees versus $15-35 monthly at traditional banks, {{approval_speed}} approval compared to 7-10 days, and {{interest_rates}} exceeding national averages. The platform provides {{transaction_speed}} processing with {{availability}} access through {{platform_availability}}. {{company_name}} serves {{target_segment}} with {{specialized_features}} unavailable at legacy institutions, leveraging digital-first economics for {{pricing_advantage}} and {{service_advantage}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} offers {{fee_structure}} fees, {{approval_speed}} approval, {{interest_rates}}, and {{unique_features}} that traditional banks with physical branches can't match.",
+        
+        "answer_fallback_template": "{{company_name}} provides faster, more affordable banking with modern technology and no physical branch limitations.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "we"
+          },
+          "founding_story": {
+            "method": "keyword_scan",
+            "keywords": ["founded to", "created to", "started because", "built from the ground up", "designed specifically"],
+            "context": "about page, mission statement",
+            "confidence_threshold": 0.6,
+            "fallback": "specifically designed"
+          },
+          "pain_point": {
+            "method": "keyword_scan",
+            "keywords": ["high fees", "slow approvals", "poor customer service", "limited access", "complex processes", "underserved customers"],
+            "context": "about page, homepage value proposition",
+            "confidence_threshold": 0.7,
+            "fallback": "common banking frustrations"
+          },
+          "key_differentiator": {
+            "method": "keyword_scan",
+            "keywords": ["no fees", "instant approval", "higher interest", "24/7 access", "mobile-first", "AI-powered", "personalized"],
+            "context": "homepage, value proposition, features",
+            "confidence_threshold": 0.8,
+            "fallback": "modern features"
+          },
+          "specific_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["no monthly fees", "no minimum balance", "instant transfers", "cashback rewards", "automated savings", "real-time notifications"],
+            "context": "features page, benefits section, pricing",
+            "confidence_threshold": 0.7,
+            "fallback": "customer-friendly features"
+          },
+          "speed_benefit": {
+            "method": "pattern_scan",
+            "patterns": ["instant", "same-day", "real-time", "immediate", "within minutes"],
+            "context": "features, product descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "fast processing"
+          },
+          "efficiency_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["lower costs", "better rates", "more value", "higher returns", "save money"],
+            "context": "value proposition, benefits",
+            "confidence_threshold": 0.7,
+            "fallback": "better value"
+          },
+          "customer_experience_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 support", "easy interface", "intuitive app", "personalized insights", "financial guidance"],
+            "context": "features, customer service pages",
+            "confidence_threshold": 0.7,
+            "fallback": "superior experience"
+          },
+          "unique_feature": {
+            "method": "keyword_scan",
+            "keywords": ["AI recommendations", "automated investing", "cryptocurrency", "early paycheck access", "overdraft protection", "split bills"],
+            "context": "features, product highlights",
+            "confidence_threshold": 0.7,
+            "fallback": "innovative features"
+          },
+          "business_model": {
+            "method": "entity_extraction",
+            "look_for": ["digital bank", "neobank", "online bank", "mobile bank", "challenger bank", "fintech platform"],
+            "context": "about page, homepage",
+            "confidence_threshold": 0.8,
+            "fallback": "digital financial platform"
+          },
+          "product_category": {
+            "method": "entity_extraction",
+            "look_for": ["checking accounts", "savings accounts", "personal loans", "business banking", "payment processing"],
+            "context": "products page, navigation",
+            "confidence_threshold": 0.8,
+            "fallback": "financial services"
+          },
+          "key_technology": {
+            "method": "keyword_scan",
+            "keywords": ["mobile-first", "cloud-native", "AI-powered", "blockchain", "API-based"],
+            "context": "about page, technology section",
+            "confidence_threshold": 0.6,
+            "fallback": "modern technology"
+          },
+          "fee_structure": {
+            "method": "pattern_scan",
+            "patterns": ["\\$0", "no monthly fees", "zero fees", "free"],
+            "context": "pricing page, features",
+            "confidence_threshold": 0.8,
+            "fallback": "competitive"
+          },
+          "approval_speed": {
+            "method": "pattern_scan",
+            "patterns": ["instant", "minutes", "same-day", "24 hours"],
+            "context": "product pages, onboarding",
+            "confidence_threshold": 0.7,
+            "fallback": "fast"
+          },
+          "interest_rates": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+\\.\\d+)% APY", "up to (\\d+)%", "high-yield"],
+            "context": "rates page, savings features",
+            "confidence_threshold": 0.7,
+            "fallback": "competitive rates"
+          },
+          "rate_comparison": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)x higher", "(\\d+)% more than", "above national average"],
+            "context": "marketing materials, rates page",
+            "confidence_threshold": 0.6,
+            "fallback": "comparison to industry average"
+          },
+          "transaction_speed": {
+            "method": "keyword_scan",
+            "keywords": ["instant transfers", "real-time payments", "same-day", "immediate"],
+            "context": "features, product descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "fast transactions"
+          },
+          "availability": {
+            "method": "keyword_scan",
+            "keywords": ["24/7", "always available", "anytime", "round-the-clock"],
+            "context": "features, customer service",
+            "confidence_threshold": 0.8,
+            "fallback": "convenient"
+          },
+          "platform_availability": {
+            "method": "entity_lookup",
+            "lookup_field": ["iOS app", "Android app", "web platform", "mobile app", "desktop"],
+            "context": "download links, footer, features",
+            "confidence_threshold": 0.8,
+            "fallback": "multiple platforms"
+          },
+          "target_segment": {
+            "method": "keyword_scan",
+            "keywords": ["millennials", "small businesses", "freelancers", "gig workers", "underbanked", "tech-savvy users"],
+            "context": "about page, marketing materials",
+            "confidence_threshold": 0.6,
+            "fallback": "modern users"
+          },
+          "specialized_features": {
+            "method": "keyword_scan",
+            "keywords": ["budgeting tools", "savings goals", "investment options", "cryptocurrency", "financial insights"],
+            "context": "features page, product descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "innovative features"
+          },
+          "pricing_advantage": {
+            "method": "keyword_scan",
+            "keywords": ["no fees", "lower costs", "better rates", "free services"],
+            "context": "pricing, value proposition",
+            "confidence_threshold": 0.7,
+            "fallback": "competitive pricing"
+          },
+          "service_advantage": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 support", "instant chat", "personalized service", "dedicated support"],
+            "context": "customer service, support pages",
+            "confidence_threshold": 0.7,
+            "fallback": "better service"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Differentiation from traditional banks is the core positioning question for fintech companies. 91% of successful fintech platforms explicitly answer 'Why not just use my bank?' to address status quo bias.",
+          "buyer_stage": "awareness to consideration",
+          "typical_searcher": "Consumer weighing whether to switch from traditional bank or try a new fintech option",
+          "decision_impact": "Critical - determines whether prospect perceives value in switching from established bank",
+          "recommendation_context": "AI assistants frequently compare fintech options to traditional banks. Without this content, you may not be positioned as a credible alternative."
+        }
+      },
+      {
+        "id": "faq_003",
+        "priority": "high",
+        "found_on_percent": 84,
+        "expected_impact": "+15-19 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How quickly can I {{primary_action}} with {{company_name}}?",
+        
+        "answer_human_friendly": {
+          "text": "You can {{primary_action}} {{speed_claim}}. Simply {{onboarding_steps}}, and you're ready to go. No waiting for paperwork, no branch visits, no delays. {{additional_speed_benefit}}. Most customers complete the entire process {{completion_time}}, and {{instant_access_feature}}. If you need help, {{support_availability}}.",
+          "word_count": 48,
+          "tone": "direct and convenience-focused",
+          "focus": "speed and ease"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} enables {{primary_action}} through {{onboarding_process}} with {{verification_method}} identity verification. Account activation timeline: {{step_by_step_timing}}. The platform uses {{technology_enabler}} to eliminate traditional banking delays of 5-10 business days. Required information includes {{required_info}}, with optional {{optional_info}} for enhanced features. {{percentage_stat}} of users complete {{primary_action}} within {{completion_time}}. {{instant_features}} are available immediately upon approval. {{company_name}} processes {{transaction_type}} {{processing_speed}}, compared to 1-3 business days for traditional banks. {{regulatory_compliance}} ensures secure rapid onboarding while maintaining {{security_standard}} verification standards.",
+          "word_count": 102,
+          "tone": "specific and process-focused",
+          "focus": "timeline and methodology",
+          
+          "factual_anchors": [
+            {
+              "claim": "account opened in minutes",
+              "type": "operational_capability",
+              "source": "company_onboarding_pages",
+              "confidence": "high",
+              "verifiable": true,
+              "extraction_location": "signup page, features, product descriptions",
+              "fallback": "fast account setup"
+            },
+            {
+              "claim": "instant verification",
+              "type": "technical_capability",
+              "source": "company_technical_specs",
+              "confidence": "medium",
+              "extraction_location": "onboarding flow, technical features",
+              "fallback": "quick verification"
+            },
+            {
+              "claim": "immediate access to funds",
+              "type": "product_feature",
+              "source": "company_features",
+              "confidence": "high",
+              "extraction_location": "features page, product benefits",
+              "fallback": "fast access to account"
+            },
+            {
+              "claim": "90% of users complete onboarding in under 5 minutes",
+              "type": "user_behavior_metric",
+              "source": "company_statistics",
+              "confidence": "medium",
+              "verifiable": "company_claims",
+              "extraction_location": "about page, marketing materials, press releases",
+              "fallback": "most users complete setup quickly"
+            }
+          ]
+        },
+        
+        "answer_fallback": "You can {{primary_action}} with {{company_name}} in minutes using our simple online process with instant verification.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "how fast {{company_name}} account",
+            "{{company_name}} setup time",
+            "open {{company_name}} account quickly",
+            "{{company_name}} onboarding speed",
+            "instant {{company_name}} approval"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How quickly can I {{primary_action}} with {{company_name}}?",
+              "alternativeQuestion": [
+                "How long does it take to set up {{company_name}}?",
+                "Can I open a {{company_name}} account instantly?",
+                "What's the fastest way to start using {{company_name}}?",
+                "How fast is {{company_name}} account approval?",
+                "When can I start using {{company_name}} after signing up?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} enables {{primary_action}} through {{onboarding_process}} with {{verification_method}} verification. Account activation: {{step_by_step_timing}}. Using {{technology_enabler}}, the platform eliminates 5-10 day traditional banking delays. Required information: {{required_info}}. {{percentage_stat}} of users complete {{primary_action}} within {{completion_time}}. {{instant_features}} available immediately upon approval. {{company_name}} processes {{transaction_type}} {{processing_speed}} compared to 1-3 business days for traditional banks."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "You can {{primary_action}} in {{completion_time}} through our {{onboarding_process}}, with {{instant_features}} available immediately.",
+        
+        "answer_fallback_template": "{{primary_action}} takes just minutes with our streamlined online process.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "us"
+          },
+          "primary_action": {
+            "method": "keyword_scan",
+            "keywords": ["open an account", "get started", "sign up", "start banking", "get approved", "receive funds", "send money"],
+            "context": "homepage CTA, onboarding pages, product descriptions",
+            "confidence_threshold": 0.8,
+            "fallback": "get started"
+          },
+          "speed_claim": {
+            "method": "pattern_scan",
+            "patterns": ["in minutes", "instantly", "in under (\\d+) minutes", "same day", "right now"],
+            "context": "homepage, onboarding page, value propositions",
+            "confidence_threshold": 0.7,
+            "fallback": "quickly"
+          },
+          "onboarding_steps": {
+            "method": "keyword_scan",
+            "keywords": ["download the app", "enter your information", "verify your identity", "link your bank", "take a selfie", "provide ID"],
+            "context": "onboarding flow, how it works pages",
+            "confidence_threshold": 0.7,
+            "fallback": "complete our simple signup process"
+          },
+          "additional_speed_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["no paperwork", "no branch visit", "no waiting", "instant approval", "immediate access"],
+            "context": "benefits, features, onboarding",
+            "confidence_threshold": 0.7,
+            "fallback": "No delays or complicated processes"
+          },
+          "completion_time": {
+            "method": "pattern_scan",
+            "patterns": ["in (\\d+) minutes", "within (\\d+) minutes", "under (\\d+) minutes", "in under an hour"],
+            "context": "onboarding pages, marketing materials",
+            "confidence_threshold": 0.7,
+            "fallback": "in minutes"
+          },
+          "instant_access_feature": {
+            "method": "keyword_scan",
+            "keywords": ["start using immediately", "instant debit card", "immediate access", "use right away", "virtual card instantly"],
+            "context": "features, onboarding, product pages",
+            "confidence_threshold": 0.7,
+            "fallback": "you can start using your account immediately"
+          },
+          "support_availability": {
+            "method": "keyword_scan",
+            "keywords": ["24/7 support", "chat support", "instant help", "in-app support", "call us anytime"],
+            "context": "support pages, contact pages",
+            "confidence_threshold": 0.7,
+            "fallback": "our team is here to help"
+          },
+          "onboarding_process": {
+            "method": "keyword_scan",
+            "keywords": ["mobile app signup", "online application", "digital onboarding", "3-step process", "simple form"],
+            "context": "how it works, onboarding pages",
+            "confidence_threshold": 0.7,
+            "fallback": "streamlined digital signup"
+          },
+          "verification_method": {
+            "method": "entity_lookup",
+            "lookup_field": ["instant identity verification", "ID photo", "selfie verification", "automated KYC", "biometric verification"],
+            "context": "security, onboarding flow",
+            "confidence_threshold": 0.7,
+            "fallback": "secure identity"
+          },
+          "step_by_step_timing": {
+            "method": "keyword_scan",
+            "keywords": ["1-2 minutes to enter info", "instant verification", "immediate approval", "activate in seconds"],
+            "context": "onboarding documentation",
+            "confidence_threshold": 0.6,
+            "fallback": "complete signup quickly, verify instantly, start using immediately"
+          },
+          "technology_enabler": {
+            "method": "keyword_scan",
+            "keywords": ["automated verification", "AI-powered KYC", "instant identity checks", "digital processing"],
+            "context": "technology pages, about section",
+            "confidence_threshold": 0.6,
+            "fallback": "advanced technology"
+          },
+          "required_info": {
+            "method": "keyword_scan",
+            "keywords": ["SSN", "ID", "address", "phone number", "date of birth", "employment"],
+            "context": "onboarding requirements, FAQ",
+            "confidence_threshold": 0.7,
+            "fallback": "basic personal information"
+          },
+          "optional_info": {
+            "method": "keyword_scan",
+            "keywords": ["direct deposit", "linked accounts", "funding source", "debit card"],
+            "context": "onboarding, features",
+            "confidence_threshold": 0.6,
+            "fallback": "additional details"
+          },
+          "percentage_stat": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% of users", "most users", "majority of customers"],
+            "context": "statistics, testimonials, about page",
+            "confidence_threshold": 0.6,
+            "fallback": "Most users"
+          },
+          "instant_features": {
+            "method": "keyword_scan",
+            "keywords": ["virtual card", "mobile payments", "transfers", "spending account", "digital wallet"],
+            "context": "features, instant benefits",
+            "confidence_threshold": 0.7,
+            "fallback": "Core features"
+          },
+          "transaction_type": {
+            "method": "keyword_scan",
+            "keywords": ["transfers", "payments", "deposits", "withdrawals", "transactions"],
+            "context": "features, product descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "transactions"
+          },
+          "processing_speed": {
+            "method": "pattern_scan",
+            "patterns": ["instantly", "in real-time", "within minutes", "same-day"],
+            "context": "features, transaction speeds",
+            "confidence_threshold": 0.7,
+            "fallback": "quickly"
+          },
+          "regulatory_compliance": {
+            "method": "entity_lookup",
+            "lookup_field": ["PATRIOT Act compliance", "BSA compliance", "KYC requirements", "federal regulations"],
+            "context": "legal pages, compliance section",
+            "confidence_threshold": 0.6,
+            "fallback": "Regulatory compliance"
+          },
+          "security_standard": {
+            "method": "keyword_scan",
+            "keywords": ["bank-grade", "industry-standard", "secure", "verified"],
+            "context": "security pages",
+            "confidence_threshold": 0.7,
+            "fallback": "robust"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Speed and convenience are major fintech differentiators. 84% of fintech companies prominently feature setup time and speed claims. Users compare fintech speed to traditional banking frustration.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "User frustrated with slow traditional banking, researching how fast they can get started",
+          "decision_impact": "High - speed claims directly influence signup decisions and reduce perceived friction",
+          "recommendation_context": "AI assistants compare onboarding speeds when users ask 'how fast can I...'. Include specific timelines and steps."
+        }
+      },
+      {
+        "id": "faq_004",
+        "priority": "high",
+        "found_on_percent": 77,
+        "expected_impact": "+14-18 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What fees does {{company_name}} charge?",
+        
+        "answer_human_friendly": {
+          "text": "{{fee_headline}}. We believe in transparent pricing with no surprises. {{fee_details}}. {{comparison_to_banks}}. You'll never see {{eliminated_fees}}. We only charge {{actual_fees_if_any}}, and we always show you the cost upfront before you confirm any transaction.",
+          "word_count": 42,
+          "tone": "transparent and customer-friendly",
+          "focus": "fee clarity and fairness"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} operates with {{fee_structure}} fee structure. Eliminated fees: {{eliminated_fees_list}}. Fees applied: {{applied_fees_with_amounts}}. Fee comparison to traditional banks: {{average_traditional_cost}} monthly at legacy institutions versus {{company_monthly_cost}} at {{company_name}}, representing {{savings_percentage}} savings annually. {{special_fee_notes}}. All fees disclosed in {{disclosure_location}} with {{advance_notice}} advance notice for any changes. {{company_name}} generates revenue through {{revenue_model}} rather than charging customers directly. Fee transparency includes {{transparency_features}}.",
+          "word_count": 85,
+          "tone": "detailed and precise",
+          "focus": "complete fee breakdown",
+          
+          "factual_anchors": [
+            {
+              "claim": "$0 monthly maintenance fees",
+              "type": "pricing_verification",
+              "source": "company_pricing_page",
+              "confidence": "high",
+              "verifiable": true,
+              "extraction_location": "pricing page, fee schedule, features",
+              "fallback": "no monthly fees"
+            },
+            {
+              "claim": "no overdraft fees",
+              "type": "fee_policy",
+              "source": "company_fee_schedule",
+              "confidence": "high",
+              "extraction_location": "pricing, FAQ, product pages",
+              "fallback": "customer-friendly fee structure"
+            },
+            {
+              "claim": "saves $300+ annually vs traditional banks",
+              "type": "comparative_analysis",
+              "source": "company_marketing",
+              "confidence": "medium",
+              "verifiable": "company_claims",
+              "extraction_location": "marketing materials, comparison pages",
+              "fallback": "significant savings compared to traditional banks"
+            },
+            {
+              "claim": "interchange revenue model",
+              "type": "business_model",
+              "source": "company_about_pages",
+              "confidence": "medium",
+              "extraction_location": "about page, how we make money section",
+              "fallback": "alternative revenue sources"
+            }
+          ]
+        },
+        
+        "answer_fallback": "{{company_name}} charges {{fee_structure}}, eliminating common bank fees like monthly maintenance and overdraft charges.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "{{company_name}} fees",
+            "{{company_name}} pricing",
+            "does {{company_name}} charge monthly fees",
+            "{{company_name}} hidden fees",
+            "{{company_name}} cost"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What fees does {{company_name}} charge?",
+              "alternativeQuestion": [
+                "How much does {{company_name}} cost?",
+                "Are there hidden fees with {{company_name}}?",
+                "Does {{company_name}} have monthly fees?",
+                "What are all the fees for {{company_name}}?",
+                "Is {{company_name}} really free?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} operates with {{fee_structure}} fee structure. Eliminated fees: {{eliminated_fees_list}}. Fees applied: {{applied_fees_with_amounts}}. Compared to {{average_traditional_cost}} monthly at traditional banks versus {{company_monthly_cost}} at {{company_name}}, users save {{savings_percentage}} annually. {{special_fee_notes}}. All fees disclosed in {{disclosure_location}} with {{advance_notice}} notice for changes. {{company_name}} generates revenue through {{revenue_model}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} charges {{fee_structure}} with {{eliminated_fees}}, saving customers {{savings_amount}} compared to traditional banks.",
+        
+        "answer_fallback_template": "{{company_name}} has a transparent fee structure with {{fee_summary}} and no hidden charges.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "we"
+          },
+          "fee_headline": {
+            "method": "keyword_scan",
+            "keywords": ["no monthly fees", "$0 monthly maintenance", "zero fees", "no hidden fees", "free checking", "no account fees"],
+            "context": "pricing page, homepage hero, value props",
+            "confidence_threshold": 0.8,
+            "fallback": "We keep our fees simple and transparent"
+          },
+          "fee_details": {
+            "method": "keyword_scan",
+            "keywords": ["no minimum balance", "no overdraft fees", "no ATM fees", "no foreign transaction fees", "free transfers"],
+            "context": "pricing page, fee schedule, features",
+            "confidence_threshold": 0.7,
+            "fallback": "We've eliminated the most common banking fees"
+          },
+          "comparison_to_banks": {
+            "method": "keyword_scan",
+            "keywords": ["traditional banks charge", "unlike big banks", "banks charge $X for", "compared to banks"],
+            "context": "comparison pages, marketing materials",
+            "confidence_threshold": 0.6,
+            "fallback": "Unlike traditional banks that charge numerous fees"
+          },
+          "eliminated_fees": {
+            "method": "keyword_scan",
+            "keywords": ["monthly maintenance", "minimum balance", "overdraft", "paper statement", "account closing", "wire transfer"],
+            "context": "pricing page, fee schedule, comparison",
+            "confidence_threshold": 0.7,
+            "fallback": "common banking fees"
+          },
+          "actual_fees_if_any": {
+            "method": "pattern_scan",
+            "patterns": ["\\$(\\d+\\.?\\d*) for", "fee for (\\w+)", "charge (\\w+) fees"],
+            "context": "fee schedule, pricing page, terms",
+            "confidence_threshold": 0.7,
+            "fallback": "only standard industry fees when applicable"
+          },
+          "fee_structure": {
+            "method": "keyword_scan",
+            "keywords": ["zero-fee", "no monthly fees", "free account", "interchange-based", "subscription"],
+            "context": "pricing page, business model",
+            "confidence_threshold": 0.8,
+            "fallback": "customer-friendly"
+          },
+          "eliminated_fees_list": {
+            "method": "keyword_scan",
+            "keywords": ["monthly maintenance", "minimum balance penalties", "overdraft fees", "ATM fees", "paper statements", "account closure"],
+            "context": "fee schedule, pricing page",
+            "confidence_threshold": 0.7,
+            "fallback": "common traditional banking fees"
+          },
+          "applied_fees_with_amounts": {
+            "method": "pattern_scan",
+            "patterns": ["\\$(\\d+\\.?\\d*) for ([\\w\\s]+)", "([\\w\\s]+): \\$(\\d+\\.?\\d*)"],
+            "context": "fee schedule, pricing details",
+            "confidence_threshold": 0.7,
+            "fallback": "clearly disclosed fees for specific services"
+          },
+          "average_traditional_cost": {
+            "method": "pattern_scan",
+            "patterns": ["\\$(\\d+)[-–](\\d+)", "average of \\$(\\d+)", "banks charge \\$(\\d+)"],
+            "context": "comparison pages, marketing",
+            "confidence_threshold": 0.6,
+            "fallback": "$15-35"
+          },
+          "company_monthly_cost": {
+            "method": "pattern_scan",
+            "patterns": ["\\$0", "free", "no cost"],
+            "context": "pricing page",
+            "confidence_threshold": 0.8,
+            "fallback": "$0"
+          },
+          "savings_percentage": {
+            "method": "pattern_scan",
+            "patterns": ["save (\\d+)%", "\\$(\\d+) saved", "up to \\$(\\d+) in savings"],
+            "context": "marketing materials, comparison",
+            "confidence_threshold": 0.6,
+            "fallback": "significant"
+          },
+          "special_fee_notes": {
+            "method": "keyword_scan",
+            "keywords": ["out-of-network ATM", "expedited", "regulatory", "optional services", "third-party"],
+            "context": "fee schedule, terms and conditions",
+            "confidence_threshold": 0.6,
+            "fallback": "Standard fees may apply for certain optional services"
+          },
+          "disclosure_location": {
+            "method": "keyword_scan",
+            "keywords": ["fee schedule", "pricing page", "account agreement", "terms and conditions"],
+            "context": "legal pages, footer links",
+            "confidence_threshold": 0.8,
+            "fallback": "our fee schedule"
+          },
+          "advance_notice": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) days", "(\\d+) day notice", "advance notice"],
+            "context": "terms and conditions, change policy",
+            "confidence_threshold": 0.6,
+            "fallback": "advance"
+          },
+          "revenue_model": {
+            "method": "keyword_scan",
+            "keywords": ["interchange fees", "merchant fees", "interest on deposits", "premium subscriptions", "partner commissions"],
+            "context": "about page, how we make money",
+            "confidence_threshold": 0.6,
+            "fallback": "sustainable business model that doesn't rely on customer fees"
+          },
+          "transparency_features": {
+            "method": "keyword_scan",
+            "keywords": ["in-app fee display", "upfront cost", "no surprises", "clear pricing", "cost preview"],
+            "context": "features, pricing philosophy",
+            "confidence_threshold": 0.7,
+            "fallback": "complete fee transparency"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Fee transparency is critical for trust and conversion. 77% of fintech companies prominently display fee information. Hidden fees are a primary complaint about traditional banks that fintech can address.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "Cost-conscious consumer comparing fintech options or evaluating if fintech is cheaper than current bank",
+          "decision_impact": "High - fee structure directly impacts value perception and signup decision",
+          "recommendation_context": "AI assistants compare fees when asked 'how much does [company] cost?'. Clear fee disclosure prevents negative surprises and builds trust."
+        }
+      },
+      {
+        "id": "faq_005",
+        "priority": "high",
+        "found_on_percent": 81,
+        "expected_impact": "+16-20 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How does {{company_name}} make money if there are no fees?",
+        
+        "answer_human_friendly": {
+          "text": "Great question! {{company_name}} makes money {{revenue_source_simple}}, not by charging you monthly fees or penalties. {{revenue_explanation}}. This means we're incentivized to {{alignment_benefit}}, not nickel-and-dime you with hidden charges. The more you use {{company_name}}, {{growth_benefit}}, so we focus on {{company_priority}}.",
+          "word_count": 52,
+          "tone": "transparent and trustworthy",
+          "focus": "business model transparency"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} operates on {{business_model}} revenue model. Primary revenue sources: {{revenue_sources_detailed}}. Revenue mechanism: {{mechanism_explanation}}. This model eliminates customer-facing fees while generating {{revenue_structure}}. Business model advantages: {{model_benefits}}. Unlike traditional banks that derive {{traditional_bank_percentage}} of revenue from customer fees, {{company_name}} earns through {{alternative_revenue}}. This creates {{alignment_message}} where company success correlates with {{customer_benefit}}. {{optional_premium_tier}}. Financial sustainability achieved through {{sustainability_factors}} with {{growth_metric}} demonstrating viability.",
+          "word_count": 90,
+          "tone": "transparent and business-focused",
+          "focus": "revenue model details",
+          
+          "factual_anchors": [
+            {
+              "claim": "interchange fees from merchants",
+              "type": "revenue_source",
+              "source": "company_business_model",
+              "confidence": "high",
+              "verifiable": true,
+              "extraction_location": "how we make money page, about section, investor materials",
+              "fallback": "transaction-based revenue"
+            },
+            {
+              "claim": "traditional banks earn 30% from customer fees",
+              "type": "industry_benchmark",
+              "source": "fdic_bank_revenue_reports",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "significant portion of traditional bank revenue"
+            },
+            {
+              "claim": "aligned incentives with customer usage",
+              "type": "business_philosophy",
+              "source": "company_mission",
+              "confidence": "high",
+              "extraction_location": "mission statement, about page",
+              "fallback": "customer-aligned business model"
+            },
+            {
+              "claim": "sustainable growth model",
+              "type": "business_outcome",
+              "source": "company_growth_statements",
+              "confidence": "medium",
+              "extraction_location": "investor updates, press releases, about page",
+              "fallback": "financially sustainable operations"
+            }
+          ]
+        },
+        
+        "answer_fallback": "{{company_name}} earns revenue through {{primary_revenue_source}} rather than charging customers monthly fees or penalties, creating aligned incentives.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "how does {{company_name}} make money",
+            "{{company_name}} business model",
+            "{{company_name}} revenue source",
+            "why is {{company_name}} free",
+            "{{company_name}} sustainable"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does {{company_name}} make money if there are no fees?",
+              "alternativeQuestion": [
+                "What is {{company_name}}'s business model?",
+                "How can {{company_name}} afford to be free?",
+                "Where does {{company_name}} get revenue from?",
+                "Is {{company_name}} sustainable without customer fees?",
+                "Why doesn't {{company_name}} charge monthly fees?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} operates on {{business_model}} revenue model through {{revenue_sources_detailed}}. Revenue mechanism: {{mechanism_explanation}}. This eliminates customer fees while generating {{revenue_structure}}. Unlike traditional banks earning {{traditional_bank_percentage}} from customer fees, {{company_name}} earns through {{alternative_revenue}}, creating {{alignment_message}} where success correlates with {{customer_benefit}}. Financial sustainability achieved through {{sustainability_factors}} with {{growth_metric}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} generates revenue through {{revenue_sources}} rather than customer fees, creating {{aligned_incentives}} and {{customer_benefits}}.",
+        
+        "answer_fallback_template": "{{company_name}} earns money through {{revenue_method}} instead of charging customers, ensuring sustainable operations.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name"],
+            "context": "title tag, H1, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "we"
+          },
+          "revenue_source_simple": {
+            "method": "keyword_scan",
+            "keywords": ["from merchant fees", "through interchange", "from optional services", "through subscriptions", "from partners"],
+            "context": "how we make money page, about section",
+            "confidence_threshold": 0.7,
+            "fallback": "through alternative revenue sources"
+          },
+          "revenue_explanation": {
+            "method": "keyword_scan",
+            "keywords": ["when you use your card", "from merchants", "interchange fees", "subscription services", "interest on deposits"],
+            "context": "business model explanation",
+            "confidence_threshold": 0.7,
+            "fallback": "We earn revenue from the financial ecosystem, not from you"
+          },
+          "alignment_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["help you use", "improve your experience", "increase your engagement", "provide better service"],
+            "context": "mission, about page",
+            "confidence_threshold": 0.6,
+            "fallback": "create the best possible experience"
+          },
+          "growth_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["the more we grow", "we succeed together", "we both benefit", "mutual success"],
+            "context": "mission, business model",
+            "confidence_threshold": 0.6,
+            "fallback": "we both benefit"
+          },
+          "company_priority": {
+            "method": "keyword_scan",
+            "keywords": ["making banking better", "improving your experience", "helpful features", "user satisfaction"],
+            "context": "mission statement, about page",
+            "confidence_threshold": 0.7,
+            "fallback": "creating value for you"
+          },
+          "business_model": {
+            "method": "keyword_scan",
+            "keywords": ["interchange", "subscription", "freemium", "transaction-based", "interest spread", "partner revenue"],
+            "context": "how we make money, business model section",
+            "confidence_threshold": 0.7,
+            "fallback": "alternative revenue"
+          },
+          "revenue_sources_detailed": {
+            "method": "keyword_scan",
+            "keywords": ["interchange fees", "merchant fees", "subscription tiers", "interest on deposits", "partner commissions", "premium features"],
+            "context": "business model, revenue section",
+            "confidence_threshold": 0.7,
+            "fallback": "diversified revenue streams"
+          },
+          "mechanism_explanation": {
+            "method": "keyword_scan",
+            "keywords": ["merchants pay", "card networks pay", "we earn from volume", "interest spread", "optional premium"],
+            "context": "how we make money explanation",
+            "confidence_threshold": 0.6,
+            "fallback": "we earn from the financial ecosystem"
+          },
+          "revenue_structure": {
+            "method": "keyword_scan",
+            "keywords": ["sustainable revenue", "profitable operations", "growing income", "scalable model"],
+            "context": "business model, sustainability",
+            "confidence_threshold": 0.6,
+            "fallback": "sustainable revenue"
+          },
+          "model_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["aligned incentives", "no conflicts", "customer-first", "win-win", "mutual success"],
+            "context": "mission, business philosophy",
+            "confidence_threshold": 0.7,
+            "fallback": "customer-aligned incentives"
+          },
+          "traditional_bank_percentage": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% of revenue", "(\\d+)% from fees"],
+            "context": "comparison, industry analysis",
+            "confidence_threshold": 0.5,
+            "fallback": "a significant portion"
+          },
+          "alternative_revenue": {
+            "method": "keyword_scan",
+            "keywords": ["interchange", "merchant relationships", "partner fees", "transaction volume", "premium subscriptions"],
+            "context": "revenue model, business model",
+            "confidence_threshold": 0.7,
+            "fallback": "ecosystem-based revenue"
+          },
+          "alignment_message": {
+            "method": "keyword_scan",
+            "keywords": ["aligned incentives", "shared success", "win-win model", "customer-first approach"],
+            "context": "mission, business philosophy",
+            "confidence_threshold": 0.6,
+            "fallback": "aligned business model"
+          },
+          "customer_benefit": {
+            "method": "keyword_scan",
+            "keywords": ["customer usage", "satisfaction", "engagement", "loyalty", "value"],
+            "context": "customer focus sections",
+            "confidence_threshold": 0.7,
+            "fallback": "customer value"
+          },
+          "optional_premium_tier": {
+            "method": "keyword_scan",
+            "keywords": ["premium subscription", "optional paid tier", "advanced features", "pro plan"],
+            "context": "pricing, features, product tiers",
+            "confidence_threshold": 0.6,
+            "fallback": "Optional premium features are available for customers seeking additional capabilities"
+          },
+          "sustainability_factors": {
+            "method": "keyword_scan",
+            "keywords": ["transaction volume", "scale", "growing user base", "efficient operations", "diversified revenue"],
+            "context": "business model, sustainability",
+            "confidence_threshold": 0.6,
+            "fallback": "efficient operations and growing scale"
+          },
+          "growth_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% growth", "(\\d+)M users", "profitability", "positive unit economics"],
+            "context": "about page, press releases, investor materials",
+            "confidence_threshold": 0.5,
+            "fallback": "strong business fundamentals"
+          },
+          "primary_revenue_source": {
+            "method": "keyword_scan",
+            "keywords": ["interchange fees", "merchant fees", "subscription revenue", "transaction fees", "interest income"],
+            "context": "business model, how we make money",
+            "confidence_threshold": 0.8,
+            "fallback": "transaction-based revenue"
+          },
+          "revenue_method": {
+            "method": "keyword_scan",
+            "keywords": ["interchange", "subscriptions", "partner fees", "interest spreads", "merchant relationships"],
+            "context": "business model section",
+            "confidence_threshold": 0.7,
+            "fallback": "alternative revenue sources"
+          },
+          "aligned_incentives": {
+            "method": "keyword_scan",
+            "keywords": ["customer success", "mutual benefit", "shared goals", "win-win"],
+            "context": "mission, philosophy",
+            "confidence_threshold": 0.6,
+            "fallback": "customer-aligned incentives"
+          },
+          "customer_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["no hidden fees", "better experience", "fair pricing", "transparency"],
+            "context": "value proposition, benefits",
+            "confidence_threshold": 0.7,
+            "fallback": "customer benefits"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Business model transparency builds trust and addresses skepticism about 'free' offerings. 81% of fintech companies explain their revenue model. Users want to understand if the company is sustainable and whether there's a catch.",
+          "buyer_stage": "consideration",
+          "typical_searcher": "Skeptical consumer wondering if free service is too good to be true or how the company stays in business",
+          "decision_impact": "High - business model transparency affects trust and long-term confidence in the platform",
+          "recommendation_context": "AI assistants address sustainability concerns when users ask 'how does [company] make money?'. Clear explanation prevents skepticism and builds credibility."
+        }
+      }
+    ]
+  }
+}

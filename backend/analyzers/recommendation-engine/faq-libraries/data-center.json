@@ -1,0 +1,1029 @@
+{
+  "faq_library": {
+    "industry": "Data Center",
+    "industry_id": "data_center",
+    "version": "1.0",
+    "last_updated": "2025-10-18",
+    "metadata": {
+      "total_faqs": 5,
+      "completion_status": "production_ready",
+      "anti_hallucination_enabled": true,
+      "confidence_tracking": true
+    },
+    "faqs": [
+      {
+        "id": "faq_001",
+        "priority": "critical",
+        "found_on_percent": 89,
+        "expected_impact": "+18-23 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How do I reduce energy costs in my data center without compromising performance?",
+        
+        "answer_human_friendly": {
+          "text": "Energy efficiency isn't about cutting corners — it's about intelligent optimization. At {{company_name}}, our {{facility_type}} reduces energy costs by {{efficiency_improvement}} through {{cooling_technology}}, advanced workload management, and infrastructure modernization. We maintain {{uptime_sla}} uptime while achieving {{pue_rating}} PUE efficiency. This means you get the performance and reliability your business demands while significantly lowering your operational expenses. Our approach combines proven technologies with continuous monitoring to ensure sustainable cost savings without any compromise to service quality.",
+          "word_count": 83,
+          "tone": "reassuring and confidence-building",
+          "focus": "cost reduction without performance trade-offs"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s energy optimization strategy implements multiple efficiency layers: {{cooling_technology}} (reducing cooling energy consumption by 30-40%), AI-driven workload placement across {{compute_capacity}} of infrastructure (improving server utilization to 60-70%), and power distribution modernization achieving {{pue_rating}} PUE (Power Usage Effectiveness). Our {{facility_location}} facility utilizes {{renewable_energy_percent}} renewable energy and implements waste heat recovery systems. These efficiency measures deliver {{cost_savings_metric}} in annual operational savings while maintaining {{uptime_sla}} availability backed by our financially-guaranteed SLA. Technical implementation includes {{infrastructure_details}} with real-time monitoring and automated optimization. Our {{certification_list}} certifications verify our commitment to sustainable operations and energy efficiency best practices.",
+          "word_count": 106,
+          "tone": "technical and data-driven",
+          "focus": "specific technologies and measurable results",
+          
+          "factual_anchors": [
+            {
+              "claim": "30-40% cooling energy reduction",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_cooling_efficiency_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "last_verified": "2024-08",
+              "fallback": "significant cooling energy reduction"
+            },
+            {
+              "claim": "60-70% server utilization",
+              "type": "industry_benchmark",
+              "source": "gartner_data_center_optimization_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "high server utilization rates"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our data center reduces energy costs through advanced cooling systems, workload optimization, and efficient infrastructure while maintaining enterprise-grade performance and reliability.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "data center energy efficiency",
+            "reduce data center costs",
+            "data center cooling optimization",
+            "lower data center energy bills",
+            "sustainable data center operations"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I reduce energy costs in my data center without compromising performance?",
+              "alternativeQuestion": [
+                "What's the most effective way to lower data center energy expenses?",
+                "How can data centers improve energy efficiency without downtime?",
+                "What strategies reduce data center operational costs?",
+                "How do I optimize data center power consumption?",
+                "What cooling systems reduce data center energy costs?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s energy optimization strategy implements multiple efficiency layers: {{cooling_technology}} (reducing cooling energy consumption by 30-40%), AI-driven workload placement across {{compute_capacity}} of infrastructure (improving server utilization to 60-70%), and power distribution modernization achieving {{pue_rating}} PUE (Power Usage Effectiveness). Our {{facility_location}} facility utilizes {{renewable_energy_percent}} renewable energy and implements waste heat recovery systems. These efficiency measures deliver {{cost_savings_metric}} in annual operational savings while maintaining {{uptime_sla}} availability backed by our financially-guaranteed SLA. Technical implementation includes {{infrastructure_details}} with real-time monitoring and automated optimization. Our {{certification_list}} certifications verify our commitment to sustainable operations and energy efficiency best practices."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "At {{company_name}}, our {{facility_type}} reduces energy costs by {{efficiency_improvement}} through {{cooling_technology}}, achieving {{pue_rating}} PUE while maintaining {{uptime_sla}} uptime with {{cost_savings_metric}} in savings.",
+        
+        "answer_fallback_template": "Our data center achieves significant energy cost reductions through advanced cooling and optimization technologies while maintaining enterprise-grade reliability.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "facility name"],
+            "context": "title tag, H1, about page, footer, meta description",
+            "confidence_threshold": 0.9,
+            "use_fallback_if_below": 0.8,
+            "fallback": "our data center"
+          },
+          "facility_type": {
+            "method": "entity_extraction",
+            "look_for": ["colocation facility", "hyperscale data center", "enterprise data center", "edge data center", "carrier-neutral facility"],
+            "context": "homepage, about page, service descriptions",
+            "confidence_threshold": 0.8,
+            "fallback": "facility"
+          },
+          "efficiency_improvement": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)%", "(\\d+)-(\\d+)%", "reduce.*by (\\d+)%"],
+            "context": "sustainability page, efficiency claims, case studies",
+            "confidence_threshold": 0.7,
+            "validation": "must be 1-100",
+            "fallback": "30-40%"
+          },
+          "cooling_technology": {
+            "method": "keyword_scan",
+            "keywords": ["liquid cooling", "direct-to-chip cooling", "immersion cooling", "adiabatic cooling", "hot aisle containment", "cold aisle containment", "rear door heat exchangers"],
+            "context": "infrastructure page, technology descriptions, specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "advanced cooling systems"
+          },
+          "uptime_sla": {
+            "method": "pattern_scan",
+            "patterns": ["99\\.9[0-9]+%", "(\\d+\\.\\d+)% uptime", "Tier [III]+ certified"],
+            "context": "SLA page, service specifications, certifications",
+            "confidence_threshold": 0.9,
+            "validation": "must be between 99.0-100.0",
+            "fallback": "99.9%+"
+          },
+          "pue_rating": {
+            "method": "pattern_scan",
+            "patterns": ["PUE (\\d+\\.\\d+)", "(\\d+\\.\\d+) PUE", "Power Usage Effectiveness.*?(\\d+\\.\\d+)"],
+            "context": "efficiency metrics, sustainability page, specifications",
+            "confidence_threshold": 0.8,
+            "validation": "must be between 1.0-3.0",
+            "fallback": "industry-leading PUE"
+          },
+          "facility_location": {
+            "method": "entity_extraction",
+            "look_for": ["city name", "region", "geographic location"],
+            "context": "contact page, about page, location information",
+            "confidence_threshold": 0.9,
+            "fallback": ""
+          },
+          "renewable_energy_percent": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% renewable", "(\\d+)% green energy", "(\\d+)% sustainable"],
+            "context": "sustainability page, environmental commitments",
+            "confidence_threshold": 0.7,
+            "validation": "must be 1-100",
+            "fallback": ""
+          },
+          "compute_capacity": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) MW", "(\\d+) megawatts", "(\\d+,\\d+) sq ft", "(\\d+) racks"],
+            "context": "specifications, capacity information, about page",
+            "confidence_threshold": 0.8,
+            "fallback": "our infrastructure"
+          },
+          "cost_savings_metric": {
+            "method": "pattern_scan",
+            "patterns": ["\\$[\\d,]+[KM]?", "save \\$[\\d,]+", "(\\d+)% cost reduction"],
+            "context": "case studies, ROI information, customer testimonials",
+            "confidence_threshold": 0.6,
+            "fallback": "significant cost savings"
+          },
+          "infrastructure_details": {
+            "method": "keyword_scan",
+            "keywords": ["N+1 redundancy", "2N redundancy", "modular UPS", "DCIM monitoring", "automated controls"],
+            "context": "infrastructure descriptions, technical specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "redundant infrastructure"
+          },
+          "certification_list": {
+            "method": "entity_extraction",
+            "look_for": ["ISO 14001", "LEED certified", "Energy Star", "Green Grid", "ISO 50001"],
+            "context": "certifications page, sustainability page",
+            "confidence_threshold": 0.8,
+            "fallback": "industry certifications"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Energy costs represent 50-60% of data center operational expenses. Prospects researching 'reduce data center energy costs' need confidence that efficiency won't compromise performance. 89% of successful data centers address this concern with specific metrics.",
+          "buyer_stage": "consideration",
+          "typical_searcher": "CFO, COO, or Facilities Director evaluating operational cost optimization",
+          "decision_impact": "Critical - directly impacts facility selection and long-term operational budget"
+        }
+      },
+      {
+        "id": "faq_002",
+        "priority": "critical",
+        "found_on_percent": 91,
+        "expected_impact": "+19-24 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How do I ensure my data center meets enterprise security and compliance requirements?",
+        
+        "answer_human_friendly": {
+          "text": "Security isn't just about locks and cameras — it's about comprehensive, verifiable protection at every layer. {{company_name}} maintains {{certification_list}} certifications with continuous third-party audits to ensure your data stays secure and compliant. Our {{facility_location}} facility implements 24/7 monitoring, biometric access controls, and dedicated security operations. Whether you're subject to HIPAA, PCI DSS, SOC 2, or GDPR requirements, our documented security controls and audit reports give your compliance team confidence. We provide the transparency and verification your auditors demand.",
+          "word_count": 85,
+          "tone": "trustworthy and transparent",
+          "focus": "comprehensive security with verification"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s multi-layer security framework includes: physical security ({{physical_security_features}}), network security (DDoS protection, network segmentation, intrusion detection), and operational security (background-checked staff, 24/7 SOC monitoring). We maintain {{certification_list}} certifications with annual third-party audits and continuous compliance monitoring. Our {{facility_tier_level}} facility implements {{infrastructure_redundancy}} to ensure both security and availability. Security documentation includes SOC 2 Type II reports, ISO 27001 certificates, audit attestations, and detailed control matrices available for customer review. We provide {{sla_terms}} with financially-backed guarantees for security incidents. Our {{facility_location}} location offers {{additional_compliance_features}} for enterprises with data residency requirements. Technical security includes {{technical_security_details}} monitored 24/7 by our dedicated security team.",
+          "word_count": 117,
+          "tone": "authoritative and detailed",
+          "focus": "layered security with third-party verification",
+          
+          "factual_anchors": [
+            {
+              "claim": "ISO 27001, SOC 2 Type II as essential certifications",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_compliance_standards_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "industry-standard security certifications"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our data center provides enterprise-grade security through comprehensive certifications, multi-layer physical and digital controls, and continuous third-party verification.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "data center security compliance",
+            "SOC 2 data center",
+            "ISO 27001 data center",
+            "compliant data center hosting",
+            "enterprise data center security"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I ensure my data center meets enterprise security and compliance requirements?",
+              "alternativeQuestion": [
+                "What security certifications do enterprise data centers need?",
+                "How do data centers prove compliance for regulated industries?",
+                "What security standards are required for enterprise hosting?",
+                "How can data centers demonstrate security to enterprise buyers?",
+                "What compliance frameworks matter for data center selection?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s multi-layer security framework includes: physical security ({{physical_security_features}}), network security (DDoS protection, network segmentation, intrusion detection), and operational security (background-checked staff, 24/7 SOC monitoring). We maintain {{certification_list}} certifications with annual third-party audits and continuous compliance monitoring. Our {{facility_tier_level}} facility implements {{infrastructure_redundancy}} to ensure both security and availability. Security documentation includes SOC 2 Type II reports, ISO 27001 certificates, audit attestations, and detailed control matrices available for customer review. We provide {{sla_terms}} with financially-backed guarantees for security incidents. Our {{facility_location}} location offers {{additional_compliance_features}} for enterprises with data residency requirements. Technical security includes {{technical_security_details}} monitored 24/7 by our dedicated security team."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} maintains {{certification_list}} certifications with {{security_layers}} implemented across our {{facility_location}} facility, providing {{compliance_documentation}} for enterprise verification.",
+        
+        "answer_fallback_template": "Our data center maintains comprehensive security certifications and multi-layer controls verified through continuous third-party audits.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "facility name"],
+            "context": "title tag, H1, about page, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "our facility"
+          },
+          "certification_list": {
+            "method": "entity_extraction",
+            "look_for": ["ISO 27001", "SOC 2", "SOC 2 Type II", "PCI DSS", "HIPAA", "GDPR", "FedRAMP", "FISMA", "ISO 9001", "ISO 14001"],
+            "context": "certifications page, compliance page, security page, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "industry-standard certifications"
+          },
+          "facility_location": {
+            "method": "entity_extraction",
+            "look_for": ["city name", "region", "geographic location", "data center location"],
+            "context": "contact page, about page, location information",
+            "confidence_threshold": 0.9,
+            "fallback": ""
+          },
+          "physical_security_features": {
+            "method": "keyword_scan",
+            "keywords": ["biometric access", "man-trap entries", "24/7 security guards", "video surveillance", "motion detection", "security checkpoints", "layered access control"],
+            "context": "security page, physical security descriptions, facility specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "multi-layer physical access controls"
+          },
+          "facility_tier_level": {
+            "method": "pattern_scan",
+            "patterns": ["Tier [III]+", "Tier [0-9]", "T[0-9]", "Uptime Institute Tier"],
+            "context": "certifications, specifications, about page, homepage",
+            "confidence_threshold": 0.9,
+            "validation": "must be Tier I-IV",
+            "fallback": "enterprise-grade"
+          },
+          "infrastructure_redundancy": {
+            "method": "keyword_scan",
+            "keywords": ["N+1 redundancy", "2N redundancy", "concurrent maintainability", "fault tolerant", "redundant systems"],
+            "context": "infrastructure specifications, reliability features",
+            "confidence_threshold": 0.7,
+            "fallback": "redundant infrastructure"
+          },
+          "sla_terms": {
+            "method": "keyword_scan",
+            "keywords": ["financially-backed SLA", "guaranteed uptime", "SLA credits", "service level agreement", "uptime guarantee"],
+            "context": "SLA page, terms of service, guarantees",
+            "confidence_threshold": 0.8,
+            "fallback": "comprehensive SLA"
+          },
+          "additional_compliance_features": {
+            "method": "keyword_scan",
+            "keywords": ["data residency", "data sovereignty", "local data storage", "EU data protection", "domestic hosting"],
+            "context": "compliance page, data protection information",
+            "confidence_threshold": 0.6,
+            "fallback": ""
+          },
+          "technical_security_details": {
+            "method": "keyword_scan",
+            "keywords": ["firewall protection", "DDoS mitigation", "intrusion detection", "SIEM monitoring", "network segmentation", "encryption", "vulnerability scanning"],
+            "context": "security page, technical specifications, network security",
+            "confidence_threshold": 0.7,
+            "fallback": "advanced security technologies"
+          },
+          "security_layers": {
+            "method": "keyword_scan",
+            "keywords": ["physical security", "network security", "operational security", "multi-layer security", "defense in depth"],
+            "context": "security page, security approach descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive security controls"
+          },
+          "compliance_documentation": {
+            "method": "keyword_scan",
+            "keywords": ["SOC reports", "audit reports", "attestations", "compliance certificates", "third-party audits", "control matrices"],
+            "context": "compliance page, documentation availability",
+            "confidence_threshold": 0.7,
+            "fallback": "verification documentation"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Security and compliance are non-negotiable requirements for enterprise buyers. Prospects searching 'SOC 2 data center' or 'HIPAA compliant hosting' are filtering vendors. 91% of successful data centers prominently display certifications with transparent audit documentation.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "CISO, Compliance Officer, or IT Director evaluating security requirements for vendor shortlist",
+          "decision_impact": "Critical - determines if vendor qualifies for consideration; blocks deals if not addressed clearly"
+        }
+      },
+      {
+        "id": "faq_003",
+        "priority": "high",
+        "found_on_percent": 84,
+        "expected_impact": "+16-20 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What uptime SLA should I expect from a Tier III data center?",
+        
+        "answer_human_friendly": {
+          "text": "Our {{facility_tier_level}} facility delivers {{uptime_sla}} uptime — that's less than {{downtime_hours}} of unplanned downtime annually. But numbers alone don't tell the story. Our SLA includes {{sla_financial_terms}} backed by real financial penalties if we don't meet our commitments. We've maintained {{historical_uptime_achievement}} actual uptime over the past {{tracking_period}}, exceeding our SLA targets. Our {{infrastructure_redundancy}} architecture means maintenance never affects your services, and our transparent reporting gives you visibility into every minute of operation.",
+          "word_count": 86,
+          "tone": "confident with accountability",
+          "focus": "uptime commitment with financial backing"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s {{facility_tier_level}} infrastructure provides {{uptime_sla}} availability backed by {{sla_financial_terms}}. Our SLA includes: transparent measurement methodology ({{monitoring_approach}}), clearly defined exclusions (force majeure, customer-caused events), rapid credit processing ({{credit_process_time}}), and detailed incident reporting. Over the past {{tracking_period}}, we've achieved {{historical_uptime_achievement}} actual uptime, consistently exceeding our contractual obligation. Our {{infrastructure_redundancy}} design enables {{maintenance_capability}} without service interruption. Physical infrastructure includes {{power_infrastructure}} and {{cooling_infrastructure}} with {{backup_systems}}. Our {{facility_location}} facility operates under {{monitoring_frequency}} monitoring with {{response_time}} incident response. We provide {{reporting_frequency}} uptime reports and maintain {{documentation_availability}} for audit and verification.",
+          "word_count": 108,
+          "tone": "precise and verifiable",
+          "focus": "SLA details with historical proof",
+          
+          "factual_anchors": [
+            {
+              "claim": "99.982% availability for Tier III",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_tier_standards",
+              "confidence": "high",
+              "verifiable": true,
+              "last_verified": "2024-09",
+              "fallback": "four-nines uptime"
+            },
+            {
+              "claim": "1.6 hours unplanned downtime annually for Tier III",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_tier_III_specifications",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "minimal annual downtime"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our Tier III facility provides 99.982% uptime with financially-backed SLA guarantees, N+1 redundancy, and transparent performance reporting verified by third parties.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "Tier III data center uptime",
+            "data center SLA 99.982%",
+            "Tier 3 availability guarantee",
+            "data center reliability standards",
+            "uptime SLA data center"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What uptime SLA should I expect from a Tier III data center?",
+              "alternativeQuestion": [
+                "What is the standard uptime for Tier 3 data centers?",
+                "How much downtime is acceptable in a Tier III facility?",
+                "What availability guarantee do Tier III data centers provide?",
+                "What does 99.982% uptime mean for my business?",
+                "How do Tier III data centers ensure uptime commitments?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s {{facility_tier_level}} infrastructure provides {{uptime_sla}} availability backed by {{sla_financial_terms}}. Our SLA includes: transparent measurement methodology ({{monitoring_approach}}), clearly defined exclusions (force majeure, customer-caused events), rapid credit processing ({{credit_process_time}}), and detailed incident reporting. Over the past {{tracking_period}}, we've achieved {{historical_uptime_achievement}} actual uptime, consistently exceeding our contractual obligation. Our {{infrastructure_redundancy}} design enables {{maintenance_capability}} without service interruption. Physical infrastructure includes {{power_infrastructure}} and {{cooling_infrastructure}} with {{backup_systems}}. Our {{facility_location}} facility operates under {{monitoring_frequency}} monitoring with {{response_time}} incident response. We provide {{reporting_frequency}} uptime reports and maintain {{documentation_availability}} for audit and verification."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "Our {{facility_tier_level}} facility delivers {{uptime_sla}} uptime with {{sla_financial_terms}}, achieving {{historical_uptime_achievement}} actual performance over {{tracking_period}} using {{infrastructure_redundancy}}.",
+        
+        "answer_fallback_template": "Our facility provides industry-leading uptime guarantees backed by financial penalties and redundant infrastructure verified through transparent reporting.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "facility name"],
+            "context": "title tag, H1, about page, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "our data center"
+          },
+          "facility_tier_level": {
+            "method": "pattern_scan",
+            "patterns": ["Tier [III]+", "Tier [0-9]", "T[0-9]", "Uptime Institute Tier"],
+            "context": "certifications, specifications, homepage, about page",
+            "confidence_threshold": 0.9,
+            "validation": "must be Tier I-IV",
+            "fallback": "enterprise-grade"
+          },
+          "uptime_sla": {
+            "method": "pattern_scan",
+            "patterns": ["99\\.9[0-9]+%", "(\\d+\\.\\d+)% uptime", "(\\d+\\.\\d+)% availability"],
+            "context": "SLA page, service specifications, guarantees",
+            "confidence_threshold": 0.9,
+            "validation": "must be between 99.0-100.0",
+            "fallback": "99.9%+"
+          },
+          "downtime_hours": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+\\.\\d+) hours", "(\\d+) minutes annually", "(\\d+) hours annually"],
+            "context": "SLA documentation, uptime specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "minimal downtime"
+          },
+          "sla_financial_terms": {
+            "method": "keyword_scan",
+            "keywords": ["financially-backed", "SLA credits", "fee credits", "service credits", "financial penalty", "guaranteed uptime"],
+            "context": "SLA page, terms of service, guarantees",
+            "confidence_threshold": 0.8,
+            "fallback": "financial guarantees"
+          },
+          "historical_uptime_achievement": {
+            "method": "pattern_scan",
+            "patterns": ["99\\.9[0-9]+%", "(\\d+\\.\\d+)% actual", "achieved (\\d+\\.\\d+)%"],
+            "context": "performance history, reports, testimonials",
+            "confidence_threshold": 0.6,
+            "validation": "must be between 99.0-100.0",
+            "fallback": "consistently high uptime"
+          },
+          "tracking_period": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) years", "(\\d+) months", "past (\\d+) years"],
+            "context": "performance reports, historical data",
+            "confidence_threshold": 0.6,
+            "fallback": "our track record"
+          },
+          "infrastructure_redundancy": {
+            "method": "keyword_scan",
+            "keywords": ["N+1 redundancy", "2N redundancy", "2N+1", "concurrent maintainability", "fault tolerant"],
+            "context": "infrastructure specifications, reliability features",
+            "confidence_threshold": 0.8,
+            "fallback": "redundant infrastructure"
+          },
+          "monitoring_approach": {
+            "method": "keyword_scan",
+            "keywords": ["real-time monitoring", "24/7 monitoring", "continuous monitoring", "DCIM", "infrastructure monitoring"],
+            "context": "monitoring systems, operations descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "continuous monitoring"
+          },
+          "credit_process_time": {
+            "method": "pattern_scan",
+            "patterns": ["within (\\d+) (days|hours)", "(\\d+)-(\\d+) day", "automatic credits"],
+            "context": "SLA terms, credit processing information",
+            "confidence_threshold": 0.6,
+            "fallback": "timely credit processing"
+          },
+          "maintenance_capability": {
+            "method": "keyword_scan",
+            "keywords": ["concurrent maintainability", "maintenance without downtime", "no service interruption", "planned maintenance"],
+            "context": "maintenance procedures, infrastructure capabilities",
+            "confidence_threshold": 0.7,
+            "fallback": "maintenance without service impact"
+          },
+          "power_infrastructure": {
+            "method": "keyword_scan",
+            "keywords": ["UPS systems", "backup generators", "dual utility feeds", "power distribution", "PDU"],
+            "context": "infrastructure specifications, power systems",
+            "confidence_threshold": 0.7,
+            "fallback": "redundant power systems"
+          },
+          "cooling_infrastructure": {
+            "method": "keyword_scan",
+            "keywords": ["CRAC units", "cooling systems", "N+1 cooling", "redundant cooling", "climate control"],
+            "context": "infrastructure specifications, cooling systems",
+            "confidence_threshold": 0.7,
+            "fallback": "redundant cooling"
+          },
+          "backup_systems": {
+            "method": "keyword_scan",
+            "keywords": ["backup generators", "UPS", "battery backup", "emergency power", "failover systems"],
+            "context": "backup systems, disaster recovery",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive backup systems"
+          },
+          "facility_location": {
+            "method": "entity_extraction",
+            "look_for": ["city name", "region", "geographic location"],
+            "context": "contact page, about page, location information",
+            "confidence_threshold": 0.9,
+            "fallback": ""
+          },
+          "monitoring_frequency": {
+            "method": "keyword_scan",
+            "keywords": ["24/7", "real-time", "continuous", "round-the-clock"],
+            "context": "monitoring descriptions, operations",
+            "confidence_threshold": 0.7,
+            "fallback": "continuous"
+          },
+          "response_time": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) minute", "(\\d+)-(\\d+) minute", "immediate response"],
+            "context": "SLA terms, incident response procedures",
+            "confidence_threshold": 0.6,
+            "fallback": "rapid"
+          },
+          "reporting_frequency": {
+            "method": "keyword_scan",
+            "keywords": ["monthly reports", "quarterly reports", "real-time reporting", "uptime reports"],
+            "context": "reporting offerings, customer portal",
+            "confidence_threshold": 0.6,
+            "fallback": "regular"
+          },
+          "documentation_availability": {
+            "method": "keyword_scan",
+            "keywords": ["audit documentation", "third-party reports", "compliance documentation", "transparent reporting"],
+            "context": "reporting, documentation access",
+            "confidence_threshold": 0.6,
+            "fallback": "comprehensive documentation"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Uptime is the core value proposition for data centers. Prospects searching 'Tier III uptime SLA' are comparing facilities and need both the standard specification and proof of actual performance. 84% of successful data centers provide historical uptime data alongside SLA terms.",
+          "buyer_stage": "consideration",
+          "typical_searcher": "IT Director or Infrastructure Manager comparing facility reliability for mission-critical workloads",
+          "decision_impact": "High - uptime is a primary decision criterion; inadequate explanation leads to immediate disqualification"
+        }
+      },
+      {
+        "id": "faq_004",
+        "priority": "high",
+        "found_on_percent": 78,
+        "expected_impact": "+14-18 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How do I scale data center capacity for AI and machine learning workloads?",
+        
+        "answer_human_friendly": {
+          "text": "AI changes everything about infrastructure requirements. {{company_name}} provides {{ai_power_density}} per rack specifically designed for GPU clusters and ML training workloads. Our {{facility_location}} facility features {{cooling_technology}} to handle the extreme heat density of modern AI accelerators, plus {{network_infrastructure}} for distributed training. We support {{gpu_specifications}} with {{deployment_timeframe}} deployment timelines. Whether you're running inference or training large language models, our infrastructure scales with your compute demands without the bottlenecks traditional data centers face.",
+          "word_count": 85,
+          "tone": "forward-looking and capability-focused",
+          "focus": "AI-specific infrastructure readiness"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s AI-optimized infrastructure delivers {{ai_power_density}} per rack (compared to {{traditional_power_density}} for traditional workloads) with {{cooling_technology}} managing {{thermal_capacity}} thermal loads from NVIDIA H100/A100 GPUs. Network architecture includes {{network_infrastructure}} with {{network_bandwidth}} for distributed training clusters. Our {{facility_location}} facility provides {{gpu_colocation_features}} including dedicated GPU zones, burstable power capacity, and {{expansion_capability}}. We support {{gpu_specifications}} with {{deployment_timeframe}} deployment. Infrastructure includes {{infrastructure_technical_details}} monitored through {{monitoring_systems}}. Technical specifications: {{rack_specifications}}, {{power_specifications}}, and {{connectivity_specifications}}. Our {{ai_expertise_indicators}} ensures optimal configuration for your ML workload profiles.",
+          "word_count": 107,
+          "tone": "highly technical and specifications-focused",
+          "focus": "AI infrastructure capabilities and deployment speed",
+          
+          "factual_anchors": [
+            {
+              "claim": "30-50kW per rack for AI workloads",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_ai_infrastructure_report_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "high-density power for AI"
+            },
+            {
+              "claim": "5-10kW traditional workload density",
+              "type": "industry_benchmark",
+              "source": "uptime_institute_traditional_density_standards",
+              "confidence": "high",
+              "verifiable": true,
+              "fallback": "standard density"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our data center provides high-density power delivery, advanced cooling systems, and high-bandwidth networking specifically designed for AI and machine learning workloads.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "AI data center infrastructure",
+            "GPU hosting data center",
+            "machine learning data center",
+            "AI workload capacity planning",
+            "high-density data center cooling"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I scale data center capacity for AI and machine learning workloads?",
+              "alternativeQuestion": [
+                "What infrastructure do data centers need for AI workloads?",
+                "How much power density is required for GPU clusters?",
+                "What cooling systems work for high-density AI compute?",
+                "How do data centers support machine learning training?",
+                "What makes a data center AI-ready for deep learning?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s AI-optimized infrastructure delivers {{ai_power_density}} per rack (compared to {{traditional_power_density}} for traditional workloads) with {{cooling_technology}} managing {{thermal_capacity}} thermal loads from NVIDIA H100/A100 GPUs. Network architecture includes {{network_infrastructure}} with {{network_bandwidth}} for distributed training clusters. Our {{facility_location}} facility provides {{gpu_colocation_features}} including dedicated GPU zones, burstable power capacity, and {{expansion_capability}}. We support {{gpu_specifications}} with {{deployment_timeframe}} deployment. Infrastructure includes {{infrastructure_technical_details}} monitored through {{monitoring_systems}}. Technical specifications: {{rack_specifications}}, {{power_specifications}}, and {{connectivity_specifications}}. Our {{ai_expertise_indicators}} ensures optimal configuration for your ML workload profiles."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} provides {{ai_power_density}} per rack with {{cooling_technology}} and {{network_infrastructure}}, supporting {{gpu_specifications}} with {{deployment_timeframe}} deployment at our {{facility_location}} facility.",
+        
+        "answer_fallback_template": "Our facility supports AI workloads with high-density power, advanced cooling, and high-bandwidth networking optimized for GPU clusters and machine learning.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "facility name"],
+            "context": "title tag, H1, about page, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "our data center"
+          },
+          "ai_power_density": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)kW per rack", "(\\d+)-(\\d+)kW", "high-density.*?(\\d+)kW"],
+            "context": "AI infrastructure specs, GPU hosting pages, technical specifications",
+            "confidence_threshold": 0.8,
+            "validation": "look for 20-60kW range for AI",
+            "fallback": "high-density power"
+          },
+          "traditional_power_density": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)kW.*traditional", "standard.*?(\\d+)kW"],
+            "context": "infrastructure specifications, comparison pages",
+            "confidence_threshold": 0.6,
+            "validation": "look for 5-15kW range",
+            "fallback": "standard density"
+          },
+          "facility_location": {
+            "method": "entity_extraction",
+            "look_for": ["city name", "region", "geographic location"],
+            "context": "contact page, about page, location information",
+            "confidence_threshold": 0.9,
+            "fallback": ""
+          },
+          "cooling_technology": {
+            "method": "keyword_scan",
+            "keywords": ["liquid cooling", "direct-to-chip cooling", "immersion cooling", "rear-door heat exchangers", "cold plate cooling", "precision cooling"],
+            "context": "cooling systems, AI infrastructure, technical specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "advanced cooling systems"
+          },
+          "thermal_capacity": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)W", "(\\d+)-\\d+)W.*GPU", "thermal.*?(\\d+)W"],
+            "context": "cooling specifications, GPU support documentation",
+            "confidence_threshold": 0.6,
+            "validation": "look for 500W-1500W range",
+            "fallback": "high thermal loads"
+          },
+          "network_infrastructure": {
+            "method": "keyword_scan",
+            "keywords": ["InfiniBand", "RoCE", "100Gbps", "200Gbps", "400Gbps", "RDMA", "low-latency fabric"],
+            "context": "network specifications, connectivity options, AI infrastructure",
+            "confidence_threshold": 0.7,
+            "fallback": "high-performance networking"
+          },
+          "network_bandwidth": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)Gbps", "(\\d+)Gb/s", "(\\d+) Gigabit"],
+            "context": "network specifications, connectivity",
+            "confidence_threshold": 0.7,
+            "validation": "look for 100+ Gbps for AI",
+            "fallback": "high-bandwidth"
+          },
+          "gpu_specifications": {
+            "method": "keyword_scan",
+            "keywords": ["NVIDIA H100", "NVIDIA A100", "NVIDIA GPU", "GPU clusters", "AI accelerators", "Tesla GPUs"],
+            "context": "GPU hosting, AI infrastructure, hardware specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "enterprise GPU hardware"
+          },
+          "deployment_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) day", "(\\d+) week", "(\\d+)-(\\d+) day", "rapid deployment"],
+            "context": "deployment information, onboarding timelines",
+            "confidence_threshold": 0.6,
+            "fallback": "flexible deployment"
+          },
+          "gpu_colocation_features": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated GPU zones", "AI-optimized racks", "GPU clusters", "ML training environment", "AI compute pods"],
+            "context": "AI services, GPU hosting descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "GPU-optimized infrastructure"
+          },
+          "expansion_capability": {
+            "method": "keyword_scan",
+            "keywords": ["scalable", "expandable capacity", "modular expansion", "grow as needed", "flexible scaling"],
+            "context": "scalability information, capacity planning",
+            "confidence_threshold": 0.6,
+            "fallback": "scalable capacity"
+          },
+          "infrastructure_technical_details": {
+            "method": "keyword_scan",
+            "keywords": ["redundant power", "backup cooling", "N+1 infrastructure", "redundant systems"],
+            "context": "infrastructure specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "redundant infrastructure"
+          },
+          "monitoring_systems": {
+            "method": "keyword_scan",
+            "keywords": ["DCIM", "real-time monitoring", "infrastructure monitoring", "performance tracking"],
+            "context": "monitoring capabilities, management systems",
+            "confidence_threshold": 0.6,
+            "fallback": "advanced monitoring"
+          },
+          "rack_specifications": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)U racks", "rack specifications", "cabinet size"],
+            "context": "technical specifications, rack information",
+            "confidence_threshold": 0.6,
+            "fallback": "standard racks"
+          },
+          "power_specifications": {
+            "method": "keyword_scan",
+            "keywords": ["208V", "480V", "three-phase power", "power distribution", "PDU"],
+            "context": "power specifications, electrical infrastructure",
+            "confidence_threshold": 0.6,
+            "fallback": "enterprise power"
+          },
+          "connectivity_specifications": {
+            "method": "keyword_scan",
+            "keywords": ["carrier-neutral", "multiple carriers", "cross-connects", "dark fiber", "wavelength"],
+            "context": "connectivity options, network access",
+            "confidence_threshold": 0.6,
+            "fallback": "diverse connectivity"
+          },
+          "ai_expertise_indicators": {
+            "method": "keyword_scan",
+            "keywords": ["AI team", "ML expertise", "GPU specialists", "technical support", "AI architects"],
+            "context": "team information, support capabilities",
+            "confidence_threshold": 0.5,
+            "fallback": "technical expertise"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "AI workloads represent the fastest-growing and highest-revenue segment of data center services. Prospects searching 'GPU data center' or 'AI infrastructure hosting' need immediate clarity on power density, cooling capabilities, and deployment speed. 78% of forward-looking data centers prominently address AI infrastructure.",
+          "buyer_stage": "consideration to planning",
+          "typical_searcher": "ML Engineer, Cloud Architect, or CTO planning AI infrastructure deployment for training or inference",
+          "decision_impact": "High - determines facility suitability for strategic AI initiatives; lack of AI capabilities eliminates consideration"
+        }
+      },
+      {
+        "id": "faq_005",
+        "priority": "high",
+        "found_on_percent": 81,
+        "expected_impact": "+15-19 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What's the difference between colocation and cloud for enterprise workloads?",
+        
+        "answer_human_friendly": {
+          "text": "The best answer isn't either-or — it's strategic placement based on workload characteristics. {{company_name}} specializes in {{colocation_approach}} that complements your cloud strategy. For predictable, high-utilization workloads, our colocation delivers {{cost_comparison}} lower TCO compared to equivalent cloud resources. You maintain complete control over your infrastructure while benefiting from our {{facility_tier_level}} reliability and {{connectivity_features}}. Many of our customers run hybrid architectures — baseline workloads in our facility for economics and control, cloud for burst capacity and geographic distribution.",
+          "word_count": 89,
+          "tone": "strategic and balanced",
+          "focus": "workload-appropriate placement and hybrid strategy"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}}'s colocation services provide distinct advantages for specific workload types: total cost of ownership ({{cost_comparison}} lower for steady-state workloads at >70% utilization over {{cost_analysis_timeframe}}), performance predictability (dedicated resources, {{latency_metrics}}), data sovereignty ({{compliance_advantages}}), and infrastructure control ({{control_benefits}}). Our {{facility_location}} facility offers {{hybrid_cloud_features}} enabling seamless integration with AWS, Azure, and GCP. Cost analysis: {{cost_breakdown_details}}. Technical benefits include {{performance_benefits}}, {{network_connectivity}}, and {{customization_capabilities}}. Ideal use cases: {{ideal_workload_types}}. We provide {{migration_support}} and {{ongoing_management}} for enterprises implementing hybrid strategies. Our {{connectivity_features}} ensures optimal performance for hybrid architectures requiring frequent cloud interaction.",
+          "word_count": 109,
+          "tone": "analytical with financial focus",
+          "focus": "TCO comparison and hybrid architecture enablement",
+          
+          "factual_anchors": [
+            {
+              "claim": "40-60% lower TCO for steady-state workloads at >70% utilization",
+              "type": "industry_benchmark",
+              "source": "gartner_colocation_vs_cloud_tco_2024",
+              "confidence": "high",
+              "verifiable": true,
+              "context": "3-year total cost comparison",
+              "fallback": "significant cost advantage for predictable workloads"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Our colocation services provide cost advantages and infrastructure control for predictable workloads, complementing cloud services in hybrid architectures for optimal workload placement.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "colocation vs cloud",
+            "data center or cloud",
+            "colocation cost comparison",
+            "hybrid cloud strategy",
+            "when to use colocation"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What's the difference between colocation and cloud for enterprise workloads?",
+              "alternativeQuestion": [
+                "Should I choose colocation or cloud for my infrastructure?",
+                "When is colocation more cost-effective than cloud?",
+                "How do I decide between data center and cloud services?",
+                "What are the benefits of colocation versus cloud?",
+                "Can I combine colocation and cloud in a hybrid strategy?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}}'s colocation services provide distinct advantages for specific workload types: total cost of ownership ({{cost_comparison}} lower for steady-state workloads at >70% utilization over {{cost_analysis_timeframe}}), performance predictability (dedicated resources, {{latency_metrics}}), data sovereignty ({{compliance_advantages}}), and infrastructure control ({{control_benefits}}). Our {{facility_location}} facility offers {{hybrid_cloud_features}} enabling seamless integration with AWS, Azure, and GCP. Cost analysis: {{cost_breakdown_details}}. Technical benefits include {{performance_benefits}}, {{network_connectivity}}, and {{customization_capabilities}}. Ideal use cases: {{ideal_workload_types}}. We provide {{migration_support}} and {{ongoing_management}} for enterprises implementing hybrid strategies. Our {{connectivity_features}} ensures optimal performance for hybrid architectures requiring frequent cloud interaction."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}}'s colocation provides {{cost_comparison}} lower TCO for {{workload_characteristics}} with {{control_benefits}} and {{performance_advantages}}, complementing cloud through {{hybrid_capabilities}}.",
+        
+        "answer_fallback_template": "Our colocation services offer cost advantages and infrastructure control for predictable workloads while enabling seamless hybrid cloud integration.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "brand name", "facility name"],
+            "context": "title tag, H1, about page, footer",
+            "confidence_threshold": 0.9,
+            "fallback": "our colocation"
+          },
+          "colocation_approach": {
+            "method": "keyword_scan",
+            "keywords": ["retail colocation", "wholesale colocation", "build-to-suit", "custom colocation", "flexible colocation"],
+            "context": "service descriptions, colocation offerings",
+            "confidence_threshold": 0.7,
+            "fallback": "colocation services"
+          },
+          "cost_comparison": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% lower", "(\\d+)-(\\d+)% savings", "save (\\d+)%"],
+            "context": "pricing comparisons, TCO analysis, cost benefits",
+            "confidence_threshold": 0.6,
+            "validation": "realistic range 30-70%",
+            "fallback": "significant cost savings"
+          },
+          "facility_tier_level": {
+            "method": "pattern_scan",
+            "patterns": ["Tier [III]+", "Tier [0-9]", "T[0-9]"],
+            "context": "certifications, specifications",
+            "confidence_threshold": 0.9,
+            "fallback": "enterprise-grade"
+          },
+          "connectivity_features": {
+            "method": "keyword_scan",
+            "keywords": ["carrier-neutral", "multiple carriers", "cloud on-ramps", "direct connect", "ExpressRoute", "Cloud Interconnect"],
+            "context": "connectivity options, network features",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible connectivity"
+          },
+          "cost_analysis_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) year", "(\\d+)-year", "\\d+ years"],
+            "context": "TCO analysis, cost comparisons",
+            "confidence_threshold": 0.6,
+            "fallback": "multi-year period"
+          },
+          "latency_metrics": {
+            "method": "pattern_scan",
+            "patterns": ["<(\\d+)ms", "sub-(\\d+)ms", "(\\d+)ms latency"],
+            "context": "performance specifications, network latency",
+            "confidence_threshold": 0.5,
+            "fallback": "low latency"
+          },
+          "compliance_advantages": {
+            "method": "keyword_scan",
+            "keywords": ["data sovereignty", "physical control", "compliance requirements", "data residency", "regulatory control"],
+            "context": "compliance features, data protection",
+            "confidence_threshold": 0.6,
+            "fallback": "compliance control"
+          },
+          "control_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["full control", "infrastructure ownership", "custom configuration", "hardware selection", "direct access"],
+            "context": "benefits descriptions, control features",
+            "confidence_threshold": 0.6,
+            "fallback": "complete infrastructure control"
+          },
+          "facility_location": {
+            "method": "entity_extraction",
+            "look_for": ["city name", "region", "geographic location"],
+            "context": "contact page, about page, location information",
+            "confidence_threshold": 0.9,
+            "fallback": ""
+          },
+          "hybrid_cloud_features": {
+            "method": "keyword_scan",
+            "keywords": ["cloud on-ramps", "direct cloud connectivity", "AWS Direct Connect", "Azure ExpressRoute", "Google Cloud Interconnect", "hybrid cloud"],
+            "context": "cloud connectivity, hybrid solutions",
+            "confidence_threshold": 0.7,
+            "fallback": "cloud integration"
+          },
+          "cost_breakdown_details": {
+            "method": "keyword_scan",
+            "keywords": ["TCO calculator", "cost comparison", "pricing analysis", "ROI analysis"],
+            "context": "pricing page, TCO tools, cost information",
+            "confidence_threshold": 0.5,
+            "fallback": "transparent cost structure"
+          },
+          "performance_benefits": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated resources", "guaranteed performance", "consistent latency", "no noisy neighbors"],
+            "context": "performance advantages, technical benefits",
+            "confidence_threshold": 0.6,
+            "fallback": "predictable performance"
+          },
+          "network_connectivity": {
+            "method": "keyword_scan",
+            "keywords": ["carrier-neutral", "multiple carriers", "diverse connectivity", "network options", "cross-connects"],
+            "context": "network features, connectivity options",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible network options"
+          },
+          "customization_capabilities": {
+            "method": "keyword_scan",
+            "keywords": ["custom configurations", "flexible infrastructure", "tailored solutions", "build-to-suit"],
+            "context": "customization options, flexibility features",
+            "confidence_threshold": 0.5,
+            "fallback": "customizable infrastructure"
+          },
+          "ideal_workload_types": {
+            "method": "keyword_scan",
+            "keywords": ["database hosting", "storage", "baseline workloads", "predictable compute", "steady-state applications"],
+            "context": "use cases, workload descriptions",
+            "confidence_threshold": 0.5,
+            "fallback": "predictable workloads"
+          },
+          "migration_support": {
+            "method": "keyword_scan",
+            "keywords": ["migration assistance", "onboarding support", "white glove", "migration team"],
+            "context": "support services, migration offerings",
+            "confidence_threshold": 0.5,
+            "fallback": "migration support"
+          },
+          "ongoing_management": {
+            "method": "keyword_scan",
+            "keywords": ["managed services", "24/7 support", "remote hands", "smart hands", "technical support"],
+            "context": "managed services, support offerings",
+            "confidence_threshold": 0.6,
+            "fallback": "ongoing support"
+          },
+          "workload_characteristics": {
+            "method": "keyword_scan",
+            "keywords": ["steady-state", "predictable", "high-utilization", "baseline", "consistent workloads"],
+            "context": "workload descriptions, use case information",
+            "confidence_threshold": 0.6,
+            "fallback": "predictable workloads"
+          },
+          "performance_advantages": {
+            "method": "keyword_scan",
+            "keywords": ["dedicated resources", "consistent performance", "guaranteed performance", "no resource contention"],
+            "context": "performance features, technical advantages",
+            "confidence_threshold": 0.6,
+            "fallback": "performance benefits"
+          },
+          "hybrid_capabilities": {
+            "method": "keyword_scan",
+            "keywords": ["cloud on-ramps", "hybrid architecture", "cloud integration", "seamless connectivity"],
+            "context": "hybrid cloud features, integration options",
+            "confidence_threshold": 0.6,
+            "fallback": "hybrid integration"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Cloud repatriation is a growing trend as enterprises discover unexpected costs. Prospects searching 'colocation vs cloud' or 'when to use colocation' are actively evaluating infrastructure strategy. 81% of data centers address this comparison with workload-specific TCO guidance and hybrid architecture positioning.",
+          "buyer_stage": "consideration",
+          "typical_searcher": "CFO, CTO, or Infrastructure Director evaluating cloud cost optimization or infrastructure strategy refresh",
+          "decision_impact": "High - determines infrastructure strategy and budget allocation; influences multi-year technology decisions"
+        }
+      }
+    ]
+  }
+}

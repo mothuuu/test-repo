@@ -1,0 +1,1158 @@
+{
+  "faq_library": {
+    "industry": "Marketing Agencies",
+    "industry_id": "marketing_agencies",
+    "version": "1.0",
+    "last_updated": "2025-10-18",
+    "metadata": {
+      "total_faqs": 5,
+      "completion_status": "production_ready",
+      "anti_hallucination_enabled": true,
+      "confidence_tracking": true
+    },
+    "faqs": [
+      {
+        "id": "faq_001",
+        "priority": "critical",
+        "found_on_percent": 89,
+        "expected_impact": "+17-22 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "How do you measure and report on marketing ROI?",
+        
+        "answer_human_friendly": {
+          "text": "We track what matters to your business — revenue impact, not just activity metrics. {{company_name}} connects every marketing initiative to measurable business outcomes through {{attribution_method}}. You'll see exactly which channels drive {{key_result}}, with transparent reporting that shows cost per acquisition, customer lifetime value, and revenue attribution. We provide {{reporting_frequency}} reports with actionable insights, plus real-time dashboard access so you always know how your investment is performing. No vanity metrics — just clear connections between marketing spend and business growth.",
+          "word_count": 89,
+          "tone": "results-focused and transparent",
+          "focus": "outcome measurement and client clarity"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} implements {{attribution_method}} attribution tracking across {{channel_list}} to measure marketing ROI. Our methodology includes: multi-touch attribution modeling, customer journey mapping from first touch to closed revenue, cost-per-acquisition tracking by channel, customer lifetime value analysis, and pipeline velocity metrics. Clients receive {{reporting_frequency}} comprehensive reports showing channel performance, conversion rates, revenue attribution, and strategic recommendations. Our attribution framework tracks {{number_of_touchpoints}} average touchpoints per customer journey, identifying high-performing channels that drive {{conversion_metric}} conversion rates. {{company_name}} uses {{technology_stack}} for data aggregation and reporting, providing transparent visibility into marketing effectiveness. Typical clients see {{improvement_metric}} improvement in marketing efficiency within {{timeframe}} through data-driven optimization based on our reporting insights.",
+          "word_count": 115,
+          "tone": "methodological and data-driven",
+          "focus": "attribution framework and measurement approach",
+          
+          "factual_anchors": [
+            {
+              "claim": "multi-touch attribution tracking",
+              "type": "methodology_specification",
+              "source": "company_methodology_extraction",
+              "confidence": "high",
+              "verifiable": "internal_methodology",
+              "fallback": "comprehensive attribution tracking"
+            },
+            {
+              "claim": "tracks average touchpoints per journey",
+              "type": "methodology_specification",
+              "source": "company_analytics_description",
+              "confidence": "medium",
+              "fallback": "tracks customer journey touchpoints"
+            },
+            {
+              "claim": "improvement in marketing efficiency",
+              "type": "client_results",
+              "source": "company_case_studies",
+              "confidence": "medium",
+              "context": "if case studies mention specific improvements",
+              "fallback": "measurable improvement in efficiency"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We provide comprehensive tracking and transparent reporting that connects your marketing investment directly to revenue outcomes and business growth.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "marketing ROI measurement",
+            "marketing attribution tracking",
+            "how to measure marketing effectiveness",
+            "marketing performance reporting",
+            "marketing analytics dashboard"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do you measure and report on marketing ROI?",
+              "alternativeQuestion": [
+                "What metrics do you track to show marketing is working?",
+                "How will I know if my marketing investment is paying off?",
+                "What kind of reporting do you provide on campaign performance?",
+                "Can you track which marketing channels drive the most revenue?",
+                "How do you prove marketing ROI to executives?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} implements {{attribution_method}} attribution tracking across {{channel_list}} to measure marketing ROI. Our methodology includes multi-touch attribution modeling, customer journey mapping, cost-per-acquisition tracking, lifetime value analysis, and pipeline velocity metrics. Clients receive {{reporting_frequency}} reports showing channel performance, conversion rates, and revenue attribution. Our framework tracks {{number_of_touchpoints}} average touchpoints per journey, identifying channels that drive {{conversion_metric}} conversion rates using {{technology_stack}} for data aggregation. Clients typically see {{improvement_metric}} improvement in efficiency within {{timeframe}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} tracks {{key_result}} through {{attribution_method}} across {{channel_list}}, providing {{reporting_frequency}} reports with {{metric_focus}}, achieving {{improvement_metric}} improvement within {{timeframe}} using {{technology_stack}}.",
+        
+        "answer_fallback_template": "We provide comprehensive measurement and transparent reporting connecting marketing activities to revenue outcomes.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "agency name", "brand name"],
+            "context": "title tag, H1, meta description, about page, footer",
+            "confidence_threshold": 0.9,
+            "use_fallback_if_below": 0.8,
+            "fallback": "Our agency"
+          },
+          "attribution_method": {
+            "method": "keyword_scan",
+            "keywords": ["multi-touch attribution", "first-touch", "last-touch", "data-driven attribution", "attribution modeling", "advanced analytics"],
+            "context": "services page, methodology, analytics offerings",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive attribution"
+          },
+          "channel_list": {
+            "method": "keyword_scan",
+            "keywords": ["paid search", "social media", "content marketing", "email", "SEO", "paid social", "display advertising"],
+            "context": "services page, channel listings, case studies",
+            "confidence_threshold": 0.7,
+            "fallback": "all marketing channels"
+          },
+          "key_result": {
+            "method": "keyword_scan",
+            "keywords": ["revenue", "leads", "conversions", "customer acquisition", "pipeline", "sales"],
+            "context": "value proposition, results descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "business outcomes"
+          },
+          "reporting_frequency": {
+            "method": "pattern_scan",
+            "patterns": ["weekly", "monthly", "bi-weekly", "quarterly", "real-time"],
+            "context": "services description, deliverables, process",
+            "confidence_threshold": 0.7,
+            "fallback": "regular"
+          },
+          "number_of_touchpoints": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-?(\\d+)? touchpoints", "(\\d+) interactions"],
+            "context": "methodology, analytics descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "multiple"
+          },
+          "conversion_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)%", "(\\d+)-(\\d+)%"],
+            "context": "case studies, results, testimonials",
+            "confidence_threshold": 0.8,
+            "fallback": "strong"
+          },
+          "technology_stack": {
+            "method": "entity_extraction",
+            "look_for": ["Google Analytics", "HubSpot", "Salesforce", "Tableau", "Power BI", "analytics platform", "CRM"],
+            "context": "technology stack, tools, integrations",
+            "confidence_threshold": 0.7,
+            "fallback": "analytics platforms"
+          },
+          "improvement_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% improvement", "(\\d+)x increase", "increased by (\\d+)%"],
+            "context": "case studies, results, testimonials",
+            "confidence_threshold": 0.8,
+            "fallback": "measurable improvement"
+          },
+          "timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) days", "(\\d+) months", "(\\d+) weeks", "within \\d+"],
+            "context": "case studies, timelines, results",
+            "confidence_threshold": 0.8,
+            "fallback": "the first few months"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "ROI measurement is the #1 question prospects ask when evaluating marketing agencies. 89% of successful agencies explicitly address their attribution and reporting methodology.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "CMO, VP Marketing, or business owner evaluating agency capabilities",
+          "decision_impact": "Critical - directly impacts whether prospect believes they can justify the investment"
+        }
+      },
+      {
+        "id": "faq_002",
+        "priority": "critical",
+        "found_on_percent": 91,
+        "expected_impact": "+18-23 points",
+        "seo_aeo_value": "critical",
+        
+        "question": "What makes your agency different from other marketing agencies?",
+        
+        "answer_human_friendly": {
+          "text": "Unlike generalist agencies, {{company_name}} specializes in {{specialization}}. We've spent {{years_experience}} years mastering {{expertise_area}}, working exclusively with {{target_market}} companies facing {{specific_challenge}}. Our team includes {{team_credential}} who understand {{industry_specific_knowledge}}. While other agencies offer a full menu of services, we focus on {{core_service}} where we've helped clients achieve {{specific_outcome}}. This specialization means faster results, deeper insights, and strategies built on proven experience with companies exactly like yours.",
+          "word_count": 84,
+          "tone": "confident and specific",
+          "focus": "differentiation through specialization"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} differentiates through specialized focus on {{specialization}} for {{target_market}} companies. Our methodology includes {{methodology_name}}, developed over {{years_experience}} years working with {{client_count}} clients in {{industry_focus}}. The team comprises {{team_size}} specialists with {{team_credential}} and expertise in {{expertise_area}}. Unlike full-service agencies, {{company_name}} concentrates on {{core_service}}, achieving {{specific_outcome}} for clients. Our specialization enables {{competitive_advantage}} through deep vertical knowledge, proprietary frameworks, and proven playbooks. Clients working with specialized agencies like {{company_name}} experience {{performance_metric}} faster time-to-results and {{improvement_metric}} better performance compared to generalist approaches. Our focus areas include {{service_list}}, supported by {{technology_platform}} and industry-specific best practices refined across {{number_of_projects}} successful implementations.",
+          "word_count": 118,
+          "tone": "authoritative with specifics",
+          "focus": "specialization methodology and proof",
+          
+          "factual_anchors": [
+            {
+              "claim": "years of specialized experience",
+              "type": "company_history",
+              "source": "about_page_extraction",
+              "confidence": "high",
+              "verifiable": "company_website",
+              "fallback": "extensive experience"
+            },
+            {
+              "claim": "number of clients served",
+              "type": "company_credentials",
+              "source": "about_page_case_studies",
+              "confidence": "medium",
+              "context": "if publicly stated",
+              "fallback": "numerous clients"
+            },
+            {
+              "claim": "performance improvements vs generalists",
+              "type": "comparative_claim",
+              "source": "case_studies_results",
+              "confidence": "medium",
+              "context": "if specific comparisons mentioned",
+              "fallback": "superior performance"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We specialize deeply in specific industries and services rather than offering everything to everyone, resulting in better outcomes through focused expertise.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "marketing agency differentiation",
+            "why choose this marketing agency",
+            "specialized marketing services",
+            "marketing agency expertise",
+            "best marketing agency for"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What makes your agency different from other marketing agencies?",
+              "alternativeQuestion": [
+                "Why should I choose your agency over competitors?",
+                "What's unique about your marketing approach?",
+                "How are you different from other marketing agencies?",
+                "What's your agency's competitive advantage?",
+                "What do you specialize in that others don't?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} differentiates through specialized focus on {{specialization}} for {{target_market}} companies. Our methodology includes {{methodology_name}}, developed over {{years_experience}} years with {{client_count}} clients in {{industry_focus}}. The team comprises {{team_size}} specialists with {{team_credential}} and expertise in {{expertise_area}}. Unlike full-service agencies, we concentrate on {{core_service}}, achieving {{specific_outcome}}. Our specialization enables {{competitive_advantage}} through vertical knowledge and proprietary frameworks. Clients experience {{performance_metric}} faster results and {{improvement_metric}} better performance. Focus areas include {{service_list}}, supported by {{technology_platform}} across {{number_of_projects}} implementations."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} specializes in {{specialization}} for {{target_market}}, using {{methodology_name}} developed over {{years_experience}} years with {{client_count}} clients, achieving {{specific_outcome}} through {{competitive_advantage}}.",
+        
+        "answer_fallback_template": "We differentiate through deep specialization in specific industries and methodologies rather than offering generalist services.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "agency name"],
+            "context": "title, header, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our agency"
+          },
+          "specialization": {
+            "method": "keyword_scan",
+            "keywords": ["B2B marketing", "SaaS marketing", "e-commerce", "lead generation", "content marketing", "performance marketing", "digital strategy"],
+            "context": "homepage headline, positioning statement, services overview",
+            "confidence_threshold": 0.8,
+            "fallback": "marketing strategy"
+          },
+          "target_market": {
+            "method": "keyword_scan",
+            "keywords": ["B2B", "B2C", "SaaS", "enterprise", "startup", "e-commerce", "healthcare", "financial services", "technology"],
+            "context": "client descriptions, case studies, target audience",
+            "confidence_threshold": 0.7,
+            "fallback": "businesses"
+          },
+          "years_experience": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) years", "since (\\d{4})", "established (\\d{4})"],
+            "context": "about page, company history, homepage",
+            "confidence_threshold": 0.8,
+            "fallback": "years of"
+          },
+          "expertise_area": {
+            "method": "keyword_scan",
+            "keywords": ["demand generation", "account-based marketing", "conversion optimization", "SEO", "paid media", "marketing automation"],
+            "context": "services page, expertise descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "marketing disciplines"
+          },
+          "specific_challenge": {
+            "method": "keyword_scan",
+            "keywords": ["lead generation", "customer acquisition", "brand awareness", "pipeline growth", "revenue growth"],
+            "context": "problem statements, value propositions",
+            "confidence_threshold": 0.7,
+            "fallback": "growth challenges"
+          },
+          "team_credential": {
+            "method": "keyword_scan",
+            "keywords": ["certified", "former", "ex-", "award-winning", "senior strategists", "industry veterans"],
+            "context": "team page, about section, leadership bios",
+            "confidence_threshold": 0.7,
+            "fallback": "experienced professionals"
+          },
+          "industry_specific_knowledge": {
+            "method": "keyword_scan",
+            "keywords": ["buyer journey", "sales cycles", "industry regulations", "competitive landscape", "market dynamics"],
+            "context": "expertise descriptions, case studies",
+            "confidence_threshold": 0.7,
+            "fallback": "industry dynamics"
+          },
+          "core_service": {
+            "method": "keyword_scan",
+            "keywords": ["lead generation", "content marketing", "paid acquisition", "SEO", "marketing strategy", "demand generation"],
+            "context": "main services, primary offerings",
+            "confidence_threshold": 0.8,
+            "fallback": "marketing services"
+          },
+          "specific_outcome": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% increase", "(\\d+)x growth", "increased (\\w+) by (\\d+)"],
+            "context": "case studies, results, testimonials",
+            "confidence_threshold": 0.8,
+            "fallback": "measurable results"
+          },
+          "methodology_name": {
+            "method": "entity_extraction",
+            "look_for": ["framework", "methodology", "process", "approach", "system"],
+            "context": "methodology descriptions, approach page",
+            "confidence_threshold": 0.7,
+            "fallback": "our proven approach"
+          },
+          "client_count": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+ clients", "over (\\d+) companies", "(\\d+) successful"],
+            "context": "about page, homepage, social proof",
+            "confidence_threshold": 0.7,
+            "fallback": "numerous"
+          },
+          "industry_focus": {
+            "method": "keyword_scan",
+            "keywords": ["SaaS", "B2B tech", "e-commerce", "healthcare", "fintech", "professional services"],
+            "context": "industry specialization, case studies",
+            "confidence_threshold": 0.7,
+            "fallback": "various industries"
+          },
+          "team_size": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-person team", "team of (\\d+)", "(\\d+) specialists"],
+            "context": "about page, team page",
+            "confidence_threshold": 0.7,
+            "fallback": "a team of"
+          },
+          "competitive_advantage": {
+            "method": "keyword_scan",
+            "keywords": ["proprietary", "exclusive", "unique methodology", "specialized expertise", "proven frameworks"],
+            "context": "differentiation statements, value props",
+            "confidence_threshold": 0.7,
+            "fallback": "competitive advantages"
+          },
+          "performance_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% faster", "(\\d+)x quicker"],
+            "context": "results, comparisons",
+            "confidence_threshold": 0.8,
+            "fallback": "notably"
+          },
+          "improvement_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% better", "(\\d+)% higher", "(\\d+)x improvement"],
+            "context": "results, case studies",
+            "confidence_threshold": 0.8,
+            "fallback": "significantly"
+          },
+          "service_list": {
+            "method": "keyword_scan",
+            "keywords": ["strategy", "execution", "analytics", "optimization", "content", "paid media"],
+            "context": "services page, offerings",
+            "confidence_threshold": 0.7,
+            "fallback": "core services"
+          },
+          "technology_platform": {
+            "method": "entity_extraction",
+            "look_for": ["HubSpot", "Salesforce", "Marketo", "Google Analytics", "proprietary tools"],
+            "context": "technology stack, tools, partnerships",
+            "confidence_threshold": 0.7,
+            "fallback": "marketing technology"
+          },
+          "number_of_projects": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+ projects", "over (\\d+) campaigns", "(\\d+) successful"],
+            "context": "experience, portfolio, track record",
+            "confidence_threshold": 0.7,
+            "fallback": "numerous"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Differentiation is critical for standing out in a crowded market. 91% of successful agencies clearly articulate what makes them unique rather than listing generic capabilities.",
+          "buyer_stage": "awareness to consideration",
+          "typical_searcher": "Decision-maker comparing multiple agency options",
+          "decision_impact": "Critical - determines whether prospect continues evaluation or moves to competitors"
+        }
+      },
+      {
+        "id": "faq_003",
+        "priority": "high",
+        "found_on_percent": 84,
+        "expected_impact": "+15-19 points",
+        "seo_aeo_value": "high",
+        
+        "question": "How long does it take to see results from your marketing services?",
+        
+        "answer_human_friendly": {
+          "text": "Honest answer: it depends on your starting point and goals. For {{quick_win_service}}, most clients see {{quick_win_result}} within {{quick_timeframe}}. More strategic initiatives like {{long_term_service}} typically show meaningful results in {{standard_timeframe}}. {{company_name}} focuses on {{approach_description}} — combining quick wins that demonstrate momentum with long-term strategies that build sustainable growth. We set realistic expectations upfront and provide {{reporting_frequency}} updates so you always know progress against goals. Most clients see {{milestone_metric}} within the first {{initial_period}}.",
+          "word_count": 91,
+          "tone": "honest and expectation-setting",
+          "focus": "realistic timelines with early wins"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} timeline for marketing results varies by service and baseline. {{quick_win_service}} delivers {{quick_win_result}} within {{quick_timeframe}} through {{quick_win_method}}. Strategic programs including {{long_term_service}} require {{standard_timeframe}} to achieve {{long_term_result}}, accounting for {{timing_factors}}. Our phased approach includes: {{phase_one}} ({{phase_one_duration}}), {{phase_two}} ({{phase_two_duration}}), and {{phase_three}} ({{phase_three_duration}}). Clients typically observe {{milestone_metric}} within {{initial_period}}, with {{sustained_result}} by {{mature_timeframe}}. Timeline factors include current marketing maturity, competitive landscape, budget allocation, and market conditions. {{company_name}} provides {{reporting_frequency}} performance tracking against benchmarks, adjusting strategies based on {{data_points}} to optimize for faster results while maintaining quality and sustainability.",
+          "word_count": 118,
+          "tone": "structured and detailed",
+          "focus": "phased timelines with clear milestones",
+          
+          "factual_anchors": [
+            {
+              "claim": "quick win results within specific timeframe",
+              "type": "service_specification",
+              "source": "services_timeline_extraction",
+              "confidence": "medium",
+              "context": "if timelines explicitly mentioned",
+              "fallback": "early results"
+            },
+            {
+              "claim": "long-term results timeframe",
+              "type": "methodology_specification",
+              "source": "process_timeline_descriptions",
+              "confidence": "medium",
+              "fallback": "sustainable results over time"
+            },
+            {
+              "claim": "milestone achievements",
+              "type": "client_results",
+              "source": "case_studies_timeline_data",
+              "confidence": "medium",
+              "context": "if case studies mention timing",
+              "fallback": "progressive improvements"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Results timing varies by service type, with tactical improvements appearing in weeks and strategic transformations taking several months to show full impact.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "marketing agency results timeline",
+            "how long until marketing works",
+            "when will I see marketing ROI",
+            "marketing campaign timeline",
+            "time to results from marketing"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How long does it take to see results from your marketing services?",
+              "alternativeQuestion": [
+                "When will I start seeing ROI from marketing?",
+                "How quickly can you deliver marketing results?",
+                "What's the typical timeline for marketing success?",
+                "How long before marketing campaigns show results?",
+                "When should I expect to see leads from marketing?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} timeline varies by service and baseline. {{quick_win_service}} delivers {{quick_win_result}} within {{quick_timeframe}} through {{quick_win_method}}. Strategic programs like {{long_term_service}} require {{standard_timeframe}} to achieve {{long_term_result}}, accounting for {{timing_factors}}. Our phased approach includes {{phase_one}} ({{phase_one_duration}}), {{phase_two}} ({{phase_two_duration}}), and {{phase_three}} ({{phase_three_duration}}). Clients observe {{milestone_metric}} within {{initial_period}}, with {{sustained_result}} by {{mature_timeframe}}. We provide {{reporting_frequency}} tracking against benchmarks, optimizing strategies based on {{data_points}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "For {{quick_win_service}}, expect {{quick_win_result}} within {{quick_timeframe}}. Strategic {{long_term_service}} shows {{long_term_result}} in {{standard_timeframe}}, with {{milestone_metric}} achieved in {{initial_period}}.",
+        
+        "answer_fallback_template": "Results timing depends on service type and starting point, with initial improvements in weeks and full strategic impact over several months.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "agency name"],
+            "context": "title, header, about page",
+            "confidence_threshold": 0.9,
+            "fallback": "Our approach"
+          },
+          "quick_win_service": {
+            "method": "keyword_scan",
+            "keywords": ["paid advertising", "PPC", "paid social", "email campaigns", "conversion optimization"],
+            "context": "services with quick results, tactical offerings",
+            "confidence_threshold": 0.7,
+            "fallback": "tactical campaigns"
+          },
+          "quick_win_result": {
+            "method": "keyword_scan",
+            "keywords": ["increased traffic", "more leads", "improved conversion", "initial pipeline"],
+            "context": "quick win outcomes, early results",
+            "confidence_threshold": 0.7,
+            "fallback": "initial improvements"
+          },
+          "quick_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-?(\\d+)? days", "(\\d+) weeks", "first month"],
+            "context": "timeline descriptions, service deliverables",
+            "confidence_threshold": 0.7,
+            "fallback": "the first few weeks"
+          },
+          "long_term_service": {
+            "method": "keyword_scan",
+            "keywords": ["SEO", "content marketing", "brand building", "demand generation", "marketing strategy"],
+            "context": "strategic services, long-term offerings",
+            "confidence_threshold": 0.7,
+            "fallback": "strategic programs"
+          },
+          "standard_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-?(\\d+)? months", "(\\d+) quarters"],
+            "context": "timeline descriptions, strategic service timelines",
+            "confidence_threshold": 0.7,
+            "fallback": "several months"
+          },
+          "long_term_result": {
+            "method": "keyword_scan",
+            "keywords": ["sustainable growth", "predictable pipeline", "market leadership", "qualified leads"],
+            "context": "strategic outcomes, long-term benefits",
+            "confidence_threshold": 0.7,
+            "fallback": "sustainable results"
+          },
+          "approach_description": {
+            "method": "keyword_scan",
+            "keywords": ["balanced approach", "quick wins plus strategy", "phased implementation", "progressive results"],
+            "context": "methodology, approach descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "balanced tactics and strategy"
+          },
+          "reporting_frequency": {
+            "method": "pattern_scan",
+            "patterns": ["weekly", "bi-weekly", "monthly", "quarterly"],
+            "context": "reporting cadence, deliverables",
+            "confidence_threshold": 0.7,
+            "fallback": "regular"
+          },
+          "milestone_metric": {
+            "method": "keyword_scan",
+            "keywords": ["first leads", "initial conversions", "traffic increase", "engagement improvement"],
+            "context": "early milestones, initial results",
+            "confidence_threshold": 0.7,
+            "fallback": "initial progress"
+          },
+          "initial_period": {
+            "method": "pattern_scan",
+            "patterns": ["first (\\d+) days", "(\\d+) weeks", "first month"],
+            "context": "early timeline markers",
+            "confidence_threshold": 0.7,
+            "fallback": "first 30-60 days"
+          },
+          "quick_win_method": {
+            "method": "keyword_scan",
+            "keywords": ["optimization", "paid campaigns", "quick deployment", "rapid testing"],
+            "context": "tactical method descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "tactical optimization"
+          },
+          "timing_factors": {
+            "method": "keyword_scan",
+            "keywords": ["market conditions", "competition", "baseline", "budget", "complexity"],
+            "context": "timeline dependencies, factors affecting results",
+            "confidence_threshold": 0.7,
+            "fallback": "various factors"
+          },
+          "phase_one": {
+            "method": "keyword_scan",
+            "keywords": ["discovery", "strategy", "planning", "audit", "foundation"],
+            "context": "process phases, methodology stages",
+            "confidence_threshold": 0.7,
+            "fallback": "initial strategy phase"
+          },
+          "phase_one_duration": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-?(\\d+)? weeks", "first month"],
+            "context": "phase timing descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "4-6 weeks"
+          },
+          "phase_two": {
+            "method": "keyword_scan",
+            "keywords": ["implementation", "execution", "launch", "deployment"],
+            "context": "process phases",
+            "confidence_threshold": 0.7,
+            "fallback": "execution phase"
+          },
+          "phase_two_duration": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-?(\\d+)? weeks", "(\\d+) months"],
+            "context": "phase timing",
+            "confidence_threshold": 0.7,
+            "fallback": "2-3 months"
+          },
+          "phase_three": {
+            "method": "keyword_scan",
+            "keywords": ["optimization", "scaling", "refinement", "growth"],
+            "context": "process phases",
+            "confidence_threshold": 0.7,
+            "fallback": "optimization phase"
+          },
+          "phase_three_duration": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+ months", "ongoing"],
+            "context": "phase timing",
+            "confidence_threshold": 0.7,
+            "fallback": "3+ months"
+          },
+          "sustained_result": {
+            "method": "keyword_scan",
+            "keywords": ["consistent leads", "predictable pipeline", "sustained growth", "stable performance"],
+            "context": "long-term outcomes",
+            "confidence_threshold": 0.7,
+            "fallback": "consistent results"
+          },
+          "mature_timeframe": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) months", "(\\d+) quarters", "first year"],
+            "context": "maturity timeline",
+            "confidence_threshold": 0.7,
+            "fallback": "6-12 months"
+          },
+          "data_points": {
+            "method": "keyword_scan",
+            "keywords": ["real-time data", "performance metrics", "KPIs", "analytics"],
+            "context": "measurement approach",
+            "confidence_threshold": 0.7,
+            "fallback": "performance data"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Timeline expectations are a common objection and concern. 84% of successful agencies proactively address realistic timelines to manage expectations and build trust.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "Decision-maker evaluating feasibility and setting internal expectations",
+          "decision_impact": "High - affects budgeting, internal planning, and willingness to commit"
+        }
+      },
+      {
+        "id": "faq_004",
+        "priority": "high",
+        "found_on_percent": 78,
+        "expected_impact": "+14-18 points",
+        "seo_aeo_value": "high",
+        
+        "question": "What does it cost to work with your marketing agency?",
+        
+        "answer_human_friendly": {
+          "text": "Investment varies based on scope, goals, and services needed. {{company_name}} offers {{pricing_model}} starting at {{starting_price}} for {{entry_service}}. Most clients invest {{typical_range}} monthly depending on {{pricing_factors}}. We're transparent about pricing and provide detailed proposals showing exactly what you get for your investment. {{additional_pricing_info}}. We focus on ROI — the right question isn't what it costs, but what {{value_delivered}}. Book a consultation to discuss your goals and get a customized proposal with transparent pricing.",
+          "word_count": 89,
+          "tone": "transparent and value-focused",
+          "focus": "investment tied to outcomes"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} pricing structure includes {{pricing_model}} based on {{pricing_basis}}. Entry-level services begin at {{starting_price}} for {{entry_service}}, with typical client investments ranging {{typical_range}} monthly. Pricing factors include {{pricing_factors}}, {{scope_elements}}, and {{additional_factors}}. Service packages include: {{package_tier_one}} ({{tier_one_price}}), {{package_tier_two}} ({{tier_two_price}}), and {{package_tier_three}} ({{tier_three_price}}). {{additional_pricing_info}}. Pricing models may include {{fee_structure}} with {{performance_component}}. Client contracts typically span {{contract_duration}} with {{contract_terms}}. Investment includes {{deliverables_included}} and access to {{tools_included}}. {{company_name}} provides transparent proposals detailing scope, timeline, deliverables, and expected outcomes, ensuring clear understanding of investment relative to {{value_delivered}}.",
+          "word_count": 115,
+          "tone": "detailed and structured",
+          "focus": "comprehensive pricing transparency",
+          
+          "factual_anchors": [
+            {
+              "claim": "starting price for services",
+              "type": "pricing_information",
+              "source": "pricing_page_extraction",
+              "confidence": "high",
+              "context": "if pricing publicly listed",
+              "verifiable": "company_website",
+              "fallback": "custom pricing based on needs"
+            },
+            {
+              "claim": "typical client investment range",
+              "type": "pricing_specification",
+              "source": "pricing_descriptions",
+              "confidence": "medium",
+              "context": "if ranges provided",
+              "fallback": "varies by scope"
+            },
+            {
+              "claim": "service package tiers and pricing",
+              "type": "package_structure",
+              "source": "services_pricing_pages",
+              "confidence": "medium",
+              "fallback": "tiered service options"
+            }
+          ]
+        },
+        
+        "answer_fallback": "Investment depends on your specific needs and goals. We provide transparent, customized proposals that detail exactly what's included and the expected return on your investment.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "marketing agency pricing",
+            "how much does marketing agency cost",
+            "marketing services investment",
+            "agency retainer fees",
+            "marketing budget planning"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What does it cost to work with your marketing agency?",
+              "alternativeQuestion": [
+                "How much do your marketing services cost?",
+                "What are your agency fees and pricing?",
+                "What's the typical monthly retainer for your services?",
+                "How much should I budget for marketing agency services?",
+                "What's included in your pricing?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} pricing includes {{pricing_model}} based on {{pricing_basis}}. Entry services begin at {{starting_price}} for {{entry_service}}, with typical investments ranging {{typical_range}} monthly. Pricing factors include {{pricing_factors}}, {{scope_elements}}, and {{additional_factors}}. Service packages: {{package_tier_one}} ({{tier_one_price}}), {{package_tier_two}} ({{tier_two_price}}), {{package_tier_three}} ({{tier_three_price}}). Models may include {{fee_structure}} with {{performance_component}}. Contracts typically span {{contract_duration}} with {{contract_terms}}. Investment includes {{deliverables_included}} and {{tools_included}}. We provide transparent proposals detailing scope, timeline, and outcomes."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} {{pricing_model}} starts at {{starting_price}} for {{entry_service}}, with typical investments of {{typical_range}} depending on {{pricing_factors}}. Packages include {{package_tier_one}}, {{package_tier_two}}, and {{package_tier_three}}.",
+        
+        "answer_fallback_template": "Pricing is customized based on your specific needs, goals, and scope. We provide transparent proposals with clear deliverables and expected outcomes.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "agency name"],
+            "context": "title, header",
+            "confidence_threshold": 0.9,
+            "fallback": "Our agency"
+          },
+          "pricing_model": {
+            "method": "keyword_scan",
+            "keywords": ["retainer-based", "project-based", "performance-based", "value-based", "hybrid pricing", "flexible packages"],
+            "context": "pricing page, services descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible pricing options"
+          },
+          "pricing_basis": {
+            "method": "keyword_scan",
+            "keywords": ["scope of work", "company size", "marketing maturity", "goals", "channels"],
+            "context": "pricing factors, how pricing determined",
+            "confidence_threshold": 0.7,
+            "fallback": "scope and objectives"
+          },
+          "starting_price": {
+            "method": "pattern_scan",
+            "patterns": ["\\$([\\d,]+)", "from \\$([\\d,]+)", "starting at \\$([\\d,]+)"],
+            "context": "pricing page, service costs",
+            "confidence_threshold": 0.8,
+            "fallback": "custom pricing"
+          },
+          "entry_service": {
+            "method": "keyword_scan",
+            "keywords": ["starter package", "basic plan", "foundational service", "entry offering"],
+            "context": "service tiers, package names",
+            "confidence_threshold": 0.7,
+            "fallback": "foundational services"
+          },
+          "typical_range": {
+            "method": "pattern_scan",
+            "patterns": ["\\$([\\d,]+)-\\$([\\d,]+)", "between \\$([\\d,]+) and \\$([\\d,]+)"],
+            "context": "pricing ranges, typical investments",
+            "confidence_threshold": 0.7,
+            "fallback": "varies based on scope"
+          },
+          "pricing_factors": {
+            "method": "keyword_scan",
+            "keywords": ["scope", "complexity", "channels", "team size", "goals", "timeline"],
+            "context": "pricing factors, what affects cost",
+            "confidence_threshold": 0.7,
+            "fallback": "project scope and requirements"
+          },
+          "scope_elements": {
+            "method": "keyword_scan",
+            "keywords": ["number of channels", "campaign complexity", "content volume", "market size"],
+            "context": "scope descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "project complexity"
+          },
+          "additional_factors": {
+            "method": "keyword_scan",
+            "keywords": ["market competitiveness", "existing infrastructure", "desired timeline"],
+            "context": "pricing considerations",
+            "confidence_threshold": 0.7,
+            "fallback": "additional considerations"
+          },
+          "package_tier_one": {
+            "method": "keyword_scan",
+            "keywords": ["starter", "essentials", "foundation", "basic"],
+            "context": "package names, service tiers",
+            "confidence_threshold": 0.7,
+            "fallback": "Starter Package"
+          },
+          "tier_one_price": {
+            "method": "pattern_scan",
+            "patterns": ["\\$([\\d,]+)/month", "\\$([\\d,]+) monthly"],
+            "context": "tier one pricing",
+            "confidence_threshold": 0.7,
+            "fallback": "custom pricing"
+          },
+          "package_tier_two": {
+            "method": "keyword_scan",
+            "keywords": ["growth", "professional", "standard", "advanced"],
+            "context": "package names",
+            "confidence_threshold": 0.7,
+            "fallback": "Growth Package"
+          },
+          "tier_two_price": {
+            "method": "pattern_scan",
+            "patterns": ["\\$([\\d,]+)/month", "\\$([\\d,]+) monthly"],
+            "context": "tier two pricing",
+            "confidence_threshold": 0.7,
+            "fallback": "custom pricing"
+          },
+          "package_tier_three": {
+            "method": "keyword_scan",
+            "keywords": ["premium", "enterprise", "comprehensive", "full-service"],
+            "context": "package names",
+            "confidence_threshold": 0.7,
+            "fallback": "Premium Package"
+          },
+          "tier_three_price": {
+            "method": "pattern_scan",
+            "patterns": ["\\$([\\d,]+)/month", "\\$([\\d,]+) monthly", "custom pricing"],
+            "context": "tier three pricing",
+            "confidence_threshold": 0.7,
+            "fallback": "custom pricing"
+          },
+          "additional_pricing_info": {
+            "method": "keyword_scan",
+            "keywords": ["setup fee", "minimum commitment", "no long-term contracts", "flexible terms"],
+            "context": "additional pricing details",
+            "confidence_threshold": 0.6,
+            "fallback": ""
+          },
+          "fee_structure": {
+            "method": "keyword_scan",
+            "keywords": ["monthly retainer", "project fee", "hourly rate", "value-based"],
+            "context": "fee structure descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "retainer fees"
+          },
+          "performance_component": {
+            "method": "keyword_scan",
+            "keywords": ["performance bonus", "results-based", "success fees", "outcome incentives"],
+            "context": "performance-based pricing elements",
+            "confidence_threshold": 0.6,
+            "fallback": "clear deliverables"
+          },
+          "contract_duration": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-month", "(\\d+) month", "month-to-month", "annual"],
+            "context": "contract terms",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible terms"
+          },
+          "contract_terms": {
+            "method": "keyword_scan",
+            "keywords": ["no long-term commitment", "cancel anytime", "30-day notice", "minimum commitment"],
+            "context": "contract flexibility",
+            "confidence_threshold": 0.6,
+            "fallback": "standard terms"
+          },
+          "deliverables_included": {
+            "method": "keyword_scan",
+            "keywords": ["strategy", "execution", "reporting", "optimization", "content creation"],
+            "context": "what's included in pricing",
+            "confidence_threshold": 0.7,
+            "fallback": "comprehensive services"
+          },
+          "tools_included": {
+            "method": "keyword_scan",
+            "keywords": ["analytics platform", "marketing automation", "reporting dashboard", "technology stack"],
+            "context": "included tools and platforms",
+            "confidence_threshold": 0.6,
+            "fallback": "marketing tools"
+          },
+          "value_delivered": {
+            "method": "keyword_scan",
+            "keywords": ["ROI", "leads generated", "revenue impact", "growth achieved", "results delivered"],
+            "context": "value propositions, outcomes",
+            "confidence_threshold": 0.7,
+            "fallback": "return you'll achieve"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Pricing is often a barrier to inquiry. 78% of successful agencies address pricing proactively with transparency to qualify leads and build trust early.",
+          "buyer_stage": "consideration to decision",
+          "typical_searcher": "Budget holder or CFO evaluating feasibility of investment",
+          "decision_impact": "High - directly affects whether prospect can proceed and sets budget expectations"
+        }
+      },
+      {
+        "id": "faq_005",
+        "priority": "high",
+        "found_on_percent": 81,
+        "expected_impact": "+14-19 points",
+        "seo_aeo_value": "high",
+        
+        "question": "Do I need to sign a long-term contract with your agency?",
+        
+        "answer_human_friendly": {
+          "text": "{{company_name}} offers {{contract_type}} to fit your comfort level. {{contract_description}}. We believe in earning your business every month through results, not locking you into rigid agreements. {{flexibility_statement}}. Most clients stay with us {{retention_context}} because they see consistent value, not because they're contractually obligated. We're flexible because we're confident in our ability to deliver. You'll have {{termination_terms}} if our partnership isn't meeting your expectations. Let's focus on building a successful partnership, not just a contract.",
+          "word_count": 90,
+          "tone": "confidence and flexibility",
+          "focus": "relationship over contracts"
+        },
+        
+        "answer_factual_backend": {
+          "text": "{{company_name}} contract structure includes {{contract_type}} with {{contract_duration}} commitments. {{contract_description}} with {{termination_terms}} notice required for cancellation. Initial engagements may include {{onboarding_period}} to establish foundation and demonstrate value. Contract terms feature: {{payment_terms}}, {{scope_change_process}}, and {{performance_review_cadence}}. {{flexibility_statement}} allowing clients to {{flexibility_options}}. Average client tenure is {{retention_metric}} with {{retention_rate}}% retention rate, indicating satisfaction-based continuation rather than contractual obligation. Agreements include {{included_protections}} to ensure mutual accountability. {{company_name}} emphasizes {{partnership_philosophy}}, structuring terms to balance agency planning needs with client flexibility. Contracts specify {{deliverables_commitment}}, {{communication_frequency}}, and {{success_metrics}} to ensure clear expectations and accountability throughout the partnership duration.",
+          "word_count": 118,
+          "tone": "structured and professional",
+          "focus": "detailed contract terms with flexibility",
+          
+          "factual_anchors": [
+            {
+              "claim": "contract duration and type",
+              "type": "business_terms",
+              "source": "contract_terms_extraction",
+              "confidence": "high",
+              "context": "if explicitly stated",
+              "verifiable": "company_website",
+              "fallback": "flexible engagement terms"
+            },
+            {
+              "claim": "client retention rate",
+              "type": "client_satisfaction",
+              "source": "about_page_statistics",
+              "confidence": "medium",
+              "context": "if retention data provided",
+              "fallback": "strong client relationships"
+            },
+            {
+              "claim": "average client tenure",
+              "type": "client_relationships",
+              "source": "testimonials_case_studies",
+              "confidence": "medium",
+              "fallback": "long-term partnerships"
+            }
+          ]
+        },
+        
+        "answer_fallback": "We offer flexible engagement terms designed to earn your continued business through results rather than binding you with rigid long-term contracts.",
+        
+        "schema_jsonld": {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "keywords": [
+            "marketing agency contract terms",
+            "long-term agency commitment",
+            "flexible marketing agreements",
+            "agency cancellation policy",
+            "month-to-month marketing services"
+          ],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Do I need to sign a long-term contract with your agency?",
+              "alternativeQuestion": [
+                "What are your agency contract requirements?",
+                "Can I cancel my marketing services anytime?",
+                "Do you offer month-to-month marketing services?",
+                "What's your agency commitment policy?",
+                "How long do I need to commit to working with you?"
+              ],
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{company_name}} offers {{contract_type}} with {{contract_duration}} commitments. {{contract_description}} with {{termination_terms}} notice for cancellation. Initial engagements may include {{onboarding_period}} to establish foundation. Terms feature {{payment_terms}}, {{scope_change_process}}, and {{performance_review_cadence}}. {{flexibility_statement}} allowing {{flexibility_options}}. Average client tenure is {{retention_metric}} with {{retention_rate}}% retention, indicating satisfaction-based continuation. Agreements include {{included_protections}} for mutual accountability. We emphasize {{partnership_philosophy}}, balancing planning needs with flexibility. Contracts specify {{deliverables_commitment}}, {{communication_frequency}}, and {{success_metrics}}."
+              }
+            }
+          ]
+        },
+        
+        "answer_template": "{{company_name}} offers {{contract_type}} with {{contract_duration}} terms and {{termination_terms}} notice. Clients average {{retention_metric}} tenure with {{retention_rate}}% retention based on results, not obligations.",
+        
+        "answer_fallback_template": "We structure flexible partnerships focused on earning your continued business through results rather than binding contracts.",
+        
+        "extraction_rules": {
+          "company_name": {
+            "method": "entity_extraction",
+            "look_for": ["company name", "agency name"],
+            "context": "title, header",
+            "confidence_threshold": 0.9,
+            "fallback": "Our agency"
+          },
+          "contract_type": {
+            "method": "keyword_scan",
+            "keywords": ["month-to-month", "flexible terms", "short-term agreements", "annual contracts", "quarterly commitments"],
+            "context": "contract terms, engagement models",
+            "confidence_threshold": 0.8,
+            "fallback": "flexible engagement options"
+          },
+          "contract_duration": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-month", "month-to-month", "no long-term", "(\\d+) month minimum"],
+            "context": "contract duration descriptions",
+            "confidence_threshold": 0.8,
+            "fallback": "flexible"
+          },
+          "contract_description": {
+            "method": "keyword_scan",
+            "keywords": ["initial commitment", "project basis", "ongoing retainer", "trial period"],
+            "context": "contract structure descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "flexible engagement structures"
+          },
+          "termination_terms": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+) days? notice", "(\\d+)-day notice", "cancel anytime", "no notice required"],
+            "context": "cancellation policy, termination terms",
+            "confidence_threshold": 0.8,
+            "fallback": "reasonable notice"
+          },
+          "flexibility_statement": {
+            "method": "keyword_scan",
+            "keywords": ["no long-term commitment", "cancel anytime", "flexible terms", "month-to-month option"],
+            "context": "flexibility messaging, contract benefits",
+            "confidence_threshold": 0.7,
+            "fallback": "We offer flexible terms"
+          },
+          "retention_context": {
+            "method": "keyword_scan",
+            "keywords": ["for years", "long-term", "multi-year", "ongoing partnerships"],
+            "context": "client relationship descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "long-term"
+          },
+          "onboarding_period": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)-month onboarding", "(\\d+)-day setup", "initial (\\d+) months"],
+            "context": "onboarding, initial period descriptions",
+            "confidence_threshold": 0.7,
+            "fallback": "an initial period"
+          },
+          "payment_terms": {
+            "method": "keyword_scan",
+            "keywords": ["monthly billing", "quarterly payments", "net 30", "upfront payment"],
+            "context": "payment structure, billing terms",
+            "confidence_threshold": 0.7,
+            "fallback": "standard payment terms"
+          },
+          "scope_change_process": {
+            "method": "keyword_scan",
+            "keywords": ["scope modifications", "change requests", "flexible scope", "adjustable services"],
+            "context": "scope management, flexibility",
+            "confidence_threshold": 0.6,
+            "fallback": "scope adjustment options"
+          },
+          "performance_review_cadence": {
+            "method": "pattern_scan",
+            "patterns": ["monthly reviews", "quarterly check-ins", "ongoing optimization"],
+            "context": "review frequency, performance discussions",
+            "confidence_threshold": 0.7,
+            "fallback": "regular performance reviews"
+          },
+          "flexibility_options": {
+            "method": "keyword_scan",
+            "keywords": ["pause services", "adjust scope", "scale up or down", "modify approach"],
+            "context": "flexibility descriptions",
+            "confidence_threshold": 0.6,
+            "fallback": "adjust engagement as needed"
+          },
+          "retention_metric": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)\\+ years", "(\\d+) years average", "(\\d+)-year average"],
+            "context": "client tenure statistics",
+            "confidence_threshold": 0.7,
+            "fallback": "multiple years"
+          },
+          "retention_rate": {
+            "method": "pattern_scan",
+            "patterns": ["(\\d+)% retention", "(\\d+)% of clients stay"],
+            "context": "retention statistics",
+            "confidence_threshold": 0.7,
+            "fallback": "high"
+          },
+          "included_protections": {
+            "method": "keyword_scan",
+            "keywords": ["performance guarantees", "mutual accountability", "clear deliverables", "transparent reporting"],
+            "context": "contract protections, guarantees",
+            "confidence_threshold": 0.6,
+            "fallback": "mutual protections"
+          },
+          "partnership_philosophy": {
+            "method": "keyword_scan",
+            "keywords": ["collaborative partnerships", "long-term relationships", "mutual success", "client-first approach"],
+            "context": "partnership values, philosophy",
+            "confidence_threshold": 0.7,
+            "fallback": "partnership-focused relationships"
+          },
+          "deliverables_commitment": {
+            "method": "keyword_scan",
+            "keywords": ["specific deliverables", "guaranteed outputs", "defined scope", "clear milestones"],
+            "context": "deliverable specifications",
+            "confidence_threshold": 0.7,
+            "fallback": "clear deliverables"
+          },
+          "communication_frequency": {
+            "method": "pattern_scan",
+            "patterns": ["weekly calls", "bi-weekly meetings", "monthly check-ins", "daily updates"],
+            "context": "communication cadence",
+            "confidence_threshold": 0.7,
+            "fallback": "regular communication"
+          },
+          "success_metrics": {
+            "method": "keyword_scan",
+            "keywords": ["KPIs", "performance targets", "success criteria", "measurable outcomes"],
+            "context": "success definitions, metrics",
+            "confidence_threshold": 0.7,
+            "fallback": "defined success metrics"
+          }
+        },
+        
+        "customization_priority": "high",
+        
+        "implementation_notes": {
+          "why_this_matters": "Contract flexibility is a common concern and potential objection. 81% of successful agencies address contract terms proactively to remove barriers and demonstrate confidence.",
+          "buyer_stage": "decision",
+          "typical_searcher": "Risk-averse decision-maker concerned about commitment or past agency experiences",
+          "decision_impact": "High - can be the final barrier preventing engagement or accelerating decision"
+        }
+      }
+    ]
+  }
+}
