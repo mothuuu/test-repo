@@ -9,67 +9,6 @@ function getDisplayScore(backendScore) {
   return Math.round(backendScore * 10);
 }
 
-async function loadRecentScans() {
-    const scansList = document.getElementById('scansList');
-    const authToken = localStorage.getItem('authToken');
-    
-    try {
-        // TODO: Replace with actual API call when backend is ready
-        const response = await fetch(`${API_BASE_URL}/scan/list/recent`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to load scans');
-        }
-        
-        const data = await response.json();
-        const scans = data.scans || [];
-        
-        if (scans.length === 0) {
-            scansList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📊</div>
-                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 10px;">No scans yet</p>
-                    <p>Start your first scan above to see your AI visibility score!</p>
-                </div>
-            `;
-            return;
-        }
-        
-        scansList.innerHTML = scans.map(scan => {
-            const date = new Date(scan.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            // IMPORTANT: Convert backend score (0-100) to display score (0-1000)
-            const displayScore = getDisplayScore(scan.total_score || 0);
-            
-            return `
-                <div class="scan-card" onclick="window.location.href='results.html?id=${scan.id}'">
-                    <div class="scan-info">
-                        <h4>${scan.url}</h4>
-                        <p>Scanned on ${date}</p>
-                    </div>
-                    <div class="scan-score">
-                        <div class="score-number">${displayScore}</div>
-                        <div class="score-label">/ 1000</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-    } catch (error) {
-        console.error('Error loading scans:', error);
-        scansList.innerHTML = `
-            <div class="empty-state">
-                <p style="color: #dc3545;">Failed to load recent scans. Please try again.</p>
-            </div>
-        `;
-    }
-}
 // Global state
 let user = null;
 let quota = { used: 0, limit: 2 };
@@ -205,19 +144,18 @@ async function loadRecentScans() {
     const authToken = localStorage.getItem('authToken');
     
     try {
-        // TODO: Replace with actual API call
-        // const response = await fetch(`${API_BASE_URL}/scans/recent`, {
-        //     headers: { 'Authorization': `Bearer ${authToken}` }
-        // });
-        // const data = await response.json();
+        const response = await fetch(`${API_BASE_URL}/scan/list/recent`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
         
-        // MOCK DATA for now
-        const mockScans = [
-            { id: 1, url: 'https://example.com', score: 735, created_at: '2024-01-15T10:30:00Z' },
-            { id: 2, url: 'https://mysite.com', score: 620, created_at: '2024-01-10T14:20:00Z' }
-        ];
+        if (!response.ok) {
+            throw new Error('Failed to load scans');
+        }
         
-        if (mockScans.length === 0) {
+        const data = await response.json();
+        const scans = data.scans || [];
+        
+        if (scans.length === 0) {
             scansList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📊</div>
@@ -228,21 +166,24 @@ async function loadRecentScans() {
             return;
         }
         
-        scansList.innerHTML = mockScans.map(scan => {
+        scansList.innerHTML = scans.map(scan => {
             const date = new Date(scan.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             });
             
+            // Convert backend score (0-100) to display score (0-1000)
+            const displayScore = getDisplayScore(scan.total_score || 0);
+            
             return `
-                <div class="scan-card" onclick="window.location.href='index.html#results-${scan.id}'">
+                <div class="scan-card" onclick="window.location.href='results.html?scanId=${scan.id}'">
                     <div class="scan-info">
                         <h4>${scan.url}</h4>
                         <p>Scanned on ${date}</p>
                     </div>
                     <div class="scan-score">
-                        <div class="score-number">${scan.score}</div>
+                        <div class="score-number">${displayScore}</div>
                         <div class="score-label">/ 1000</div>
                     </div>
                 </div>
@@ -265,6 +206,7 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
     
     const url = document.getElementById('scanUrl').value.trim();
     const scanBtn = document.getElementById('scanBtn');
+    const authToken = localStorage.getItem('authToken');
     
     // Check quota
     if (quota.used >= quota.limit) {
@@ -278,24 +220,42 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
     scanBtn.textContent = 'Starting scan...';
     
     try {
-        // For DIY/Pro users, go to page selector
-        if (user.plan === 'diy' || user.plan === 'pro') {
-            window.location.href = `page-selector.html?url=${encodeURIComponent(url)}`;
+        // For free users - scan homepage immediately
+        if (user.plan === 'free') {
+            const response = await fetch(`${API_BASE_URL}/scan/analyze`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: url,
+                    scanType: 'homepage'
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Scan failed');
+            }
+            
+            const data = await response.json();
+            
+            // Redirect to results
+            if (data.scanId) {
+                window.location.href = `results.html?scanId=${data.scanId}`;
+            } else {
+                throw new Error('No scan ID received');
+            }
             return;
         }
         
-        // For free users, scan immediately (homepage only)
-        // TODO: Call actual API
-        console.log('Starting scan for:', url);
-        
-        // MOCK: Redirect to results after delay
-        setTimeout(() => {
-            window.location.href = `index.html?scan=true&url=${encodeURIComponent(url)}`;
-        }, 2000);
+        // For DIY/Pro users - go to page selector
+        window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
         
     } catch (error) {
         console.error('Scan error:', error);
-        alert('Failed to start scan. Please try again.');
+        alert('Failed to start scan: ' + error.message);
         scanBtn.disabled = false;
         scanBtn.textContent = 'Analyze Website';
     }

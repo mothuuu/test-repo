@@ -14,7 +14,7 @@ const PLAN_LIMITS = {
     brandVisibilityIndex: false
   },
   diy: {
-    scansPerMonth: 10, // Reasonable limit for DIY users
+    scansPerMonth: 25, // Reasonable limit for DIY users
     pagesPerScan: 5, // Homepage + 4 additional pages
     multiPageScan: true,
     pageSelection: true, // KEY FEATURE: User chooses which pages

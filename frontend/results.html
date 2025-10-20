@@ -5,361 +5,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Results - AI Visibility Score</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .results-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
+        .recommendation-card {
+            transition: all 0.3s ease;
         }
-        
-        .results-header {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .results-header h1 {
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .scan-domain {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        .scan-date {
-            color: #999;
-            font-size: 0.95rem;
-        }
-        
-        .overall-score {
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-            padding: 50px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .score-display {
-            font-size: 6rem;
-            font-weight: bold;
-            line-height: 1;
-            margin-bottom: 10px;
-        }
-        
-        .score-label {
-            font-size: 1.5rem;
-            opacity: 0.9;
-        }
-        
-        .score-message {
-            font-size: 1.2rem;
-            margin-top: 20px;
-            opacity: 0.95;
-        }
-        
-        .pillars-section {
-            margin-bottom: 30px;
-        }
-        
-        .pillars-section h2 {
-            font-size: 2rem;
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .pillars-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .pillar-card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .pillar-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-        }
-        
-        .pillar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .pillar-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .pillar-score {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #00B9DA;
-        }
-        
-        .pillar-score.excellent { color: #28a745; }
-        .pillar-score.good { color: #4DACA6; }
-        .pillar-score.fair { color: #ffc107; }
-        .pillar-score.poor { color: #dc3545; }
-        
-        .pillar-progress {
-            width: 100%;
-            height: 10px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-        
-        .pillar-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #00B9DA 0%, #7030A0 100%);
-            border-radius: 10px;
-            transition: width 1s ease-out;
-        }
-        
-        .pillar-description {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
-        .pillar-recommendations {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .pillar-recommendations h4 {
-            font-size: 1rem;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .pillar-recommendations ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .pillar-recommendations li {
-            padding: 8px 0;
-            color: #666;
-            font-size: 0.9rem;
-            padding-left: 20px;
-            position: relative;
-        }
-        
-        .pillar-recommendations li:before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: #00B9DA;
-            font-weight: bold;
-        }
-        
-        .actions-section {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .actions-section h3 {
-            font-size: 1.8rem;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .action-btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-        }
-        
-        .btn-primary:hover {
+        .recommendation-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(112, 48, 160, 0.3);
         }
         
-        .btn-secondary {
-            background: white;
-            color: #7030A0;
-            border: 2px solid #7030A0;
-        }
-        
-        .btn-secondary:hover {
-            background: #f8f9fa;
-        }
-        
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            background: white;
-            border-radius: 20px;
-            padding: 60px;
-        }
-        
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #7030A0;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-container {
-            background: white;
-            padding: 60px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-        
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-        
-        .error-message {
-            font-size: 1.3rem;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .pillars-grid {
-                grid-template-columns: 1fr;
+        /* Score circle animation */
+        @keyframes scoreReveal {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
             }
-            
-            .score-display {
-                font-size: 4rem;
+            to {
+                transform: scale(1);
+                opacity: 1;
             }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .action-btn {
-                width: 100%;
-            }
+        }
+        
+        #scoreCircle {
+            animation: scoreReveal 0.6s ease-out;
+        }
+
+        /* Smooth expand/collapse */
+        .hidden {
+            display: none;
         }
     </style>
 </head>
-<body style="background: #f5f5f5;">
-    <div class="container">
-        <div class="header" style="padding-bottom: 20px;">
-            <h1>AI Visibility Score</h1>
+<body class="bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="dashboard.html" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    AI Visibility Score
+                </a>
+                <div class="flex items-center gap-4">
+                    <span id="userPlan" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold"></span>
+                    <span id="scanQuota" class="text-sm text-gray-600"></span>
+                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+        <!-- Header Section -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Scan Results</h1>
+                    <p class="text-gray-600">
+                        <span id="scanUrl" class="font-semibold"></span> • 
+                        <span id="scanDate"></span>
+                    </p>
+                </div>
+                <div id="scoreCircle" class="text-center">
+                    <div class="text-6xl font-bold mb-2">
+                        <span id="overallScore">0</span>
+                        <span class="text-3xl text-gray-500">/1000</span>
+                    </div>
+                    <p class="text-gray-600 font-semibold">Overall Score</p>
+                </div>
+            </div>
+
+            <!-- Export Section (DIY+ only) -->
+            <div id="exportSection" class="hidden flex gap-4 pt-6 border-t">
+                <button onclick="window.print()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    📄 Export PDF
+                </button>
+                <button onclick="alert('CSV export coming soon!')" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold">
+                    📊 Export CSV
+                </button>
+                <a href="dashboard.html" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                    ✓ Save & Continue
+                </a>
+            </div>
         </div>
 
-        <div class="results-container">
-            <!-- Loading State -->
-            <div id="loadingState" class="loading-container">
-                <div class="loading-spinner"></div>
-                <h2 style="color: #333; margin-bottom: 10px;">Analyzing Your Website</h2>
-                <p style="color: #666;">This may take a minute or two...</p>
-            </div>
-            
-            <!-- Error State -->
-            <div id="errorState" class="error-container" style="display: none;">
-                <div class="error-icon">⚠️</div>
-                <h2 style="color: #333; margin-bottom: 15px;">Unable to Load Results</h2>
-                <p class="error-message" id="errorMessage">Something went wrong</p>
-                <button class="action-btn btn-primary" onclick="window.location.href='dashboard.html'">
-                    Return to Dashboard
-                </button>
-            </div>
-            
-            <!-- Results State -->
-            <div id="resultsState" style="display: none;">
-                <!-- Header -->
-                <div class="results-header">
-                    <h1>AI Visibility Analysis</h1>
-                    <div class="scan-domain" id="scanDomain">example.com</div>
-                    <div class="scan-date" id="scanDate">Scanned on: January 1, 2025</div>
-                </div>
-                
-                <!-- Overall Score -->
-                <div class="overall-score">
-                    <div class="score-display" id="overallScore">0</div>
-                    <div class="score-label">out of 1000</div>
-                    <div class="score-message" id="scoreMessage">Loading...</div>
-                </div>
-                
-                <!-- 8 Pillars Breakdown -->
-                <div class="pillars-section">
-                    <h2>8 Pillar Analysis</h2>
-                    <div class="pillars-grid" id="pillarsGrid">
-                        <!-- Pillar cards will be inserted here by JavaScript -->
-                    </div>
-                </div>
-                
-                <!-- Actions -->
-                <div class="actions-section">
-                    <h3>What's Next?</h3>
-                    <p style="color: #666; margin-bottom: 30px;">
-                        Use these insights to improve your AI visibility and get discovered by AI-powered search engines
-                    </p>
-                    <div class="action-buttons">
-                        <button class="action-btn btn-secondary" onclick="window.location.href='dashboard.html'">
-                            Back to Dashboard
-                        </button>
-                        <button class="action-btn btn-primary" onclick="startNewScan()">
-                            Start New Scan
-                        </button>
-                    </div>
-                </div>
+        <!-- Category Scores Grid -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Performance by Category</h2>
+            <div id="categoryScores" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Category cards will be inserted here -->
             </div>
         </div>
+
+        <!-- Recommendations Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Detailed Recommendations</h2>
+                <div class="flex gap-2">
+                    <button onclick="expandAll()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-semibold">
+                        Expand All
+                    </button>
+                    <button onclick="collapseAll()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold">
+                        Collapse All
+                    </button>
+                </div>
+            </div>
+            <div id="recommendationsList" class="space-y-4">
+                <!-- Recommendation cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- FAQ Section (DIY+ only) -->
+        <div id="faqSection" class="hidden mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">❓ Custom FAQ for Your Website</h2>
+            <p class="text-gray-600 mb-6">
+                These AI-generated FAQs are tailored to your content and optimized for AI search visibility. 
+                Implement them on your website to improve how AI understands your business.
+            </p>
+            
+            <div id="faqList" class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- FAQ cards will be inserted here -->
+            </div>
+
+            <div id="schemaCode">
+                <!-- Schema code will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Upgrade CTA Section -->
+        <div id="upgradeSection" class="hidden mb-8">
+            <!-- Upgrade content will be inserted here -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row gap-4 justify-center items-center">
+            <button onclick="window.location.href='dashboard.html'" 
+                    class="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md">
+                Scan Another Website
+            </button>
+            <button onclick="window.location.href='dashboard.html#history'" 
+                    class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                View Scan History
+            </button>
+            <button onclick="alert('Implementation tracking coming soon!')" 
+                    class="px-8 py-3 bg-green-100 text-green-800 rounded-lg font-semibold hover:bg-green-200 transition-colors">
+                Track Progress
+            </button>
+        </div>
     </div>
-    
-    <script src="results.js" defer></script>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            <p>&copy; 2025 AI Visibility Score. Track and optimize your AI search presence.</p>
+            <div class="mt-2 flex justify-center gap-4 text-sm">
+                <a href="#" class="hover:text-blue-600">Help Center</a>
+                <a href="#" class="hover:text-blue-600">Privacy Policy</a>
+                <a href="#" class="hover:text-blue-600">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="results.js"></script>
+    <script>
+        // Utility functions for expand/collapse all
+        function expandAll() {
+            document.querySelectorAll('[id^="content-"]').forEach(el => {
+                el.classList.remove('hidden');
+            });
+            document.querySelectorAll('[id^="toggle-"]').forEach(el => {
+                el.textContent = 'Collapse ▲';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('[id^="content-"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.querySelectorAll('[id^="toggle-"]').forEach(el => {
+                el.textContent = 'Expand ▼';
+            });
+        }
+    </script>
 </body>
-</html>
 </html>

@@ -5,7 +5,7 @@ const db = require('../db/database');
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
 // ============================================
-const V5RubricEngine = require('../analyzers/V5-rubric-engine'); // Import the class
+const V5RubricEngine = require('../analyzers/v5-rubric-engine'); // Import the class
 const { generateCompleteRecommendations } = require('../analyzers/recommendation-generator');
 
 // Middleware to verify JWT token

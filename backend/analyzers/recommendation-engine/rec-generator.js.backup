@@ -1,0 +1,633 @@
+require('dotenv').config();
+
+/**
+ * RECOMMENDATION GENERATOR - HYBRID SYSTEM
+ * File: backend/analyzers/recommendation-engine/rec-generator.js
+ * 
+ * Top 5 issues: AI-generated (Claude/ChatGPT)
+ * Remaining issues: Smart template-based (instant, no API calls)
+ */
+
+const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
+
+// Initialize API clients
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// ========================================
+// RECOMMENDATION TEMPLATES
+// ========================================
+
+const RECOMMENDATION_TEMPLATES = {
+  // AI Search Readiness
+  schemaMarkup: {
+    title: "Add Missing Schema Markup",
+    impactArea: "AI Search Visibility",
+    whyItMatters: "Schema markup helps AI engines understand and categorize your content accurately",
+    typicalTimeToFix: "2-4 hours",
+    difficulty: "Medium"
+  },
+  structuredDataScore: {
+    title: "Implement Structured Data",
+    impactArea: "AI Understanding",
+    whyItMatters: "Structured data enables AI systems to properly parse and reference your content",
+    typicalTimeToFix: "3-5 hours",
+    difficulty: "Medium"
+  },
+  faqStructure: {
+    title: "Implement FAQ Schema",
+    impactArea: "Featured Snippets & Voice Search",
+    whyItMatters: "FAQ schema increases chances of appearing in AI-generated answers and voice results",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  faqScore: {
+    title: "Add FAQ Structured Data",
+    impactArea: "Voice Search & AI Answers",
+    whyItMatters: "FAQ markup makes your content quotable by AI assistants",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  entityRecognition: {
+    title: "Improve Entity Recognition",
+    impactArea: "Brand & Topic Authority",
+    whyItMatters: "Clear entity markup helps AI connect your brand to relevant topics and queries",
+    typicalTimeToFix: "3-5 hours",
+    difficulty: "Medium"
+  },
+  
+  // AI Readability
+  imageAltText: {
+    title: "Add Alt Text to Images",
+    impactArea: "Multimodal AI Understanding",
+    whyItMatters: "Alt text enables AI to understand and reference your visual content",
+    typicalTimeToFix: "1-3 hours",
+    difficulty: "Easy"
+  },
+  altTextScore: {
+    title: "Improve Image Alt Text",
+    impactArea: "Visual AI Understanding",
+    whyItMatters: "Descriptive alt text helps AI understand and describe your images",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  videoTranscripts: {
+    title: "Add Video Transcripts",
+    impactArea: "Content Accessibility & AI Indexing",
+    whyItMatters: "Transcripts make video content searchable and quotable by AI engines",
+    typicalTimeToFix: "2-4 hours per video",
+    difficulty: "Medium"
+  },
+  captionsTranscriptsScore: {
+    title: "Add Video Captions and Transcripts",
+    impactArea: "Multimedia Accessibility",
+    whyItMatters: "Captions enable AI to index and quote your video content",
+    typicalTimeToFix: "3-4 hours",
+    difficulty: "Medium"
+  },
+  visualHierarchy: {
+    title: "Fix Heading Structure",
+    impactArea: "Content Organization",
+    whyItMatters: "Proper heading hierarchy helps AI understand content structure and importance",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  
+  // Technical Setup
+  robotsTxt: {
+    title: "Create/Fix robots.txt File",
+    impactArea: "AI Crawler Access",
+    whyItMatters: "Robots.txt controls which content AI crawlers can access and index",
+    typicalTimeToFix: "30 minutes",
+    difficulty: "Easy"
+  },
+  xmlSitemap: {
+    title: "Add XML Sitemap",
+    impactArea: "Content Discovery",
+    whyItMatters: "Sitemaps help AI crawlers discover and prioritize your content",
+    typicalTimeToFix: "1 hour",
+    difficulty: "Easy"
+  },
+  sitemapScore: {
+    title: "Optimize XML Sitemap",
+    impactArea: "Crawler Efficiency",
+    whyItMatters: "A well-structured sitemap ensures AI discovers all your important pages",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  httpsImplementation: {
+    title: "Implement HTTPS",
+    impactArea: "Security & Trust",
+    whyItMatters: "HTTPS is required for AI engines to trust and index your content",
+    typicalTimeToFix: "2-4 hours",
+    difficulty: "Medium"
+  },
+  indexNowScore: {
+    title: "Implement IndexNow Protocol",
+    impactArea: "Real-time Indexing",
+    whyItMatters: "IndexNow enables instant notification of content updates to search engines",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Medium"
+  },
+  
+  // Trust & Authority
+  authorBios: {
+    title: "Add Author Information",
+    impactArea: "Content Credibility",
+    whyItMatters: "Author credentials help AI assess content expertise and trustworthiness",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  authorBiosScore: {
+    title: "Enhance Author Profiles",
+    impactArea: "E-E-A-T Signals",
+    whyItMatters: "Detailed author bios establish expertise and trustworthiness for AI",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  contactInformation: {
+    title: "Improve Contact Information",
+    impactArea: "Business Trust Signals",
+    whyItMatters: "Clear contact info increases AI confidence in your business legitimacy",
+    typicalTimeToFix: "1 hour",
+    difficulty: "Easy"
+  },
+  certificationsScore: {
+    title: "Showcase Certifications",
+    impactArea: "Authority & Trust",
+    whyItMatters: "Certifications and awards strengthen your domain authority for AI",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  
+  // Content Structure
+  headingHierarchy: {
+    title: "Fix Heading Hierarchy",
+    impactArea: "Content Structure",
+    whyItMatters: "Logical heading structure helps AI parse and summarize your content",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  headingHierarchyScore: {
+    title: "Optimize Heading Structure",
+    impactArea: "Document Outline",
+    whyItMatters: "Proper H1-H6 hierarchy helps AI understand content relationships",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  paragraphLength: {
+    title: "Optimize Paragraph Length",
+    impactArea: "Readability & Scannability",
+    whyItMatters: "Well-sized paragraphs make content easier for AI to extract and quote",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  accessibilityScore: {
+    title: "Improve Web Accessibility",
+    impactArea: "Universal Access",
+    whyItMatters: "Accessibility features help AI better understand and present your content",
+    typicalTimeToFix: "3-5 hours",
+    difficulty: "Medium"
+  },
+  questionHeadingsScore: {
+    title: "Use Question-Format Headings",
+    impactArea: "Voice Search Optimization",
+    whyItMatters: "Question headings align with how users query AI assistants",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Easy"
+  },
+  geoContentScore: {
+    title: "Add Location-Specific Content",
+    impactArea: "Local Relevance",
+    whyItMatters: "Geographic signals help AI serve your content for local queries",
+    typicalTimeToFix: "2-4 hours",
+    difficulty: "Medium"
+  },
+  localIntentScore: {
+    title: "Optimize for Local Search Intent",
+    impactArea: "Local Discovery",
+    whyItMatters: "Local optimization helps AI recommend your business for nearby queries",
+    typicalTimeToFix: "3-4 hours",
+    difficulty: "Medium"
+  },
+  lastUpdatedScore: {
+    title: "Add Content Freshness Indicators",
+    impactArea: "Content Timeliness",
+    whyItMatters: "Freshness signals help AI prioritize your current information",
+    typicalTimeToFix: "1-2 hours",
+    difficulty: "Easy"
+  },
+  versioningScore: {
+    title: "Implement Content Versioning",
+    impactArea: "Change Tracking",
+    whyItMatters: "Version indicators help AI understand content evolution and currency",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Medium"
+  },
+  httpFreshnessScore: {
+    title: "Configure HTTP Freshness Headers",
+    impactArea: "Cache Management",
+    whyItMatters: "Proper headers ensure AI crawlers get your latest content",
+    typicalTimeToFix: "1 hour",
+    difficulty: "Medium"
+  },
+  canonicalHreflangScore: {
+    title: "Implement Canonical and Hreflang Tags",
+    impactArea: "International SEO",
+    whyItMatters: "These tags help AI understand content relationships and language variants",
+    typicalTimeToFix: "2-3 hours",
+    difficulty: "Medium"
+  }
+};
+
+// ========================================
+// MAIN GENERATION FUNCTION (HYBRID)
+// ========================================
+
+async function generateRecommendations(issues, scanEvidence, tier = 'free', industry = null) {
+  console.log(`   🎯 HYBRID MODE: Generating recommendations for ${issues.length} issues...`);
+  
+  const recommendations = [];
+  
+  // Limit based on tier
+  const limit = tier === 'free' ? 5 : (tier === 'diy' ? 15 : 25);
+  const issuesToProcess = issues.slice(0, limit);
+  
+  // Split into AI (top 5) and template (rest)
+  const aiIssues = issuesToProcess.slice(0, 5);
+  const templateIssues = issuesToProcess.slice(5);
+  
+  console.log(`   🤖 AI Generation: ${aiIssues.length} issues`);
+  console.log(`   📋 Template Generation: ${templateIssues.length} issues`);
+  
+  // PART 1: Generate AI recommendations for top 5 issues
+  for (let i = 0; i < aiIssues.length; i++) {
+    const issue = aiIssues[i];
+    
+    try {
+      const recommendation = await generateSingleRecommendation(issue, scanEvidence, tier, industry);
+      recommendations.push(recommendation);
+      
+      // Add delay between API calls to avoid rate limits (except for last one)
+      if (i < aiIssues.length - 1) {
+        await sleep(2000); // 2 second delay
+      }
+      
+    } catch (error) {
+      console.error(`   ⚠️  AI failed for ${issue.subfactor}, using smart template`);
+      recommendations.push(generateSmartTemplate(issue, scanEvidence, tier));
+    }
+  }
+  
+  // PART 2: Generate template recommendations for remaining issues (instant, no API calls)
+  for (const issue of templateIssues) {
+    recommendations.push(generateSmartTemplate(issue, scanEvidence, tier));
+  }
+  
+  console.log(`   ✅ Generated ${recommendations.length} total recommendations (${aiIssues.length} AI, ${templateIssues.length} template)`);
+  
+  return recommendations;
+}
+
+// Sleep helper
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ========================================
+// AI GENERATION (Top 5 Issues Only)
+// ========================================
+
+async function generateSingleRecommendation(issue, scanEvidence, tier, industry) {
+  const template = RECOMMENDATION_TEMPLATES[issue.subfactor] || {
+    title: `Improve ${issue.subfactor}`,
+    impactArea: issue.category,
+    whyItMatters: "This affects your AI visibility",
+    typicalTimeToFix: "Varies",
+    difficulty: "Medium"
+  };
+  
+  const prompt = buildPrompt(issue, scanEvidence, template, tier, industry);
+  
+  // Try Claude first
+  try {
+    return await generateWithClaude(prompt, issue, template, tier);
+  } catch (claudeError) {
+    console.log(`   ⚠️  Claude failed, trying ChatGPT...`);
+    
+    // Fallback to ChatGPT
+    try {
+      return await generateWithChatGPT(prompt, issue, template, tier);
+    } catch (gptError) {
+      throw gptError; // Will trigger template fallback
+    }
+  }
+}
+
+async function generateWithClaude(prompt, issue, template, tier) {
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: tier === 'free' ? 500 : 1500,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+  
+  const claudeResponse = response.content[0].text;
+  return structureRecommendation(claudeResponse, issue, template, tier, 'claude');
+}
+
+async function generateWithChatGPT(prompt, issue, template, tier) {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    max_tokens: tier === 'free' ? 500 : 1500,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+  
+  const gptResponse = response.choices[0].message.content;
+  return structureRecommendation(gptResponse, issue, template, tier, 'chatgpt');
+}
+
+function buildPrompt(issue, scanEvidence, template, tier, industry) {
+  const detailLevel = tier === 'free' ? 'brief and general' : 'detailed and specific';
+  const includeCode = tier !== 'free';
+  
+  return `You are an AI Search Optimization expert. Generate a ${detailLevel} recommendation for this website issue.
+
+CONTEXT:
+- Website: ${scanEvidence.url}
+- Industry: ${industry || 'General'}
+- Issue: ${issue.subfactor}
+- Current Score: ${issue.currentScore}/100
+- Target Score: ${issue.threshold}/100
+- Severity: ${issue.severity}
+
+EVIDENCE:
+${JSON.stringify(issue.evidence, null, 2)}
+
+TEMPLATE GUIDANCE:
+- Title: ${template.title}
+- Impact Area: ${template.impactArea}
+- Why it matters: ${template.whyItMatters}
+
+INSTRUCTIONS:
+Generate a recommendation with these sections:
+
+[FINDING]
+What specific problem was detected on this website? (2-3 sentences, use the actual evidence)
+
+[IMPACT]
+Why does this matter for AI visibility? What opportunities are being missed? (2-3 sentences)
+
+[ACTION STEPS]
+${tier === 'free' ? '3-4 brief action items' : '5-7 detailed step-by-step instructions'}
+
+${includeCode ? `[CODE]
+Provide copy-paste ready code snippet customized for this website. Use actual data from the evidence when possible.` : ''}
+
+Be specific to THIS website using the evidence provided. ${tier !== 'free' ? 'Include exact URLs, numbers, and data from the evidence.' : 'Keep it general but actionable.'}`;
+}
+
+function structureRecommendation(aiResponse, issue, template, tier, source) {
+  return {
+    id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
+    title: template.title,
+    category: issue.category,
+    subfactor: issue.subfactor,
+    priority: issue.severity,
+    priorityScore: issue.priority,
+    
+    finding: extractSection(aiResponse, 'FINDING') || extractSection(aiResponse, 'What We Found'),
+    impact: extractSection(aiResponse, 'IMPACT'),
+    actionSteps: extractActionSteps(aiResponse),
+    codeSnippet: tier !== 'free' ? (extractSection(aiResponse, 'CODE') || extractSection(aiResponse, 'Implementation Code')) : null,
+    
+    estimatedTime: template.typicalTimeToFix,
+    difficulty: template.difficulty,
+    estimatedScoreGain: Math.round(issue.gap * 0.7),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: tier !== 'free' ? issue.evidence : null,
+    generatedBy: source
+  };
+}
+
+// ========================================
+// SMART TEMPLATE GENERATION (Instant)
+// ========================================
+
+function generateSmartTemplate(issue, scanEvidence, tier) {
+  const template = RECOMMENDATION_TEMPLATES[issue.subfactor] || {
+    title: `Improve ${issue.subfactor}`,
+    impactArea: issue.category,
+    whyItMatters: "This affects your AI visibility",
+    typicalTimeToFix: "Varies",
+    difficulty: "Medium"
+  };
+  
+  // Build smart finding based on actual data
+  let finding = `Your ${issue.subfactor} score is ${issue.currentScore}/100, which is below the recommended threshold of ${issue.threshold}/100.`;
+  
+  if (issue.evidence) {
+    if (issue.evidence.missingCount) {
+      finding += ` ${issue.evidence.missingCount} items need attention.`;
+    }
+    if (issue.evidence.found === false) {
+      finding += ` This feature was not detected on your website.`;
+    }
+    if (issue.evidence.errorCount) {
+      finding += ` ${issue.evidence.errorCount} errors were found.`;
+    }
+    if (issue.evidence.totalImages && issue.evidence.imagesWithoutAlt) {
+      finding += ` ${issue.evidence.imagesWithoutAlt} of ${issue.evidence.totalImages} images are missing alt text.`;
+    }
+  }
+  
+  // Generate smart action steps
+  const actionSteps = generateSmartActionSteps(issue, scanEvidence);
+  
+  // Generate code snippet for paid tiers
+  const codeSnippet = tier !== 'free' ? generateSmartCodeSnippet(issue, scanEvidence) : null;
+  
+  return {
+    id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
+    title: template.title,
+    category: issue.category,
+    subfactor: issue.subfactor,
+    priority: issue.severity,
+    priorityScore: issue.priority,
+    finding: finding,
+    impact: template.whyItMatters,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    estimatedTime: template.typicalTimeToFix,
+    difficulty: template.difficulty,
+    estimatedScoreGain: Math.round(issue.gap * 0.7),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: tier !== 'free' ? issue.evidence : null,
+    generatedBy: 'smart_template'
+  };
+}
+
+function generateSmartActionSteps(issue, scanEvidence) {
+  const subfactor = issue.subfactor;
+  
+  const actionStepsMap = {
+    structuredDataScore: [
+      'Audit existing structured data using Google\'s Rich Results Test',
+      'Implement Organization schema with complete business information',
+      'Add Service schemas for each product/service offering',
+      'Include FAQ schema for common questions',
+      'Validate all markup with Schema.org validator'
+    ],
+    faqScore: [
+      'Identify 5-10 frequently asked questions from customer inquiries',
+      'Write clear, concise answers (100-200 words each)',
+      'Implement FAQ schema markup on relevant pages',
+      'Test visibility in Google\'s Rich Results Test',
+      'Monitor performance in Search Console'
+    ],
+    altTextScore: [
+      `Audit all ${issue.evidence?.totalImages || 'your'} images for missing alt text`,
+      'Write descriptive alt text that explains image content (5-125 characters)',
+      'Include relevant keywords naturally in descriptions',
+      'Update CMS settings to require alt text on upload',
+      'Review and update alt text quarterly'
+    ],
+    accessibilityScore: [
+      'Run automated accessibility audit (WAVE or Lighthouse)',
+      'Fix color contrast issues for text readability',
+      'Add ARIA labels to interactive elements',
+      'Ensure keyboard navigation works throughout site',
+      'Test with screen reader software'
+    ],
+    sitemapScore: [
+      'Generate XML sitemap including all important pages',
+      'Submit sitemap to Google Search Console',
+      'Configure automatic sitemap updates',
+      'Include priority and change frequency hints',
+      'Monitor sitemap errors in Search Console'
+    ],
+    headingHierarchyScore: [
+      'Ensure exactly one H1 tag per page with primary keyword',
+      'Use H2 tags for main sections (aim for 3-5 per page)',
+      'Use H3 tags for subsections under each H2',
+      'Avoid skipping heading levels (e.g., H1 → H3)',
+      'Review heading structure in HTML validator'
+    ]
+  };
+  
+  return actionStepsMap[subfactor] || [
+    `Review current implementation of ${subfactor}`,
+    'Research best practices for this optimization',
+    'Create implementation plan with timeline',
+    'Execute changes and test thoroughly',
+    'Monitor impact on AI visibility metrics'
+  ];
+}
+
+function generateSmartCodeSnippet(issue, scanEvidence) {
+  const subfactor = issue.subfactor;
+  const url = scanEvidence.url || 'https://yourwebsite.com';
+  
+  const codeSnippets = {
+    structuredDataScore: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Your Company Name",
+  "url": "${url}",
+  "logo": "${url}/logo.png",
+  "description": "Your company description",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+1-xxx-xxx-xxxx",
+    "contactType": "Customer Service"
+  }
+}
+</script>`,
+    faqScore: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "Your first question?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Your detailed answer here (100-200 words)."
+    }
+  }]
+}
+</script>`,
+    altTextScore: `<!-- Replace all image tags like this: -->
+<img src="/path/to/image.jpg" 
+     alt="Descriptive text explaining what's in the image" 
+     loading="lazy">
+     
+<!-- Example: -->
+<img src="/team-photo.jpg" 
+     alt="Marketing team collaborating in conference room" 
+     loading="lazy">`,
+    sitemapScore: `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${url}</loc>
+    <lastmod>2025-01-20</lastmod>
+    <priority>1.0</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>${url}/about</loc>
+    <lastmod>2025-01-20</lastmod>
+    <priority>0.8</priority>
+  </url>
+</urlset>`
+  };
+  
+  return codeSnippets[subfactor] || `<!-- Code implementation for ${subfactor} -->
+<!-- Visit ${url} for specific implementation guidance -->`;
+}
+
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
+
+function extractSection(response, sectionName) {
+  const regex = new RegExp(`\\[${sectionName}\\]\\s*([\\s\\S]*?)(?=\\[|$)`, 'i');
+  const match = response.match(regex);
+  return match ? match[1].trim() : '';
+}
+
+function extractActionSteps(response) {
+  const stepsSection = extractSection(response, 'ACTION STEPS') || extractSection(response, 'Action Steps');
+  if (!stepsSection) return [];
+  
+  return stepsSection
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => line.replace(/^[-•*]\s*/, '').replace(/^\d+\.\s*/, ''))
+    .filter(line => line.length > 10);
+}
+
+// ========================================
+// EXPORTS
+// ========================================
+
+module.exports = {
+  generateRecommendations,
+  generateSingleRecommendation,
+  RECOMMENDATION_TEMPLATES
+};

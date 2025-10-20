@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3001'
-    : 'https://your-production-domain.com';
+    ? 'http://localhost:3001/api'
+    : 'https://ai-visibility-tool.onrender.com/api';
 
 const MAX_PAGES = 5;
 let selectedPages = [];
@@ -16,9 +16,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    // Get domain from URL params
+    // Get domain from URL params (accepts both 'domain' and 'url')
     const urlParams = new URLSearchParams(window.location.search);
-    baseDomain = urlParams.get('domain');
+    baseDomain = urlParams.get('domain') || urlParams.get('url');
     
     if (!baseDomain) {
         showError('No domain specified');
@@ -53,13 +53,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Check authentication
+// Check authentication using localStorage token
 async function checkAuth() {
+    const authToken = localStorage.getItem('authToken');
+    
+    if (!authToken) {
+        return false;
+    }
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
             method: 'GET',
-            credentials: 'include',
             headers: {
+                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -71,7 +77,7 @@ async function checkAuth() {
         const data = await response.json();
         
         // Check if email is verified
-        if (!data.user.email_verified) {
+        if (data.user && !data.user.email_verified) {
             alert('Please verify your email first');
             window.location.href = 'verify.html';
             return false;
@@ -212,7 +218,7 @@ function updateAnalyzeButton() {
     analyzeBtn.disabled = selectedPages.length === 0;
 }
 
-// Start analysis
+// Start analysis with proper auth token
 async function startAnalysis() {
     if (selectedPages.length === 0) {
         showError('Please select at least one page');
@@ -221,33 +227,51 @@ async function startAnalysis() {
     
     const analyzeBtn = document.getElementById('analyzeBtn');
     const originalText = analyzeBtn.innerHTML;
+    const authToken = localStorage.getItem('authToken');
+    
+    if (!authToken) {
+        showError('Please log in to continue');
+        setTimeout(() => {
+            window.location.href = 'auth.html';
+        }, 1500);
+        return;
+    }
     
     try {
         analyzeBtn.disabled = true;
         analyzeBtn.innerHTML = '<div class="loading-spinner"></div>Starting analysis...';
         
-        const response = await fetch(`${API_BASE_URL}/api/ai-testing/scan-pages`, {
+        console.log('Starting scan with pages:', selectedPages);
+        
+        const response = await fetch(`${API_BASE_URL}/scan/analyze`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
+                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                url: baseDomain,
                 pages: selectedPages,
-                domain: baseDomain
+                scanType: 'multi-page'
             })
         });
         
-        const data = await response.json();
-        
         if (!response.ok) {
-            throw new Error(data.error || 'Analysis failed');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Analysis failed');
         }
         
-        // Redirect to results page
-        if (data.scanId) {
-            window.location.href = `results.html?scanId=${data.scanId}`;
+        const data = await response.json();
+        
+        console.log('Scan response:', data);
+        
+        // FIXED: Backend returns scan.id nested in scan object
+        const scanId = data.scan?.id || data.scanId || data.id;
+        
+        if (scanId) {
+            window.location.href = `results.html?scanId=${scanId}`;
         } else {
+            console.error('Full response:', data);
             throw new Error('No scan ID received');
         }
         
