@@ -6,7 +6,7 @@ const axios = require('axios');
  */
 
 async function sendEmail({ to, subject, html, text }) {
-  const provider = process.env.EMAIL_PROVIDER || 'console'; // console, sendgrid, mailgun, ses
+  const provider = process.env.EMAIL_PROVIDER || 'console';
   
   try {
     switch (provider) {
@@ -19,9 +19,11 @@ async function sendEmail({ to, subject, html, text }) {
       case 'ses':
         return await sendWithSES({ to, subject, html, text });
       
+      case 'gmail':  // ← ADD THIS
+        return await sendWithGmail({ to, subject, html, text });
+      
       case 'console':
       default:
-        // For development - just log to console
         console.log('\n📧 ===== EMAIL (CONSOLE MODE) =====');
         console.log('To:', to);
         console.log('Subject:', subject);
@@ -33,6 +35,41 @@ async function sendEmail({ to, subject, html, text }) {
     console.error('Email send error:', error);
     throw new Error(`Failed to send email: ${error.message}`);
   }
+}
+
+// Gmail implementation using nodemailer
+async function sendWithGmail({ to, subject, html, text }) {
+  // First, install nodemailer: npm install nodemailer
+  const nodemailer = require('nodemailer');
+  
+  const GMAIL_USER = process.env.GMAIL_USER;
+  const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+  const FROM_EMAIL = process.env.FROM_EMAIL || GMAIL_USER;
+  const FROM_NAME = process.env.FROM_NAME || 'AI Visibility Score';
+  
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+    throw new Error('GMAIL_USER or GMAIL_APP_PASSWORD not configured');
+  }
+  
+  // Create transporter
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: GMAIL_USER,
+      pass: GMAIL_APP_PASSWORD
+    }
+  });
+  
+  // Send email
+  const info = await transporter.sendMail({
+    from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+    to: to,
+    subject: subject,
+    html: html,
+    text: text
+  });
+  
+  return { success: true, provider: 'gmail', messageId: info.messageId };
 }
 
 // SendGrid implementation

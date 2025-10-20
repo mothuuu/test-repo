@@ -100,7 +100,7 @@ function updateUserInfo() {
 function updateQuota() {
     const planLimits = {
         free: 2,
-        diy: 10,
+        diy: 25,
         pro: 50
     };
     
@@ -240,11 +240,15 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
             }
             
             const data = await response.json();
+            console.log('Scan response:', data);
             
-            // Redirect to results
-            if (data.scanId) {
+            // Redirect to results - FIXED for correct API response structure
+            if (data.scan && data.scan.id) {
+                window.location.href = `results.html?scanId=${data.scan.id}`;
+            } else if (data.scanId) {
                 window.location.href = `results.html?scanId=${data.scanId}`;
             } else {
+                console.error('No scan ID in response:', data);
                 throw new Error('No scan ID received');
             }
             return;

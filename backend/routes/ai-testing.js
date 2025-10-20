@@ -995,7 +995,7 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
           message: `You've used ${req.user.scans_used_this_month}/${scanLimit} scans this month.`,
           currentPlan: userPlan,
           upgrade: userPlan === 'free' 
-            ? 'Upgrade to DIY ($29/mo) for 10 scans/month' 
+            ? 'Upgrade to DIY ($29/mo) for 25 scans/month' 
             : userPlan === 'diy'
             ? 'Upgrade to Pro ($99/mo) for 50 scans/month'
             : null
