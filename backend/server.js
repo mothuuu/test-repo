@@ -9,6 +9,7 @@ const aiTestingRoutes = require('./routes/ai-testing');
 const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const scanRoutes = require('./routes/scan'); // ✅ ADD THIS LINE
+const recommendationRoutes = require('./routes/recommendations');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +56,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api', aiTestingRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/scan', scanRoutes); // ✅ ADD THIS LINE
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/test', require('./routes/test-routes'));  // ⬅️ ADD THIS LINE
 
 // Health check
 app.get('/health', (req, res) => {

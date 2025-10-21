@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
+const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
+
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
 // ============================================
@@ -170,7 +172,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     );
 
     // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan);
+    const scanResult = await performV5Scan(url, user.plan, pages);
 
     // Update scan record with results
     await db.query(
@@ -205,29 +207,34 @@ router.post('/analyze', authenticateToken, async (req, res) => {
         scan.id
       ]
     );
-
-    // 🔥 Save recommendations with more details (NEW!)
-    if (scanResult.recommendations && scanResult.recommendations.length > 0) {
-      for (const rec of scanResult.recommendations) {
-        await db.query(
-          `INSERT INTO scan_recommendations (
-            scan_id, category, recommendation_text, priority,
-            estimated_impact, estimated_effort, action_steps, findings, code_snippet
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [
-            scan.id,
-            rec.category || 'General',
-            rec.title || rec.recommendation, // NEW format has 'title'
-            rec.priority,
-            rec.estimatedScoreGain || 0, // Score gain as impact (number)
-            rec.difficulty || 'medium', // NEW format has 'difficulty'
-            rec.actionSteps ? JSON.stringify(rec.actionSteps) : null,
-            rec.finding || null, // NEW format is singular 'finding'
-            rec.codeSnippet || null
-          ]
-        );
-      }
-    }
+    
+    
+    // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
+let progressInfo = null;
+if (scanResult.recommendations && scanResult.recommendations.length > 0) {
+  // Prepare page priorities from request
+  const selectedPages = pages && pages.length > 0 
+    ? pages.map((pageUrl, index) => ({
+        url: pageUrl,
+        priority: index + 1 // First page = priority 1, etc.
+      }))
+    : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
+  
+  // Save with hybrid system
+  progressInfo = await saveHybridRecommendations(
+    scan.id,
+    userId,
+    url,
+    selectedPages,
+    scanResult.recommendations,
+    user.plan
+  );
+  
+  console.log(`   📊 Recommendations saved:`);
+  console.log(`      Site-wide: ${progressInfo.siteWideTotal} (${progressInfo.siteWideActive} active)`);
+  console.log(`      Page-specific: ${progressInfo.pageSpecificTotal} (all locked)`);
+  console.log(`      Total: ${progressInfo.totalRecommendations}`);
+}
 
     // 🔥 Save FAQ schema if available (DIY tier only)
     if (scanResult.faq && scanResult.faq.length > 0) {
@@ -483,14 +490,14 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
 // Now properly uses the V5RubricEngine class!
 // ============================================
-async function performV5Scan(url, plan) {
-  console.log('🔬 Starting REAL V5 rubric analysis for:', url);
+async function performV5Scan(url, plan, pages = null) {
+  console.log('🔬 Starting V5 rubric analysis for:', url);
   
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
-    const engine = new V5RubricEngine(url, {}); // Create instance
-    const v5Results = await engine.analyze();    // Call analyze method
+    const engine = new V5RubricEngine(url, {});
+    const v5Results = await engine.analyze();
     
     // Extract scores from category results
     const categories = {
@@ -504,33 +511,29 @@ async function performV5Scan(url, plan) {
       voiceOptimization: v5Results.categories.voiceOptimization.score || 0
     };
 
-    // Total score already calculated by V5 engine
     const totalScore = v5Results.totalScore;
-
-    // Step 2: Generate AI-powered recommendations
-    console.log('🤖 Generating recommendations with AI...');
-    
-    // Access the evidence from the engine instance
     const scanEvidence = engine.evidence;
     
     // Extract subfactors from each category for issue detection
-const subfactorScores = {};
-for (const [category, data] of Object.entries(v5Results.categories)) {
-  subfactorScores[category] = data.subfactors; // Extract just the subfactors
-}
+    const subfactorScores = {};
+    for (const [category, data] of Object.entries(v5Results.categories)) {
+      subfactorScores[category] = data.subfactors;
+    }
 
-// 🔍 DEBUG: Let's see what we're actually passing
-console.log('🔍 DEBUG - subfactorScores:', JSON.stringify(subfactorScores, null, 2));
+    // Step 2: Generate recommendations (same for all plans)
+    console.log('🤖 Generating recommendations...');
+    
+    const recommendationResults = await generateCompleteRecommendations(
+      {
+        v5Scores: subfactorScores,
+        scanEvidence: scanEvidence
+      },
+      plan,
+      v5Results.industry || 'General'
+    );
 
-const recommendationResults = await generateCompleteRecommendations(
-  {
-    v5Scores: subfactorScores,  // ← CORRECT: Just the subfactor scores
-    scanEvidence: scanEvidence
-  },
-  plan,
-  v5Results.industry || 'General'
-);
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${v5Results.industry})`);
+    console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
     return {
       totalScore,

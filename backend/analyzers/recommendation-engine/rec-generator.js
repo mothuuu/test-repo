@@ -122,7 +122,7 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
   const recommendations = [];
   
   // Limit based on tier
-  const limit = tier === 'free' ? 5 : (tier === 'diy' ? 15 : 25);
+  const limit = tier === 'free' ? 5 : (tier === 'diy' ? 40 : 300);
   const issuesToProcess = issues.slice(0, limit);
   
   // Split into ChatGPT (top 5) and template (rest)

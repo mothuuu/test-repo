@@ -20,7 +20,7 @@ const TIER_LIMITS = {
     detailLevel: 'basic'
   },
   diy: {
-    maxRecommendations: 15,
+    maxRecommendations: 40,
     showCodeSnippets: true,
     showEvidence: true,
     showFAQ: true,
@@ -28,7 +28,7 @@ const TIER_LIMITS = {
     detailLevel: 'detailed'
   },
   pro: {
-    maxRecommendations: 25,
+    maxRecommendations: 300,
     showCodeSnippets: true,
     showEvidence: true,
     showFAQ: true,
