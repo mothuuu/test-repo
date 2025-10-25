@@ -171,30 +171,31 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         continue;
       }
 
-      // 2a) Programmatic JSON-LD for structured data
+      // 2) ChatGPT for DIY/Pro (now used for ALL recommendations)
+      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
+        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
+        out.push(gptRec);
+        continue;
+      }
+
+      // 3) Free tier: Use programmatic for specific subfactors, template for others
+      // 3a) Programmatic JSON-LD for structured data
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
         continue;
       }
 
-      // 2b) Programmatic Question Headings
+      // 3b) Programmatic Question Headings
       if (issue.subfactor === 'questionHeadingsScore') {
         const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence);
         if (rec) { out.push(rec); continue; }
       }
 
-      // 2c) Programmatic Open Graph meta tags
+      // 3c) Programmatic Open Graph meta tags
       if (issue.subfactor === 'openGraphScore') {
         const rec = makeProgrammaticOpenGraphRecommendation(issue, scanEvidence);
         if (rec) { out.push(rec); continue; }
-      }
-
-      // 3) ChatGPT (DIY/Pro only)
-      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
-        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
-        out.push(gptRec);
-        continue;
       }
 
       // 4) Smart template fallback
