@@ -909,41 +909,188 @@ function buildSiteShapeDescription(profile) {
 
 function buildFactsSection(facts) {
   if (!facts?.length) return '- No facts extracted (site may be behind auth or empty).';
-  return facts.map(f => {
-    const val = Array.isArray(f.value) ? f.value.join(', ') :
-      (typeof f.value === 'string' && f.value.length > 120 ? f.value.slice(0,120) + '…' : f.value);
-    const parts = [`- ${f.name}: ${val}`];
-    if (f.selector) parts.push(`(at: ${f.selector})`);
-    if (f.confidence) parts.push(`[${f.confidence} confidence]`);
+
+  // Prioritize important facts for ChatGPT context
+  const priorityOrder = ['brand', 'site_name', 'logo', 'description', 'tagline', 'services', 'products', 'features', 'audiences', 'contact_email', 'contact_phone', 'address', 'social_links'];
+  const prioritized = [];
+  const rest = [];
+
+  for (const f of facts) {
+    if (priorityOrder.includes(f.name)) {
+      prioritized.push(f);
+    } else {
+      rest.push(f);
+    }
+  }
+
+  // Sort prioritized by the order defined above
+  prioritized.sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name));
+
+  // Format with smart truncation and visual hierarchy
+  const formatFact = (f) => {
+    let val = f.value;
+
+    // Smart formatting by type
+    if (Array.isArray(val)) {
+      if (val.length > 5) {
+        val = val.slice(0, 5).join(', ') + ` (+${val.length - 5} more)`;
+      } else {
+        val = val.join(', ');
+      }
+    } else if (typeof val === 'string') {
+      if (val.length > 150) {
+        val = val.slice(0, 150) + '…';
+      }
+    }
+
+    const parts = [`• ${f.name}: ${val}`];
+    if (f.confidence && f.confidence < 0.8) parts.push(`[${Math.round(f.confidence * 100)}% confidence]`);
     return parts.join(' ');
-  }).join('\n');
+  };
+
+  const lines = [
+    '**KEY IDENTIFIERS:**',
+    ...prioritized.slice(0, 8).map(formatFact)
+  ];
+
+  if (rest.length > 0) {
+    lines.push('\n**ADDITIONAL CONTEXT:**');
+    lines.push(...rest.slice(0, 10).map(formatFact));
+  }
+
+  return lines.join('\n');
 }
 
 function buildCurrentState(issue, scanEvidence) {
   const sub = issue.subfactor;
   const ev = issue.evidence || {};
+  const meta = scanEvidence.metadata || {};
+  const content = scanEvidence.content || {};
+  const tech = scanEvidence.technical || {};
+  const struct = scanEvidence.structure || {};
+
+  // Structured Data
   if (sub === 'structuredDataScore') {
-    const found = scanEvidence.technical?.structuredData || [];
+    const found = tech.structuredData || [];
+    const types = found.map(s => s.type).join(', ') || 'None';
     if (!found.length) {
-      return '- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)';
+      return `- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)\n- Page word count: ${content.wordCount || 0}`;
     }
-    return `- Found ${found.length} Schema.org block(s)\n- May be missing Organization/WebSite linking or stable @ids`;
+    return `- Found ${found.length} Schema.org block(s): ${types}\n- May be missing Organization/WebSite linking or stable @ids\n- Recommended additions: FAQ, BreadcrumbList`;
   }
+
+  // FAQ
   if (sub === 'faqScore') {
-    const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
-    const faqCount = scanEvidence.content?.faqs?.length || 0;
+    const hasFAQSchema = tech.hasFAQSchema;
+    const faqCount = content.faqs?.length || 0;
+    const questionHeadings = content.headings?.h2?.filter(h => h.endsWith('?')).length || 0;
     if (!hasFAQSchema && faqCount > 0) {
-      return `- Detected ${faqCount} on-page FAQs\n- No FAQPage schema present`;
+      return `- Detected ${faqCount} on-page FAQs without schema\n- ${questionHeadings} question-format headings found\n- Adding FAQ schema will enable AI citation`;
     }
-    return '- No FAQ content or schema detected';
+    if (questionHeadings > 0) {
+      return `- ${questionHeadings} question headings found but no FAQ content\n- Expand headings into Q&A pairs with 100-200 word answers`;
+    }
+    return `- No FAQ content or schema detected\n- ${content.wordCount || 0} words of content could be restructured as Q&A`;
   }
+
+  // Alt Text / Images
   if (sub === 'altTextScore' || sub === 'imageAltText') {
-    const total = ev.totalImages || 0;
-    const withAlt = ev.imagesWithAlt || 0;
-    const missing = ev.imagesWithoutAlt || 0;
-    return `- Images: total ${total}, with alt ${withAlt}, missing ${missing}`;
+    const total = ev.totalImages || scanEvidence.media?.imageCount || 0;
+    const withAlt = ev.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
+    const missing = ev.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
+    const coverage = total > 0 ? Math.round((withAlt / total) * 100) : 0;
+    return `- Images: ${total} total, ${withAlt} with alt (${coverage}% coverage), ${missing} missing\n- Priority: Hero images, product photos, infographics\n- Decorative images should use empty alt=""`;
   }
-  return `- Current score: ${issue.currentScore}/100\n- Target: ${issue.threshold}/100`;
+
+  // Question Headings
+  if (sub === 'questionHeadingsScore') {
+    const h2Count = content.headings?.h2?.length || 0;
+    const h3Count = content.headings?.h3?.length || 0;
+    const questionH2 = content.headings?.h2?.filter(h => h.endsWith('?')).length || 0;
+    const questionH3 = content.headings?.h3?.filter(h => h.endsWith('?')).length || 0;
+    const totalQuestions = questionH2 + questionH3;
+    return `- Total headings: ${h2Count} H2s, ${h3Count} H3s\n- Question-format headings: ${totalQuestions} (${h2Count + h3Count > 0 ? Math.round((totalQuestions / (h2Count + h3Count)) * 100) : 0}%)\n- Target: 30-50% of headings should be questions`;
+  }
+
+  // Open Graph
+  if (sub === 'openGraphScore') {
+    const hasTitle = !!meta.ogTitle;
+    const hasDesc = !!meta.ogDescription;
+    const hasImage = !!meta.ogImage;
+    const hasTwitter = !!meta.twitterCard;
+    const missing = [];
+    if (!hasTitle) missing.push('og:title');
+    if (!hasDesc) missing.push('og:description');
+    if (!hasImage) missing.push('og:image');
+    if (!hasTwitter) missing.push('twitter:card');
+    if (missing.length) {
+      return `- Open Graph incomplete: missing ${missing.join(', ')}\n- Current: ${hasTitle ? '✓' : '✗'} title, ${hasDesc ? '✓' : '✗'} description, ${hasImage ? '✓' : '✗'} image, ${hasTwitter ? '✓' : '✗'} twitter`;
+    }
+    return `- Open Graph tags present but may need optimization\n- Ensure og:image is 1200x630px for best preview`;
+  }
+
+  // Heading Hierarchy
+  if (sub === 'headingHierarchyScore') {
+    const h1Count = struct.headingCount?.h1 || 0;
+    const h2Count = struct.headingCount?.h2 || 0;
+    const h3Count = struct.headingCount?.h3 || 0;
+    const issues = [];
+    if (h1Count === 0) issues.push('Missing H1');
+    if (h1Count > 1) issues.push(`${h1Count} H1s (should be 1)`);
+    if (h2Count === 0 && content.wordCount > 300) issues.push('No H2 sections');
+    return `- Heading structure: ${h1Count} H1, ${h2Count} H2, ${h3Count} H3\n${issues.length ? `- Issues: ${issues.join(', ')}\n` : ''}- Content length: ${content.wordCount || 0} words`;
+  }
+
+  // Internal Linking
+  if (sub === 'linkedSubpagesScore' || sub === 'internalLinking') {
+    const internal = struct.internalLinks || 0;
+    const hasBreadcrumbs = struct.hasBreadcrumbs;
+    const hasTOC = struct.hasTOC;
+    return `- Internal links: ${internal}\n- Breadcrumbs: ${hasBreadcrumbs ? 'Present' : 'Missing'}\n- Table of contents: ${hasTOC ? 'Present' : 'Missing'}\n- Recommended: ${Math.max(10, Math.round(content.wordCount / 150))} links for ${content.wordCount} words`;
+  }
+
+  // Readability
+  if (sub === 'readabilityScore') {
+    const wordCount = content.wordCount || 0;
+    const paragraphs = content.paragraphs?.length || 0;
+    const avgWordsPerPara = paragraphs > 0 ? Math.round(wordCount / paragraphs) : 0;
+    return `- Content: ${wordCount} words in ${paragraphs} paragraphs\n- Average paragraph length: ${avgWordsPerPara} words\n- Target: 50-100 words per paragraph for AI readability\n- Flesch score target: 60-70 (8th-10th grade level)`;
+  }
+
+  // Scannability
+  if (sub === 'scannabilityScore') {
+    const h2Count = struct.headingCount?.h2 || 0;
+    const listCount = content.lists?.length || 0;
+    const wordCount = content.wordCount || 0;
+    return `- Content: ${wordCount} words\n- Structure: ${h2Count} H2 headings, ${listCount} lists\n- Recommended: ${Math.max(3, Math.round(wordCount / 300))} H2 headings for ${wordCount} words\n- Add: Bulleted lists for features/benefits, numbered lists for steps`;
+  }
+
+  // Sitemap
+  if (sub === 'sitemapScore') {
+    const hasSitemap = tech.hasSitemapLink;
+    const hasRobots = !!tech.robotsMeta;
+    return `- XML Sitemap: ${hasSitemap ? 'Detected' : 'Not found'}\n- Robots.txt: ${hasRobots ? 'Present' : 'Missing'}\n${hasSitemap ? '- Ensure sitemap submitted to Google Search Console' : '- Create sitemap at /sitemap.xml'}`;
+  }
+
+  // Crawler Access
+  if (sub === 'crawlerAccessScore') {
+    const hasRobots = !!tech.robotsMeta;
+    const hasCanonical = tech.hasCanonical;
+    const hasSitemap = tech.hasSitemapLink;
+    return `- Robots meta: ${hasRobots ? tech.robotsMeta : 'Not set'}\n- Canonical tag: ${hasCanonical ? 'Present' : 'Missing'}\n- Sitemap: ${hasSitemap ? 'Linked' : 'Not linked'}\n- Ensure no accidental blocking of AI crawlers`;
+  }
+
+  // Videos/Captions
+  if (sub === 'captionsTranscriptsScore' || sub === 'videoTranscripts') {
+    const videoCount = scanEvidence.media?.videoCount || 0;
+    if (videoCount > 0) {
+      return `- Videos detected: ${videoCount}\n- Transcripts: Not detected\n- Adding transcripts makes ${videoCount} videos searchable and quotable by AI`;
+    }
+    return `- No video content detected\n- If you have videos, ensure they have captions and full transcripts`;
+  }
+
+  // Generic fallback with more context
+  return `- Current score: ${issue.currentScore}/100 (target: ${issue.threshold}/100)\n- Gap: ${issue.gap} points\n- Page word count: ${content.wordCount || 0}\n- Improvement needed for AI visibility`;
 }
 
 function calculateScoreBreakdown(issue) {
