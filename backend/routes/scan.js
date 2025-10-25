@@ -312,13 +312,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     // Get recommendations
     const recResult = await db.query(
-      `SELECT 
+      `SELECT
         id, category, recommendation_text, priority,
         estimated_impact, estimated_effort, status,
         action_steps, findings, code_snippet,
+        impact_description,
         user_rating, user_feedback, implemented_at
-       FROM scan_recommendations 
-       WHERE scan_id = $1 
+       FROM scan_recommendations
+       WHERE scan_id = $1
        ORDER BY priority DESC, estimated_impact DESC`,
       [scanId]
     );

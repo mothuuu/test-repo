@@ -110,8 +110,8 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         scan_id, category, recommendation_text, priority,
         estimated_impact, estimated_effort, action_steps, findings, code_snippet,
         unlock_state, batch_number, unlocked_at,
-        recommendation_type, page_url, skip_enabled_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        recommendation_type, page_url, skip_enabled_at, impact_description
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [
         scanId,
         rec.category || 'General',
@@ -127,7 +127,8 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         unlockedAt,
         'site-wide',
         null, // No specific page URL
-        skipEnabledAt
+        skipEnabledAt,
+        rec.impact || null  // Add impact description
       ]
     );
   }
@@ -149,8 +150,8 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           scan_id, category, recommendation_text, priority,
           estimated_impact, estimated_effort, action_steps, findings, code_snippet,
           unlock_state, batch_number, unlocked_at,
-          recommendation_type, page_url, page_priority
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          recommendation_type, page_url, page_priority, impact_description
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
         [
           scanId,
           rec.category || 'General',
@@ -166,7 +167,8 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           null,
           'page-specific',
           page.url,
-          page.priority || 1
+          page.priority || 1,
+          rec.impact || null  // Add impact description
         ]
       );
       pageSpecificTotal++;

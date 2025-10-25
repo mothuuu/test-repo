@@ -115,6 +115,37 @@ function extractDomain(url) {
 // Static templates (titles, difficulty, etc.)
 // -----------------------------------------
 
+// Category display names (matching V5 rubric)
+const CATEGORY_NAMES = {
+  aiReadability: 'AI Readability',
+  aiSearchReadiness: 'AI Search Readiness',
+  contentFreshness: 'Content Freshness',
+  contentStructure: 'Content Structure',
+  speedUX: 'Speed & UX',
+  technicalSetup: 'Technical Setup',
+  trustAuthority: 'Trust & Authority',
+  voiceOptimization: 'Voice Optimization'
+};
+
+// Subfactor display names (user-friendly)
+const SUBFACTOR_NAMES = {
+  structuredDataScore: 'Schema Markup',
+  organizationSchema: 'Organization Schema',
+  productSchema: 'Product Schema',
+  faqScore: 'FAQ Schema',
+  questionHeadingsScore: 'Question-Based Headings',
+  openGraphScore: 'Open Graph & Social Meta Tags',
+  headingHierarchyScore: 'Heading Structure',
+  contentDepthScore: 'Content Depth',
+  scannabilityScore: 'Content Scannability',
+  geoContentScore: 'Location & Geographic Content',
+  readabilityScore: 'Readability & Clarity',
+  sitemapScore: 'XML Sitemap',
+  robotsTxtScore: 'Robots.txt Configuration',
+  httpsScore: 'HTTPS Security',
+  crawlAccessibilityScore: 'Crawl Accessibility'
+};
+
 const RECOMMENDATION_TEMPLATES = {
   structuredDataScore: {
     title: "Implement Structured Data Schema",
@@ -282,12 +313,17 @@ function buildChatGPTPrompt(issue, scanEvidence, template, tier, industry) {
   const scoreBreakdown = calculateScoreBreakdown(issue);
   const neededSchemas = determineNeededSchemas(issue, profile, scanEvidence);
 
+  // Get category and subfactor display names
+  const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
+  const subfactorName = SUBFACTOR_NAMES[issue.subfactor] || issue.subfactor;
+
   return `You are an AI Search Optimization expert generating PRESCRIPTIVE, ready-to-implement recommendations.
 
 **WEBSITE ANALYSIS**
 URL: ${scanEvidence.url}
 Industry: ${industry || 'General'}
-Issue: ${issue.subfactor} (${issue.currentScore}/100)
+Category: ${categoryName}
+Issue: ${subfactorName} (${issue.currentScore}/100)
 
 **SITE SHAPE DETECTED**
 ${siteShape}
@@ -312,16 +348,30 @@ Projected Impact: +${scoreBreakdown.min}-${scoreBreakdown.max} points
 Generate the following sections with concrete, non-generic content:
 
 [TITLE]
-- A short, action-oriented title (5-8 words maximum)
-- Should clearly describe what the user needs to do
-- Examples: "Add Organization Schema", "Create Question-Based Headings", "Implement FAQ Section"
-- DO NOT include technical jargon or score names
+Format: "${categoryName}: ${subfactorName}"
+- Use this EXACT format with the category and subfactor names provided above
+- Example: "AI Search Readiness: Product Schema"
+- Example: "Technical Setup: Organization Schema"
 
 [FINDING]
-- 2 sentences, tied to the extracted facts and current state.
+Provide a detailed, specific finding with:
+1. Status line: "Status: Missing" or "Status: Incomplete" or "Status: Needs Improvement"
+2. Specific observation based on EXTRACTED FACTS
+3. List of detected items (products, services, features, pages, etc.) with bullet points
+4. Include actual numbers and metrics from CURRENT STATE
 
-[IMPACT BREAKDOWN]
-- Coverage, Completeness, Consistency, Crawlability: each explained with specifics.
+Example format:
+Status: Missing
+Multiple products mentioned but no Product schema detected:
+• ThinkSystem SR675 V3 server (up to 8 NVIDIA GPUs)
+• Lenovo Neptune Liquid Cooling technology
+• NVIDIA H100 NVL, H200 NVL GPUs
+
+[IMPACT]
+Write 1-2 sentences explaining the business impact in plain language.
+- Focus on how this affects search engines, AI assistants, and user discovery
+- Mention specific visibility/ranking/citation impacts
+- Example: "Search engines and AI cannot understand product specifications, pricing context, or purchase intent signals."
 
 [APPLY INSTRUCTIONS]
 CRITICAL: Format as a FLAT numbered list of actionable steps (5-7 steps maximum).
@@ -347,16 +397,34 @@ DO NOT include any code blocks in this section. Put all code in [CODE].
 
 ${tier !== 'free' && neededSchemas.length ? `
 [PRE-FILLED JSON-LD]
-- Do NOT include placeholders. If data is missing, omit that field.
+CRITICAL: Pre-fill ALL fields with actual data from EXTRACTED FACTS above.
+- DO NOT use placeholders like [Your Company Name] or [INSERT X]
+- Use actual brand name, products, services, contact info from the facts
+- If data is missing from facts, omit that field entirely
 - Use stable @ids like ${scanEvidence.url}/#organization
 - Link schemas (Organization → logo, WebSite → publisher)
+- For multiple products/services, generate schema for EACH ONE detected
 - Required schemas:
 ${neededSchemas.map((s, i) => `${i + 1}. ${s.type} — use: ${s.useData}`).join('\n')}
+
+Example of pre-filled Product schema:
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "ThinkSystem SR675 V3",
+  "brand": { "@type": "Brand", "name": "Lenovo" },
+  "description": "Up to 8 NVIDIA H100/H200 NVL GPUs",
+  ...
+}
+
+Then repeat for each product detected.
 ` : ''}
 
 [CODE]
-- If any code is required (HTML/JSON-LD/meta tags), include ONLY here.
-- Use the smallest working snippet.
+- If any code is required (HTML/JSON-LD/meta tags), include ONLY here
+- PRE-FILL with actual data from EXTRACTED FACTS (no placeholders!)
+- Use the smallest working snippet
+- For schema markup, generate separate blocks for EACH item detected
 
 [QUICK WINS]
 - 2 or 3 actionable wins based on detected profile/sections.
@@ -1177,7 +1245,7 @@ function structureRecommendation(aiResponse, issue, template, tier, source) {
     priority: issue.severity,
     priorityScore: issue.priority,
     finding: escapeAngleBrackets(extractSection(aiResponse, 'FINDING') || ''),
-impact: escapeAngleBrackets(extractSection(aiResponse, 'IMPACT BREAKDOWN') || extractSection(aiResponse, 'IMPACT') || ''),
+    impact: escapeAngleBrackets(extractSection(aiResponse, 'IMPACT') || extractSection(aiResponse, 'IMPACT BREAKDOWN') || ''),
 actionSteps: sanitizeSteps(extractActionSteps(aiResponse)),
     codeSnippet: tier !== 'free'
   ? stripCodeFences(extractSection(aiResponse, 'PRE-FILLED JSON-LD') || extractSection(aiResponse, 'CODE') || '')
