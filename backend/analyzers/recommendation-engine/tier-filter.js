@@ -11,29 +11,42 @@
 // ========================================
 
 const TIER_LIMITS = {
-  free: {
-    maxRecommendations: 5,
+  guest: {
+    maxRecommendations: 0,  // Anonymous - NO recommendations shown
     showCodeSnippets: false,
     showEvidence: false,
     showFAQ: false,
     showPDF: false,
-    detailLevel: 'basic'
+    detailLevel: 'basic',
+    upgradeMessage: 'Sign up free to unlock your top 3 recommendations'
+  },
+  free: {
+    maxRecommendations: 3,  // Registered - Top 3 only
+    showCodeSnippets: false,
+    showEvidence: false,
+    showFAQ: false,
+    showPDF: false,
+    detailLevel: 'basic',
+    upgradeMessage: 'Upgrade to DIY for deep scans, personalized code, and daily recommendations'
   },
   diy: {
-    maxRecommendations: 40,
+    maxRecommendationsPerDay: 5,  // Progressive unlock - 5 per day
+    progressiveUnlock: true,
     showCodeSnippets: true,
     showEvidence: true,
     showFAQ: true,
     showPDF: true,
-    detailLevel: 'detailed'
+    detailLevel: 'detailed',
+    pagesPerScan: 5
   },
   pro: {
-    maxRecommendations: 300,
+    maxRecommendations: 300,  // All recommendations immediately
     showCodeSnippets: true,
     showEvidence: true,
     showFAQ: true,
     showPDF: true,
-    detailLevel: 'comprehensive'
+    detailLevel: 'comprehensive',
+    pagesPerScan: 25
   }
 };
 
@@ -41,35 +54,69 @@ const TIER_LIMITS = {
 // MAIN FILTER FUNCTION
 // ========================================
 
-function filterByTier(recommendations, customizedFAQ, tier = 'free', metadata = {}) {
-  const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
-  
+function filterByTier(recommendations, customizedFAQ, tier = 'free', metadata = {}, userProgress = null) {
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.guest;
+
   // Ensure recommendations is an array
   const recs = Array.isArray(recommendations) ? recommendations : [];
-  
+
   // Sort by priority score (highest first)
   const sortedRecs = [...recs].sort((a, b) => b.priorityScore - a.priorityScore);
-  
-  // Limit number of recommendations
-  const limitedRecs = sortedRecs.slice(0, limits.maxRecommendations);
-  
+
+  // Determine how many recommendations to show based on tier
+  let limitedRecs;
+  let activeCount = 0;
+
+  if (tier === 'diy' && limits.progressiveUnlock && userProgress) {
+    // DIY tier with progressive unlock - use userProgress data
+    activeCount = userProgress.active_recommendations || 0;
+    limitedRecs = sortedRecs.slice(0, activeCount);
+  } else if (tier === 'guest') {
+    // Guest - NO recommendations
+    limitedRecs = [];
+  } else if (tier === 'free') {
+    // Free - Top 3 only
+    limitedRecs = sortedRecs.slice(0, 3);
+  } else {
+    // Pro - All recommendations
+    limitedRecs = sortedRecs.slice(0, limits.maxRecommendations || recs.length);
+  }
+
   // Filter each recommendation based on tier
   const filteredRecs = limitedRecs.map(rec => filterRecommendation(rec, limits));
-  
+
   // Build tier-specific response
   return {
     tier: tier,
     limits: {
       recommendationsShown: filteredRecs.length,
       recommendationsAvailable: recs.length,
-      hasMoreRecommendations: recs.length > limits.maxRecommendations
+      hasMoreRecommendations: tier === 'guest' ? true : (recs.length > filteredRecs.length),
+      activeRecommendations: activeCount,
+      canUnlockMore: tier === 'diy' && userProgress ? canUnlockMoreToday(userProgress) : false
     },
     recommendations: filteredRecs,
     faq: filterFAQ(customizedFAQ, limits),
-    upgrade: getUpgradeCTA(tier, recs.length, customizedFAQ),
+    upgrade: getUpgradeCTA(tier, recs.length, customizedFAQ, limits),
     features: getTierFeatures(tier),
     metadata: metadata
   };
+}
+
+// Helper function to check if user can unlock more recommendations today
+function canUnlockMoreToday(userProgress) {
+  if (!userProgress) return false;
+
+  const today = new Date().toDateString();
+  const lastUnlock = userProgress.last_unlock_date ? new Date(userProgress.last_unlock_date).toDateString() : null;
+
+  // If last unlock was not today, reset to 0 unlocks
+  if (lastUnlock !== today) {
+    return true;
+  }
+
+  // Check if under daily limit (5 unlocks per day)
+  return (userProgress.unlocks_today || 0) < 5;
 }
 
 function filterRecommendation(rec, limits) {
@@ -120,79 +167,114 @@ function filterFAQ(faq, limits) {
   return faq;
 }
 
-function getUpgradeCTA(tier, totalRecommendations, faq) {
+function getUpgradeCTA(tier, totalRecommendations, faq, limits) {
+  if (tier === 'guest') {
+    return {
+      show: true,
+      title: 'Sign up free to unlock your top 3 recommendations',
+      message: `Get instant access to ${Math.min(3, totalRecommendations)} personalized recommendations to improve your AI visibility.`,
+      benefits: [
+        'Top 3 priority recommendations',
+        'Detailed findings for each issue',
+        'Action steps to fix problems',
+        'Track your progress over time'
+      ],
+      cta: 'Sign Up Free',
+      ctaUrl: '/auth.html?mode=signup',
+      tier: 'free'
+    };
+  }
+
   if (tier === 'free') {
     return {
       show: true,
-      title: 'Unlock Full AI Visibility Analysis',
-      message: `You're seeing ${TIER_LIMITS.free.maxRecommendations} of ${totalRecommendations} recommendations. Upgrade to DIY for complete analysis.`,
+      title: 'Upgrade to DIY for deep scans, personalized code, and daily recommendations',
+      message: `You're seeing 3 of ${totalRecommendations} recommendations. Upgrade to DIY Starter for the complete picture.`,
       benefits: [
-        'All recommendations with detailed action steps',
+        '5 new recommendations unlocked daily',
+        '5-page deep scans (vs 1 page)',
         'Copy-paste ready code snippets',
         'Industry-specific FAQ schema',
-        'PDF export',
-        'Track 5 pages with unlimited scans'
+        'PDF export capabilities',
+        'Unlimited scans per month'
       ],
       cta: 'Upgrade to DIY - $29/month',
-      ctaUrl: '/checkout?plan=diy'
+      ctaUrl: '/checkout.html?plan=diy',
+      tier: 'diy'
     };
   }
-  
+
   if (tier === 'diy') {
     return {
       show: true,
-      title: 'Coming Soon: Premium Features',
-      message: 'Be first to access advanced features when they launch.',
+      title: 'Coming Soon: Pro Tier with Triple Score Analysis',
+      message: 'Be first to access Brand Visibility Index and Competitive Analysis.',
       benefits: [
-        'Track 25 pages (vs 5)',
-        'Website Visibility Index',
-        'Brand Visibility Index',
-        'Advanced competitor analysis',
+        '25-page comprehensive scans (vs 5)',
+        'AI Visibility Score',
+        'Brand Visibility Index (NEW)',
+        'Competitive Analysis (vs 3 competitors)',
+        'All recommendations unlocked immediately',
         'Priority support'
       ],
-      cta: 'Join Premium Waitlist - $99/month',
-      ctaUrl: '/waitlist?plan=premium',
+      cta: 'Join Pro Waitlist - $99/month',
+      ctaUrl: '/waitlist.html?plan=pro',
+      tier: 'pro',
       comingSoon: true
     };
   }
-  
+
   return null;
 }
 
 function getTierFeatures(tier) {
   const features = {
-    free: {
-      scansPerMonth: 2,
+    guest: {
+      scansPerMonth: 'Unlimited',
       pagesPerScan: 1,
-      recommendationsShown: 5,
+      recommendationsShown: 0,
       codeSnippets: false,
       faqSchema: false,
       pdfExport: false,
-      tracking: false
+      tracking: false,
+      description: 'Anonymous - Score only'
+    },
+    free: {
+      scansPerMonth: 2,
+      pagesPerScan: 1,
+      recommendationsShown: 3,
+      codeSnippets: false,
+      faqSchema: false,
+      pdfExport: false,
+      tracking: true,
+      description: 'Registered - Top 3 recommendations'
     },
     diy: {
       scansPerMonth: 'Unlimited',
       pagesPerScan: 5,
-      recommendationsShown: 15,
-      codeSnippets: true,
-      faqSchema: true,
-      pdfExport: true,
-      tracking: true
-    },
-    pro: {
-      scansPerMonth: 'Unlimited',
-      pagesPerScan: 25,
-      recommendationsShown: 25,
+      recommendationsPerDay: 5,
+      progressiveUnlock: true,
       codeSnippets: true,
       faqSchema: true,
       pdfExport: true,
       tracking: true,
-      dualIndexes: true,
-      competitorAnalysis: true
+      description: 'DIY - 5 recommendations/day + code'
+    },
+    pro: {
+      scansPerMonth: 'Unlimited',
+      pagesPerScan: 25,
+      recommendationsShown: 'All',
+      codeSnippets: true,
+      faqSchema: true,
+      pdfExport: true,
+      tracking: true,
+      brandVisibility: true,
+      competitorAnalysis: true,
+      description: 'Pro - Triple Score Analysis'
     }
   };
-  
-  return features[tier] || features.free;
+
+  return features[tier] || features.guest;
 }
 
 // ========================================

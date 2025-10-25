@@ -75,7 +75,8 @@ router.post('/guest', async (req, res) => {
     console.log('🔍 Guest scan requested for:', url);
 
     // Perform V5 rubric scan (results NOT saved)
-    const scanResult = await performV5Scan(url, 'free'); // 🔥 Uses real engine now!
+    // Use 'guest' tier - NO recommendations shown to anonymous users
+    const scanResult = await performV5Scan(url, 'guest');
 
     // Return results immediately without saving
     res.json({
@@ -84,10 +85,10 @@ router.post('/guest', async (req, res) => {
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
-      recommendations: scanResult.recommendations,
-      faq: scanResult.faq || null, // Include FAQ if available
-      upgrade: scanResult.upgrade || null, // Include upgrade CTA
-      message: 'Sign up to save results and track progress over time',
+      recommendations: scanResult.recommendations, // Will be empty array for guest tier
+      faq: null, // No FAQ for guest
+      upgrade: scanResult.upgrade || null, // CTA to sign up
+      message: 'Sign up free to unlock your top 3 recommendations',
       guest: true
     });
 

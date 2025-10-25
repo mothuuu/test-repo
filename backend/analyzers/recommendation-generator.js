@@ -8,7 +8,7 @@ const { generateRecommendations } = require('./recommendation-engine/rec-generat
 const { generateCustomizedFAQ } = require('./recommendation-engine/faq-customizer');
 const { filterByTier, formatForAPI } = require('./recommendation-engine/tier-filter');
 
-async function generateCompleteRecommendations(scanResults, tier = 'free', industry = null) {
+async function generateCompleteRecommendations(scanResults, tier = 'free', industry = null, userProgress = null) {
   try {
     console.log(`🎯 Generating recommendations for tier: ${tier}`);
 
@@ -18,7 +18,7 @@ async function generateCompleteRecommendations(scanResults, tier = 'free', indus
     console.log('🔍 Step 1: Detecting issues...');
     let allIssues;
 
-    if (tier === 'free') {
+    if (tier === 'guest' || tier === 'free') {
       allIssues = detectPageIssues(v5Scores, scanEvidence);
       console.log(`   Found ${allIssues.length} issues on homepage`);
     } else {
@@ -37,7 +37,7 @@ async function generateCompleteRecommendations(scanResults, tier = 'free', indus
     const recommendations = await generateRecommendations(
       allIssues,
       scanEvidence,
-      tier,
+      tier === 'guest' ? 'free' : tier, // Use free tier logic for guest
       industry
     );
     console.log(`   Generated ${recommendations.length} total recommendations`);
@@ -45,7 +45,7 @@ async function generateCompleteRecommendations(scanResults, tier = 'free', indus
     // STEP 3: Generate customized FAQ (DIY+ only)
     console.log('❓ Step 3: Generating FAQ...');
     let customizedFAQ = null;
-    if (tier !== 'free' && industry) {
+    if (tier !== 'free' && tier !== 'guest' && industry) {
       try {
         customizedFAQ = await generateCustomizedFAQ(industry, scanEvidence);
         console.log(`   Generated ${customizedFAQ.faqCount} customized FAQs`);
@@ -53,7 +53,7 @@ async function generateCompleteRecommendations(scanResults, tier = 'free', indus
         console.error('   ⚠️  FAQ generation failed:', error.message);
       }
     } else {
-      console.log('   ⏭️  Skipping FAQ (tier: free or no industry)');
+      console.log(`   ⏭️  Skipping FAQ (tier: ${tier})`);
     }
 
     // STEP 4: Filter and format by tier
@@ -61,7 +61,7 @@ async function generateCompleteRecommendations(scanResults, tier = 'free', indus
     const filteredResults = filterByTier(recommendations, customizedFAQ, tier, {
       url: scanEvidence.url,
       scannedAt: new Date().toISOString()
-    });
+    }, userProgress); // Pass userProgress for DIY progressive unlock
     console.log(`   Filtered to ${filteredResults.recommendations.length} recommendations for ${tier} tier`);
 
     // Return formatted results
