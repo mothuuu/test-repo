@@ -333,7 +333,7 @@ async function generateSingleRecommendation(issue, scanEvidence, tier, industry)
 async function generateWithClaude(prompt, issue, template, tier) {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: tier === 'free' ? 500 : 1500,
+    max_tokens: tier === 'free' ? 500 : 3000,
     messages: [{
       role: 'user',
       content: prompt
@@ -347,7 +347,7 @@ async function generateWithClaude(prompt, issue, template, tier) {
 async function generateWithChatGPT(prompt, issue, template, tier) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
-    max_tokens: tier === 'free' ? 500 : 1500,
+    max_tokens: tier === 'free' ? 500 : 3000,
     messages: [{
       role: 'user',
       content: prompt

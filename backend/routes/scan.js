@@ -32,7 +32,7 @@ const authenticateToken = (req, res, next) => {
 // Plan limits
 const PLAN_LIMITS = {
   free: { scansPerMonth: 2, pagesPerScan: 1 },
-  diy: { scansPerMonth: 10, pagesPerScan: 5 },
+  diy: { scansPerMonth: 25, pagesPerScan: 5 },
   pro: { scansPerMonth: 50, pagesPerScan: 25 }
 };
 

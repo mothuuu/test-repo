@@ -2,36 +2,43 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
-// Test endpoint to check recommendation counts
-router.get('/check-recommendations/:scanId', async (req, res) => {
+// Check user quota by email
+router.get('/check-quota-by-email/:email', async (req, res) => {
   try {
-    const { scanId } = req.params;
+    const { email } = req.params;
     
-    const result = await db.query(`
-      SELECT 
-        recommendation_type,
-        COUNT(*) as count
-      FROM scan_recommendations
-      WHERE scan_id = $1
-      GROUP BY recommendation_type
-    `, [scanId]);
+    const user = await db.query(
+      'SELECT id, email, plan, scans_used_this_month FROM users WHERE email = $1',
+      [email]
+    );
     
-    const total = await db.query(`
-      SELECT COUNT(*) as total
-      FROM scan_recommendations
-      WHERE scan_id = $1
-    `, [scanId]);
+    const PLAN_LIMITS = {
+      free: { scansPerMonth: 2 },
+      diy: { scansPerMonth: 25 },
+      pro: { scansPerMonth: 50 }
+    };
+    
+    if (user.rows.length === 0) {
+      return res.json({ error: 'User not found' });
+    }
+    
+    const userData = user.rows[0];
+    const limit = PLAN_LIMITS[userData.plan]?.scansPerMonth || 2;
     
     res.json({
-      scanId: scanId,
-      breakdown: result.rows,
-      total: total.rows[0].total
+      userId: userData.id,
+      email: userData.email,
+      plan: userData.plan,
+      scansUsed: userData.scans_used_this_month,
+      scanLimit: limit,
+      remaining: limit - userData.scans_used_this_month,
+      quotaExceeded: userData.scans_used_this_month >= limit
     });
     
   } catch (error) {
-    console.error('Error checking recommendations:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
 
 module.exports = router;
