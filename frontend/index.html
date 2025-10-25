@@ -11,29 +11,33 @@
             text-align: center;
             padding: 80px 20px;
         }
-        
+
         .hero-title {
             font-size: 3.5rem;
-            font-weight: bold;
+            font-weight: 800;
             color: #ffffff;
             margin-bottom: 20px;
             line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        
+
         .hero-gradient {
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #4DACA6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
-        
+
         .hero-subtitle {
             font-size: 1.3rem;
-            color: #666;
+            color: #ffffff;
             max-width: 700px;
             margin: 0 auto 40px;
+            font-weight: 400;
+            opacity: 0.95;
         }
-        
+
         .hero-form {
             max-width: 700px;
             margin: 0 auto;
@@ -41,38 +45,45 @@
             gap: 15px;
             flex-wrap: wrap;
         }
-        
+
         .hero-input {
             flex: 1;
             min-width: 300px;
             padding: 18px 24px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50px;
             font-size: 1.1rem;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
         }
-        
+
         .hero-input:focus {
             outline: none;
-            border-color: #00B9DA;
+            border-color: #ffffff;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
-        
+
         .hero-button {
             padding: 18px 40px;
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
+            background: #ffffff;
+            color: #7030A0;
             border: none;
             border-radius: 50px;
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        
+
         .hero-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 185, 218, 0.4);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            background: #4DACA6;
+            color: #ffffff;
         }
-        
+
         .trust-badges {
             display: flex;
             justify-content: center;
@@ -80,37 +91,61 @@
             margin-top: 40px;
             flex-wrap: wrap;
         }
-        
+
         .trust-badge {
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #666;
+            color: #ffffff;
+            font-weight: 500;
+            background: rgba(255,255,255,0.15);
+            padding: 12px 24px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
         }
-        
+
+        .trust-badge-icon {
+            color: #4DACA6;
+            font-size: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 30px;
             margin: 60px 0;
         }
-        
+
         .feature-card {
-            background: white;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        
+
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.15);
         }
-        
+
         .feature-icon {
             font-size: 3rem;
             margin-bottom: 15px;
+        }
+
+        .feature-card h4 {
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: rgba(255,255,255,0.9);
         }
     </style>
 </head>
@@ -118,12 +153,12 @@
     <div class="container" style="max-width: 1200px;">
         <!-- Header -->
         <div class="header" style="padding: 30px 0; display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #7030A0 0%, #7030A0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                 AI Visibility Score
             </h1>
-            <div style="display: flex; gap: 20px;">
-                <a href="auth.html" style="color: #ffffff; text-decoration: none; font-weight: 600;">Sign In</a>
-                <a href="auth.html" class="analyze-btn" style="padding: 10px 25px; text-decoration: none;">Get Started</a>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="auth.html" style="color: #ffffff; text-decoration: none; font-weight: 600; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Sign In</a>
+                <a href="auth.html" class="analyze-btn" style="padding: 12px 28px; text-decoration: none; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); color: #ffffff; font-weight: 700;">Get Started</a>
             </div>
         </div>
 
@@ -156,11 +191,11 @@
             
             <div class="trust-badges">
                 <div class="trust-badge">
-                    <span style="color: #4caf50; font-size: 1.5rem;">✓</span>
+                    <span class="trust-badge-icon">✓</span>
                     <span>1000+ Sites Analyzed</span>
                 </div>
                 <div class="trust-badge">
-                    <span style="color: #4caf50; font-size: 1.5rem;">✓</span>
+                    <span class="trust-badge-icon">✓</span>
                     <span>No Signup Required</span>
                 </div>
             </div>
@@ -175,50 +210,50 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">📋</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Schema Markup</h4>
-                    <p style="color: #666;">Structured data optimization for AI understanding</p>
+                    <h4>Schema Markup</h4>
+                    <p>Structured data optimization for AI understanding</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">🏢</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Entity Recognition</h4>
-                    <p style="color: #666;">Help AI identify your brand and offerings</p>
+                    <h4>Entity Recognition</h4>
+                    <p>Help AI identify your brand and offerings</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">❓</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">FAQ Optimization</h4>
-                    <p style="color: #666;">Q&A format for better AI responses</p>
+                    <h4>FAQ Optimization</h4>
+                    <p>Q&A format for better AI responses</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">📚</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Citations & Authority</h4>
-                    <p style="color: #666;">Build credibility with AI systems</p>
+                    <h4>Citations & Authority</h4>
+                    <p>Build credibility with AI systems</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">🔍</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Crawlability</h4>
-                    <p style="color: #666;">Ensure AI bots can access your content</p>
+                    <h4>Crawlability</h4>
+                    <p>Ensure AI bots can access your content</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Speed & Performance</h4>
-                    <p style="color: #666;">Fast sites rank better everywhere</p>
+                    <h4>Speed & Performance</h4>
+                    <p>Fast sites rank better everywhere</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">Trust Signals</h4>
-                    <p style="color: #666;">Security and reliability indicators</p>
+                    <h4>Trust Signals</h4>
+                    <p>Security and reliability indicators</p>
                 </div>
-                
+
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
-                    <h4 style="font-weight: bold; margin-bottom: 10px;">AEO Content</h4>
-                    <p style="color: #666;">Answer Engine Optimization tactics</p>
+                    <h4>AEO Content</h4>
+                    <p>Answer Engine Optimization tactics</p>
                 </div>
             </div>
         </section>
