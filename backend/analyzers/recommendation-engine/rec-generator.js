@@ -655,59 +655,271 @@ function buildSmartFinding(issue, scanEvidence) {
   const subfactor = issue.subfactor;
   const evidence = issue.evidence || {};
   const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'this page';
+  const wordCount = scanEvidence.content?.wordCount || 0;
 
+  // Structured Data
   if (subfactor === 'structuredDataScore') {
     const found = scanEvidence.technical?.structuredData?.length || 0;
-    if (!found) return `No Schema.org markup detected on ${domain}.`;
-    return `Limited/partial Schema.org detected on ${domain} (${found} block${found>1?'s':''}).`;
+    const types = found > 0 ? scanEvidence.technical.structuredData.map(s => s.type).join(', ') : '';
+    if (!found) return `No Schema.org markup detected on ${domain}. Your ${wordCount} words of content are invisible to AI entity recognition.`;
+    return `Limited Schema.org on ${domain}: ${types}. Missing critical schemas (Organization, FAQ, BreadcrumbList) that AI assistants use for citations.`;
   }
+
+  // FAQ
   if (subfactor === 'faqScore') {
     const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
     const faqCount = scanEvidence.content?.faqs?.length || 0;
-    if (!hasFAQSchema && faqCount > 0) return `Found ${faqCount} on-page FAQs but no FAQPage schema.`;
-    return 'No FAQ content or schema detected.';
+    if (!hasFAQSchema && faqCount > 0) return `Found ${faqCount} on-page FAQs on "${pageTitle}" but no FAQPage schema. Adding schema would enable AI citation of these answers.`;
+    return `No FAQ content or schema on ${domain}. Your ${wordCount}-word page could be restructured into Q&A format to increase AI visibility.`;
   }
+
+  // Alt Text
   if (subfactor === 'altTextScore' || subfactor === 'imageAltText') {
-    const total = evidence.totalImages || 0;
-    const withAlt = evidence.imagesWithAlt || 0;
-    const missing = evidence.imagesWithoutAlt || 0;
+    const total = evidence.totalImages || scanEvidence.media?.imageCount || 0;
+    const withAlt = evidence.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
+    const missing = evidence.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
     const coverage = total > 0 ? Math.round((withAlt/total) * 100) : 0;
-    return `Alt text coverage: ${coverage}% (${withAlt}/${total}). Missing ${missing}.`;
+    return `Alt text coverage: ${coverage}% (${withAlt}/${total} images). ${missing} images missing alt text, making them invisible to multimodal AI search.`;
   }
-  return `Your ${subfactor} score is ${issue.currentScore}/100 (target ${issue.threshold}/100).`;
+
+  // Question Headings
+  if (subfactor === 'questionHeadingsScore') {
+    const h2s = scanEvidence.content?.headings?.h2?.length || 0;
+    const h3s = scanEvidence.content?.headings?.h3?.length || 0;
+    const questions = (scanEvidence.content?.headings?.h2?.filter(h => h.endsWith('?')).length || 0) +
+                      (scanEvidence.content?.headings?.h3?.filter(h => h.endsWith('?')).length || 0);
+    const pct = (h2s + h3s) > 0 ? Math.round((questions / (h2s + h3s)) * 100) : 0;
+    return `Only ${questions} of ${h2s + h3s} headings (${pct}%) are question-format on "${pageTitle}". Voice search queries are 75% question-based, limiting your AI discoverability.`;
+  }
+
+  // Open Graph
+  if (subfactor === 'openGraphScore') {
+    const missing = [];
+    if (!scanEvidence.metadata?.ogTitle) missing.push('og:title');
+    if (!scanEvidence.metadata?.ogDescription) missing.push('og:description');
+    if (!scanEvidence.metadata?.ogImage) missing.push('og:image');
+    if (!scanEvidence.metadata?.twitterCard) missing.push('twitter:card');
+    if (missing.length > 0) {
+      return `Open Graph incomplete on "${pageTitle}": missing ${missing.join(', ')}. When AI assistants or users share this page, it appears without proper preview.`;
+    }
+    return `Open Graph tags present but may need optimization (ensure 1200x630px image for best AI/social preview).`;
+  }
+
+  // Heading Hierarchy
+  if (subfactor === 'headingHierarchyScore') {
+    const h1Count = scanEvidence.structure?.headingCount?.h1 || 0;
+    const issues = [];
+    if (h1Count === 0) issues.push('Missing H1');
+    if (h1Count > 1) issues.push(`${h1Count} H1s (should be exactly 1)`);
+    if (issues.length > 0) {
+      return `Heading hierarchy issues on "${pageTitle}": ${issues.join(', ')}. This confuses AI about your content structure and makes extracting key points harder.`;
+    }
+    return `Heading structure score ${issue.currentScore}/100. Better H1-H6 hierarchy will help AI understand content organization for accurate citations.`;
+  }
+
+  // Readability
+  if (subfactor === 'readabilityScore') {
+    return `Content readability score ${issue.currentScore}/100 on ${wordCount}-word page. AI assistants prefer 8th-10th grade reading level (Flesch 60-70) for better understanding and citation.`;
+  }
+
+  // Scannability
+  if (subfactor === 'scannabilityScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    const listCount = scanEvidence.content?.lists?.length || 0;
+    if (h2Count < 3 && wordCount > 500) {
+      return `Poor scannability: Only ${h2Count} H2 headings on ${wordCount}-word page. AI relies on headings to extract key points. Add 3-5 H2 sections.`;
+    }
+    if (listCount === 0 && wordCount > 500) {
+      return `No bulleted/numbered lists on ${wordCount}-word page. Adding lists helps AI extract key takeaways and features.`;
+    }
+    return `Scannability score ${issue.currentScore}/100. More structure (headings, lists, tables) helps AI understand and cite your content.`;
+  }
+
+  // Generic fallback with context
+  return `Your ${subfactor} score is ${issue.currentScore}/100 on "${pageTitle}" (target ${issue.threshold}/100). Gap: ${issue.gap} points. Improvements needed for AI visibility.`;
 }
 
 function generateContextAwareSteps(issue, scanEvidence) {
   const subfactor = issue.subfactor;
   const domain = extractDomain(scanEvidence.url);
+  const wordCount = scanEvidence.content?.wordCount || 0;
+  const imageCount = scanEvidence.media?.imageCount || 0;
 
+  // Structured Data - already has programmatic generator, but fallback here
   if (subfactor === 'structuredDataScore') {
     return [
-      'Create Organization, WebSite, and WebPage JSON-LD for your homepage.',
-      'Place snippets before </head> on the homepage.',
-      'Validate in Google’s Rich Results Test and fix any errors.'
+      'Open your homepage template file (e.g., index.html or header.php).',
+      'Add Organization, WebSite, and WebPage JSON-LD before </head>.',
+      `Validate at schema.org/validator and Google Rich Results Test.`,
+      'Submit updated page to Google Search Console for indexing.'
     ];
   }
+
+  // FAQ Schema
   if (subfactor === 'faqScore') {
+    const faqCount = scanEvidence.content?.faqs?.length || 0;
+    if (faqCount > 0) {
+      return [
+        `Your page has ${faqCount} FAQ pairs detected - add FAQPage schema to mark them up.`,
+        'Copy the FAQ JSON-LD code from the CODE section below.',
+        'Paste it into your page template before </head>.',
+        `Match each schema Q&A to your on-page content exactly.`,
+        'Validate with Google Rich Results Test.',
+        'Monitor FAQ rich snippets in Search Console.'
+      ];
+    }
     return [
-      `Identify 4–8 common questions customers ask about ${domain}.`,
-      'Write concise answers (80–200 words).',
-      'Add FAQPage JSON-LD reflecting the exact Q/A on the page.',
-      'Validate with Rich Results Test.'
+      `Identify 5-10 common questions customers ask about ${domain}.`,
+      'Write comprehensive answers (100-250 words each).',
+      'Add Q&A content to your page in a dedicated FAQ section.',
+      'Implement FAQPage schema matching your on-page content.',
+      'Validate with Rich Results Test and re-scan.'
     ];
   }
-  if (subfactor === 'altTextScore') {
+
+  // Alt Text
+  if (subfactor === 'altTextScore' || subfactor === 'imageAltText') {
+    const missing = scanEvidence.media?.imagesWithoutAlt || 0;
     return [
-      'Audit all images and list those with missing/poor alt text.',
-      'Write descriptive, non-keyword-stuffed alt text for each.',
-      'Set empty alt="" for purely decorative images.',
-      'Re-run the scan to confirm coverage.'
+      `Audit all ${imageCount} images on ${domain} - ${missing} are missing alt text.`,
+      'Prioritize: Hero images, product photos, infographics, team photos.',
+      'Write descriptive alt text explaining what\'s shown (10-15 words).',
+      'For decorative images (borders, backgrounds), use empty alt="".',
+      'Update your CMS to require alt text before publishing.',
+      'Re-run scan to verify 90%+ coverage.'
     ];
   }
+
+  // Question Headings
+  if (subfactor === 'questionHeadingsScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    return [
+      `Audit your ${h2Count} H2/H3 headings - rewrite 30-50% as natural questions.`,
+      'Use questions users actually search: check Google autocomplete.',
+      'Start with: Who, What, When, Where, Why, How.',
+      'Example: Change "Our Services" to "What services does ${domain} offer?"',
+      'Place questions as H2 headings with answers in following paragraphs.',
+      'Test voice search: read headings aloud to verify they sound natural.'
+    ];
+  }
+
+  // Open Graph Tags
+  if (subfactor === 'openGraphScore') {
+    return [
+      'Open your site\'s <head> template file.',
+      'Add the Open Graph meta tags from the CODE section below.',
+      'Create a 1200x630px image for og:image (JPG or PNG).',
+      'Ensure og:description is compelling (155-160 characters).',
+      'Validate with Facebook Sharing Debugger and Twitter Card Validator.',
+      'Re-scan to verify all tags are detected.'
+    ];
+  }
+
+  // Heading Hierarchy
+  if (subfactor === 'headingHierarchyScore') {
+    const h1Count = scanEvidence.structure?.headingCount?.h1 || 0;
+    if (h1Count === 0 || h1Count > 1) {
+      return [
+        h1Count === 0 ? 'Add exactly ONE H1 tag to your page with your primary keyword/topic.' : `Reduce from ${h1Count} H1 tags to exactly 1 (merge or change extras to H2).`,
+        'Structure content: H1 → H2 for main sections → H3 for subsections.',
+        'Never skip levels (don\'t go H1 → H3 directly).',
+        'Make headings descriptive: "How We Help" not "Section 1".',
+        'Use a heading hierarchy analyzer to visualize structure.',
+        'Re-scan to verify structure score improves.'
+      ];
+    }
+    return [
+      'Ensure you have exactly ONE H1 tag per page.',
+      'Use 3-5 H2 tags for main sections.',
+      'Use H3 tags for subsections under each H2.',
+      'Never skip heading levels (H1 → H2 → H3, not H1 → H3).',
+      'Make headings scannable and descriptive for AI parsing.'
+    ];
+  }
+
+  // Readability
+  if (subfactor === 'readabilityScore') {
+    return [
+      `Review your ${wordCount}-word page for complex sentences and jargon.`,
+      'Target reading level: 8th-10th grade (Flesch score 60-70).',
+      'Break long sentences (aim for 15-20 words per sentence).',
+      'Use active voice: "We analyze data" not "Data is analyzed by us".',
+      'Define technical terms or link to glossary.',
+      'Use tools like Hemingway Editor or readable.com to check score.',
+      'Re-scan to verify improved readability.'
+    ];
+  }
+
+  // Scannability
+  if (subfactor === 'scannabilityScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    const recommended = Math.max(3, Math.round(wordCount / 300));
+    return [
+      `Add ${Math.max(0, recommended - h2Count)} more H2 headings to break up ${wordCount} words.`,
+      'Convert paragraphs into bulleted lists where appropriate (features, benefits, steps).',
+      'Use numbered lists for sequential instructions or processes.',
+      'Add bold/italic for emphasis on key points.',
+      'Keep paragraphs short: 50-100 words maximum.',
+      'Re-scan to verify scannability score improves.'
+    ];
+  }
+
+  // Sitemap
+  if (subfactor === 'sitemapScore') {
+    return [
+      'Generate XML sitemap using your CMS plugin or sitemap generator tool.',
+      'Include all important pages with priority (0.0-1.0) and changefreq.',
+      'Add lastmod dates to show content freshness.',
+      'Upload sitemap to /sitemap.xml on your root domain.',
+      'Submit sitemap URL to Google Search Console and Bing Webmaster Tools.',
+      'Set up automatic updates when you publish new content.'
+    ];
+  }
+
+  // Crawler Access
+  if (subfactor === 'crawlerAccessScore') {
+    return [
+      'Check robots.txt - ensure it\'s not blocking important pages.',
+      'Review meta robots tags - remove "noindex" from pages you want indexed.',
+      'Test with Google Search Console URL Inspection tool.',
+      'Ensure canonical tags point to correct URLs.',
+      'Link your XML sitemap in robots.txt: "Sitemap: https://' + domain + '/sitemap.xml"',
+      'Monitor crawl stats in Search Console for errors.'
+    ];
+  }
+
+  // Videos/Captions
+  if (subfactor === 'captionsTranscriptsScore' || subfactor === 'videoTranscripts') {
+    const videoCount = scanEvidence.media?.videoCount || 0;
+    if (videoCount > 0) {
+      return [
+        `Audit your ${videoCount} videos - add captions and transcripts to each.`,
+        'Use YouTube/Vimeo auto-captioning as starting point, then edit for accuracy.',
+        'Ensure product names, brand terms, and technical terms are spelled correctly.',
+        'Add full transcript below each video on the page.',
+        'Include speaker names and timestamps for multi-speaker content.',
+        'Add download link for transcript PDF.',
+        'Re-scan to verify transcripts are detected.'
+      ];
+    }
+    return [
+      'If you have video content, ensure all videos have captions enabled.',
+      'Add full text transcripts below each video.',
+      'Use auto-captioning tools as starting point, then edit for accuracy.',
+      'Include transcripts in your sitemap for SEO.',
+      'Re-scan after adding transcripts.'
+    ];
+  }
+
+  // Generic fallback - still helpful
   return [
-    `Review current implementation for ${subfactor}.`,
-    'Apply best practices.',
-    'Validate with automated checks and re-scan.'
+    `Open the relevant page/template for ${domain}.`,
+    `Review current ${subfactor} implementation against best practices.`,
+    'Make necessary changes based on the recommendations above.',
+    'Validate changes with automated tools (validators, analyzers).',
+    'Re-run the scan to verify score improvement.',
+    'Monitor impact on AI visibility over 2-4 weeks.'
   ];
 }
 
