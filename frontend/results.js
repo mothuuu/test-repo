@@ -223,6 +223,7 @@ function createRecommendationCard(rec, index, userPlan) {
     // Use the correct field names from API
     const title = rec.recommendation_text || rec.title || 'Recommendation';
     const finding = rec.findings || rec.finding || '';
+    const impact = rec.impact_description || rec.impact || '';
     const actionSteps = rec.action_steps || rec.actionSteps || [];
     const codeSnippet = rec.code_snippet || rec.codeSnippet || '';
     const estimatedImpact = rec.estimated_impact || rec.estimatedScoreGain || 0;
@@ -259,8 +260,16 @@ function createRecommendationCard(rec, index, userPlan) {
                 <!-- Finding -->
                 ${finding ? `
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">🔍 What We Found:</h4>
-                        <p class="text-gray-700 leading-relaxed">${finding}</p>
+                        <h4 class="font-bold text-gray-800 mb-2">🔍 Finding:</h4>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">${finding}</p>
+                    </div>
+                ` : ''}
+
+                <!-- Impact -->
+                ${impact ? `
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-2">💡 Impact:</h4>
+                        <p class="text-gray-700 leading-relaxed">${impact}</p>
                     </div>
                 ` : ''}
 
