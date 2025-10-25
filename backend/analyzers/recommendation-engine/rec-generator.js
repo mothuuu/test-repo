@@ -461,7 +461,7 @@ function proposeQuestionHeadings(industryId, facts) {
   const brand = facts.find(f=>f.name==='brand')?.value || facts.find(f=>f.name==='site_name')?.value || 'your business';
   const topics = deriveTopicsFromFacts(facts);
 
-  // A tiny seed library by vertical; extend as you wish.
+  // Industry-specific question seeds library
   const SEEDS = {
     saas: [
       `What is ${brand}?`,
@@ -472,7 +472,7 @@ function proposeQuestionHeadings(industryId, facts) {
       `How secure is ${brand}?`,
       `Does ${brand} integrate with my tools?`,
       `How long does ${brand} take to implement?`,
-      `What’s the ROI of ${brand}?`,
+      `What's the ROI of ${brand}?`,
       `How is ${brand} different from alternatives?`
     ],
     ai_infrastructure: [
@@ -484,7 +484,91 @@ function proposeQuestionHeadings(industryId, facts) {
       `How does autoscaling work for bursty inference traffic?`,
       `What SLAs should I expect for AI infrastructure?`,
       `How do I secure model artifacts and datasets?`,
-      `What’s the best way to deploy multi-model routing?`
+      `What's the best way to deploy multi-model routing?`
+    ],
+    ecommerce: [
+      `What products does ${brand} sell?`,
+      `How long does shipping take?`,
+      `What is the return policy?`,
+      `How do I track my order?`,
+      `What payment methods do you accept?`,
+      `Do you offer free shipping?`,
+      `How do I know what size to order?`,
+      `Are your products authentic?`,
+      `Do you ship internationally?`,
+      `How can I contact customer service?`
+    ],
+    healthcare: [
+      `How do I schedule an appointment?`,
+      `What insurance do you accept?`,
+      `What should I bring to my first visit?`,
+      `How do I access my medical records?`,
+      `What are your office hours?`,
+      `Do you offer telehealth appointments?`,
+      `How long will my appointment take?`,
+      `What safety measures are in place?`,
+      `How do I request a prescription refill?`,
+      `What if I need to cancel my appointment?`
+    ],
+    agency: [
+      `What services does ${brand} provide?`,
+      `How much do your services cost?`,
+      `What's your typical project timeline?`,
+      `Who are your ideal clients?`,
+      `Can you show me case studies?`,
+      `What makes ${brand} different from other agencies?`,
+      `How do you measure success?`,
+      `What's your process for new clients?`,
+      `Do you offer ongoing support after launch?`,
+      `How do I get started with ${brand}?`
+    ],
+    real_estate: [
+      `How do I search for homes in my area?`,
+      `What's the current market value of my home?`,
+      `How long does it take to sell a home?`,
+      `What are closing costs?`,
+      `How do I schedule a showing?`,
+      `Do you help with first-time home buyers?`,
+      `What neighborhoods do you serve?`,
+      `How is the local housing market?`,
+      `What's your commission rate?`,
+      `How do I get pre-approved for a mortgage?`
+    ],
+    financial: [
+      `How do I open an account?`,
+      `What are your interest rates?`,
+      `Is my money FDIC insured?`,
+      `What fees do you charge?`,
+      `How do I access my account online?`,
+      `What types of accounts do you offer?`,
+      `How long does a loan approval take?`,
+      `What credit score do I need?`,
+      `How do I contact customer support?`,
+      `Are there any minimum balance requirements?`
+    ],
+    legal: [
+      `What types of cases does ${brand} handle?`,
+      `How much do legal services cost?`,
+      `Do you offer free consultations?`,
+      `How long will my case take?`,
+      `What are my legal rights?`,
+      `How do I know if I have a strong case?`,
+      `What should I bring to my consultation?`,
+      `How do you communicate with clients?`,
+      `What is your success rate?`,
+      `How do I get started?`
+    ],
+    restaurant: [
+      `What are your hours?`,
+      `Do you take reservations?`,
+      `What's on your menu?`,
+      `Do you offer takeout or delivery?`,
+      `Do you have vegetarian/vegan options?`,
+      `What are your most popular dishes?`,
+      `Do you accommodate dietary restrictions?`,
+      `Where can I park?`,
+      `Do you have outdoor seating?`,
+      `How do I make a reservation?`
     ],
     generic: [
       `What is ${brand}?`,
@@ -507,9 +591,18 @@ function proposeQuestionHeadings(industryId, facts) {
     `What are best practices for ${t}?`
   ]));
 
+  // Match industry to seeds (case-insensitive, partial match)
+  const industryLower = (industryId || '').toLowerCase();
   const base =
-    industryId?.includes('ai_infrastructure') ? SEEDS.ai_infrastructure :
-    industryId?.includes('saas') ? SEEDS.saas :
+    industryLower.includes('ai_infrastructure') || industryLower.includes('ai infrastructure') ? SEEDS.ai_infrastructure :
+    industryLower.includes('saas') || industryLower.includes('software') ? SEEDS.saas :
+    industryLower.includes('ecommerce') || industryLower.includes('e-commerce') || industryLower.includes('retail') ? SEEDS.ecommerce :
+    industryLower.includes('health') || industryLower.includes('medical') ? SEEDS.healthcare :
+    industryLower.includes('agency') || industryLower.includes('marketing') ? SEEDS.agency :
+    industryLower.includes('real') || industryLower.includes('estate') ? SEEDS.real_estate :
+    industryLower.includes('financial') || industryLower.includes('bank') || industryLower.includes('fintech') ? SEEDS.financial :
+    industryLower.includes('legal') || industryLower.includes('law') || industryLower.includes('attorney') ? SEEDS.legal :
+    industryLower.includes('restaurant') || industryLower.includes('food') ? SEEDS.restaurant :
     SEEDS.generic;
 
   return pickUnique([...base, ...topicQs], 12);
@@ -655,59 +748,271 @@ function buildSmartFinding(issue, scanEvidence) {
   const subfactor = issue.subfactor;
   const evidence = issue.evidence || {};
   const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'this page';
+  const wordCount = scanEvidence.content?.wordCount || 0;
 
+  // Structured Data
   if (subfactor === 'structuredDataScore') {
     const found = scanEvidence.technical?.structuredData?.length || 0;
-    if (!found) return `No Schema.org markup detected on ${domain}.`;
-    return `Limited/partial Schema.org detected on ${domain} (${found} block${found>1?'s':''}).`;
+    const types = found > 0 ? scanEvidence.technical.structuredData.map(s => s.type).join(', ') : '';
+    if (!found) return `No Schema.org markup detected on ${domain}. Your ${wordCount} words of content are invisible to AI entity recognition.`;
+    return `Limited Schema.org on ${domain}: ${types}. Missing critical schemas (Organization, FAQ, BreadcrumbList) that AI assistants use for citations.`;
   }
+
+  // FAQ
   if (subfactor === 'faqScore') {
     const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
     const faqCount = scanEvidence.content?.faqs?.length || 0;
-    if (!hasFAQSchema && faqCount > 0) return `Found ${faqCount} on-page FAQs but no FAQPage schema.`;
-    return 'No FAQ content or schema detected.';
+    if (!hasFAQSchema && faqCount > 0) return `Found ${faqCount} on-page FAQs on "${pageTitle}" but no FAQPage schema. Adding schema would enable AI citation of these answers.`;
+    return `No FAQ content or schema on ${domain}. Your ${wordCount}-word page could be restructured into Q&A format to increase AI visibility.`;
   }
+
+  // Alt Text
   if (subfactor === 'altTextScore' || subfactor === 'imageAltText') {
-    const total = evidence.totalImages || 0;
-    const withAlt = evidence.imagesWithAlt || 0;
-    const missing = evidence.imagesWithoutAlt || 0;
+    const total = evidence.totalImages || scanEvidence.media?.imageCount || 0;
+    const withAlt = evidence.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
+    const missing = evidence.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
     const coverage = total > 0 ? Math.round((withAlt/total) * 100) : 0;
-    return `Alt text coverage: ${coverage}% (${withAlt}/${total}). Missing ${missing}.`;
+    return `Alt text coverage: ${coverage}% (${withAlt}/${total} images). ${missing} images missing alt text, making them invisible to multimodal AI search.`;
   }
-  return `Your ${subfactor} score is ${issue.currentScore}/100 (target ${issue.threshold}/100).`;
+
+  // Question Headings
+  if (subfactor === 'questionHeadingsScore') {
+    const h2s = scanEvidence.content?.headings?.h2?.length || 0;
+    const h3s = scanEvidence.content?.headings?.h3?.length || 0;
+    const questions = (scanEvidence.content?.headings?.h2?.filter(h => h.endsWith('?')).length || 0) +
+                      (scanEvidence.content?.headings?.h3?.filter(h => h.endsWith('?')).length || 0);
+    const pct = (h2s + h3s) > 0 ? Math.round((questions / (h2s + h3s)) * 100) : 0;
+    return `Only ${questions} of ${h2s + h3s} headings (${pct}%) are question-format on "${pageTitle}". Voice search queries are 75% question-based, limiting your AI discoverability.`;
+  }
+
+  // Open Graph
+  if (subfactor === 'openGraphScore') {
+    const missing = [];
+    if (!scanEvidence.metadata?.ogTitle) missing.push('og:title');
+    if (!scanEvidence.metadata?.ogDescription) missing.push('og:description');
+    if (!scanEvidence.metadata?.ogImage) missing.push('og:image');
+    if (!scanEvidence.metadata?.twitterCard) missing.push('twitter:card');
+    if (missing.length > 0) {
+      return `Open Graph incomplete on "${pageTitle}": missing ${missing.join(', ')}. When AI assistants or users share this page, it appears without proper preview.`;
+    }
+    return `Open Graph tags present but may need optimization (ensure 1200x630px image for best AI/social preview).`;
+  }
+
+  // Heading Hierarchy
+  if (subfactor === 'headingHierarchyScore') {
+    const h1Count = scanEvidence.structure?.headingCount?.h1 || 0;
+    const issues = [];
+    if (h1Count === 0) issues.push('Missing H1');
+    if (h1Count > 1) issues.push(`${h1Count} H1s (should be exactly 1)`);
+    if (issues.length > 0) {
+      return `Heading hierarchy issues on "${pageTitle}": ${issues.join(', ')}. This confuses AI about your content structure and makes extracting key points harder.`;
+    }
+    return `Heading structure score ${issue.currentScore}/100. Better H1-H6 hierarchy will help AI understand content organization for accurate citations.`;
+  }
+
+  // Readability
+  if (subfactor === 'readabilityScore') {
+    return `Content readability score ${issue.currentScore}/100 on ${wordCount}-word page. AI assistants prefer 8th-10th grade reading level (Flesch 60-70) for better understanding and citation.`;
+  }
+
+  // Scannability
+  if (subfactor === 'scannabilityScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    const listCount = scanEvidence.content?.lists?.length || 0;
+    if (h2Count < 3 && wordCount > 500) {
+      return `Poor scannability: Only ${h2Count} H2 headings on ${wordCount}-word page. AI relies on headings to extract key points. Add 3-5 H2 sections.`;
+    }
+    if (listCount === 0 && wordCount > 500) {
+      return `No bulleted/numbered lists on ${wordCount}-word page. Adding lists helps AI extract key takeaways and features.`;
+    }
+    return `Scannability score ${issue.currentScore}/100. More structure (headings, lists, tables) helps AI understand and cite your content.`;
+  }
+
+  // Generic fallback with context
+  return `Your ${subfactor} score is ${issue.currentScore}/100 on "${pageTitle}" (target ${issue.threshold}/100). Gap: ${issue.gap} points. Improvements needed for AI visibility.`;
 }
 
 function generateContextAwareSteps(issue, scanEvidence) {
   const subfactor = issue.subfactor;
   const domain = extractDomain(scanEvidence.url);
+  const wordCount = scanEvidence.content?.wordCount || 0;
+  const imageCount = scanEvidence.media?.imageCount || 0;
 
+  // Structured Data - already has programmatic generator, but fallback here
   if (subfactor === 'structuredDataScore') {
     return [
-      'Create Organization, WebSite, and WebPage JSON-LD for your homepage.',
-      'Place snippets before </head> on the homepage.',
-      'Validate in Google’s Rich Results Test and fix any errors.'
+      'Open your homepage template file (e.g., index.html or header.php).',
+      'Add Organization, WebSite, and WebPage JSON-LD before </head>.',
+      `Validate at schema.org/validator and Google Rich Results Test.`,
+      'Submit updated page to Google Search Console for indexing.'
     ];
   }
+
+  // FAQ Schema
   if (subfactor === 'faqScore') {
+    const faqCount = scanEvidence.content?.faqs?.length || 0;
+    if (faqCount > 0) {
+      return [
+        `Your page has ${faqCount} FAQ pairs detected - add FAQPage schema to mark them up.`,
+        'Copy the FAQ JSON-LD code from the CODE section below.',
+        'Paste it into your page template before </head>.',
+        `Match each schema Q&A to your on-page content exactly.`,
+        'Validate with Google Rich Results Test.',
+        'Monitor FAQ rich snippets in Search Console.'
+      ];
+    }
     return [
-      `Identify 4–8 common questions customers ask about ${domain}.`,
-      'Write concise answers (80–200 words).',
-      'Add FAQPage JSON-LD reflecting the exact Q/A on the page.',
-      'Validate with Rich Results Test.'
+      `Identify 5-10 common questions customers ask about ${domain}.`,
+      'Write comprehensive answers (100-250 words each).',
+      'Add Q&A content to your page in a dedicated FAQ section.',
+      'Implement FAQPage schema matching your on-page content.',
+      'Validate with Rich Results Test and re-scan.'
     ];
   }
-  if (subfactor === 'altTextScore') {
+
+  // Alt Text
+  if (subfactor === 'altTextScore' || subfactor === 'imageAltText') {
+    const missing = scanEvidence.media?.imagesWithoutAlt || 0;
     return [
-      'Audit all images and list those with missing/poor alt text.',
-      'Write descriptive, non-keyword-stuffed alt text for each.',
-      'Set empty alt="" for purely decorative images.',
-      'Re-run the scan to confirm coverage.'
+      `Audit all ${imageCount} images on ${domain} - ${missing} are missing alt text.`,
+      'Prioritize: Hero images, product photos, infographics, team photos.',
+      'Write descriptive alt text explaining what\'s shown (10-15 words).',
+      'For decorative images (borders, backgrounds), use empty alt="".',
+      'Update your CMS to require alt text before publishing.',
+      'Re-run scan to verify 90%+ coverage.'
     ];
   }
+
+  // Question Headings
+  if (subfactor === 'questionHeadingsScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    return [
+      `Audit your ${h2Count} H2/H3 headings - rewrite 30-50% as natural questions.`,
+      'Use questions users actually search: check Google autocomplete.',
+      'Start with: Who, What, When, Where, Why, How.',
+      'Example: Change "Our Services" to "What services does ${domain} offer?"',
+      'Place questions as H2 headings with answers in following paragraphs.',
+      'Test voice search: read headings aloud to verify they sound natural.'
+    ];
+  }
+
+  // Open Graph Tags
+  if (subfactor === 'openGraphScore') {
+    return [
+      'Open your site\'s <head> template file.',
+      'Add the Open Graph meta tags from the CODE section below.',
+      'Create a 1200x630px image for og:image (JPG or PNG).',
+      'Ensure og:description is compelling (155-160 characters).',
+      'Validate with Facebook Sharing Debugger and Twitter Card Validator.',
+      'Re-scan to verify all tags are detected.'
+    ];
+  }
+
+  // Heading Hierarchy
+  if (subfactor === 'headingHierarchyScore') {
+    const h1Count = scanEvidence.structure?.headingCount?.h1 || 0;
+    if (h1Count === 0 || h1Count > 1) {
+      return [
+        h1Count === 0 ? 'Add exactly ONE H1 tag to your page with your primary keyword/topic.' : `Reduce from ${h1Count} H1 tags to exactly 1 (merge or change extras to H2).`,
+        'Structure content: H1 → H2 for main sections → H3 for subsections.',
+        'Never skip levels (don\'t go H1 → H3 directly).',
+        'Make headings descriptive: "How We Help" not "Section 1".',
+        'Use a heading hierarchy analyzer to visualize structure.',
+        'Re-scan to verify structure score improves.'
+      ];
+    }
+    return [
+      'Ensure you have exactly ONE H1 tag per page.',
+      'Use 3-5 H2 tags for main sections.',
+      'Use H3 tags for subsections under each H2.',
+      'Never skip heading levels (H1 → H2 → H3, not H1 → H3).',
+      'Make headings scannable and descriptive for AI parsing.'
+    ];
+  }
+
+  // Readability
+  if (subfactor === 'readabilityScore') {
+    return [
+      `Review your ${wordCount}-word page for complex sentences and jargon.`,
+      'Target reading level: 8th-10th grade (Flesch score 60-70).',
+      'Break long sentences (aim for 15-20 words per sentence).',
+      'Use active voice: "We analyze data" not "Data is analyzed by us".',
+      'Define technical terms or link to glossary.',
+      'Use tools like Hemingway Editor or readable.com to check score.',
+      'Re-scan to verify improved readability.'
+    ];
+  }
+
+  // Scannability
+  if (subfactor === 'scannabilityScore') {
+    const h2Count = scanEvidence.structure?.headingCount?.h2 || 0;
+    const recommended = Math.max(3, Math.round(wordCount / 300));
+    return [
+      `Add ${Math.max(0, recommended - h2Count)} more H2 headings to break up ${wordCount} words.`,
+      'Convert paragraphs into bulleted lists where appropriate (features, benefits, steps).',
+      'Use numbered lists for sequential instructions or processes.',
+      'Add bold/italic for emphasis on key points.',
+      'Keep paragraphs short: 50-100 words maximum.',
+      'Re-scan to verify scannability score improves.'
+    ];
+  }
+
+  // Sitemap
+  if (subfactor === 'sitemapScore') {
+    return [
+      'Generate XML sitemap using your CMS plugin or sitemap generator tool.',
+      'Include all important pages with priority (0.0-1.0) and changefreq.',
+      'Add lastmod dates to show content freshness.',
+      'Upload sitemap to /sitemap.xml on your root domain.',
+      'Submit sitemap URL to Google Search Console and Bing Webmaster Tools.',
+      'Set up automatic updates when you publish new content.'
+    ];
+  }
+
+  // Crawler Access
+  if (subfactor === 'crawlerAccessScore') {
+    return [
+      'Check robots.txt - ensure it\'s not blocking important pages.',
+      'Review meta robots tags - remove "noindex" from pages you want indexed.',
+      'Test with Google Search Console URL Inspection tool.',
+      'Ensure canonical tags point to correct URLs.',
+      'Link your XML sitemap in robots.txt: "Sitemap: https://' + domain + '/sitemap.xml"',
+      'Monitor crawl stats in Search Console for errors.'
+    ];
+  }
+
+  // Videos/Captions
+  if (subfactor === 'captionsTranscriptsScore' || subfactor === 'videoTranscripts') {
+    const videoCount = scanEvidence.media?.videoCount || 0;
+    if (videoCount > 0) {
+      return [
+        `Audit your ${videoCount} videos - add captions and transcripts to each.`,
+        'Use YouTube/Vimeo auto-captioning as starting point, then edit for accuracy.',
+        'Ensure product names, brand terms, and technical terms are spelled correctly.',
+        'Add full transcript below each video on the page.',
+        'Include speaker names and timestamps for multi-speaker content.',
+        'Add download link for transcript PDF.',
+        'Re-scan to verify transcripts are detected.'
+      ];
+    }
+    return [
+      'If you have video content, ensure all videos have captions enabled.',
+      'Add full text transcripts below each video.',
+      'Use auto-captioning tools as starting point, then edit for accuracy.',
+      'Include transcripts in your sitemap for SEO.',
+      'Re-scan after adding transcripts.'
+    ];
+  }
+
+  // Generic fallback - still helpful
   return [
-    `Review current implementation for ${subfactor}.`,
-    'Apply best practices.',
-    'Validate with automated checks and re-scan.'
+    `Open the relevant page/template for ${domain}.`,
+    `Review current ${subfactor} implementation against best practices.`,
+    'Make necessary changes based on the recommendations above.',
+    'Validate changes with automated tools (validators, analyzers).',
+    'Re-run the scan to verify score improvement.',
+    'Monitor impact on AI visibility over 2-4 weeks.'
   ];
 }
 
@@ -909,41 +1214,188 @@ function buildSiteShapeDescription(profile) {
 
 function buildFactsSection(facts) {
   if (!facts?.length) return '- No facts extracted (site may be behind auth or empty).';
-  return facts.map(f => {
-    const val = Array.isArray(f.value) ? f.value.join(', ') :
-      (typeof f.value === 'string' && f.value.length > 120 ? f.value.slice(0,120) + '…' : f.value);
-    const parts = [`- ${f.name}: ${val}`];
-    if (f.selector) parts.push(`(at: ${f.selector})`);
-    if (f.confidence) parts.push(`[${f.confidence} confidence]`);
+
+  // Prioritize important facts for ChatGPT context
+  const priorityOrder = ['brand', 'site_name', 'logo', 'description', 'tagline', 'services', 'products', 'features', 'audiences', 'contact_email', 'contact_phone', 'address', 'social_links'];
+  const prioritized = [];
+  const rest = [];
+
+  for (const f of facts) {
+    if (priorityOrder.includes(f.name)) {
+      prioritized.push(f);
+    } else {
+      rest.push(f);
+    }
+  }
+
+  // Sort prioritized by the order defined above
+  prioritized.sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name));
+
+  // Format with smart truncation and visual hierarchy
+  const formatFact = (f) => {
+    let val = f.value;
+
+    // Smart formatting by type
+    if (Array.isArray(val)) {
+      if (val.length > 5) {
+        val = val.slice(0, 5).join(', ') + ` (+${val.length - 5} more)`;
+      } else {
+        val = val.join(', ');
+      }
+    } else if (typeof val === 'string') {
+      if (val.length > 150) {
+        val = val.slice(0, 150) + '…';
+      }
+    }
+
+    const parts = [`• ${f.name}: ${val}`];
+    if (f.confidence && f.confidence < 0.8) parts.push(`[${Math.round(f.confidence * 100)}% confidence]`);
     return parts.join(' ');
-  }).join('\n');
+  };
+
+  const lines = [
+    '**KEY IDENTIFIERS:**',
+    ...prioritized.slice(0, 8).map(formatFact)
+  ];
+
+  if (rest.length > 0) {
+    lines.push('\n**ADDITIONAL CONTEXT:**');
+    lines.push(...rest.slice(0, 10).map(formatFact));
+  }
+
+  return lines.join('\n');
 }
 
 function buildCurrentState(issue, scanEvidence) {
   const sub = issue.subfactor;
   const ev = issue.evidence || {};
+  const meta = scanEvidence.metadata || {};
+  const content = scanEvidence.content || {};
+  const tech = scanEvidence.technical || {};
+  const struct = scanEvidence.structure || {};
+
+  // Structured Data
   if (sub === 'structuredDataScore') {
-    const found = scanEvidence.technical?.structuredData || [];
+    const found = tech.structuredData || [];
+    const types = found.map(s => s.type).join(', ') || 'None';
     if (!found.length) {
-      return '- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)';
+      return `- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)\n- Page word count: ${content.wordCount || 0}`;
     }
-    return `- Found ${found.length} Schema.org block(s)\n- May be missing Organization/WebSite linking or stable @ids`;
+    return `- Found ${found.length} Schema.org block(s): ${types}\n- May be missing Organization/WebSite linking or stable @ids\n- Recommended additions: FAQ, BreadcrumbList`;
   }
+
+  // FAQ
   if (sub === 'faqScore') {
-    const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
-    const faqCount = scanEvidence.content?.faqs?.length || 0;
+    const hasFAQSchema = tech.hasFAQSchema;
+    const faqCount = content.faqs?.length || 0;
+    const questionHeadings = content.headings?.h2?.filter(h => h.endsWith('?')).length || 0;
     if (!hasFAQSchema && faqCount > 0) {
-      return `- Detected ${faqCount} on-page FAQs\n- No FAQPage schema present`;
+      return `- Detected ${faqCount} on-page FAQs without schema\n- ${questionHeadings} question-format headings found\n- Adding FAQ schema will enable AI citation`;
     }
-    return '- No FAQ content or schema detected';
+    if (questionHeadings > 0) {
+      return `- ${questionHeadings} question headings found but no FAQ content\n- Expand headings into Q&A pairs with 100-200 word answers`;
+    }
+    return `- No FAQ content or schema detected\n- ${content.wordCount || 0} words of content could be restructured as Q&A`;
   }
+
+  // Alt Text / Images
   if (sub === 'altTextScore' || sub === 'imageAltText') {
-    const total = ev.totalImages || 0;
-    const withAlt = ev.imagesWithAlt || 0;
-    const missing = ev.imagesWithoutAlt || 0;
-    return `- Images: total ${total}, with alt ${withAlt}, missing ${missing}`;
+    const total = ev.totalImages || scanEvidence.media?.imageCount || 0;
+    const withAlt = ev.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
+    const missing = ev.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
+    const coverage = total > 0 ? Math.round((withAlt / total) * 100) : 0;
+    return `- Images: ${total} total, ${withAlt} with alt (${coverage}% coverage), ${missing} missing\n- Priority: Hero images, product photos, infographics\n- Decorative images should use empty alt=""`;
   }
-  return `- Current score: ${issue.currentScore}/100\n- Target: ${issue.threshold}/100`;
+
+  // Question Headings
+  if (sub === 'questionHeadingsScore') {
+    const h2Count = content.headings?.h2?.length || 0;
+    const h3Count = content.headings?.h3?.length || 0;
+    const questionH2 = content.headings?.h2?.filter(h => h.endsWith('?')).length || 0;
+    const questionH3 = content.headings?.h3?.filter(h => h.endsWith('?')).length || 0;
+    const totalQuestions = questionH2 + questionH3;
+    return `- Total headings: ${h2Count} H2s, ${h3Count} H3s\n- Question-format headings: ${totalQuestions} (${h2Count + h3Count > 0 ? Math.round((totalQuestions / (h2Count + h3Count)) * 100) : 0}%)\n- Target: 30-50% of headings should be questions`;
+  }
+
+  // Open Graph
+  if (sub === 'openGraphScore') {
+    const hasTitle = !!meta.ogTitle;
+    const hasDesc = !!meta.ogDescription;
+    const hasImage = !!meta.ogImage;
+    const hasTwitter = !!meta.twitterCard;
+    const missing = [];
+    if (!hasTitle) missing.push('og:title');
+    if (!hasDesc) missing.push('og:description');
+    if (!hasImage) missing.push('og:image');
+    if (!hasTwitter) missing.push('twitter:card');
+    if (missing.length) {
+      return `- Open Graph incomplete: missing ${missing.join(', ')}\n- Current: ${hasTitle ? '✓' : '✗'} title, ${hasDesc ? '✓' : '✗'} description, ${hasImage ? '✓' : '✗'} image, ${hasTwitter ? '✓' : '✗'} twitter`;
+    }
+    return `- Open Graph tags present but may need optimization\n- Ensure og:image is 1200x630px for best preview`;
+  }
+
+  // Heading Hierarchy
+  if (sub === 'headingHierarchyScore') {
+    const h1Count = struct.headingCount?.h1 || 0;
+    const h2Count = struct.headingCount?.h2 || 0;
+    const h3Count = struct.headingCount?.h3 || 0;
+    const issues = [];
+    if (h1Count === 0) issues.push('Missing H1');
+    if (h1Count > 1) issues.push(`${h1Count} H1s (should be 1)`);
+    if (h2Count === 0 && content.wordCount > 300) issues.push('No H2 sections');
+    return `- Heading structure: ${h1Count} H1, ${h2Count} H2, ${h3Count} H3\n${issues.length ? `- Issues: ${issues.join(', ')}\n` : ''}- Content length: ${content.wordCount || 0} words`;
+  }
+
+  // Internal Linking
+  if (sub === 'linkedSubpagesScore' || sub === 'internalLinking') {
+    const internal = struct.internalLinks || 0;
+    const hasBreadcrumbs = struct.hasBreadcrumbs;
+    const hasTOC = struct.hasTOC;
+    return `- Internal links: ${internal}\n- Breadcrumbs: ${hasBreadcrumbs ? 'Present' : 'Missing'}\n- Table of contents: ${hasTOC ? 'Present' : 'Missing'}\n- Recommended: ${Math.max(10, Math.round(content.wordCount / 150))} links for ${content.wordCount} words`;
+  }
+
+  // Readability
+  if (sub === 'readabilityScore') {
+    const wordCount = content.wordCount || 0;
+    const paragraphs = content.paragraphs?.length || 0;
+    const avgWordsPerPara = paragraphs > 0 ? Math.round(wordCount / paragraphs) : 0;
+    return `- Content: ${wordCount} words in ${paragraphs} paragraphs\n- Average paragraph length: ${avgWordsPerPara} words\n- Target: 50-100 words per paragraph for AI readability\n- Flesch score target: 60-70 (8th-10th grade level)`;
+  }
+
+  // Scannability
+  if (sub === 'scannabilityScore') {
+    const h2Count = struct.headingCount?.h2 || 0;
+    const listCount = content.lists?.length || 0;
+    const wordCount = content.wordCount || 0;
+    return `- Content: ${wordCount} words\n- Structure: ${h2Count} H2 headings, ${listCount} lists\n- Recommended: ${Math.max(3, Math.round(wordCount / 300))} H2 headings for ${wordCount} words\n- Add: Bulleted lists for features/benefits, numbered lists for steps`;
+  }
+
+  // Sitemap
+  if (sub === 'sitemapScore') {
+    const hasSitemap = tech.hasSitemapLink;
+    const hasRobots = !!tech.robotsMeta;
+    return `- XML Sitemap: ${hasSitemap ? 'Detected' : 'Not found'}\n- Robots.txt: ${hasRobots ? 'Present' : 'Missing'}\n${hasSitemap ? '- Ensure sitemap submitted to Google Search Console' : '- Create sitemap at /sitemap.xml'}`;
+  }
+
+  // Crawler Access
+  if (sub === 'crawlerAccessScore') {
+    const hasRobots = !!tech.robotsMeta;
+    const hasCanonical = tech.hasCanonical;
+    const hasSitemap = tech.hasSitemapLink;
+    return `- Robots meta: ${hasRobots ? tech.robotsMeta : 'Not set'}\n- Canonical tag: ${hasCanonical ? 'Present' : 'Missing'}\n- Sitemap: ${hasSitemap ? 'Linked' : 'Not linked'}\n- Ensure no accidental blocking of AI crawlers`;
+  }
+
+  // Videos/Captions
+  if (sub === 'captionsTranscriptsScore' || sub === 'videoTranscripts') {
+    const videoCount = scanEvidence.media?.videoCount || 0;
+    if (videoCount > 0) {
+      return `- Videos detected: ${videoCount}\n- Transcripts: Not detected\n- Adding transcripts makes ${videoCount} videos searchable and quotable by AI`;
+    }
+    return `- No video content detected\n- If you have videos, ensure they have captions and full transcripts`;
+  }
+
+  // Generic fallback with more context
+  return `- Current score: ${issue.currentScore}/100 (target: ${issue.threshold}/100)\n- Gap: ${issue.gap} points\n- Page word count: ${content.wordCount || 0}\n- Improvement needed for AI visibility`;
 }
 
 function calculateScoreBreakdown(issue) {
