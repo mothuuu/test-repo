@@ -311,6 +311,12 @@ Projected Impact: +${scoreBreakdown.min}-${scoreBreakdown.max} points
 ---
 Generate the following sections with concrete, non-generic content:
 
+[TITLE]
+- A short, action-oriented title (5-8 words maximum)
+- Should clearly describe what the user needs to do
+- Examples: "Add Organization Schema", "Create Question-Based Headings", "Implement FAQ Section"
+- DO NOT include technical jargon or score names
+
 [FINDING]
 - 2 sentences, tied to the extracted facts and current state.
 
@@ -1158,10 +1164,14 @@ function structureRecommendation(aiResponse, issue, template, tier, source) {
   console.log('  Raw steps found:', rawSteps?.length, 'steps');
   console.log('  Raw code found:', rawCode?.length, 'chars');
   console.log('  First step:', rawSteps?.[0]?.slice(0, 100));
-  
+
+  // Extract title from ChatGPT response (fallback to template title)
+  const extractedTitle = extractSection(aiResponse, 'TITLE');
+  const title = extractedTitle ? extractedTitle.trim().replace(/^-\s*/, '') : template.title;
+
   return {
     id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
-    title: template.title,
+    title: title,
     category: issue.category,
     subfactor: issue.subfactor,
     priority: issue.severity,
