@@ -1,18 +1,19 @@
 require('dotenv').config(); // Load .env file
 const { Pool } = require('pg');
 
-// Parse the connection string to determine if SSL is needed
+// Configure database connection with SSL based on environment
+// Render free-tier databases may not support SSL, so we disable it for render.com
 const connectionString = process.env.DATABASE_URL;
-const isRenderDB = connectionString?.includes('render.com');
 const isLocalDB = connectionString?.includes('localhost') || connectionString?.includes('127.0.0.1');
+const isRenderDB = connectionString?.includes('render.com');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: isRenderDB ? {
+  // Disable SSL for local and Render databases (Render free tier doesn't support SSL)
+  // Keep SSL enabled for other cloud providers
+  ssl: isLocalDB || isRenderDB ? false : {
     rejectUnauthorized: false
-  } : (isLocalDB ? false : {
-    rejectUnauthorized: false
-  })
+  }
 });
 
 module.exports = {
