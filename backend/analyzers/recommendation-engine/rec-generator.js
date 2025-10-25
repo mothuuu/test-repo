@@ -461,7 +461,7 @@ function proposeQuestionHeadings(industryId, facts) {
   const brand = facts.find(f=>f.name==='brand')?.value || facts.find(f=>f.name==='site_name')?.value || 'your business';
   const topics = deriveTopicsFromFacts(facts);
 
-  // A tiny seed library by vertical; extend as you wish.
+  // Industry-specific question seeds library
   const SEEDS = {
     saas: [
       `What is ${brand}?`,
@@ -472,7 +472,7 @@ function proposeQuestionHeadings(industryId, facts) {
       `How secure is ${brand}?`,
       `Does ${brand} integrate with my tools?`,
       `How long does ${brand} take to implement?`,
-      `What’s the ROI of ${brand}?`,
+      `What's the ROI of ${brand}?`,
       `How is ${brand} different from alternatives?`
     ],
     ai_infrastructure: [
@@ -484,7 +484,91 @@ function proposeQuestionHeadings(industryId, facts) {
       `How does autoscaling work for bursty inference traffic?`,
       `What SLAs should I expect for AI infrastructure?`,
       `How do I secure model artifacts and datasets?`,
-      `What’s the best way to deploy multi-model routing?`
+      `What's the best way to deploy multi-model routing?`
+    ],
+    ecommerce: [
+      `What products does ${brand} sell?`,
+      `How long does shipping take?`,
+      `What is the return policy?`,
+      `How do I track my order?`,
+      `What payment methods do you accept?`,
+      `Do you offer free shipping?`,
+      `How do I know what size to order?`,
+      `Are your products authentic?`,
+      `Do you ship internationally?`,
+      `How can I contact customer service?`
+    ],
+    healthcare: [
+      `How do I schedule an appointment?`,
+      `What insurance do you accept?`,
+      `What should I bring to my first visit?`,
+      `How do I access my medical records?`,
+      `What are your office hours?`,
+      `Do you offer telehealth appointments?`,
+      `How long will my appointment take?`,
+      `What safety measures are in place?`,
+      `How do I request a prescription refill?`,
+      `What if I need to cancel my appointment?`
+    ],
+    agency: [
+      `What services does ${brand} provide?`,
+      `How much do your services cost?`,
+      `What's your typical project timeline?`,
+      `Who are your ideal clients?`,
+      `Can you show me case studies?`,
+      `What makes ${brand} different from other agencies?`,
+      `How do you measure success?`,
+      `What's your process for new clients?`,
+      `Do you offer ongoing support after launch?`,
+      `How do I get started with ${brand}?`
+    ],
+    real_estate: [
+      `How do I search for homes in my area?`,
+      `What's the current market value of my home?`,
+      `How long does it take to sell a home?`,
+      `What are closing costs?`,
+      `How do I schedule a showing?`,
+      `Do you help with first-time home buyers?`,
+      `What neighborhoods do you serve?`,
+      `How is the local housing market?`,
+      `What's your commission rate?`,
+      `How do I get pre-approved for a mortgage?`
+    ],
+    financial: [
+      `How do I open an account?`,
+      `What are your interest rates?`,
+      `Is my money FDIC insured?`,
+      `What fees do you charge?`,
+      `How do I access my account online?`,
+      `What types of accounts do you offer?`,
+      `How long does a loan approval take?`,
+      `What credit score do I need?`,
+      `How do I contact customer support?`,
+      `Are there any minimum balance requirements?`
+    ],
+    legal: [
+      `What types of cases does ${brand} handle?`,
+      `How much do legal services cost?`,
+      `Do you offer free consultations?`,
+      `How long will my case take?`,
+      `What are my legal rights?`,
+      `How do I know if I have a strong case?`,
+      `What should I bring to my consultation?`,
+      `How do you communicate with clients?`,
+      `What is your success rate?`,
+      `How do I get started?`
+    ],
+    restaurant: [
+      `What are your hours?`,
+      `Do you take reservations?`,
+      `What's on your menu?`,
+      `Do you offer takeout or delivery?`,
+      `Do you have vegetarian/vegan options?`,
+      `What are your most popular dishes?`,
+      `Do you accommodate dietary restrictions?`,
+      `Where can I park?`,
+      `Do you have outdoor seating?`,
+      `How do I make a reservation?`
     ],
     generic: [
       `What is ${brand}?`,
@@ -507,9 +591,18 @@ function proposeQuestionHeadings(industryId, facts) {
     `What are best practices for ${t}?`
   ]));
 
+  // Match industry to seeds (case-insensitive, partial match)
+  const industryLower = (industryId || '').toLowerCase();
   const base =
-    industryId?.includes('ai_infrastructure') ? SEEDS.ai_infrastructure :
-    industryId?.includes('saas') ? SEEDS.saas :
+    industryLower.includes('ai_infrastructure') || industryLower.includes('ai infrastructure') ? SEEDS.ai_infrastructure :
+    industryLower.includes('saas') || industryLower.includes('software') ? SEEDS.saas :
+    industryLower.includes('ecommerce') || industryLower.includes('e-commerce') || industryLower.includes('retail') ? SEEDS.ecommerce :
+    industryLower.includes('health') || industryLower.includes('medical') ? SEEDS.healthcare :
+    industryLower.includes('agency') || industryLower.includes('marketing') ? SEEDS.agency :
+    industryLower.includes('real') || industryLower.includes('estate') ? SEEDS.real_estate :
+    industryLower.includes('financial') || industryLower.includes('bank') || industryLower.includes('fintech') ? SEEDS.financial :
+    industryLower.includes('legal') || industryLower.includes('law') || industryLower.includes('attorney') ? SEEDS.legal :
+    industryLower.includes('restaurant') || industryLower.includes('food') ? SEEDS.restaurant :
     SEEDS.generic;
 
   return pickUnique([...base, ...topicQs], 12);
