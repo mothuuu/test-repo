@@ -90,18 +90,32 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
     : Math.ceil(pageSpecificRecs.length / pagesWithRecs.length);
   
   console.log(`   📄 Will save ${recsPerPage} recommendations per page (${pagesWithRecs.length} page(s))`);
-  
+
+  // Determine initial active count based on plan
+  let initialActive;
+  if (userPlan === 'free') {
+    initialActive = 3;  // Free: Top 3 recommendations
+  } else if (userPlan === 'diy') {
+    initialActive = 5;  // DIY: First 5, then progressive unlock
+  } else if (userPlan === 'pro') {
+    initialActive = 999; // Pro: All recommendations active immediately
+  } else {
+    initialActive = 0;   // Guest: No recommendations
+  }
+
+  console.log(`   🔓 Initial active recommendations for ${userPlan} tier: ${initialActive}`);
+
   // Save site-wide recommendations
   let siteWideActive = 0;
   let siteWideLocked = 0;
-  
+
   for (let i = 0; i < limitedSiteWide.length; i++) {
     const rec = limitedSiteWide[i];
     const batchNumber = Math.floor(i / 5) + 1;
-    const unlockState = i < 5 ? 'active' : 'locked';
-    const unlockedAt = i < 5 ? new Date() : null;
-    const skipEnabledAt = i < 5 ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
-    
+    const unlockState = i < initialActive ? 'active' : 'locked';
+    const unlockedAt = i < initialActive ? new Date() : null;
+    const skipEnabledAt = i < initialActive ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
+
     if (unlockState === 'active') siteWideActive++;
     if (unlockState === 'locked') siteWideLocked++;
     
