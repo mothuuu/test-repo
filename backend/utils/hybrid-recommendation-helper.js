@@ -115,7 +115,7 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       [
         scanId,
         rec.category || 'General',
-        rec.impact || rec.title || rec.recommendation,  // Save full impact text
+        rec.title || rec.recommendation_text || rec.recommendation,  // Save short title
         rec.priority,
         rec.estimatedScoreGain || 0,
         rec.difficulty || 'medium',
@@ -154,7 +154,7 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         [
           scanId,
           rec.category || 'General',
-          rec.impact || rec.title || rec.recommendation,  // Save full impact text
+          rec.title || rec.recommendation_text || rec.recommendation,  // Save short title
           rec.priority,
           rec.estimatedScoreGain || 0,
           rec.difficulty || 'medium',
