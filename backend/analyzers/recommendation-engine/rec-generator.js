@@ -317,6 +317,17 @@ function buildChatGPTPrompt(issue, scanEvidence, template, tier, industry) {
   const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
   const subfactorName = SUBFACTOR_NAMES[issue.subfactor] || issue.subfactor;
 
+  // Build list of EXISTING schemas to explicitly exclude from recommendations
+  const existingSchemas = [];
+  if (scanEvidence.technical?.hasOrganizationSchema) existingSchemas.push('Organization');
+  if (scanEvidence.technical?.hasFAQSchema) existingSchemas.push('FAQPage');
+  if (scanEvidence.technical?.hasLocalBusinessSchema) existingSchemas.push('LocalBusiness');
+  if (scanEvidence.technical?.hasArticleSchema) existingSchemas.push('Article/BlogPosting');
+  if (scanEvidence.technical?.hasBreadcrumbSchema) existingSchemas.push('BreadcrumbList');
+  const existingSchemasText = existingSchemas.length > 0
+    ? `\n\n**EXISTING SCHEMAS (DO NOT RECOMMEND ADDING THESE):**\n✅ ${existingSchemas.join('\n✅ ')}\n- These schemas are ALREADY IMPLEMENTED on the site\n- DO NOT recommend adding these schemas again\n- Focus only on schemas that are MISSING`
+    : '';
+
   return `You are an AI Search Optimization expert generating PRESCRIPTIVE, ready-to-implement recommendations.
 
 **WEBSITE ANALYSIS**
@@ -332,7 +343,7 @@ ${siteShape}
 ${factsSection}
 
 **CURRENT STATE**
-${buildCurrentState(issue, scanEvidence)}
+${buildCurrentState(issue, scanEvidence)}${existingSchemasText}
 
 **SCORE BREAKDOWN**
 Current: ${issue.currentScore}/100
@@ -831,8 +842,20 @@ function buildSmartFinding(issue, scanEvidence) {
   if (subfactor === 'structuredDataScore') {
     const found = scanEvidence.technical?.structuredData?.length || 0;
     const types = found > 0 ? scanEvidence.technical.structuredData.map(s => s.type).join(', ') : '';
+
+    // Determine which schemas are ACTUALLY missing
+    const missing = [];
+    if (!scanEvidence.technical?.hasOrganizationSchema) missing.push('Organization');
+    if (!scanEvidence.technical?.hasFAQSchema) missing.push('FAQ');
+    if (!scanEvidence.technical?.hasLocalBusinessSchema) missing.push('LocalBusiness');
+    if (!scanEvidence.technical?.hasBreadcrumbSchema) missing.push('BreadcrumbList');
+    if (!scanEvidence.technical?.hasArticleSchema) missing.push('Article');
+
     if (!found) return `No Schema.org markup detected on ${domain}. Your ${wordCount} words of content are invisible to AI entity recognition.`;
-    return `Limited Schema.org on ${domain}: ${types}. Missing critical schemas (Organization, FAQ, BreadcrumbList) that AI assistants use for citations.`;
+    if (missing.length > 0) {
+      return `Limited Schema.org on ${domain}. Found: ${types}. Missing: ${missing.join(', ')}. Adding these will improve AI citation accuracy.`;
+    }
+    return `Schema.org detected on ${domain}: ${types}. Consider enhancing with more specific schema types for your content.`;
   }
 
   // FAQ
@@ -1358,10 +1381,19 @@ function buildCurrentState(issue, scanEvidence) {
   if (sub === 'structuredDataScore') {
     const found = tech.structuredData || [];
     const types = found.map(s => s.type).join(', ') || 'None';
+
+    // Determine which schemas are ACTUALLY missing
+    const missing = [];
+    if (!tech.hasOrganizationSchema) missing.push('Organization');
+    if (!tech.hasFAQSchema) missing.push('FAQ');
+    if (!tech.hasLocalBusinessSchema) missing.push('LocalBusiness');
+    if (!tech.hasBreadcrumbSchema) missing.push('BreadcrumbList');
+    if (!tech.hasArticleSchema) missing.push('Article/BlogPosting');
+
     if (!found.length) {
-      return `- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)\n- Page word count: ${content.wordCount || 0}`;
+      return `- No Schema.org detected\n- Missing: ${missing.join(', ')}\n- Page word count: ${content.wordCount || 0}`;
     }
-    return `- Found ${found.length} Schema.org block(s): ${types}\n- May be missing Organization/WebSite linking or stable @ids\n- Recommended additions: FAQ, BreadcrumbList`;
+    return `- Found ${found.length} Schema.org block(s): ${types}\n- Missing: ${missing.length > 0 ? missing.join(', ') : 'None - good coverage!'}\n- Page word count: ${content.wordCount || 0}`;
   }
 
   // FAQ
@@ -1499,18 +1531,37 @@ function determineNeededSchemas(issue, profile, scanEvidence) {
   const schemas = [];
   if (issue.subfactor === 'structuredDataScore') {
     const existing = (scanEvidence.technical?.structuredData || []).map(s => s.type);
-    if (!existing.includes('Organization')) {
-      schemas.push({ type: 'Organization', useData: 'brand, logo, sameAs' });
+    const hasOrganization = scanEvidence.technical?.hasOrganizationSchema || existing.includes('Organization');
+    const hasLocalBusiness = scanEvidence.technical?.hasLocalBusinessSchema || existing.includes('LocalBusiness');
+    const hasFAQ = scanEvidence.technical?.hasFAQSchema || existing.includes('FAQPage');
+    const hasArticle = scanEvidence.technical?.hasArticleSchema || existing.includes('Article') || existing.includes('BlogPosting');
+    const hasBreadcrumb = scanEvidence.technical?.hasBreadcrumbSchema || existing.includes('BreadcrumbList');
+
+    // Only recommend schemas that are MISSING
+    if (!hasOrganization) {
+      schemas.push({ type: 'Organization', useData: 'brand, logo, sameAs, address, contact' });
     }
     if (!existing.includes('WebSite')) {
       schemas.push({ type: 'WebSite', useData: 'url, name, publisher→Organization' });
     }
+    if (profile.site_type === 'local_business' && !hasLocalBusiness) {
+      schemas.push({ type: 'LocalBusiness', useData: 'address, phone, opening hours, geo coordinates' });
+    }
     if (profile.site_type === 'saas' && !existing.includes('SoftwareApplication')) {
       schemas.push({ type: 'SoftwareApplication', useData: 'name, description, offers (optional)' });
     }
+    if (!hasFAQ && profile.sections?.has_faq) {
+      schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    }
+    if (!hasBreadcrumb && profile.site_type !== 'simple_site') {
+      schemas.push({ type: 'BreadcrumbList', useData: 'navigation hierarchy' });
+    }
   }
   if (issue.subfactor === 'faqScore') {
-    schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    const hasFAQ = scanEvidence.technical?.hasFAQSchema;
+    if (!hasFAQ) {
+      schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    }
   }
   return schemas;
 }
