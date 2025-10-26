@@ -62,7 +62,13 @@ const $ = cheerio.load(html);
       });
 
       const responseTime = Date.now() - startTime;
-      
+
+      // Debug: Log first 3000 chars of HTML to see what we're getting
+      const htmlPreview = response.data.substring(0, 3000);
+      console.log('[ContentExtractor] HTML preview (first 3000 chars):');
+      console.log(htmlPreview);
+      console.log('[ContentExtractor] ... (HTML continues)');
+
       return {
         html: response.data,
         responseTime,
