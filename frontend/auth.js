@@ -1,5 +1,7 @@
-// API Configuration
-const API_URL = 'http://localhost:3001/api';
+// API Configuration - Dynamic based on environment
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001/api'
+    : 'https://ai-visibility-tool.onrender.com/api';
 
 // UI Elements
 const loginForm = document.getElementById('loginForm');

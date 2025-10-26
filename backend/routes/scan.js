@@ -75,7 +75,8 @@ router.post('/guest', async (req, res) => {
     console.log('🔍 Guest scan requested for:', url);
 
     // Perform V5 rubric scan (results NOT saved)
-    const scanResult = await performV5Scan(url, 'free'); // 🔥 Uses real engine now!
+    // Use 'guest' tier - NO recommendations shown to anonymous users
+    const scanResult = await performV5Scan(url, 'guest');
 
     // Return results immediately without saving
     res.json({
@@ -84,10 +85,10 @@ router.post('/guest', async (req, res) => {
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
-      recommendations: scanResult.recommendations,
-      faq: scanResult.faq || null, // Include FAQ if available
-      upgrade: scanResult.upgrade || null, // Include upgrade CTA
-      message: 'Sign up to save results and track progress over time',
+      recommendations: scanResult.recommendations, // Will be empty array for guest tier
+      faq: null, // No FAQ for guest
+      upgrade: scanResult.upgrade || null, // CTA to sign up
+      message: 'Sign up free to unlock your top 3 recommendations',
       guest: true
     });
 
@@ -104,6 +105,8 @@ router.post('/guest', async (req, res) => {
 // POST /api/scan/analyze - Authenticated scan
 // ============================================
 router.post('/analyze', authenticateToken, async (req, res) => {
+  let scan = null; // Define outside try block for error handling
+
   try {
     const { url, pages } = req.body;
     const userId = req.userId;
@@ -120,8 +123,8 @@ router.post('/analyze', authenticateToken, async (req, res) => {
         throw new Error('Invalid protocol');
       }
     } catch (e) {
-      return res.status(400).json({ 
-        error: 'Invalid URL format. Please use http:// or https://' 
+      return res.status(400).json({
+        error: 'Invalid URL format. Please use http:// or https://'
       });
     }
 
@@ -165,14 +168,21 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
     const scan = scanRecord.rows[0];
 
-    // Increment user's scan count
+    // Get existing user progress for this scan (if any)
+    const existingProgressResult = await db.query(
+      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scan.id]
+    );
+    const userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+
+    // Perform V5 rubric scan 🔥 REAL ENGINE!
+    const scanResult = await performV5Scan(url, user.plan, pages, userProgress);
+
+    // Increment user's scan count AFTER successful scan
     await db.query(
       'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
       [userId]
     );
-
-    // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan, pages);
 
     // Update scan record with results
     await db.query(
@@ -275,9 +285,19 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
 
   } catch (error) {
     console.error('❌ Authenticated scan error:', error);
-    res.status(500).json({ 
+    console.error('Stack trace:', error.stack);
+
+    // Mark scan as failed if we created a scan record
+    if (scan && scan.id) {
+      await db.query(
+        `UPDATE scans SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2`,
+        ['failed', scan.id]
+      );
+    }
+
+    res.status(500).json({
       error: 'Scan failed',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -317,12 +337,30 @@ router.get('/:id', authenticateToken, async (req, res) => {
         estimated_impact, estimated_effort, status,
         action_steps, findings, code_snippet,
         impact_description,
+        customized_implementation, ready_to_use_content,
+        implementation_notes, quick_wins, validation_checklist,
         user_rating, user_feedback, implemented_at
        FROM scan_recommendations
        WHERE scan_id = $1
        ORDER BY priority DESC, estimated_impact DESC`,
       [scanId]
     );
+
+    // Get user progress (for DIY progressive unlock)
+    const progressResult = await db.query(
+      `SELECT
+        total_recommendations, active_recommendations,
+        completed_recommendations, verified_recommendations,
+        current_batch, last_unlock_date, unlocks_today,
+        site_wide_total, site_wide_completed, site_wide_active,
+        page_specific_total, page_specific_completed,
+        site_wide_complete
+       FROM user_progress
+       WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scanId]
+    );
+
+    const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
 
     res.json({
       success: true,
@@ -339,7 +377,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
           voiceOptimization: scan.voice_optimization_score
         },
         recommendations: recResult.rows,
-        faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null
+        faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
+        userProgress: userProgress // Include progress for DIY tier
       }
     });
 
@@ -392,6 +431,116 @@ router.get('/list/recent', authenticateToken, async (req, res) => {
 });
 
 // ============================================
+// ============================================
+// POST /api/scan/:id/unlock - Unlock next batch of recommendations (DIY tier)
+// ============================================
+router.post('/:id/unlock', authenticateToken, async (req, res) => {
+  try {
+    const scanId = req.params.id;
+    const userId = req.userId;
+
+    // Get user plan
+    const userResult = await db.query(
+      'SELECT plan FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Only DIY and Pro users can unlock recommendations
+    if (user.plan !== 'diy' && user.plan !== 'pro') {
+      return res.status(403).json({
+        error: 'Progressive unlock is only available for DIY and Pro tiers',
+        upgrade: {
+          message: 'Upgrade to DIY Starter to unlock 5 recommendations per day',
+          cta: 'Upgrade to DIY - $29/month',
+          ctaUrl: '/checkout.html?plan=diy'
+        }
+      });
+    }
+
+    // Verify scan belongs to user
+    const scanCheck = await db.query(
+      'SELECT id FROM scans WHERE id = $1 AND user_id = $2',
+      [scanId, userId]
+    );
+
+    if (scanCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    // Get current user progress
+    const progressResult = await db.query(
+      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scanId]
+    );
+
+    if (progressResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No progress found for this scan' });
+    }
+
+    const progress = progressResult.rows[0];
+    const today = new Date().toDateString();
+    const lastUnlock = progress.last_unlock_date ? new Date(progress.last_unlock_date).toDateString() : null;
+
+    // Check if we need to reset daily counter
+    let unlocksToday = progress.unlocks_today || 0;
+    if (lastUnlock !== today) {
+      unlocksToday = 0; // Reset counter for new day
+    }
+
+    // Check daily limit (5 unlocks per day)
+    if (unlocksToday >= 5) {
+      return res.status(429).json({
+        error: 'Daily unlock limit reached',
+        message: 'You can unlock 5 new recommendations per day. Come back tomorrow for more!',
+        canUnlockAgainAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString()
+      });
+    }
+
+    // Check if all recommendations are already unlocked
+    if (progress.active_recommendations >= progress.total_recommendations) {
+      return res.status(400).json({
+        error: 'All recommendations already unlocked',
+        message: 'You\'ve unlocked all available recommendations for this scan.'
+      });
+    }
+
+    // Calculate how many to unlock (up to 5, but not more than remaining)
+    const remaining = progress.total_recommendations - progress.active_recommendations;
+    const toUnlock = Math.min(5, remaining);
+
+    // Update user progress
+    const updated = await db.query(
+      `UPDATE user_progress
+       SET active_recommendations = active_recommendations + $1,
+           unlocks_today = $2,
+           last_unlock_date = CURRENT_DATE
+       WHERE user_id = $3 AND scan_id = $4
+       RETURNING *`,
+      [toUnlock, unlocksToday + 1, userId, scanId]
+    );
+
+    console.log(`🔓 User ${userId} unlocked ${toUnlock} recommendations for scan ${scanId}`);
+
+    res.json({
+      success: true,
+      message: `Unlocked ${toUnlock} new recommendation${toUnlock > 1 ? 's' : ''}!`,
+      progress: updated.rows[0],
+      unlocked: toUnlock,
+      canUnlockMore: (unlocksToday + 1) < 5 && (progress.active_recommendations + toUnlock) < progress.total_recommendations
+    });
+
+  } catch (error) {
+    console.error('❌ Unlock error:', error);
+    res.status(500).json({ error: 'Failed to unlock recommendations' });
+  }
+});
+
 // POST /api/scan/:id/recommendation/:recId/feedback
 // Learning Loop: Track user actions
 // ============================================
@@ -491,15 +640,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
 // Now properly uses the V5RubricEngine class!
 // ============================================
-async function performV5Scan(url, plan, pages = null) {
+async function performV5Scan(url, plan, pages = null, userProgress = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
-  
+
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
     const engine = new V5RubricEngine(url, {});
     const v5Results = await engine.analyze();
-    
+
     // Extract scores from category results
     const categories = {
       aiReadability: v5Results.categories.aiReadability.score || 0,
@@ -514,23 +663,24 @@ async function performV5Scan(url, plan, pages = null) {
 
     const totalScore = v5Results.totalScore;
     const scanEvidence = engine.evidence;
-    
+
     // Extract subfactors from each category for issue detection
     const subfactorScores = {};
     for (const [category, data] of Object.entries(v5Results.categories)) {
       subfactorScores[category] = data.subfactors;
     }
 
-    // Step 2: Generate recommendations (same for all plans)
+    // Step 2: Generate recommendations with user progress for DIY tier
     console.log('🤖 Generating recommendations...');
-    
+
     const recommendationResults = await generateCompleteRecommendations(
       {
         v5Scores: subfactorScores,
         scanEvidence: scanEvidence
       },
       plan,
-      v5Results.industry || 'General'
+      v5Results.industry || 'General',
+      userProgress // Pass userProgress for progressive unlock
     );
 
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${v5Results.industry})`);

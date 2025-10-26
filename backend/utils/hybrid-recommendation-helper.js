@@ -90,18 +90,49 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
     : Math.ceil(pageSpecificRecs.length / pagesWithRecs.length);
   
   console.log(`   📄 Will save ${recsPerPage} recommendations per page (${pagesWithRecs.length} page(s))`);
-  
+
+  // Determine initial active count based on plan
+  let initialActive;
+  if (userPlan === 'free') {
+    initialActive = 3;  // Free: Top 3 recommendations
+  } else if (userPlan === 'diy') {
+    initialActive = 5;  // DIY: First 5, then progressive unlock
+  } else if (userPlan === 'pro') {
+    initialActive = 999; // Pro: All recommendations active immediately
+  } else {
+    initialActive = 0;   // Guest: No recommendations
+  }
+
+  console.log(`   🔓 Initial active recommendations for ${userPlan} tier: ${initialActive}`);
+
   // Save site-wide recommendations
   let siteWideActive = 0;
   let siteWideLocked = 0;
-  
+
   for (let i = 0; i < limitedSiteWide.length; i++) {
     const rec = limitedSiteWide[i];
     const batchNumber = Math.floor(i / 5) + 1;
-    const unlockState = i < 5 ? 'active' : 'locked';
-    const unlockedAt = i < 5 ? new Date() : null;
-    const skipEnabledAt = i < 5 ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
-    
+    const unlockState = i < initialActive ? 'active' : 'locked';
+    const unlockedAt = i < initialActive ? new Date() : null;
+    const skipEnabledAt = i < initialActive ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
+
+    // DEBUG: Log structured fields for FAQ recommendations
+    if (rec.category === 'FAQ Schema' || rec.subfactor === 'faqScore') {
+      console.log('📦 FAQ Recommendation object received:', {
+        title: rec.title?.substring(0, 50),
+        hasCustomizedImplementation: !!rec.customizedImplementation,
+        hasReadyToUseContent: !!rec.readyToUseContent,
+        hasImplementationNotes: !!rec.implementationNotes,
+        hasQuickWins: !!rec.quickWins,
+        hasValidationChecklist: !!rec.validationChecklist,
+        customizedImplLength: rec.customizedImplementation?.length || 0,
+        readyToUseLength: rec.readyToUseContent?.length || 0,
+        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+      });
+    }
+
     if (unlockState === 'active') siteWideActive++;
     if (unlockState === 'locked') siteWideLocked++;
     
@@ -110,8 +141,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         scan_id, category, recommendation_text, priority,
         estimated_impact, estimated_effort, action_steps, findings, code_snippet,
         unlock_state, batch_number, unlocked_at,
-        recommendation_type, page_url, skip_enabled_at, impact_description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        recommendation_type, page_url, skip_enabled_at, impact_description,
+        customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
       [
         scanId,
         rec.category || 'General',
@@ -128,7 +160,12 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         'site-wide',
         null, // No specific page URL
         skipEnabledAt,
-        rec.impact || null  // Add impact description
+        rec.impact || null,  // Add impact description
+        rec.customizedImplementation || null,  // NEW: Customized before/after
+        rec.readyToUseContent || null,  // NEW: Ready-to-use content
+        rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
+        rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
+        rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
       ]
     );
   }
@@ -150,8 +187,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           scan_id, category, recommendation_text, priority,
           estimated_impact, estimated_effort, action_steps, findings, code_snippet,
           unlock_state, batch_number, unlocked_at,
-          recommendation_type, page_url, page_priority, impact_description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+          recommendation_type, page_url, page_priority, impact_description,
+          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         [
           scanId,
           rec.category || 'General',
@@ -168,7 +206,12 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           'page-specific',
           page.url,
           page.priority || 1,
-          rec.impact || null  // Add impact description
+          rec.impact || null,  // Add impact description
+          rec.customizedImplementation || null,  // NEW: Customized before/after
+          rec.readyToUseContent || null,  // NEW: Ready-to-use content
+          rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
+          rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
+          rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
         ]
       );
       pageSpecificTotal++;

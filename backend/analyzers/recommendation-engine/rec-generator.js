@@ -202,31 +202,46 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         continue;
       }
 
-      // 2) ChatGPT for DIY/Pro (now used for ALL recommendations)
-      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
-        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
-        out.push(gptRec);
-        continue;
+      // 2) HIGH-VALUE PROGRAMMATIC GENERATORS (run FIRST - these have rich, pre-written content)
+      // These take precedence over ChatGPT for consistency and quality
+
+      // 2a) FAQ Schema - Rich, ready-to-use FAQ content
+      if (issue.subfactor === 'faqScore') {
+        console.log(`✅ Detected faqScore issue - calling programmatic FAQ generator`);
+        const rec = makeProgrammaticFAQRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ FAQ recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        } else {
+          console.log(`❌ FAQ generator returned null/undefined`);
+        }
       }
 
-      // 3) Free tier: Use programmatic for specific subfactors, template for others
-      // 3a) Programmatic JSON-LD for structured data
+      // 2b) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
         continue;
       }
 
-      // 3b) Programmatic Question Headings
-      if (issue.subfactor === 'questionHeadingsScore') {
-        const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence);
-        if (rec) { out.push(rec); continue; }
-      }
-
-      // 3c) Programmatic Open Graph meta tags
+      // 2c) Open Graph - Programmatic meta tags
       if (issue.subfactor === 'openGraphScore') {
         const rec = makeProgrammaticOpenGraphRecommendation(issue, scanEvidence);
         if (rec) { out.push(rec); continue; }
+      }
+
+      // 2d) Question Headings - Programmatic suggestions with ChatGPT intelligence
+      if (issue.subfactor === 'questionHeadingsScore') {
+        const rec = await makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry);
+        if (rec) { out.push(rec); continue; }
+      }
+
+      // 3) ChatGPT for other subfactors (DIY/Pro tier)
+      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
+        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
+        out.push(gptRec);
+        continue;
       }
 
       // 4) Smart template fallback
@@ -317,6 +332,17 @@ function buildChatGPTPrompt(issue, scanEvidence, template, tier, industry) {
   const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
   const subfactorName = SUBFACTOR_NAMES[issue.subfactor] || issue.subfactor;
 
+  // Build list of EXISTING schemas to explicitly exclude from recommendations
+  const existingSchemas = [];
+  if (scanEvidence.technical?.hasOrganizationSchema) existingSchemas.push('Organization');
+  if (scanEvidence.technical?.hasFAQSchema) existingSchemas.push('FAQPage');
+  if (scanEvidence.technical?.hasLocalBusinessSchema) existingSchemas.push('LocalBusiness');
+  if (scanEvidence.technical?.hasArticleSchema) existingSchemas.push('Article/BlogPosting');
+  if (scanEvidence.technical?.hasBreadcrumbSchema) existingSchemas.push('BreadcrumbList');
+  const existingSchemasText = existingSchemas.length > 0
+    ? `\n\n**EXISTING SCHEMAS (DO NOT RECOMMEND ADDING THESE):**\n✅ ${existingSchemas.join('\n✅ ')}\n- These schemas are ALREADY IMPLEMENTED on the site\n- DO NOT recommend adding these schemas again\n- Focus only on schemas that are MISSING`
+    : '';
+
   return `You are an AI Search Optimization expert generating PRESCRIPTIVE, ready-to-implement recommendations.
 
 **WEBSITE ANALYSIS**
@@ -332,7 +358,7 @@ ${siteShape}
 ${factsSection}
 
 **CURRENT STATE**
-${buildCurrentState(issue, scanEvidence)}
+${buildCurrentState(issue, scanEvidence)}${existingSchemasText}
 
 **SCORE BREAKDOWN**
 Current: ${issue.currentScore}/100
@@ -431,8 +457,9 @@ Then repeat for each product detected.
 
 Output ONLY the following sections in this exact order, each starting on its own line:
 
+[TITLE]
 [FINDING]
-[IMPACT BREAKDOWN]
+[IMPACT]
 [APPLY INSTRUCTIONS]
 [CODE]
 [QUICK WINS]
@@ -448,6 +475,281 @@ Rules:
 // -----------------------------------------
 // Programmatic recommendations (deterministic)
 // -----------------------------------------
+
+// Industry-specific FAQ libraries (rich, ready-to-use content)
+const FAQ_LIBRARIES = {
+  Agency: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "How do you measure and report on marketing ROI?",
+        pageAnswer: "We connect every initiative to outcomes like revenue, qualified pipeline, and CAC. You'll get transparent reports that show which channels drive results, plus a live dashboard so you always know what's working.",
+        schemaAnswer: "We connect marketing activity to outcomes like qualified pipeline, revenue influence, and CAC. Our approach uses multi-touch attribution where feasible and clear performance tracking across channels, with scheduled reports and a live dashboard."
+      },
+      {
+        q: "What makes your agency different from others?",
+        pageAnswer: "We're an AI-first, B2B marketing partner specialized in your industry vertical. Instead of generic tactics, we use answer-engine optimization and AI-readable content to help the right buyers find, understand, and trust you.",
+        schemaAnswer: "We are an AI-first, B2B-focused team specializing in answer-engine optimization (AEO) and AI-readable content so assistants can accurately match you to high-fit intent, not generic searches."
+      },
+      {
+        q: "How long until we see results?",
+        pageAnswer: "Quick wins (e.g., conversion improvements, qualified demos) typically appear within weeks; durable gains from programs like content/AEO build over a few months. We set expectations up front and report progress on a regular cadence.",
+        schemaAnswer: "Tactical improvements (e.g., conversion lifts) can appear within weeks; strategic programs like content/AEO typically show meaningful, compounding results over several months. We set milestones and report progress regularly."
+      },
+      {
+        q: "What does it cost to work with you?",
+        pageAnswer: "Investment depends on scope and goals. We share a clear proposal with deliverables and reporting so you can see value-for-spend and make decisions with confidence.",
+        schemaAnswer: "Investment varies by scope and goals. We share transparent proposals with deliverables, reporting, and success metrics so you can evaluate value-for-spend and expected outcomes."
+      },
+      {
+        q: "Do you require long-term contracts?",
+        pageAnswer: "We prefer flexible terms and aim to earn your renewal with results—not lock-ins. We set clear goals, deliverables, and review cadence so you always know where we stand.",
+        schemaAnswer: "We favor flexible terms and aim to earn ongoing partnership through results. Engagements include clear deliverables, communication cadence, and success metrics with reasonable cancellation notice."
+      }
+    ],
+    impact: "FAQs consistently surface in rich results and AI answers. Adding a focused set of agency FAQs improves entity clarity, reduces pre-sales friction, and qualifies leads earlier.",
+    quickWins: [
+      "Link the FAQ headings in-page (anchor links) and from your Help/Resources menu",
+      "Add the FAQ page to your sitemap and include it in your internal linking from Services and Pricing pages",
+      "Reuse these Q&As in your chatbot prompts and Answer Engine optimization"
+    ]
+  },
+  SaaS: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "How does pricing work?",
+        pageAnswer: "We offer flexible pricing based on your team size and feature needs. Start with our free plan to test core features, then upgrade to unlock advanced capabilities, integrations, and priority support.",
+        schemaAnswer: "Pricing is usage-based with free and paid tiers. Free plans include core features; paid plans unlock advanced capabilities, integrations, and priority support scaled to team size."
+      },
+      {
+        q: "What integrations do you support?",
+        pageAnswer: "We integrate with 50+ popular tools including Slack, Salesforce, HubSpot, Zapier, and major CRMs. Native API access lets you build custom integrations for your workflow.",
+        schemaAnswer: "We support 50+ native integrations including Slack, Salesforce, HubSpot, Zapier, and major CRMs, plus REST API for custom integrations."
+      },
+      {
+        q: "How secure is our data?",
+        pageAnswer: "Enterprise-grade security is standard: SOC 2 Type II certified, end-to-end encryption, role-based access controls, and regular third-party audits. Your data stays yours—we never train AI models on customer data.",
+        schemaAnswer: "We maintain SOC 2 Type II certification, end-to-end encryption, role-based access controls, and regular security audits. Customer data is never used for AI training."
+      },
+      {
+        q: "Can I try it before buying?",
+        pageAnswer: "Yes! Start with our 14-day free trial—no credit card required. You'll get full access to premium features so you can test everything with your real workflows before committing.",
+        schemaAnswer: "14-day free trial with full premium access, no credit card required. Test all features with your actual workflows before purchasing."
+      },
+      {
+        q: "What kind of support do you offer?",
+        pageAnswer: "All plans include email support and comprehensive documentation. Paid plans add live chat and priority response times. Enterprise customers get dedicated success managers and custom onboarding.",
+        schemaAnswer: "Support ranges from email and documentation (all plans) to live chat and priority response (paid plans) to dedicated success managers (enterprise)."
+      }
+    ],
+    impact: "FAQs help AI assistants and buyers quickly evaluate fit, reducing friction in the purchase journey and improving qualified demo requests.",
+    quickWins: [
+      "Add FAQ schema to pricing and product pages for rich snippet eligibility",
+      "Link FAQs from your chatbot and support widget for instant answers",
+      "Include FAQ content in your demo request flow to pre-qualify leads"
+    ]
+  },
+  General: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "What services or products do you offer?",
+        pageAnswer: "We provide solutions designed to solve specific customer challenges. Our offerings include core products/services, support resources, and ongoing updates to ensure you get maximum value.",
+        schemaAnswer: "We offer comprehensive solutions including core products/services, support resources, and continuous updates for maximum customer value."
+      },
+      {
+        q: "How do I get started?",
+        pageAnswer: "Getting started is simple: explore our offerings, choose what fits your needs, and follow the guided setup process. Our team is available to help with onboarding and answer questions.",
+        schemaAnswer: "Start by exploring offerings, selecting what fits your needs, and following guided setup. Onboarding support is available."
+      },
+      {
+        q: "What makes you different from competitors?",
+        pageAnswer: "We focus on delivering measurable results through proven methodologies, transparent communication, and customer-centric service. Our approach combines innovation with reliability.",
+        schemaAnswer: "We deliver measurable results through proven methodologies, transparent communication, and customer-centric service combining innovation with reliability."
+      },
+      {
+        q: "How long does implementation take?",
+        pageAnswer: "Typical implementations range from days to weeks depending on complexity. We provide clear timelines upfront and keep you informed throughout the process.",
+        schemaAnswer: "Implementation timelines range from days to weeks based on complexity, with clear milestones and regular progress updates."
+      },
+      {
+        q: "What support options are available?",
+        pageAnswer: "We offer multiple support channels including documentation, email support, and live assistance. Premium customers receive priority access and dedicated account management.",
+        schemaAnswer: "Support includes documentation, email, and live assistance, with premium customers receiving priority access and dedicated account management."
+      }
+    ],
+    impact: "FAQs help search engines and AI assistants extract clear answers about your offerings, improving discoverability and reducing barriers to engagement.",
+    quickWins: [
+      "Link FAQs from your main navigation and footer for easy access",
+      "Include FAQ schema in your homepage and key landing pages",
+      "Update FAQs quarterly based on actual customer questions from support tickets"
+    ]
+  }
+};
+
+function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
+  console.log('🎯 Starting FAQ recommendation generation...');
+  const domain = extractDomain(scanEvidence.url);
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Use provided industry or default to General
+  // Industry is passed from V5 analysis (detected from content/metadata)
+  const detectedIndustry = industry || 'General';
+  const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+  console.log(`📚 Using FAQ library for industry: ${detectedIndustry}`);
+
+  // Check if FAQ schema exists (but content might be missing)
+  const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
+  const faqCount = scanEvidence.content?.faqs?.length || 0;
+
+  // Build the finding based on what exists
+  let finding;
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists but no on-page FAQ content
+    finding = `Status: Incomplete
+
+FAQPage schema detected in JSON-LD, but no visible FAQ content found on ${domain}. Search engines and AI assistants need BOTH schema markup AND on-page Q&A pairs to surface your answers in rich results.
+
+Your schema exists but is disconnected from actual user-facing FAQ content.`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists but no schema
+    finding = `Status: Missing Schema
+
+${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Adding schema will help AI assistants extract and cite your answers in voice search and rich results.`;
+  } else {
+    // Neither exists
+    finding = `Status: Missing
+
+No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
+  }
+  const faqPageCopy = faqLib.questions.map((faq, idx) =>
+    `Q${idx + 1}. ${faq.q}\n${faq.pageAnswer}`
+  ).join('\n\n');
+
+  // Build JSON-LD schema
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqLib.questions.map(faq => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.schemaAnswer
+      }
+    }))
+  };
+
+  const schemaCode = `<script type="application/ld+json">\n${JSON.stringify(faqSchema, null, 2)}\n</script>`;
+
+  // Build the recommendation in the exact format requested
+  const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
+  const title = `${categoryName}: FAQ Section`;
+
+  // Impact is consistent regardless of scenario
+  const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
+
+${faqLib.impact}`;
+
+  // Action steps vary based on what exists
+  let actionSteps;
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists but content missing - focus on adding visible content
+    actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
+2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section below
+3. Paste the Q&A pairs into your page HTML so they're visible to users
+4. Update your existing FAQPage schema to match the new on-page content (or replace with the schema below)
+5. Validate in Google Rich Results Test to ensure schema matches visible content
+6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score"`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists but schema missing - just add schema
+    actionSteps = `1. Review your existing on-page FAQ content
+2. Copy the FAQ Schema JSON-LD from the "FAQ Schema" section below
+3. Customize the Q&A pairs in the schema to match your actual on-page FAQs
+4. Paste the JSON-LD into your page <head> (or via tag manager)
+5. Validate in Google Rich Results Test
+6. Re-scan in the AI Visibility Tool to confirm lift`;
+  } else {
+    // Neither exists - full implementation
+    actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
+2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section below
+3. Paste the Q&A pairs into your page HTML
+4. Copy the FAQ Schema JSON-LD and paste it into your page <head> (or via tag manager)
+5. Validate in Google Rich Results Test (search.google.com/test/rich-results)
+6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score" and "Entity Clarity"`;
+  }
+
+  // Implementation Notes as array (for structured display)
+  const implementationNotes = [
+    'Keep each answer concise (80-140 words on page; shorter in JSON-LD is fine)',
+    'Avoid unverifiable claims (e.g., exact % lifts) unless you have public proof',
+    'Update FAQ content quarterly based on actual customer questions from support tickets or sales calls',
+    'Ensure Q&A pairs are visible on the page (not hidden behind collapsed accordions that block crawlers)'
+  ];
+
+  // Validation Checklist as array (for interactive checkboxes)
+  const validationChecklist = [
+    'Google Rich Results Test: FAQ detected, no warnings',
+    'Page renders Q&A visibly (not hidden behind tabs that block crawl)',
+    'Re-scan in AI Visibility Tool: "FAQ Score" and "Entity Clarity" increase',
+    'FAQPage schema validates at schema.org/validator'
+  ];
+
+  // Build separate frontend and backend code
+  let customizedImplementation = '';
+  let readyToUseContent = '';
+  let frontendCode = '';
+  let backendCode = '';
+
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists, just need on-page content
+    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
+    readyToUseContent = faqPageCopy;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    backendCode = `**Note:** You already have FAQ schema. Update it to match the new on-page content above.`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists, just need schema
+    customizedImplementation = `### Your Customized FAQ Schema Implementation\n\nYou already have FAQ content on your page (${faqCount} question${faqCount > 1 ? 's' : ''} detected). Now you need to add structured data schema so AI systems like ChatGPT, Perplexity, and Google can understand and reference your FAQs.\n\n**What's Missing:** FAQPage schema in JSON-LD format\n\n**Impact:** Without schema, AI can see your FAQ text but can't reliably extract and cite specific Q&A pairs. Adding schema makes your expertise directly quotable by AI.`;
+    readyToUseContent = '**Note:** You already have FAQ content on your page. Just add the schema below to your page <head>.';
+    frontendCode = '<!-- Your existing FAQ content is good. No changes needed. -->';
+    backendCode = schemaCode;
+  } else {
+    // Need both - full implementation
+    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
+    readyToUseContent = faqPageCopy;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    backendCode = schemaCode;
+  }
+
+  // Combine frontend and backend for codeSnippet display
+  const codeSnippet = `## Frontend Implementation (Page Content)\n\n${frontendCode}\n\n---\n\n## Backend Implementation (FAQ Schema)\n\n${backendCode}`;
+
+  return {
+    id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
+    title: title,
+    category: issue.category,
+    subfactor: "faqScore",
+    priority: issue.severity || 'high',
+    priorityScore: issue.priority || 85,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps.split('\n').filter(s => s.trim()),
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,  // ✅ ADDED: Customized implementation for blue box
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: faqLib.quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-2 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(12, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: { faqDetected: false, industry: detectedIndustry },
+    generatedBy: 'programmatic_faq_library'
+  };
+}
 
 function makeProgrammaticStructuredDataRecommendation(issue, scanEvidence) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
@@ -683,47 +985,349 @@ function proposeQuestionHeadings(industryId, facts) {
   return pickUnique([...base, ...topicQs], 12);
 }
 
-function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence) {
+async function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry) {
+  console.log('🎯 Starting Question Headings recommendation generation...');
   const { profile, facts } = normalizeEvidence(scanEvidence);
-  const industryId = (scanEvidence?.industry_id || scanEvidence?.industry || '')
-    .toString().trim().toLowerCase();
   const domain = extractDomain(scanEvidence.url);
+  const pageUrl = scanEvidence.url || '';
 
-  const headings = proposeQuestionHeadings(industryId, facts);
-  if (!headings.length) return null;
+  // Extract page name from URL slug or SEO title
+  let pageTitle = '';
+  try {
+    const urlObj = new URL(pageUrl);
+    const pathParts = urlObj.pathname.split('/').filter(p => p.length > 0);
+    if (pathParts.length > 0) {
+      // Get the last meaningful part of the path (the slug)
+      const slug = pathParts[pathParts.length - 1];
+      // Convert slug to title case (e.g., "ai-marketing-services" → "AI Marketing Services")
+      pageTitle = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+  } catch (e) {
+    // Fallback to empty string if URL parsing fails
+  }
 
-  const htmlBlock =
-`<!-- Question-based headings block -->
-<section id="qa-topics" class="container">
-  <h2>Questions we answer</h2>
-${headings.map(h => `  <h3>${h}</h3>\n  <p><!-- Write an 80–200 word clear, scannable answer here. --></p>`).join('\n')}
-</section>`;
+  // If no slug, try metadata title, otherwise use generic label
+  if (!pageTitle) {
+    pageTitle = scanEvidence.metadata?.title || 'this page';
+  }
+
+  // Extract actual headings from the page
+  const allH2s = scanEvidence.content?.headings?.h2 || [];
+  const allH3s = scanEvidence.content?.headings?.h3 || [];
+  const allHeadings = [...allH2s, ...allH3s];
+
+  // Count question vs statement headings
+  const questionHeadings = allHeadings.filter(h => h.trim().endsWith('?'));
+  const statementHeadings = allHeadings.filter(h => !h.trim().endsWith('?'));
+  const questionPercent = allHeadings.length > 0
+    ? Math.round((questionHeadings.length / allHeadings.length) * 100)
+    : 0;
+
+  // Build Finding with actual examples from the page
+  const exampleStatementHeadings = statementHeadings.slice(0, 3);
+  const exampleQuestionHeadings = questionHeadings.slice(0, 2);
+
+  const findingParts = [];
+
+  if (questionHeadings.length > 0) {
+    findingParts.push(`Your ${pageTitle ? `"${pageTitle}" page` : 'page'} already includes ${questionHeadings.length} question-based heading${questionHeadings.length === 1 ? '' : 's'}:`);
+    findingParts.push('');
+    exampleQuestionHeadings.forEach(q => {
+      findingParts.push(`• "${q}"`);
+    });
+    findingParts.push('');
+    findingParts.push(`${questionHeadings.length > 2 ? 'These provide' : 'This provides'} a solid foundation for AI-readable, conversational content.`);
+  } else {
+    findingParts.push(`Your ${pageTitle ? `"${pageTitle}" page` : 'page'} currently uses ${statementHeadings.length} statement-based headings with no question-format H2/H3s.`);
+  }
+
+  findingParts.push('');
+
+  if (statementHeadings.length > 0) {
+    findingParts.push(`However, ${statementHeadings.length} important section${statementHeadings.length === 1 ? '' : 's'} still ${statementHeadings.length === 1 ? 'relies' : 'rely'} on statement-based headings rather than question-based H2/H3s:`);
+    findingParts.push('');
+    exampleStatementHeadings.forEach(s => {
+      findingParts.push(`• "${s}"`);
+    });
+    findingParts.push('');
+    findingParts.push(`As a result, your Direct Answer Structure sub-score remains partially optimized (${questionPercent}% question-format headings).`);
+  }
+
+  const finding = findingParts.join('\n');
+
+  // Calculate impact points
+  const potentialGainMin = Math.max(8, Math.round(issue.gap * 0.6));
+  const potentialGainMax = Math.max(12, Math.round(issue.gap * 0.9));
+
+  const impact = `Impact: High | +${potentialGainMin} to +${potentialGainMax} pts potential
+
+AI assistants prioritize pages that mirror how users ask questions. Shifting remaining static headings into natural-language questions will:
+• Strengthen your content's eligibility for AI citations and "People Also Ask" features
+• Raise your Direct Answer Structure and Entity Clarity metrics
+• Improve user scannability and dwell time by matching reading rhythm to question-and-answer flow`;
+
+  // Build action steps
+  const actionSteps = [
+    `1️⃣ Identify non-question headings on this page — ${exampleStatementHeadings.length > 0 ? `e.g., "${exampleStatementHeadings[0]}"` : 'review all H2/H3 headings'}`,
+    '2️⃣ Rewrite them as question-based H2/H3s that mirror how buyers would ask',
+    '3️⃣ Pair each question with a concise (50–150 word) answer written in conversational tone and active voice',
+    '4️⃣ Validate readability and AI parsing: target Flesch > 65 and average sentence < 20 words',
+    '5️⃣ Re-scan this page after publishing to confirm improvement in AI Search Readiness and Entity Clarity metrics'
+  ];
+
+  // Generate customized before/after examples for the top statement headings
+  const customizedSections = [];
+
+  const topHeadings = statementHeadings.slice(0, 3);
+  console.log(`📝 Processing ${topHeadings.length} headings with ChatGPT...`);
+
+  // Process all headings in parallel for better performance
+  const sectionPromises = topHeadings.map(async (heading, idx) => {
+    const questionVersion = await convertToQuestionHeading(heading, industry, facts);
+    const exampleAnswer = await generateExampleAnswer(heading, questionVersion, industry, facts);
+
+    return {
+      sectionNumber: idx + 1,
+      sectionTitle: heading,
+      before: `<h2>${heading}</h2>`,
+      after: `<h2>${questionVersion}</h2>`,
+      suggestedAnswer: exampleAnswer
+    };
+  });
+
+  // Wait for all conversions to complete
+  const sections = await Promise.all(sectionPromises);
+  customizedSections.push(...sections);
+
+  // Build customized implementation text
+  const customizedImplementation = buildCustomizedImplementationText(customizedSections, pageUrl);
+
+  // Build code snippet with before/after examples
+  const codeSnippet = buildQuestionHeadingsCodeSnippet(customizedSections);
+
+  // Implementation notes
+  const implementationNotes = [
+    'Keep each answer concise (80–150 words) and start with a direct response',
+    'Use conversational tone and active voice',
+    'Target Flesch readability score > 65',
+    'Ensure each H2/H3 question is followed immediately by answer content',
+    'Avoid overly technical jargon unless your audience demands it'
+  ];
+
+  // Quick wins
+  const quickWins = [
+    `Add 2–3 question-based H2/H3 headings in your main content sections`,
+    'Ensure each answer is 80–150 words and starts with a direct response',
+    `${questionHeadings.length === 0 ? 'Add FAQ schema for existing question content' : 'Expand your FAQ schema to include new questions'}`,
+    'Re-scan this page after publishing to measure lift in Direct Answer Structure (sub-factor 1a)'
+  ];
+
+  // Validation checklist
+  const validationChecklist = [
+    '≥ 70% of H2/H3 are question-formatted',
+    'Average answer length 80–150 words',
+    'Flesch readability score > 65',
+    'Each question immediately followed by answer content',
+    'No orphaned questions (every Q has an A)'
+  ];
 
   return {
     id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
-    title: "Add question-based H2/H3 headings across key sections",
+    title: "AI Search Readiness: Direct Answer Structure (Question-Based Headings Enhancement)",
     category: issue.category,
     subfactor: "questionHeadingsScore",
-    priority: issue.severity || 'medium',
-    priorityScore: issue.priority || 70,
-    finding: `Question-format headings (H2/H3 ending with “?”) are sparse or missing on ${domain}, limiting AI/voice snippet eligibility.`,
-    impact: "Aligns page copy with how users query AI/search, improves passage extraction and featured answers.",
-    actionSteps: [
-      "Open your homepage or main landing template (e.g., `index.html`).",
-      "Insert the block below near the end of the hero/intro or above the footer.",
-      "For each question, write an 80–200 word answer **on the page** directly under the <h3>.",
-      "Link answers to deeper docs/blog where useful; keep one idea per paragraph.",
-      "Re-scan and verify headings are detected (H2/H3 with a `?`)."
-    ],
-    codeSnippet: htmlBlock,
+    priority: issue.severity || 'high',
+    priorityScore: issue.priority || 85,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: null, // Not applicable for this subfactor
+    codeSnippet: codeSnippet,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
     estimatedTime: "45–90 minutes",
     difficulty: "Easy",
-    estimatedScoreGain: 10,
+    estimatedScoreGain: potentialGainMax,
     currentScore: issue.currentScore,
     targetScore: issue.threshold,
-    evidence: { sampleHeadings: headings.slice(0, 6), siteType: profile.site_type, domain },
-    generatedBy: 'programmatic'
+    evidence: {
+      totalHeadings: allHeadings.length,
+      questionHeadings: questionHeadings.length,
+      statementHeadings: statementHeadings.length,
+      questionPercent: questionPercent,
+      exampleStatements: exampleStatementHeadings,
+      exampleQuestions: exampleQuestionHeadings
+    },
+    generatedBy: 'programmatic_question_headings'
   };
+}
+
+// Helper: Convert statement heading to question format (ChatGPT-powered)
+async function convertToQuestionHeading(statement, industry, facts) {
+  const brandName = factValue(facts, 'brand') || 'your company';
+
+  // Fallback for when OpenAI is not available
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️ OPENAI_API_KEY not found - using fallback conversion');
+    const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
+    return `What is ${cleanedStatement}?`;
+  }
+
+  try {
+    console.log(`🤖 Converting heading with ChatGPT: "${statement}"`);
+    const prompt = `Convert this heading to a natural, conversational question that preserves the original meaning and intent.
+
+Heading: "${statement}"
+Brand: ${brandName}
+Industry: ${industry || 'general'}
+
+Rules:
+- Preserve the exact meaning and intent of the original heading
+- Make it sound natural (how a real person would ask)
+- Use conversational, engaging tone
+- Keep it under 15 words
+- Don't just add "What is" or "How does" - be creative and contextual
+- If it's already question-like, refine it naturally
+- Return ONLY the question, nothing else
+
+Example transformations:
+- "Stop Marketing Like It's 2019." → "Why should modern companies rethink their marketing strategies?"
+- "Our Services" → "What services do we offer?"
+- "About Our Team" → "Who's behind our work?"`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      temperature: 0.4,
+      max_tokens: 60,
+      messages: [
+        { role: 'system', content: 'You are an expert copywriter converting headings to natural questions. Be creative and preserve meaning.' },
+        { role: 'user', content: prompt }
+      ]
+    });
+
+    const question = response.choices[0].message.content.trim();
+    console.log(`✅ ChatGPT conversion successful: "${question}"`);
+    return question;
+  } catch (error) {
+    console.error('❌ Error converting heading to question:', error.message);
+    console.error('❌ Full error:', error);
+    // Fallback to simple conversion
+    const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
+    return `What is ${cleanedStatement}?`;
+  }
+}
+
+// Helper: Generate example answer for a heading (ChatGPT-powered)
+async function generateExampleAnswer(heading, questionVersion, industry, facts) {
+  const brandName = factValue(facts, 'brand') || 'Our company';
+  const location = factValue(facts, 'location') || '';
+  const services = factValue(facts, 'services') || '';
+
+  // Fallback for when OpenAI is not available
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️ OPENAI_API_KEY not found - using fallback answer');
+    return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
+  }
+
+  try {
+    console.log(`🤖 Generating answer with ChatGPT for: "${heading}"`);
+    const contextInfo = [];
+    if (location) contextInfo.push(`Location: ${location}`);
+    if (services) contextInfo.push(`Services: ${services}`);
+
+    const prompt = `Write a concise, direct answer to this question based on the heading context.
+
+Original Heading: "${heading}"
+Question Version: "${questionVersion}"
+Brand: ${brandName}
+Industry: ${industry || 'general'}
+${contextInfo.length > 0 ? contextInfo.join('\n') : ''}
+
+Requirements:
+- Write 80-150 words maximum
+- Start with a DIRECT answer (no fluff)
+- Use conversational, engaging tone
+- Use active voice and present tense
+- Include specific value or benefits when possible
+- Target Flesch readability > 65
+- Make it sound natural and helpful
+- Return ONLY the answer text, no extra formatting
+
+The answer should help AI understand what ${brandName} offers and why it matters.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      temperature: 0.5,
+      max_tokens: 200,
+      messages: [
+        { role: 'system', content: 'You are a professional copywriter creating clear, engaging answers for website content. Focus on being helpful and direct.' },
+        { role: 'user', content: prompt }
+      ]
+    });
+
+    const answer = response.choices[0].message.content.trim();
+    console.log(`✅ ChatGPT answer generation successful (${answer.length} chars)`);
+    return answer;
+  } catch (error) {
+    console.error('❌ Error generating example answer:', error.message);
+    console.error('❌ Full error:', error);
+    // Fallback to generic answer
+    return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
+  }
+}
+
+// Helper: Build customized implementation text
+function buildCustomizedImplementationText(sections, pageUrl) {
+  if (sections.length === 0) return 'No specific sections identified for conversion.';
+
+  const parts = [`## Customized Implementation for This Page\n`];
+  parts.push(`**Page:** ${pageUrl}\n`);
+
+  sections.forEach(section => {
+    parts.push(`\n### Section ${section.sectionNumber} — ${section.sectionTitle}\n`);
+    parts.push(`**Replace:**`);
+    parts.push(`\`\`\`html`);
+    parts.push(section.before);
+    parts.push(`\`\`\``);
+    parts.push(``);
+    parts.push(`**With:**`);
+    parts.push(`\`\`\`html`);
+    parts.push(section.after);
+    parts.push(`\`\`\``);
+    parts.push(``);
+    parts.push(`**Suggested Answer:**`);
+    parts.push(`<p>${section.suggestedAnswer}</p>`);
+  });
+
+  return parts.join('\n');
+}
+
+// Helper: Build code snippet with examples
+function buildQuestionHeadingsCodeSnippet(sections) {
+  if (sections.length === 0) {
+    return `<!-- No specific heading conversions identified -->`;
+  }
+
+  const parts = [];
+  parts.push(`<!-- Before/After Examples for Question-Based Headings -->\n`);
+
+  sections.forEach(section => {
+    parts.push(`<!-- Section ${section.sectionNumber}: ${section.sectionTitle} -->`);
+    parts.push(`<!-- BEFORE: -->`);
+    parts.push(`<!-- ${section.before} -->`);
+    parts.push(``);
+    parts.push(`<!-- AFTER: -->`);
+    parts.push(section.after);
+    parts.push(`<p>${section.suggestedAnswer}</p>`);
+    parts.push(``);
+  });
+
+  return parts.join('\n');
 }
 
 function makeProgrammaticOpenGraphRecommendation(issue, scanEvidence) {
@@ -830,8 +1434,20 @@ function buildSmartFinding(issue, scanEvidence) {
   if (subfactor === 'structuredDataScore') {
     const found = scanEvidence.technical?.structuredData?.length || 0;
     const types = found > 0 ? scanEvidence.technical.structuredData.map(s => s.type).join(', ') : '';
+
+    // Determine which schemas are ACTUALLY missing
+    const missing = [];
+    if (!scanEvidence.technical?.hasOrganizationSchema) missing.push('Organization');
+    if (!scanEvidence.technical?.hasFAQSchema) missing.push('FAQ');
+    if (!scanEvidence.technical?.hasLocalBusinessSchema) missing.push('LocalBusiness');
+    if (!scanEvidence.technical?.hasBreadcrumbSchema) missing.push('BreadcrumbList');
+    if (!scanEvidence.technical?.hasArticleSchema) missing.push('Article');
+
     if (!found) return `No Schema.org markup detected on ${domain}. Your ${wordCount} words of content are invisible to AI entity recognition.`;
-    return `Limited Schema.org on ${domain}: ${types}. Missing critical schemas (Organization, FAQ, BreadcrumbList) that AI assistants use for citations.`;
+    if (missing.length > 0) {
+      return `Limited Schema.org on ${domain}. Found: ${types}. Missing: ${missing.join(', ')}. Adding these will improve AI citation accuracy.`;
+    }
+    return `Schema.org detected on ${domain}: ${types}. Consider enhancing with more specific schema types for your content.`;
   }
 
   // FAQ
@@ -1357,10 +1973,19 @@ function buildCurrentState(issue, scanEvidence) {
   if (sub === 'structuredDataScore') {
     const found = tech.structuredData || [];
     const types = found.map(s => s.type).join(', ') || 'None';
+
+    // Determine which schemas are ACTUALLY missing
+    const missing = [];
+    if (!tech.hasOrganizationSchema) missing.push('Organization');
+    if (!tech.hasFAQSchema) missing.push('FAQ');
+    if (!tech.hasLocalBusinessSchema) missing.push('LocalBusiness');
+    if (!tech.hasBreadcrumbSchema) missing.push('BreadcrumbList');
+    if (!tech.hasArticleSchema) missing.push('Article/BlogPosting');
+
     if (!found.length) {
-      return `- No Schema.org detected\n- Missing: Organization, WebSite, WebPage (at minimum)\n- Page word count: ${content.wordCount || 0}`;
+      return `- No Schema.org detected\n- Missing: ${missing.join(', ')}\n- Page word count: ${content.wordCount || 0}`;
     }
-    return `- Found ${found.length} Schema.org block(s): ${types}\n- May be missing Organization/WebSite linking or stable @ids\n- Recommended additions: FAQ, BreadcrumbList`;
+    return `- Found ${found.length} Schema.org block(s): ${types}\n- Missing: ${missing.length > 0 ? missing.join(', ') : 'None - good coverage!'}\n- Page word count: ${content.wordCount || 0}`;
   }
 
   // FAQ
@@ -1498,18 +2123,37 @@ function determineNeededSchemas(issue, profile, scanEvidence) {
   const schemas = [];
   if (issue.subfactor === 'structuredDataScore') {
     const existing = (scanEvidence.technical?.structuredData || []).map(s => s.type);
-    if (!existing.includes('Organization')) {
-      schemas.push({ type: 'Organization', useData: 'brand, logo, sameAs' });
+    const hasOrganization = scanEvidence.technical?.hasOrganizationSchema || existing.includes('Organization');
+    const hasLocalBusiness = scanEvidence.technical?.hasLocalBusinessSchema || existing.includes('LocalBusiness');
+    const hasFAQ = scanEvidence.technical?.hasFAQSchema || existing.includes('FAQPage');
+    const hasArticle = scanEvidence.technical?.hasArticleSchema || existing.includes('Article') || existing.includes('BlogPosting');
+    const hasBreadcrumb = scanEvidence.technical?.hasBreadcrumbSchema || existing.includes('BreadcrumbList');
+
+    // Only recommend schemas that are MISSING
+    if (!hasOrganization) {
+      schemas.push({ type: 'Organization', useData: 'brand, logo, sameAs, address, contact' });
     }
     if (!existing.includes('WebSite')) {
       schemas.push({ type: 'WebSite', useData: 'url, name, publisher→Organization' });
     }
+    if (profile.site_type === 'local_business' && !hasLocalBusiness) {
+      schemas.push({ type: 'LocalBusiness', useData: 'address, phone, opening hours, geo coordinates' });
+    }
     if (profile.site_type === 'saas' && !existing.includes('SoftwareApplication')) {
       schemas.push({ type: 'SoftwareApplication', useData: 'name, description, offers (optional)' });
     }
+    if (!hasFAQ && profile.sections?.has_faq) {
+      schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    }
+    if (!hasBreadcrumb && profile.site_type !== 'simple_site') {
+      schemas.push({ type: 'BreadcrumbList', useData: 'navigation hierarchy' });
+    }
   }
   if (issue.subfactor === 'faqScore') {
-    schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    const hasFAQ = scanEvidence.technical?.hasFAQSchema;
+    if (!hasFAQ) {
+      schemas.push({ type: 'FAQPage', useData: 'on-page Q/A pairs' });
+    }
   }
   return schemas;
 }

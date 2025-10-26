@@ -11,7 +11,8 @@ class ContentExtractor {
   constructor(url, options = {}) {
     this.url = url;
     this.timeout = options.timeout || 10000;
-    this.userAgent = options.userAgent || 'Mozilla/5.0 (compatible; AIVisibilityBot/1.0)';
+    // Use Googlebot user-agent to ensure WordPress serves full HTML with schema markup
+    this.userAgent = options.userAgent || 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
     this.maxContentLength = options.maxContentLength || 5000000; // 5MB
   }
 
@@ -28,10 +29,10 @@ const $ = cheerio.load(html);
         url: this.url,
         html: html, // Store HTML for analysis
         metadata: this.extractMetadata($),
+        technical: this.extractTechnical($, html), // MUST run BEFORE extractContent removes <script> tags!
         content: this.extractContent($),
         structure: this.extractStructure($),
         media: this.extractMedia($),
-        technical: this.extractTechnical($, html),
         performance: await this.checkPerformance(),
         accessibility: this.extractAccessibility($),
         timestamp: new Date().toISOString()
@@ -61,7 +62,42 @@ const $ = cheerio.load(html);
       });
 
       const responseTime = Date.now() - startTime;
-      
+
+      // Debug: Log first 3000 chars of HTML to see what we're getting
+      const htmlPreview = response.data.substring(0, 3000);
+      console.log('[ContentExtractor] HTML preview (first 3000 chars):');
+      console.log(htmlPreview);
+      console.log('[ContentExtractor] ... (HTML continues)');
+
+      // Debug: Check if schema exists ANYWHERE in the full HTML
+      const fullHtmlLength = response.data.length;
+      const hasJsonLd = response.data.includes('application/ld+json');
+      const jsonLdMatches = response.data.match(/application\/ld\+json/g);
+      const jsonLdCount = jsonLdMatches ? jsonLdMatches.length : 0;
+      console.log(`[ContentExtractor] Full HTML analysis:`);
+      console.log(`  - Total HTML length: ${fullHtmlLength} characters`);
+      console.log(`  - Contains 'application/ld+json': ${hasJsonLd}`);
+      console.log(`  - Count of 'application/ld+json' occurrences: ${jsonLdCount}`);
+
+      // Debug: Show actual HTML context around each schema occurrence
+      if (jsonLdCount > 0) {
+        console.log(`\n[ContentExtractor] Extracting HTML context for each schema tag:`);
+        let searchPos = 0;
+        for (let i = 0; i < jsonLdCount; i++) {
+          const foundPos = response.data.indexOf('application/ld+json', searchPos);
+          if (foundPos !== -1) {
+            // Extract 500 chars before and after to see the actual HTML structure
+            const contextStart = Math.max(0, foundPos - 500);
+            const contextEnd = Math.min(response.data.length, foundPos + 1000);
+            const context = response.data.substring(contextStart, contextEnd);
+            console.log(`\n--- Schema #${i + 1} Context (position ${foundPos}) ---`);
+            console.log(context);
+            console.log(`--- End Schema #${i + 1} ---\n`);
+            searchPos = foundPos + 1;
+          }
+        }
+      }
+
       return {
         html: response.data,
         responseTime,
@@ -296,18 +332,30 @@ const $ = cheerio.load(html);
     
     // Structured data detection (JSON-LD)
     const structuredData = [];
-    $('script[type="application/ld+json"]').each((idx, el) => {
+    const jsonLdScripts = $('script[type="application/ld+json"]');
+    console.log(`[ContentExtractor] Found ${jsonLdScripts.length} JSON-LD script tags`);
+
+    jsonLdScripts.each((idx, el) => {
       try {
-        const data = JSON.parse($(el).html());
+        const scriptContent = $(el).html();
+        console.log(`[ContentExtractor] Parsing JSON-LD #${idx + 1}, length: ${scriptContent?.length || 0} chars`);
+        const data = JSON.parse(scriptContent);
+        const schemaType = data['@type'] || 'Unknown';
+        console.log(`[ContentExtractor] Successfully parsed: ${schemaType}`);
         structuredData.push({
-          type: data['@type'] || 'Unknown',
+          type: schemaType,
           context: data['@context'] || '',
           raw: data
         });
       } catch (e) {
-        // Invalid JSON-LD
+        console.log(`[ContentExtractor] Failed to parse JSON-LD #${idx + 1}:`, e.message);
       }
     });
+
+    console.log(`[ContentExtractor] Total structured data found: ${structuredData.length}`);
+    console.log(`[ContentExtractor] Has Organization: ${structuredData.some(sd => sd.type === 'Organization')}`);
+    console.log(`[ContentExtractor] Has FAQPage: ${structuredData.some(sd => sd.type === 'FAQPage')}`);
+    console.log(`[ContentExtractor] Has LocalBusiness: ${structuredData.some(sd => sd.type === 'LocalBusiness')}`);
 
     return {
       // Structured Data
