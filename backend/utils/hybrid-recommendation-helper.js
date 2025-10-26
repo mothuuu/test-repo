@@ -124,8 +124,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         scan_id, category, recommendation_text, priority,
         estimated_impact, estimated_effort, action_steps, findings, code_snippet,
         unlock_state, batch_number, unlocked_at,
-        recommendation_type, page_url, skip_enabled_at, impact_description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        recommendation_type, page_url, skip_enabled_at, impact_description,
+        customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
       [
         scanId,
         rec.category || 'General',
@@ -142,7 +143,12 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         'site-wide',
         null, // No specific page URL
         skipEnabledAt,
-        rec.impact || null  // Add impact description
+        rec.impact || null,  // Add impact description
+        rec.customizedImplementation || null,  // NEW: Customized before/after
+        rec.readyToUseContent || null,  // NEW: Ready-to-use content
+        rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
+        rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
+        rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
       ]
     );
   }
@@ -164,8 +170,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           scan_id, category, recommendation_text, priority,
           estimated_impact, estimated_effort, action_steps, findings, code_snippet,
           unlock_state, batch_number, unlocked_at,
-          recommendation_type, page_url, page_priority, impact_description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+          recommendation_type, page_url, page_priority, impact_description,
+          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         [
           scanId,
           rec.category || 'General',
@@ -182,7 +189,12 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           'page-specific',
           page.url,
           page.priority || 1,
-          rec.impact || null  // Add impact description
+          rec.impact || null,  // Add impact description
+          rec.customizedImplementation || null,  // NEW: Customized before/after
+          rec.readyToUseContent || null,  // NEW: Ready-to-use content
+          rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
+          rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
+          rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
         ]
       );
       pageSpecificTotal++;

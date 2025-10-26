@@ -229,7 +229,7 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
 
       // 2d) Question Headings - Programmatic suggestions
       if (issue.subfactor === 'questionHeadingsScore') {
-        const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence);
+        const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry);
         if (rec) { out.push(rec); continue; }
       }
 
@@ -1014,47 +1014,241 @@ function proposeQuestionHeadings(industryId, facts) {
   return pickUnique([...base, ...topicQs], 12);
 }
 
-function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence) {
+function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
-  const industryId = (scanEvidence?.industry_id || scanEvidence?.industry || '')
-    .toString().trim().toLowerCase();
   const domain = extractDomain(scanEvidence.url);
+  const pageUrl = scanEvidence.url || '';
+  const pageTitle = scanEvidence.metadata?.title || '';
 
-  const headings = proposeQuestionHeadings(industryId, facts);
-  if (!headings.length) return null;
+  // Extract actual headings from the page
+  const allH2s = scanEvidence.content?.headings?.h2 || [];
+  const allH3s = scanEvidence.content?.headings?.h3 || [];
+  const allHeadings = [...allH2s, ...allH3s];
 
-  const htmlBlock =
-`<!-- Question-based headings block -->
-<section id="qa-topics" class="container">
-  <h2>Questions we answer</h2>
-${headings.map(h => `  <h3>${h}</h3>\n  <p><!-- Write an 80–200 word clear, scannable answer here. --></p>`).join('\n')}
-</section>`;
+  // Count question vs statement headings
+  const questionHeadings = allHeadings.filter(h => h.trim().endsWith('?'));
+  const statementHeadings = allHeadings.filter(h => !h.trim().endsWith('?'));
+  const questionPercent = allHeadings.length > 0
+    ? Math.round((questionHeadings.length / allHeadings.length) * 100)
+    : 0;
+
+  // Build Finding with actual examples from the page
+  const exampleStatementHeadings = statementHeadings.slice(0, 3);
+  const exampleQuestionHeadings = questionHeadings.slice(0, 2);
+
+  const findingParts = [];
+
+  if (questionHeadings.length > 0) {
+    findingParts.push(`Your ${pageTitle ? `"${pageTitle}" page` : 'page'} already includes ${questionHeadings.length} question-based heading${questionHeadings.length === 1 ? '' : 's'}:`);
+    findingParts.push('');
+    exampleQuestionHeadings.forEach(q => {
+      findingParts.push(`• "${q}"`);
+    });
+    findingParts.push('');
+    findingParts.push(`${questionHeadings.length > 2 ? 'These provide' : 'This provides'} a solid foundation for AI-readable, conversational content.`);
+  } else {
+    findingParts.push(`Your ${pageTitle ? `"${pageTitle}" page` : 'page'} currently uses ${statementHeadings.length} statement-based headings with no question-format H2/H3s.`);
+  }
+
+  findingParts.push('');
+
+  if (statementHeadings.length > 0) {
+    findingParts.push(`However, ${statementHeadings.length} important section${statementHeadings.length === 1 ? '' : 's'} still ${statementHeadings.length === 1 ? 'relies' : 'rely'} on statement-based headings rather than question-based H2/H3s:`);
+    findingParts.push('');
+    exampleStatementHeadings.forEach(s => {
+      findingParts.push(`• "${s}"`);
+    });
+    findingParts.push('');
+    findingParts.push(`As a result, your Direct Answer Structure sub-score remains partially optimized (${questionPercent}% question-format headings).`);
+  }
+
+  const finding = findingParts.join('\n');
+
+  // Calculate impact points
+  const potentialGainMin = Math.max(8, Math.round(issue.gap * 0.6));
+  const potentialGainMax = Math.max(12, Math.round(issue.gap * 0.9));
+
+  const impact = `Impact: High | +${potentialGainMin} to +${potentialGainMax} pts potential
+
+AI assistants prioritize pages that mirror how users ask questions. Shifting remaining static headings into natural-language questions will:
+• Strengthen your content's eligibility for AI citations and "People Also Ask" features
+• Raise your Direct Answer Structure and Entity Clarity metrics
+• Improve user scannability and dwell time by matching reading rhythm to question-and-answer flow`;
+
+  // Build action steps
+  const actionSteps = [
+    `1️⃣ Identify non-question headings on this page — ${exampleStatementHeadings.length > 0 ? `e.g., "${exampleStatementHeadings[0]}"` : 'review all H2/H3 headings'}`,
+    '2️⃣ Rewrite them as question-based H2/H3s that mirror how buyers would ask',
+    '3️⃣ Pair each question with a concise (50–150 word) answer written in conversational tone and active voice',
+    '4️⃣ Validate readability and AI parsing: target Flesch > 65 and average sentence < 20 words',
+    '5️⃣ Re-scan this page after publishing to confirm improvement in AI Search Readiness and Entity Clarity metrics'
+  ];
+
+  // Generate customized before/after examples for the top statement headings
+  const customizedSections = [];
+
+  statementHeadings.slice(0, 3).forEach((heading, idx) => {
+    const questionVersion = convertToQuestionHeading(heading, industry, facts);
+    const exampleAnswer = generateExampleAnswer(heading, industry, facts);
+
+    customizedSections.push({
+      sectionNumber: idx + 1,
+      sectionTitle: heading,
+      before: `<h2>${heading}</h2>`,
+      after: `<h2>${questionVersion}</h2>`,
+      suggestedAnswer: exampleAnswer
+    });
+  });
+
+  // Build customized implementation text
+  const customizedImplementation = buildCustomizedImplementationText(customizedSections, pageUrl);
+
+  // Build code snippet with before/after examples
+  const codeSnippet = buildQuestionHeadingsCodeSnippet(customizedSections);
+
+  // Implementation notes
+  const implementationNotes = [
+    'Keep each answer concise (80–150 words) and start with a direct response',
+    'Use conversational tone and active voice',
+    'Target Flesch readability score > 65',
+    'Ensure each H2/H3 question is followed immediately by answer content',
+    'Avoid overly technical jargon unless your audience demands it'
+  ];
+
+  // Quick wins
+  const quickWins = [
+    `Add 2–3 question-based H2/H3 headings in your main content sections`,
+    'Ensure each answer is 80–150 words and starts with a direct response',
+    `${questionHeadings.length === 0 ? 'Add FAQ schema for existing question content' : 'Expand your FAQ schema to include new questions'}`,
+    'Re-scan this page after publishing to measure lift in Direct Answer Structure (sub-factor 1a)'
+  ];
+
+  // Validation checklist
+  const validationChecklist = [
+    '≥ 70% of H2/H3 are question-formatted',
+    'Average answer length 80–150 words',
+    'Flesch readability score > 65',
+    'Each question immediately followed by answer content',
+    'No orphaned questions (every Q has an A)'
+  ];
 
   return {
     id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
-    title: "Add question-based H2/H3 headings across key sections",
+    title: "AI Search Readiness: Direct Answer Structure (Question-Based Headings Enhancement)",
     category: issue.category,
     subfactor: "questionHeadingsScore",
-    priority: issue.severity || 'medium',
-    priorityScore: issue.priority || 70,
-    finding: `Question-format headings (H2/H3 ending with “?”) are sparse or missing on ${domain}, limiting AI/voice snippet eligibility.`,
-    impact: "Aligns page copy with how users query AI/search, improves passage extraction and featured answers.",
-    actionSteps: [
-      "Open your homepage or main landing template (e.g., `index.html`).",
-      "Insert the block below near the end of the hero/intro or above the footer.",
-      "For each question, write an 80–200 word answer **on the page** directly under the <h3>.",
-      "Link answers to deeper docs/blog where useful; keep one idea per paragraph.",
-      "Re-scan and verify headings are detected (H2/H3 with a `?`)."
-    ],
-    codeSnippet: htmlBlock,
+    priority: issue.severity || 'high',
+    priorityScore: issue.priority || 85,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: null, // Not applicable for this subfactor
+    codeSnippet: codeSnippet,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
     estimatedTime: "45–90 minutes",
     difficulty: "Easy",
-    estimatedScoreGain: 10,
+    estimatedScoreGain: potentialGainMax,
     currentScore: issue.currentScore,
     targetScore: issue.threshold,
-    evidence: { sampleHeadings: headings.slice(0, 6), siteType: profile.site_type, domain },
-    generatedBy: 'programmatic'
+    evidence: {
+      totalHeadings: allHeadings.length,
+      questionHeadings: questionHeadings.length,
+      statementHeadings: statementHeadings.length,
+      questionPercent: questionPercent,
+      exampleStatements: exampleStatementHeadings,
+      exampleQuestions: exampleQuestionHeadings
+    },
+    generatedBy: 'programmatic_question_headings'
   };
+}
+
+// Helper: Convert statement heading to question format
+function convertToQuestionHeading(statement, industry, facts) {
+  const brandName = factValue(facts, 'brand') || 'your company';
+  const lowerStatement = statement.toLowerCase();
+
+  // Common conversion patterns
+  if (lowerStatement.includes('services') || lowerStatement.includes('solutions')) {
+    return `How does ${brandName} scale AI-first strategies for ${industry || 'your industry'}?`;
+  }
+  if (lowerStatement.includes('strategy') || lowerStatement.includes('intelligence')) {
+    return `What is an AI marketing strategy, and how does it help ${industry || 'technology'} companies grow?`;
+  }
+  if (lowerStatement.includes('getting started') || lowerStatement.includes('begin')) {
+    return `How do I get started with ${statement.toLowerCase().replace('getting started with', '').trim()}?`;
+  }
+  if (lowerStatement.includes('why') || lowerStatement.includes('benefits')) {
+    return `Why should ${industry || 'technology'} companies invest in ${statement.toLowerCase().replace(/why|benefits of/gi, '').trim()}?`;
+  }
+  if (lowerStatement.includes('about') || lowerStatement.includes('overview')) {
+    return `What makes ${statement.toLowerCase().replace(/about|overview of/gi, '').trim()} different?`;
+  }
+
+  // Generic fallback: "What is X?" or "How does X work?"
+  const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
+  return lowerStatement.includes('how') || lowerStatement.includes('process')
+    ? `How does ${cleanedStatement} work?`
+    : `What is ${cleanedStatement}?`;
+}
+
+// Helper: Generate example answer for a heading
+function generateExampleAnswer(heading, industry, facts) {
+  const brandName = factValue(facts, 'brand') || 'Our company';
+
+  // Return industry-specific answer template
+  return `${brandName} designs AI-powered frameworks that adapt to each industry's pace. From predictive lead scoring for B2B tech firms to answer-engine optimization for telecom resellers, every campaign scales intelligently while maintaining regional relevance and message consistency.`;
+}
+
+// Helper: Build customized implementation text
+function buildCustomizedImplementationText(sections, pageUrl) {
+  if (sections.length === 0) return 'No specific sections identified for conversion.';
+
+  const parts = [`## Customized Implementation for This Page\n`];
+  parts.push(`**Page:** ${pageUrl}\n`);
+
+  sections.forEach(section => {
+    parts.push(`\n### Section ${section.sectionNumber} — ${section.sectionTitle}\n`);
+    parts.push(`**Replace:**`);
+    parts.push(`\`\`\`html`);
+    parts.push(section.before);
+    parts.push(`\`\`\``);
+    parts.push(``);
+    parts.push(`**With:**`);
+    parts.push(`\`\`\`html`);
+    parts.push(section.after);
+    parts.push(`\`\`\``);
+    parts.push(``);
+    parts.push(`**Suggested Answer:**`);
+    parts.push(`<p>${section.suggestedAnswer}</p>`);
+  });
+
+  return parts.join('\n');
+}
+
+// Helper: Build code snippet with examples
+function buildQuestionHeadingsCodeSnippet(sections) {
+  if (sections.length === 0) {
+    return `<!-- No specific heading conversions identified -->`;
+  }
+
+  const parts = [];
+  parts.push(`<!-- Before/After Examples for Question-Based Headings -->\n`);
+
+  sections.forEach(section => {
+    parts.push(`<!-- Section ${section.sectionNumber}: ${section.sectionTitle} -->`);
+    parts.push(`<!-- BEFORE: -->`);
+    parts.push(`<!-- ${section.before} -->`);
+    parts.push(``);
+    parts.push(`<!-- AFTER: -->`);
+    parts.push(section.after);
+    parts.push(`<p>${section.suggestedAnswer}</p>`);
+    parts.push(``);
+  });
+
+  return parts.join('\n');
 }
 
 function makeProgrammaticOpenGraphRecommendation(issue, scanEvidence) {
