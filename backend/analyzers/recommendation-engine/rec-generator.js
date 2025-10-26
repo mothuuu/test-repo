@@ -233,7 +233,51 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         }
       }
 
-      // 2b) Structured Data - Deterministic JSON-LD
+      // 2b) Alt Text - Image accessibility
+      if (issue.subfactor === 'altTextScore') {
+        console.log(`✅ Detected altTextScore issue - calling programmatic alt text generator`);
+        const rec = makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Alt text recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2c) Scannability - Content formatting
+      if (issue.subfactor === 'scannabilityScore') {
+        console.log(`✅ Detected scannabilityScore issue - calling programmatic scannability generator`);
+        const rec = makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Scannability recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2d) Captions/Transcripts - Video accessibility
+      if (issue.subfactor === 'captionsTranscriptsScore') {
+        console.log(`✅ Detected captionsTranscriptsScore issue - calling programmatic transcripts generator`);
+        const rec = makeProgrammaticCaptionsTranscriptsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Transcripts recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2e) IndexNow - Instant indexing
+      if (issue.subfactor === 'indexNowScore') {
+        console.log(`✅ Detected indexNowScore issue - calling programmatic IndexNow generator`);
+        const rec = makeProgrammaticIndexNowRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ IndexNow recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2f) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
@@ -763,6 +807,864 @@ ${faqLib.impact}`;
     targetScore: issue.threshold,
     evidence: { faqDetected: false, industry: detectedIndustry },
     generatedBy: 'programmatic_faq_library'
+  };
+}
+
+// ========================================
+// ALT TEXT GENERATOR
+// ========================================
+
+function makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+
+  // Extract image data
+  const images = scanEvidence.content?.images || [];
+  const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
+  const imagesWithAlt = images.filter(img => img.alt && img.alt.trim() !== '');
+
+  const totalImages = images.length;
+  const missingAltCount = imagesWithoutAlt.length;
+  const altCoverage = totalImages > 0 ? Math.round((imagesWithAlt.length / totalImages) * 100) : 0;
+
+  // Build Finding
+  const finding = `Status: ${missingAltCount === 0 ? 'Good' : 'Needs Improvement'}
+
+Your page contains ${totalImages} image${totalImages === 1 ? '' : 's'}:
+• ${imagesWithAlt.length} image${imagesWithAlt.length === 1 ? '' : 's'} with alt text (${altCoverage}% coverage)
+• ${missingAltCount} image${missingAltCount === 1 ? '' : 's'} missing alt text
+
+${missingAltCount > 0 ? `Images without alt text cannot be understood by AI assistants, screen readers, or search engines. This reduces your content's accessibility and discoverability.` : `Great job! All your images have alt text. Make sure the descriptions are meaningful and descriptive.`}`;
+
+  // Build Impact
+  const impact = `Impact: ${missingAltCount > 5 ? 'High' : missingAltCount > 0 ? 'Medium' : 'Low'} | +${Math.max(5, Math.round(issue.gap * 0.7))} to +${Math.max(10, Math.round(issue.gap))} pts potential
+
+Alt text serves three critical purposes:
+• **AI Understanding:** ChatGPT, Perplexity, and other AI assistants can reference your images in answers
+• **Accessibility:** Screen readers can describe images to visually impaired users
+• **SEO:** Search engines index alt text for image search results
+
+Missing alt text means AI systems skip your visual content entirely, reducing citation opportunities.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Audit all ${totalImages} images on this page to identify those missing alt text`,
+    `Write descriptive alt text for each image (8-15 words recommended)`,
+    `Include relevant keywords naturally - describe what's actually in the image`,
+    `For decorative images (borders, spacers), use empty alt="" to indicate they're decorative`,
+    `Validate implementation using an accessibility checker (WAVE, axe DevTools)`,
+    `Re-scan this page to confirm alt text coverage reaches 100%`
+  ];
+
+  // Customized Implementation - Show actual images that need alt text
+  let customizedImplementation = '';
+  if (missingAltCount > 0) {
+    const exampleImages = imagesWithoutAlt.slice(0, 3);
+    customizedImplementation = `### Your Images That Need Alt Text\n\nWe detected ${missingAltCount} image${missingAltCount === 1 ? '' : 's'} without alt text. Here are ${Math.min(3, missingAltCount)} that need attention:\n\n`;
+
+    exampleImages.forEach((img, idx) => {
+      const fileName = img.src ? img.src.split('/').pop() : 'unknown';
+      const suggestedAlt = generateAltTextSuggestion(fileName, detectedIndustry);
+      customizedImplementation += `**Image ${idx + 1}:** \`${fileName}\`\n`;
+      customizedImplementation += `- **Current:** No alt text\n`;
+      customizedImplementation += `- **Suggested:** "${suggestedAlt}"\n`;
+      customizedImplementation += `- **Code:** \`<img src="${img.src}" alt="${suggestedAlt}">\`\n\n`;
+    });
+
+    if (missingAltCount > 3) {
+      customizedImplementation += `*...and ${missingAltCount - 3} more image${missingAltCount - 3 === 1 ? '' : 's'} need${missingAltCount - 3 === 1 ? 's' : ''} alt text.*\n\n`;
+    }
+
+    customizedImplementation += `**Why These Matter:**\n- AI assistants can now reference your visual content in answers\n- Screen readers can describe images to visually impaired visitors\n- Google Images can index and rank these images for relevant searches`;
+  } else {
+    customizedImplementation = `### Excellent Alt Text Coverage!\n\nAll ${totalImages} images on your page have alt text. To maximize AI visibility:\n\n1. **Review quality:** Make sure alt text is descriptive, not just "image" or "photo"\n2. **Include context:** Describe what's happening in the image and why it matters\n3. **Natural keywords:** Include relevant terms naturally without keyword stuffing\n\n**Example of good vs. poor alt text:**\n- ❌ Poor: "team photo"\n- ✅ Good: "AI startup team collaborating on product roadmap in modern office"\n\nWell-written alt text helps AI assistants cite your content with visual context.`;
+  }
+
+  // Ready-to-use content - HTML template
+  const readyToUseContent = missingAltCount > 0 ? `Copy-paste this HTML template for adding alt text to your images:
+
+\`\`\`html
+<!-- Before: Missing alt text -->
+<img src="/images/hero.jpg">
+
+<!-- After: With descriptive alt text -->
+<img src="/images/hero.jpg" alt="${generateAltTextSuggestion('hero', detectedIndustry)}">
+\`\`\`
+
+**Alt Text Formula:** [What's in the image] + [Context/Purpose] + [Relevant keyword if natural]
+
+Example: "Marketing team reviewing analytics dashboard on laptop"` : null;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Keep alt text between 8-15 words - descriptive but concise',
+    'Avoid starting with "image of" or "picture of" - it\'s implied',
+    'For complex images (charts, diagrams), provide detailed descriptions or link to full text alternative',
+    'Decorative images should have empty alt="" to indicate they add no informational value',
+    'Use your industry terminology naturally - helps with topical relevance'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Add alt text to your logo: "' + (facts.brand || 'Your Company') + ' logo"',
+    'Add alt text to hero/banner image first - most visible to visitors',
+    'Update team photos with names and roles when appropriate',
+    'For product images, include product name and key feature'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Run WAVE accessibility checker - no alt text errors',
+    'Test with screen reader (NVDA, JAWS, or VoiceOver) - images described correctly',
+    'Google Lighthouse accessibility score improved',
+    'Re-scan in AI Visibility Tool - altTextScore increases',
+    'All images have meaningful alt text (not "image1.jpg" or generic descriptions)'
+  ];
+
+  // Code Snippet
+  const codeSnippet = missingAltCount > 0 ? `## Adding Alt Text to Images
+
+### Step 1: Locate Images Without Alt Text
+
+Use browser DevTools or view page source to find \`<img>\` tags missing alt attributes.
+
+### Step 2: Add Descriptive Alt Text
+
+\`\`\`html
+<!-- Generic example -->
+<img src="/images/product-demo.jpg"
+     alt="${generateAltTextSuggestion('product-demo', detectedIndustry)}">
+
+<!-- Logo -->
+<img src="/images/logo.png"
+     alt="${facts.brand || 'Company'} logo">
+
+<!-- Team photo -->
+<img src="/images/team.jpg"
+     alt="Marketing team collaborating in ${detectedIndustry} strategy session">
+
+<!-- Decorative image (no informational value) -->
+<img src="/images/decorative-border.svg"
+     alt=""
+     role="presentation">
+\`\`\`
+
+### Step 3: Validate
+
+Test with a screen reader or use WAVE browser extension to verify alt text is present and meaningful.` : `## Maintaining Good Alt Text
+
+Your images already have alt text! Here's how to keep it high-quality:
+
+\`\`\`html
+<!-- Good alt text example -->
+<img src="/images/case-study.jpg"
+     alt="AI startup dashboard showing 40% increase in user engagement">
+
+<!-- Poor alt text example - too generic -->
+<img src="/images/case-study.jpg"
+     alt="screenshot">
+\`\`\`
+
+**Quality Checklist:**
+✓ Describes what's actually in the image
+✓ Provides context about why it matters
+✓ Uses natural language (not keyword stuffing)
+✓ Concise but informative (8-15 words ideal)
+\`\`\``;
+
+  return {
+    id: `rec_${issue.category}_altText_${Date.now()}`,
+    title: 'AI Readability: Image Alt Text',
+    category: issue.category,
+    subfactor: 'altTextScore',
+    priority: missingAltCount > 5 ? 'high' : missingAltCount > 0 ? 'medium' : 'low',
+    priorityScore: issue.priority || 70,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: missingAltCount > 10 ? "2-3 hours" : missingAltCount > 0 ? "1-2 hours" : "30 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(5, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      totalImages: totalImages,
+      missingAlt: missingAltCount,
+      altCoverage: altCoverage
+    },
+    generatedBy: 'programmatic_alt_text'
+  };
+}
+
+// Helper: Generate alt text suggestions based on filename and industry
+function generateAltTextSuggestion(filename, industry) {
+  const name = filename.replace(/\.(jpg|jpeg|png|gif|svg|webp)$/i, '').replace(/[-_]/g, ' ');
+
+  // Common patterns
+  if (/logo/i.test(name)) return `${industry} company logo`;
+  if (/hero|banner/i.test(name)) return `${industry} professional services hero image`;
+  if (/team|people|staff/i.test(name)) return `${industry} team members collaborating`;
+  if (/product|demo|screenshot/i.test(name)) return `${industry} product demonstration screenshot`;
+  if (/office|workspace/i.test(name)) return `Modern ${industry} office workspace`;
+
+  // Generic fallback
+  return `${name} - ${industry} visual content`;
+}
+
+// ========================================
+// SCANNABILITY GENERATOR
+// ========================================
+
+function makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Extract scannability metrics
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const headings = {
+    h1: scanEvidence.content?.headings?.h1 || [],
+    h2: scanEvidence.content?.headings?.h2 || [],
+    h3: scanEvidence.content?.headings?.h3 || [],
+  };
+
+  const totalHeadings = headings.h1.length + headings.h2.length + headings.h3.length;
+  const avgWordsPerHeading = totalHeadings > 0 ? Math.round(wordCount / totalHeadings) : wordCount;
+
+  // Find long paragraphs (>150 words)
+  const longParagraphs = paragraphs.filter(p => p.length > 150);
+
+  // Detect lists/bullets
+  const hasBullets = /<ul|<ol|<li/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${avgWordsPerHeading > 300 ? 'Needs Improvement' : avgWordsPerHeading > 200 ? 'Fair' : 'Good'}
+
+**Page Structure:**
+• Total word count: ${wordCount}
+• Headings: ${totalHeadings} (${headings.h2.length} H2s, ${headings.h3.length} H3s)
+• Average words per section: ${avgWordsPerHeading}
+• Long paragraphs (>150 words): ${longParagraphs.length}
+• Bullet points/lists: ${hasBullets ? 'Detected' : 'Not detected'}
+
+${avgWordsPerHeading > 300 ? `Your content has large sections without headings. AI assistants prefer content broken into clear, scannable sections with descriptive headings every 150-250 words.` : `Your content structure is reasonable, but optimizing scannability will improve AI comprehension and user engagement.`}`;
+
+  // Build Impact
+  const impact = `Impact: Medium | +${Math.max(8, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
+
+Scannable content helps AI assistants:
+• **Extract answers faster:** Clear headings signal what each section covers
+• **Cite specific points:** Bullet points are easier to reference than dense paragraphs
+• **Understand hierarchy:** Proper H2/H3 structure shows content organization
+
+Well-structured content gets cited more frequently because AI can quickly find relevant information.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Break long paragraphs (>150 words) into smaller chunks of 3-4 sentences each`,
+    `Add descriptive H2/H3 headings every 150-250 words to segment content`,
+    `Convert process lists or feature lists into bullet points for clarity`,
+    `Use bold text to highlight key terms and important concepts`,
+    `Add white space between sections to improve visual scannability`,
+    `Test readability score - aim for Flesch Reading Ease >65`
+  ];
+
+  // Customized Implementation
+  let customizedImplementation = '';
+  if (longParagraphs.length > 0) {
+    const longestParagraph = longParagraphs[0];
+    const previewText = longestParagraph.substring(0, 300) + (longestParagraph.length > 300 ? '...' : '');
+
+    customizedImplementation = `### Reformatting Your Content for Better Scannability\n\n**Before:** One long paragraph (${longestParagraph.length} words)\n\n${previewText}\n\n---\n\n**After:** Broken into scannable sections with headings and bullets\n\n## [Add Descriptive H2 Here]\n\n[First key point in 2-3 sentences]\n\n**Key benefits:**\n- [Benefit 1]\n- [Benefit 2]\n- [Benefit 3]\n\n## [Add Second H2 Here]\n\n[Next point in 2-3 sentences]\n\n---\n\n**Why This Works:**\n- AI assistants can quickly scan headings to find relevant sections\n- Bullets make individual points easy to extract and cite\n- Shorter paragraphs improve comprehension and keep readers engaged`;
+  } else {
+    customizedImplementation = `### Optimizing Your Content Structure\n\nYour content is already fairly scannable! Here's how to make it even better:\n\n**Current Structure:**\n- ${totalHeadings} headings dividing ${wordCount} words\n- Average ${avgWordsPerHeading} words per section\n\n**Optimization Opportunities:**\n1. Ensure every 150-250 words has a descriptive H2 or H3 heading\n2. Convert any process descriptions or feature lists to bullet points\n3. Add bold formatting to key terms AI should pay attention to\n4. Use short paragraphs (3-4 sentences max) for easy scanning`;
+  }
+
+  // Ready-to-use content
+  const readyToUseContent = `### Scannability Checklist\n\nApply these formatting rules to your content:\n\n**Heading Frequency:** Add H2/H3 every 150-250 words\n**Paragraph Length:** Keep paragraphs to 3-4 sentences (50-100 words)\n**Lists:** Convert 3+ related items to bullet points\n**White Space:** Add line breaks between sections\n**Bold Text:** Highlight 1-2 key terms per section\n\n**Example Format:**\n\n## Clear, Descriptive Heading\n\nShort introductory paragraph (2-3 sentences) that previews what this section covers.\n\n**Key points:**\n- First important point\n- Second important point\n- Third important point\n\nBrief conclusion or transition (1-2 sentences).`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Aim for Flesch Reading Ease score above 65 (readable by 13-15 year olds)',
+    'Average sentence length should be under 20 words',
+    'Use transition words (However, Therefore, Additionally) to connect ideas',
+    'Bold key terms but avoid over-formatting (3-5 bold terms per section max)',
+    'Test on mobile - scannable content is even more critical on small screens'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Break your longest paragraph in half - add a subheading between the two parts',
+    'Find one list of items in sentence form - convert it to bullet points',
+    'Add bold formatting to 5-10 key terms throughout the page',
+    'Review your H2 headings - make them more descriptive and keyword-rich'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Hemingway App or similar tool shows readability grade of 8th grade or lower',
+    'Every section has a clear H2 or H3 heading',
+    'No paragraphs exceed 4-5 sentences',
+    'Important lists are formatted as bullet points',
+    'Re-scan shows improved scannabilityScore'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## Content Formatting Template
+
+### Before: Dense, Hard-to-Scan Content
+
+\`\`\`html
+<p>
+  This is a very long paragraph that covers multiple topics without any breaks.
+  It discusses the first topic at length, then moves to a second topic, and
+  eventually covers a third topic. There are no headings, no bullets, and no
+  clear visual breaks. AI assistants struggle to extract specific information
+  from this format because everything is jumbled together in one continuous block.
+  [continues for 200+ words...]
+</p>
+\`\`\`
+
+### After: Scannable, AI-Friendly Format
+
+\`\`\`html
+<h2>First Topic: Clear Descriptive Heading</h2>
+
+<p>
+  Short introduction to this topic (2-3 sentences that summarize the key point).
+</p>
+
+<p><strong>Key benefits:</strong></p>
+<ul>
+  <li>First specific benefit</li>
+  <li>Second specific benefit</li>
+  <li>Third specific benefit</li>
+</ul>
+
+<h2>Second Topic: Another Clear Heading</h2>
+
+<p>
+  Brief explanation of this topic with <strong>key terms</strong> highlighted for emphasis.
+</p>
+
+<p>
+  Additional details in a separate paragraph (keeps each para to 3-4 sentences).
+</p>
+\`\`\`
+
+**Key Improvements:**
+- Clear H2 headings every 150-250 words
+- Short paragraphs (3-4 sentences each)
+- Bullet points for lists
+- Bold text on key terms`;
+
+  return {
+    id: `rec_${issue.category}_scannability_${Date.now()}`,
+    title: 'AI Search Readiness: Content Scannability',
+    category: issue.category,
+    subfactor: 'scannabilityScore',
+    priority: avgWordsPerHeading > 400 ? 'high' : 'medium',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-3 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      totalHeadings: totalHeadings,
+      avgWordsPerHeading: avgWordsPerHeading,
+      longParagraphs: longParagraphs.length
+    },
+    generatedBy: 'programmatic_scannability'
+  };
+}
+
+// ========================================
+// CAPTIONS/TRANSCRIPTS GENERATOR
+// ========================================
+
+function makeProgrammaticCaptionsTranscriptsRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Detect videos
+  const videos = scanEvidence.content?.videos || [];
+  const videoCount = videos.length;
+  const hasTranscripts = /transcript|caption/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${hasTranscripts ? 'Partial' : videoCount > 0 ? 'Missing' : 'N/A'}
+
+${videoCount > 0 ? `**Video Content Detected:**
+• Videos on page: ${videoCount}
+• Transcripts detected: ${hasTranscripts ? 'Yes (partial)' : 'No'}
+
+${!hasTranscripts ? `Without transcripts, AI assistants cannot index or reference your video content. Search engines skip video content entirely unless transcripts are provided.` : `You have some transcript content, but ensure all videos have complete, properly formatted transcripts for maximum AI visibility.`}` : `No video content detected on this page. This recommendation will apply when you add video content.`}`;
+
+  // Build Impact
+  const impact = `Impact: ${videoCount > 0 && !hasTranscripts ? 'High' : 'Medium'} | +${Math.max(6, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
+
+Video transcripts unlock AI visibility in three ways:
+• **AI Citations:** ChatGPT and Perplexity can reference specific quotes from your videos
+• **Search Indexing:** Google indexes transcript text for traditional and video search
+• **Accessibility:** Screen readers and deaf/hard-of-hearing users can access video content
+
+Without transcripts, your video content is invisible to AI systems - regardless of how valuable the information is.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Identify all ${videoCount > 0 ? videoCount : ''} video${videoCount === 1 ? '' : 's'} on your page that need transcripts`,
+    `Use a transcription service (Rev, Otter.ai, YouTube auto-captions) to generate initial transcript`,
+    `Edit transcript for accuracy - fix technical terms, company names, and industry jargon`,
+    `Format transcript with timestamps and speaker labels for clarity`,
+    `Add transcript to page in accessible location (expandable section below video, separate tab, or dedicated transcript page)`,
+    `Test with screen reader to ensure transcript is properly labeled and accessible`,
+    `Validate with Google Rich Results Test - transcript should be crawlable`
+  ];
+
+  // Customized Implementation
+  const customizedImplementation = videoCount > 0 ? `### Adding Transcripts to Your Video Content\n\n**Videos Detected:** ${videoCount}\n\nEach video needs a complete, accurate transcript to be AI-readable. Here's what to do:\n\n**Option 1: Embedded Transcript (Recommended)**\nAdd an expandable transcript section directly below each video:\n\n\`\`\`html
+<div class="video-container">
+  <video src="your-video.mp4" controls></video>
+
+  <details class="transcript">
+    <summary>📄 View Transcript</summary>
+    <div class="transcript-content">
+      <p><strong>[00:00]</strong> Introduction to ${facts.brand || 'our service'}...</p>
+      <p><strong>[00:30]</strong> Key feature explanation...</p>
+      <p><strong>[01:15]</strong> Customer success story...</p>
+    </div>
+  </details>
+</div>
+\`\`\`
+
+**Option 2: Separate Transcript Page**\nCreate a dedicated transcript page and link to it below the video:
+
+\`\`\`html
+<video src="your-video.mp4" controls></video>
+<p><a href="/transcripts/video-1-transcript">Read full transcript</a></p>
+\`\`\`
+
+**Why This Matters:**\n- AI assistants can now cite specific quotes from your video\n- Search engines index the transcript text\n- Accessible to all users regardless of ability to hear audio` : `### Preparing for Video Content\n\nWhen you add video content to your site, follow this transcript workflow:\n\n1. **Record video** with clear audio\n2. **Generate transcript** using Rev.com, Otter.ai, or YouTube auto-captions\n3. **Edit for accuracy** - fix technical terms and jargon\n4. **Format with timestamps** for easy reference\n5. **Embed on page** below video or link to separate transcript page\n6. **Validate accessibility** with screen reader testing\n\nProper transcripts can increase video content's AI citation rate by 300%+.`;
+
+  // Ready-to-use content
+  const readyToUseContent = `### Video Transcript Template\n\n\`\`\`html
+<div class="video-with-transcript">
+  <h2>Video Title Here</h2>
+
+  <video controls>
+    <source src="/videos/demo.mp4" type="video/mp4">
+    <track kind="captions" src="/captions/demo.vtt" srclang="en" label="English">
+  </video>
+
+  <details class="video-transcript" open>
+    <summary><strong>📄 Transcript</strong></summary>
+
+    <div class="transcript-content">
+      <p>
+        <span class="timestamp">[00:00]</span>
+        <span class="speaker">Speaker:</span>
+        Welcome to this overview of [topic]. In this video, we'll cover...
+      </p>
+
+      <p>
+        <span class="timestamp">[00:30]</span>
+        First key point about [topic]...
+      </p>
+
+      <p>
+        <span class="timestamp">[01:15]</span>
+        Second key point...
+      </p>
+    </div>
+  </details>
+</div>
+\`\`\`
+
+Copy this template and fill in your actual video content.`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Use professional transcription services (Rev, Otter.ai) for accuracy - auto-captions need heavy editing',
+    'Include timestamps every 30-60 seconds for easy navigation',
+    'Add speaker labels if multiple people appear in video',
+    'Correct all technical terms, company names, and industry jargon',
+    'Make transcripts accessible via <details> element, accordion, or separate linked page'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Start with your homepage video - it likely gets the most traffic',
+    'Use YouTube auto-captions as a starting point (free)',
+    'For short videos (<5 min), manually transcribe - faster than editing auto-captions',
+    'Add VTT caption files for native browser caption support'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Every video on the page has a complete transcript',
+    'Transcript is visible and accessible (not hidden in code comments)',
+    'Screen reader can navigate and read transcript properly',
+    'Transcript includes timestamps for longer videos (>5 minutes)',
+    'Google Rich Results Test can crawl the transcript text'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## Video Transcript Implementation
+
+### Complete Example with Styles
+
+\`\`\`html
+<style>
+.video-transcript {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-left: 4px solid #0066cc;
+  border-radius: 4px;
+}
+
+.video-transcript summary {
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.transcript-content p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.timestamp {
+  font-weight: bold;
+  color: #0066cc;
+  margin-right: 8px;
+}
+
+.speaker {
+  font-style: italic;
+  margin-right: 8px;
+}
+</style>
+
+<div class="video-container">
+  <h2>Product Demo Video</h2>
+
+  <video width="100%" controls>
+    <source src="/videos/product-demo.mp4" type="video/mp4">
+    <track kind="captions" src="/captions/demo.vtt" srclang="en" label="English">
+    Your browser does not support the video tag.
+  </video>
+
+  <details class="video-transcript" open>
+    <summary>📄 Full Transcript</summary>
+
+    <div class="transcript-content">
+      <p>
+        <span class="timestamp">[00:00]</span>
+        <span class="speaker">Presenter:</span>
+        Welcome to our product demo. Today I'll show you how our platform helps ${industry} companies improve their efficiency.
+      </p>
+
+      <p>
+        <span class="timestamp">[00:30]</span>
+        Let's start with the dashboard. As you can see, all your key metrics are displayed in real-time...
+      </p>
+
+      <p>
+        <span class="timestamp">[01:00]</span>
+        Now let's look at the reporting features. You can generate custom reports by...
+      </p>
+
+      <!-- Continue with full transcript -->
+    </div>
+  </details>
+</div>
+\`\`\`
+
+### VTT Caption File Format
+
+Create a \`.vtt\` file for native browser captions:
+
+\`\`\`
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+Welcome to our product demo.
+
+00:00:05.000 --> 00:00:10.000
+Today I'll show you how our platform helps companies improve efficiency.
+
+00:00:10.000 --> 00:00:15.000
+Let's start with the dashboard.
+\`\`\`
+
+Save as \`demo.vtt\` and reference in video tag.`;
+
+  return {
+    id: `rec_${issue.category}_transcripts_${Date.now()}`,
+    title: 'AI Readability: Video Transcripts',
+    category: issue.category,
+    subfactor: 'captionsTranscriptsScore',
+    priority: videoCount > 0 && !hasTranscripts ? 'high' : 'medium',
+    priorityScore: issue.priority || 70,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: videoCount > 0 ? `${videoCount * 2}-${videoCount * 4} hours` : "2-3 hours per video",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.75)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      videoCount: videoCount,
+      hasTranscripts: hasTranscripts
+    },
+    generatedBy: 'programmatic_transcripts'
+  };
+}
+
+// ========================================
+// INDEXNOW GENERATOR
+// ========================================
+
+function makeProgrammaticIndexNowRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  // Check if IndexNow is already implemented
+  const hasIndexNow = /indexnow/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${hasIndexNow ? 'Detected (verify implementation)' : 'Missing'}
+
+${!hasIndexNow ? `**IndexNow Protocol:** Not detected
+
+IndexNow is a protocol that instantly notifies search engines when your content changes. Without it, search engines may take days or weeks to discover your updates.
+
+**Current situation:**
+• No IndexNow implementation detected
+• Search engines rely on periodic crawling to discover changes
+• New or updated content may remain unindexed for extended periods` : `**IndexNow Protocol:** Detected
+
+You appear to have IndexNow implemented. Verify that:
+• The API key is valid and properly configured
+• Notifications are sent automatically on content updates
+• All major search engines (Bing, Yandex) are receiving notifications`}`;
+
+  // Build Impact
+  const impact = `Impact: Medium | +${Math.max(5, Math.round(issue.gap * 0.5))} to +${Math.max(10, Math.round(issue.gap))} pts potential
+
+IndexNow provides instant indexing benefits:
+• **Immediate Discovery:** Search engines notified within seconds of content updates
+• **Faster Rankings:** New content can rank within hours instead of days/weeks
+• **API Efficiency:** One API call notifies multiple search engines simultaneously
+• **Competitive Advantage:** Your content gets indexed before competitors using traditional crawling
+
+For news sites, blogs, or frequently updated content, IndexNow can dramatically accelerate visibility.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Generate an IndexNow API key at bing.com/indexnow`,
+    `Create a text file containing your API key (e.g., abc123.txt) in your site root`,
+    `Add the API key file to your site root directory (${domain}/abc123.txt)`,
+    `Implement automatic notifications: send POST request to api.indexnow.org when content changes`,
+    `Test implementation by updating a page and verifying notification was sent`,
+    `Monitor IndexNow submissions in Bing Webmaster Tools`,
+    `Set up automatic notifications for CMS publish/update events`
+  ];
+
+  // Customized Implementation
+  const customizedImplementation = `### IndexNow Setup for ${domain}\n\n**Step-by-Step Implementation:**\n\n**1. Generate Your API Key**\n- Visit https://www.bing.com/indexnow\n- Generate a unique API key (e.g., \`8f3d2c1b9a7e5f4d3c2b1a0987654321\`)\n- Save this key securely\n\n**2. Create Key File**\nCreate a text file named \`[your-key].txt\` containing only your API key:\n\n\`\`\`
+8f3d2c1b9a7e5f4d3c2b1a0987654321
+\`\`\`
+
+Upload to: \`${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\`\n\n**3. Verify Key File**\nConfirm the file is publicly accessible by visiting the URL in your browser.\n\n**4. Send Notifications**\nWhen you publish or update content, send a POST request to IndexNow API (implementation code in the Code section below).\n\n**Why This Matters for ${industry}:**\n- Your content gets discovered immediately instead of waiting for the next crawl\n- Critical updates (pricing changes, new features, breaking news) are indexed within hours\n- Competitive advantage over companies relying on traditional crawling`;
+
+  // Ready-to-use content
+  const readyToUseContent = `### Quick IndexNow Setup\n\n**1. Get Your API Key:**\nhttps://www.bing.com/indexnow\n\n**2. Create Key File:**\nCreate \`[your-api-key].txt\` with just the key inside\n\n**3. Upload to Site Root:**\n\`${domain}/[your-api-key].txt\`\n\n**4. Submit URLs:**\nUse the code examples in the Code section to notify search engines when content changes.\n\n**Supported Search Engines:**\n- Bing\n- Yandex\n- Seznam.cz\n- Naver\n\n(Google doesn't support IndexNow but uses its own instant indexing API)`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'API key file must be publicly accessible at [domain]/[key].txt',
+    'Send notifications only when content actually changes - not on every page view',
+    'You can submit up to 10,000 URLs per batch',
+    'Notifications are free - no rate limits or usage fees',
+    'Test with a single URL first before implementing site-wide'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Start with manual submissions for important pages using the web interface',
+    'Implement automatic notifications for blog posts first',
+    'Add IndexNow to your CMS publish workflow',
+    'Monitor Bing Webmaster Tools to confirm submissions are working'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'API key file accessible at public URL',
+    'Test notification sent successfully (check response code 200)',
+    'Bing Webmaster Tools shows submitted URLs',
+    'New content appears in Bing search within 24-48 hours',
+    'Automatic notifications trigger on CMS publish/update events'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## IndexNow Implementation
+
+### 1. Create API Key File
+
+Create a file named \`8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\` (use your actual key):
+
+\`\`\`
+8f3d2c1b9a7e5f4d3c2b1a0987654321
+\`\`\`
+
+Upload to your site root: \`${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\`
+
+---
+
+### 2. Manual Submission (Test First)
+
+\`\`\`bash
+curl -X POST "https://api.indexnow.org/indexnow" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "host": "${domain}",
+    "key": "8f3d2c1b9a7e5f4d3c2b1a0987654321",
+    "keyLocation": "https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt",
+    "urlList": [
+      "https://${domain}/new-page",
+      "https://${domain}/updated-page"
+    ]
+  }'
+\`\`\`
+
+---
+
+### 3. Node.js/Express Implementation
+
+\`\`\`javascript
+const axios = require('axios');
+
+async function notifyIndexNow(urls) {
+  try {
+    const response = await axios.post('https://api.indexnow.org/indexnow', {
+      host: '${domain}',
+      key: '8f3d2c1b9a7e5f4d3c2b1a0987654321',
+      keyLocation: 'https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt',
+      urlList: Array.isArray(urls) ? urls : [urls]
+    });
+
+    console.log('IndexNow notification sent:', response.status);
+    return response.status === 200;
+  } catch (error) {
+    console.error('IndexNow error:', error.message);
+    return false;
+  }
+}
+
+// Usage: Call when content is published/updated
+notifyIndexNow([
+  'https://${domain}/new-blog-post',
+  'https://${domain}/updated-service-page'
+]);
+\`\`\`
+
+---
+
+### 4. WordPress Plugin Alternative
+
+If using WordPress, install the **IndexNow** plugin:
+1. Go to Plugins → Add New
+2. Search for "IndexNow"
+3. Install and activate
+4. Enter your API key in Settings → IndexNow
+5. URLs auto-submitted on publish/update
+
+---
+
+### 5. Python Implementation
+
+\`\`\`python
+import requests
+import json
+
+def notify_indexnow(urls):
+    payload = {
+        "host": "${domain}",
+        "key": "8f3d2c1b9a7e5f4d3c2b1a0987654321",
+        "keyLocation": "https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt",
+        "urlList": urls if isinstance(urls, list) else [urls]
+    }
+
+    response = requests.post(
+        "https://api.indexnow.org/indexnow",
+        json=payload
+    )
+
+    return response.status_code == 200
+
+# Usage
+notify_indexnow([
+    "https://${domain}/new-page",
+    "https://${domain}/updated-page"
+])
+\`\`\`
+
+**Response Codes:**
+- \`200\`: Success - URL submitted
+- \`400\`: Bad request - check your JSON format
+- \`403\`: Forbidden - verify key file is accessible
+- \`422\`: Unprocessable - invalid URL format`;
+
+  return {
+    id: `rec_${issue.category}_indexnow_${Date.now()}`,
+    title: 'Technical Setup: IndexNow Protocol',
+    category: issue.category,
+    subfactor: 'indexNowScore',
+    priority: 'medium',
+    priorityScore: issue.priority || 65,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-2 hours",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(5, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasIndexNow: hasIndexNow,
+      domain: domain
+    },
+    generatedBy: 'programmatic_indexnow'
   };
 }
 
