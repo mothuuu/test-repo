@@ -674,90 +674,46 @@ ${faqLib.impact}`;
 6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score" and "Entity Clarity"`;
   }
 
-  const implementationNotes = `## Implementation Notes
+  // Implementation Notes as array (for structured display)
+  const implementationNotes = [
+    'Keep each answer concise (80-140 words on page; shorter in JSON-LD is fine)',
+    'Avoid unverifiable claims (e.g., exact % lifts) unless you have public proof',
+    'Update FAQ content quarterly based on actual customer questions from support tickets or sales calls',
+    'Ensure Q&A pairs are visible on the page (not hidden behind collapsed accordions that block crawlers)'
+  ];
 
-• Keep each answer concise (80-140 words on page; shorter in JSON-LD is fine)
-• Avoid unverifiable claims (e.g., exact % lifts) unless you have public proof
-• Update FAQ content quarterly based on actual customer questions from support tickets or sales calls
-• Ensure Q&A pairs are visible on the page (not hidden behind collapsed accordions that block crawlers)`;
+  // Validation Checklist as array (for interactive checkboxes)
+  const validationChecklist = [
+    'Google Rich Results Test: FAQ detected, no warnings',
+    'Page renders Q&A visibly (not hidden behind tabs that block crawl)',
+    'Re-scan in AI Visibility Tool: "FAQ Score" and "Entity Clarity" increase',
+    'FAQPage schema validates at schema.org/validator'
+  ];
 
-  const validationChecklist = `## Validation Checklist
-
-✓ Google Rich Results Test: FAQ detected, no warnings
-✓ Page renders Q&A visibly (not hidden behind tabs that block crawl)
-✓ Re-scan in AI Visibility Tool: "FAQ Score" and "Entity Clarity" increase
-✓ FAQPage schema validates at schema.org/validator`;
-
-  // Build code snippet based on what's needed
-  let codeSnippet = '';
+  // Build separate frontend and backend code
+  let readyToUseContent = '';
+  let frontendCode = '';
+  let backendCode = '';
 
   if (hasFAQSchema && faqCount === 0) {
     // Schema exists, just need on-page content
-    codeSnippet = `## Ready-to-use FAQ (page copy)
-
-${faqPageCopy}
-
----
-
-${implementationNotes}
-
----
-
-## Quick Wins
-${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
-
----
-
-${validationChecklist}`;
+    readyToUseContent = faqPageCopy;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    backendCode = `**Note:** You already have FAQ schema. Update it to match the new on-page content above.`;
   } else if (!hasFAQSchema && faqCount > 0) {
     // Content exists, just need schema
-    codeSnippet = `## FAQ Schema (JSON-LD – paste into <head>)
-
-\`\`\`html
-${schemaCode}
-\`\`\`
-
-**Note:** Customize the Q&A pairs above to match your actual on-page FAQ content.
-
----
-
-${implementationNotes}
-
----
-
-## Quick Wins
-${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
-
----
-
-${validationChecklist}`;
+    readyToUseContent = '**Note:** You already have FAQ content on your page. Just add the schema below to your page <head>.';
+    frontendCode = '<!-- Your existing FAQ content is good. No changes needed. -->';
+    backendCode = schemaCode;
   } else {
     // Need both - full implementation
-    codeSnippet = `## Ready-to-use FAQ (page copy)
-
-${faqPageCopy}
-
----
-
-## FAQ Schema (JSON-LD – paste into <head>)
-
-\`\`\`html
-${schemaCode}
-\`\`\`
-
----
-
-${implementationNotes}
-
----
-
-## Quick Wins
-${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
-
----
-
-${validationChecklist}`;
+    readyToUseContent = faqPageCopy;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    backendCode = schemaCode;
   }
+
+  // Combine frontend and backend for codeSnippet display
+  const codeSnippet = `## Frontend Implementation (Page Content)\n\n${frontendCode}\n\n---\n\n## Backend Implementation (FAQ Schema)\n\n${backendCode}`;
 
   return {
     id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
@@ -770,6 +726,10 @@ ${validationChecklist}`;
     impact: impact,
     actionSteps: actionSteps.split('\n').filter(s => s.trim()),
     codeSnippet: codeSnippet,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: faqLib.quickWins,
+    validationChecklist: validationChecklist,
     estimatedTime: "1-2 hours",
     difficulty: "Easy",
     estimatedScoreGain: Math.max(12, Math.round(issue.gap * 0.8)),

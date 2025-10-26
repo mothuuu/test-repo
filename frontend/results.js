@@ -543,11 +543,15 @@ function createRecommendationCard(rec, index, userPlan) {
                     </div>
                 ` : ''}
 
-                <!-- Mark as Implemented (for future learning loop) -->
-                <div class="pt-4 border-t">
+                <!-- Action Buttons -->
+                <div class="pt-4 border-t flex gap-3">
                     <button onclick="markImplemented(${rec.id || index})"
                             class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
                         ✓ Mark as Implemented
+                    </button>
+                    <button onclick="skipRecommendation(${rec.id || index})"
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
+                        ⊘ Skip this recommendation
                     </button>
                 </div>
             </div>
@@ -737,6 +741,14 @@ function copySchemaCode() {
 function markImplemented(recId) {
     console.log('Marking recommendation as implemented:', recId);
     alert('Feature coming soon: This will track your implementation progress and improve future recommendations!');
+}
+
+function skipRecommendation(recId) {
+    console.log('Skipping recommendation:', recId);
+    if (confirm('Are you sure you want to skip this recommendation? You can always come back to it later.')) {
+        // TODO: Implement skip logic - hide the card and mark in database
+        alert('Feature coming soon: This will hide the recommendation and you can view skipped items in settings.');
+    }
 }
 
 function formatCategoryName(key) {
