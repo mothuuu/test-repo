@@ -29,10 +29,10 @@ const $ = cheerio.load(html);
         url: this.url,
         html: html, // Store HTML for analysis
         metadata: this.extractMetadata($),
+        technical: this.extractTechnical($, html), // MUST run BEFORE extractContent removes <script> tags!
         content: this.extractContent($),
         structure: this.extractStructure($),
         media: this.extractMedia($),
-        technical: this.extractTechnical($, html),
         performance: await this.checkPerformance(),
         accessibility: this.extractAccessibility($),
         timestamp: new Date().toISOString()
