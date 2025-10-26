@@ -431,8 +431,9 @@ Then repeat for each product detected.
 
 Output ONLY the following sections in this exact order, each starting on its own line:
 
+[TITLE]
 [FINDING]
-[IMPACT BREAKDOWN]
+[IMPACT]
 [APPLY INSTRUCTIONS]
 [CODE]
 [QUICK WINS]
