@@ -132,9 +132,15 @@ function filterRecommendation(rec, limits) {
     difficulty: rec.difficulty,
     estimatedScoreGain: rec.estimatedScoreGain,
     currentScore: rec.currentScore,
-    targetScore: rec.targetScore
+    targetScore: rec.targetScore,
+    // ✅ CRITICAL FIX: Include structured fields for colored boxes
+    customizedImplementation: rec.customizedImplementation || null,
+    readyToUseContent: rec.readyToUseContent || null,
+    implementationNotes: rec.implementationNotes || null,
+    quickWins: rec.quickWins || null,
+    validationChecklist: rec.validationChecklist || null
   };
-  
+
   // Add code snippets for paid tiers only
   if (limits.showCodeSnippets && rec.codeSnippet) {
     filtered.codeSnippet = rec.codeSnippet;
@@ -142,14 +148,14 @@ function filterRecommendation(rec, limits) {
     filtered.codeSnippetAvailable = true;
     filtered.upgradeMessage = 'Upgrade to DIY for copy-paste code';
   }
-  
+
   // Add evidence for paid tiers only
   if (limits.showEvidence && rec.evidence) {
     filtered.evidence = rec.evidence;
   }
-  
+
   filtered.detailLevel = limits.detailLevel;
-  
+
   return filtered;
 }
 
