@@ -105,6 +105,8 @@ router.post('/guest', async (req, res) => {
 // POST /api/scan/analyze - Authenticated scan
 // ============================================
 router.post('/analyze', authenticateToken, async (req, res) => {
+  let scan = null; // Define outside try block for error handling
+
   try {
     const { url, pages } = req.body;
     const userId = req.userId;
@@ -121,8 +123,8 @@ router.post('/analyze', authenticateToken, async (req, res) => {
         throw new Error('Invalid protocol');
       }
     } catch (e) {
-      return res.status(400).json({ 
-        error: 'Invalid URL format. Please use http:// or https://' 
+      return res.status(400).json({
+        error: 'Invalid URL format. Please use http:// or https://'
       });
     }
 
@@ -166,14 +168,21 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
     const scan = scanRecord.rows[0];
 
-    // Increment user's scan count
+    // Get existing user progress for this scan (if any)
+    const existingProgressResult = await db.query(
+      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scan.id]
+    );
+    const userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+
+    // Perform V5 rubric scan 🔥 REAL ENGINE!
+    const scanResult = await performV5Scan(url, user.plan, pages, userProgress);
+
+    // Increment user's scan count AFTER successful scan
     await db.query(
       'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
       [userId]
     );
-
-    // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan, pages);
 
     // Update scan record with results
     await db.query(
@@ -276,9 +285,19 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
 
   } catch (error) {
     console.error('❌ Authenticated scan error:', error);
-    res.status(500).json({ 
+    console.error('Stack trace:', error.stack);
+
+    // Mark scan as failed if we created a scan record
+    if (scan && scan.id) {
+      await db.query(
+        `UPDATE scans SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2`,
+        ['failed', scan.id]
+      );
+    }
+
+    res.status(500).json({
       error: 'Scan failed',
-      details: error.message 
+      details: error.message
     });
   }
 });
