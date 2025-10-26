@@ -11,7 +11,8 @@ class ContentExtractor {
   constructor(url, options = {}) {
     this.url = url;
     this.timeout = options.timeout || 10000;
-    this.userAgent = options.userAgent || 'Mozilla/5.0 (compatible; AIVisibilityBot/1.0)';
+    // Use Googlebot user-agent to ensure WordPress serves full HTML with schema markup
+    this.userAgent = options.userAgent || 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
     this.maxContentLength = options.maxContentLength || 5000000; // 5MB
   }
 
