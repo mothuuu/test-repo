@@ -79,6 +79,25 @@ const $ = cheerio.load(html);
       console.log(`  - Contains 'application/ld+json': ${hasJsonLd}`);
       console.log(`  - Count of 'application/ld+json' occurrences: ${jsonLdCount}`);
 
+      // Debug: Show actual HTML context around each schema occurrence
+      if (jsonLdCount > 0) {
+        console.log(`\n[ContentExtractor] Extracting HTML context for each schema tag:`);
+        let searchPos = 0;
+        for (let i = 0; i < jsonLdCount; i++) {
+          const foundPos = response.data.indexOf('application/ld+json', searchPos);
+          if (foundPos !== -1) {
+            // Extract 500 chars before and after to see the actual HTML structure
+            const contextStart = Math.max(0, foundPos - 500);
+            const contextEnd = Math.min(response.data.length, foundPos + 1000);
+            const context = response.data.substring(contextStart, contextEnd);
+            console.log(`\n--- Schema #${i + 1} Context (position ${foundPos}) ---`);
+            console.log(context);
+            console.log(`--- End Schema #${i + 1} ---\n`);
+            searchPos = foundPos + 1;
+          }
+        }
+      }
+
       return {
         html: response.data,
         responseTime,
