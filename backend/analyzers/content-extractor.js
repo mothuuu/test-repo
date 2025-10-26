@@ -69,6 +69,16 @@ const $ = cheerio.load(html);
       console.log(htmlPreview);
       console.log('[ContentExtractor] ... (HTML continues)');
 
+      // Debug: Check if schema exists ANYWHERE in the full HTML
+      const fullHtmlLength = response.data.length;
+      const hasJsonLd = response.data.includes('application/ld+json');
+      const jsonLdMatches = response.data.match(/application\/ld\+json/g);
+      const jsonLdCount = jsonLdMatches ? jsonLdMatches.length : 0;
+      console.log(`[ContentExtractor] Full HTML analysis:`);
+      console.log(`  - Total HTML length: ${fullHtmlLength} characters`);
+      console.log(`  - Contains 'application/ld+json': ${hasJsonLd}`);
+      console.log(`  - Count of 'application/ld+json' occurrences: ${jsonLdCount}`);
+
       return {
         html: response.data,
         responseTime,
