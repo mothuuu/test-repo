@@ -1015,6 +1015,7 @@ function proposeQuestionHeadings(industryId, facts) {
 }
 
 async function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry) {
+  console.log('🎯 Starting Question Headings recommendation generation...');
   const { profile, facts } = normalizeEvidence(scanEvidence);
   const domain = extractDomain(scanEvidence.url);
   const pageUrl = scanEvidence.url || '';
@@ -1110,6 +1111,7 @@ AI assistants prioritize pages that mirror how users ask questions. Shifting rem
   const customizedSections = [];
 
   const topHeadings = statementHeadings.slice(0, 3);
+  console.log(`📝 Processing ${topHeadings.length} headings with ChatGPT...`);
 
   // Process all headings in parallel for better performance
   const sectionPromises = topHeadings.map(async (heading, idx) => {
@@ -1200,11 +1202,13 @@ async function convertToQuestionHeading(statement, industry, facts) {
 
   // Fallback for when OpenAI is not available
   if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️ OPENAI_API_KEY not found - using fallback conversion');
     const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
     return `What is ${cleanedStatement}?`;
   }
 
   try {
+    console.log(`🤖 Converting heading with ChatGPT: "${statement}"`);
     const prompt = `Convert this heading to a natural, conversational question that preserves the original meaning and intent.
 
 Heading: "${statement}"
@@ -1236,9 +1240,11 @@ Example transformations:
     });
 
     const question = response.choices[0].message.content.trim();
+    console.log(`✅ ChatGPT conversion successful: "${question}"`);
     return question;
   } catch (error) {
     console.error('❌ Error converting heading to question:', error.message);
+    console.error('❌ Full error:', error);
     // Fallback to simple conversion
     const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
     return `What is ${cleanedStatement}?`;
@@ -1253,10 +1259,12 @@ async function generateExampleAnswer(heading, questionVersion, industry, facts) 
 
   // Fallback for when OpenAI is not available
   if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️ OPENAI_API_KEY not found - using fallback answer');
     return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
   }
 
   try {
+    console.log(`🤖 Generating answer with ChatGPT for: "${heading}"`);
     const contextInfo = [];
     if (location) contextInfo.push(`Location: ${location}`);
     if (services) contextInfo.push(`Services: ${services}`);
@@ -1292,9 +1300,11 @@ The answer should help AI understand what ${brandName} offers and why it matters
     });
 
     const answer = response.choices[0].message.content.trim();
+    console.log(`✅ ChatGPT answer generation successful (${answer.length} chars)`);
     return answer;
   } catch (error) {
     console.error('❌ Error generating example answer:', error.message);
+    console.error('❌ Full error:', error);
     // Fallback to generic answer
     return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
   }
