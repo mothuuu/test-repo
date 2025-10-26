@@ -697,22 +697,26 @@ ${faqLib.impact}`;
   ];
 
   // Build separate frontend and backend code
+  let customizedImplementation = '';
   let readyToUseContent = '';
   let frontendCode = '';
   let backendCode = '';
 
   if (hasFAQSchema && faqCount === 0) {
     // Schema exists, just need on-page content
+    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
     readyToUseContent = faqPageCopy;
     frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = `**Note:** You already have FAQ schema. Update it to match the new on-page content above.`;
   } else if (!hasFAQSchema && faqCount > 0) {
     // Content exists, just need schema
+    customizedImplementation = `### Your Customized FAQ Schema Implementation\n\nYou already have FAQ content on your page (${faqCount} question${faqCount > 1 ? 's' : ''} detected). Now you need to add structured data schema so AI systems like ChatGPT, Perplexity, and Google can understand and reference your FAQs.\n\n**What's Missing:** FAQPage schema in JSON-LD format\n\n**Impact:** Without schema, AI can see your FAQ text but can't reliably extract and cite specific Q&A pairs. Adding schema makes your expertise directly quotable by AI.`;
     readyToUseContent = '**Note:** You already have FAQ content on your page. Just add the schema below to your page <head>.';
     frontendCode = '<!-- Your existing FAQ content is good. No changes needed. -->';
     backendCode = schemaCode;
   } else {
     // Need both - full implementation
+    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
     readyToUseContent = faqPageCopy;
     frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = schemaCode;
@@ -732,6 +736,7 @@ ${faqLib.impact}`;
     impact: impact,
     actionSteps: actionSteps.split('\n').filter(s => s.trim()),
     codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,  // ✅ ADDED: Customized implementation for blue box
     readyToUseContent: readyToUseContent,
     implementationNotes: implementationNotes,
     quickWins: faqLib.quickWins,
