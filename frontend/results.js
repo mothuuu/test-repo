@@ -387,7 +387,7 @@ function createRecommendationCard(rec, index, userPlan) {
 
     const priorityClass = priorityColors[rec.priority] || priorityColors.medium;
     const showCodeSnippet = userPlan !== 'free' && rec.code_snippet;
-    
+
     // Use the correct field names from API
     const title = rec.recommendation_text || rec.title || 'Recommendation';
     const finding = rec.findings || rec.finding || '';
@@ -396,6 +396,13 @@ function createRecommendationCard(rec, index, userPlan) {
     const codeSnippet = rec.code_snippet || rec.codeSnippet || '';
     const estimatedImpact = rec.estimated_impact || rec.estimatedScoreGain || 0;
     const effort = rec.estimated_effort || rec.effort || '';
+
+    // NEW STRUCTURED FIELDS
+    const customizedImplementation = rec.customized_implementation || rec.customizedImplementation || '';
+    const readyToUseContent = rec.ready_to_use_content || rec.readyToUseContent || '';
+    const implementationNotes = rec.implementation_notes || rec.implementationNotes || [];
+    const quickWins = rec.quick_wins || rec.quickWins || [];
+    const validationChecklist = rec.validation_checklist || rec.validationChecklist || [];
 
     card.innerHTML = `
         <div class="p-6">
@@ -417,7 +424,7 @@ function createRecommendationCard(rec, index, userPlan) {
                         </div>
                     ` : ''}
                 </div>
-                <button onclick="toggleRecommendation(${index})" 
+                <button onclick="toggleRecommendation(${index})"
                         class="text-blue-600 hover:text-blue-800 font-semibold">
                     <span id="toggle-${index}">Expand ▼</span>
                 </button>
@@ -436,20 +443,44 @@ function createRecommendationCard(rec, index, userPlan) {
                 <!-- Impact -->
                 ${impact ? `
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-2">💡 Impact:</h4>
-                        <p class="text-gray-700 leading-relaxed">${impact}</p>
+                        <h4 class="font-bold text-gray-800 mb-2">💡 Why It Matters:</h4>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">${impact}</p>
                     </div>
                 ` : ''}
 
                 <!-- Action Steps -->
                 ${actionSteps && actionSteps.length > 0 ? `
                     <div>
-                        <h4 class="font-bold text-gray-800 mb-3">✅ Action Steps:</h4>
-                        <ol class="list-decimal list-inside space-y-2">
+                        <h4 class="font-bold text-gray-800 mb-3">✅ What to Do (Apply Steps):</h4>
+                        <ol class="space-y-2">
                             ${actionSteps.map(step => `
                                 <li class="text-gray-700 leading-relaxed ml-2">${step}</li>
                             `).join('')}
                         </ol>
+                    </div>
+                ` : ''}
+
+                <!-- Customized Implementation -->
+                ${customizedImplementation && userPlan !== 'free' ? `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <h4 class="font-bold text-gray-800 mb-3">🎯 Customized Implementation for Your Page:</h4>
+                        <div class="prose prose-sm max-w-none text-gray-700">
+                            ${renderMarkdown(customizedImplementation)}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Ready to Use Content -->
+                ${readyToUseContent && userPlan !== 'free' ? `
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                        <h4 class="font-bold text-gray-800 mb-3">📝 Ready-to-Use Content:</h4>
+                        <div class="relative">
+                            <pre class="bg-white border border-green-200 p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap font-sans text-gray-800"><code id="ready-content-${index}">${escapeHtml(readyToUseContent)}</code></pre>
+                            <button onclick="copyCode('ready-content-${index}')"
+                                    class="absolute top-2 right-2 px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">
+                                Copy Content
+                            </button>
+                        </div>
                     </div>
                 ` : ''}
 
@@ -459,7 +490,7 @@ function createRecommendationCard(rec, index, userPlan) {
                         <h4 class="font-bold text-gray-800 mb-2">💻 Implementation Code:</h4>
                         <div class="relative">
                             <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code id="code-${index}">${escapeHtml(codeSnippet)}</code></pre>
-                            <button onclick="copyCode('code-${index}')" 
+                            <button onclick="copyCode('code-${index}')"
                                     class="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
                                 Copy Code
                             </button>
@@ -467,9 +498,54 @@ function createRecommendationCard(rec, index, userPlan) {
                     </div>
                 ` : ''}
 
+                <!-- Implementation Notes -->
+                ${implementationNotes && implementationNotes.length > 0 && userPlan !== 'free' ? `
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                        <h4 class="font-bold text-gray-800 mb-3">📌 Implementation Notes:</h4>
+                        <ul class="space-y-2">
+                            ${implementationNotes.map(note => `
+                                <li class="text-gray-700 leading-relaxed flex items-start">
+                                    <span class="text-yellow-600 mr-2">•</span>
+                                    <span>${note}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <!-- Quick Wins -->
+                ${quickWins && quickWins.length > 0 && userPlan !== 'free' ? `
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                        <h4 class="font-bold text-gray-800 mb-3">⚡ Quick Wins:</h4>
+                        <ol class="space-y-2">
+                            ${quickWins.map((win, idx) => `
+                                <li class="text-gray-700 leading-relaxed flex items-start">
+                                    <span class="text-purple-600 font-semibold mr-2">${idx + 1}.</span>
+                                    <span>${win}</span>
+                                </li>
+                            `).join('')}
+                        </ol>
+                    </div>
+                ` : ''}
+
+                <!-- Validation Checklist -->
+                ${validationChecklist && validationChecklist.length > 0 && userPlan !== 'free' ? `
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
+                        <h4 class="font-bold text-gray-800 mb-3">✓ Validation Checklist:</h4>
+                        <ul class="space-y-2">
+                            ${validationChecklist.map(item => `
+                                <li class="text-gray-700 leading-relaxed flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 text-indigo-600 rounded">
+                                    <span>${item}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
                 <!-- Mark as Implemented (for future learning loop) -->
                 <div class="pt-4 border-t">
-                    <button onclick="markImplemented(${rec.id || index})" 
+                    <button onclick="markImplemented(${rec.id || index})"
                             class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
                         ✓ Mark as Implemented
                     </button>
@@ -683,6 +759,36 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Simple markdown renderer for customizedImplementation
+function renderMarkdown(markdown) {
+    if (!markdown) return '';
+
+    let html = markdown
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
+
+        // Bold
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+
+        // Code blocks
+        .replace(/```html\n([\s\S]*?)\n```/gim, '<pre class="bg-gray-900 text-gray-100 p-3 rounded my-2 overflow-x-auto text-xs"><code>$1</code></pre>')
+        .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-900 text-gray-100 p-3 rounded my-2 overflow-x-auto text-xs"><code>$1</code></pre>')
+
+        // Inline code
+        .replace(/`([^`]+)`/gim, '<code class="bg-gray-200 px-2 py-1 rounded text-sm">$1</code>')
+
+        // Horizontal rules
+        .replace(/^---$/gim, '<hr class="my-4 border-gray-300">')
+
+        // Paragraphs (simple - just add breaks for double newlines)
+        .replace(/\n\n/gim, '<br><br>')
+        .replace(/\n/gim, '<br>');
+
+    return html;
 }
 
 function showError(message) {
