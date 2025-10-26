@@ -593,13 +593,30 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   const detectedIndustry = industry || 'General';
   const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
 
-  // Check if FAQ already exists
+  // Check if FAQ schema exists (but content might be missing)
   const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
-  if (hasFAQSchema) {
-    return null; // Don't generate if FAQ schema already exists
-  }
+  const faqCount = scanEvidence.content?.faqs?.length || 0;
 
-  // Build ready-to-use FAQ page copy
+  // Build the finding based on what exists
+  let finding;
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists but no on-page FAQ content
+    finding = `Status: Incomplete
+
+FAQPage schema detected in JSON-LD, but no visible FAQ content found on ${domain}. Search engines and AI assistants need BOTH schema markup AND on-page Q&A pairs to surface your answers in rich results.
+
+Your schema exists but is disconnected from actual user-facing FAQ content.`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists but no schema
+    finding = `Status: Missing Schema
+
+${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Adding schema will help AI assistants extract and cite your answers in voice search and rich results.`;
+  } else {
+    // Neither exists
+    finding = `Status: Missing
+
+No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
+  }
   const faqPageCopy = faqLib.questions.map((faq, idx) =>
     `Q${idx + 1}. ${faq.q}\n${faq.pageAnswer}`
   ).join('\n\n');
@@ -624,39 +641,105 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
   const title = `${categoryName}: FAQ Section`;
 
-  const finding = `Status: Missing
-
-No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
-
+  // Impact is consistent regardless of scenario
   const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
 
 ${faqLib.impact}`;
 
-  const actionSteps = `1. Add the FAQ section below your primary CTA or above the footer with the 5 Q&As provided below
-2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section
-3. Paste the JSON-LD block from the "FAQ Schema" section into your page <head> (or via tag manager)
-4. Validate in Google Rich Results Test (search.google.com/test/rich-results)
-5. Re-scan in the AI Visibility Tool to confirm lift in "AI Search Readiness" and "Entity Clarity"`;
+  // Action steps vary based on what exists
+  let actionSteps;
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists but content missing - focus on adding visible content
+    actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
+2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section below
+3. Paste the Q&A pairs into your page HTML so they're visible to users
+4. Update your existing FAQPage schema to match the new on-page content (or replace with the schema below)
+5. Validate in Google Rich Results Test to ensure schema matches visible content
+6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score"`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists but schema missing - just add schema
+    actionSteps = `1. Review your existing on-page FAQ content
+2. Copy the FAQ Schema JSON-LD from the "FAQ Schema" section below
+3. Customize the Q&A pairs in the schema to match your actual on-page FAQs
+4. Paste the JSON-LD into your page <head> (or via tag manager)
+5. Validate in Google Rich Results Test
+6. Re-scan in the AI Visibility Tool to confirm lift`;
+  } else {
+    // Neither exists - full implementation
+    actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
+2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section below
+3. Paste the Q&A pairs into your page HTML
+4. Copy the FAQ Schema JSON-LD and paste it into your page <head> (or via tag manager)
+5. Validate in Google Rich Results Test (search.google.com/test/rich-results)
+6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score" and "Entity Clarity"`;
+  }
 
-  const implementationNotes = `Implementation notes:
+  const implementationNotes = `## Implementation Notes
+
 • Keep each answer concise (80-140 words on page; shorter in JSON-LD is fine)
 • Avoid unverifiable claims (e.g., exact % lifts) unless you have public proof
 • Update FAQ content quarterly based on actual customer questions from support tickets or sales calls
 • Ensure Q&A pairs are visible on the page (not hidden behind collapsed accordions that block crawlers)`;
 
-  const validationChecklist = `Validation checklist:
+  const validationChecklist = `## Validation Checklist
+
 ✓ Google Rich Results Test: FAQ detected, no warnings
 ✓ Page renders Q&A visibly (not hidden behind tabs that block crawl)
 ✓ Re-scan in AI Visibility Tool: "FAQ Score" and "Entity Clarity" increase
 ✓ FAQPage schema validates at schema.org/validator`;
 
-  const codeSnippet = `# Ready-to-use FAQ (page copy)
+  // Build code snippet based on what's needed
+  let codeSnippet = '';
+
+  if (hasFAQSchema && faqCount === 0) {
+    // Schema exists, just need on-page content
+    codeSnippet = `## Ready-to-use FAQ (page copy)
 
 ${faqPageCopy}
 
 ---
 
-# FAQ Schema (JSON-LD – paste into <head>)
+${implementationNotes}
+
+---
+
+## Quick Wins
+${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
+
+---
+
+${validationChecklist}`;
+  } else if (!hasFAQSchema && faqCount > 0) {
+    // Content exists, just need schema
+    codeSnippet = `## FAQ Schema (JSON-LD – paste into <head>)
+
+\`\`\`html
+${schemaCode}
+\`\`\`
+
+**Note:** Customize the Q&A pairs above to match your actual on-page FAQ content.
+
+---
+
+${implementationNotes}
+
+---
+
+## Quick Wins
+${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
+
+---
+
+${validationChecklist}`;
+  } else {
+    // Need both - full implementation
+    codeSnippet = `## Ready-to-use FAQ (page copy)
+
+${faqPageCopy}
+
+---
+
+## FAQ Schema (JSON-LD – paste into <head>)
 
 \`\`\`html
 ${schemaCode}
@@ -668,12 +751,13 @@ ${implementationNotes}
 
 ---
 
-# Quick wins
+## Quick Wins
 ${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
 
 ---
 
 ${validationChecklist}`;
+  }
 
   return {
     id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
