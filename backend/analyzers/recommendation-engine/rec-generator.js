@@ -211,6 +211,21 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         const rec = makeProgrammaticFAQRecommendation(issue, scanEvidence, industry);
         if (rec) {
           console.log(`✅ FAQ recommendation generated successfully`);
+          console.log(`🔍 FAQ GENERATOR RETURNED:`, {
+            title: rec.title?.substring(0, 50),
+            category: rec.category,
+            subfactor: rec.subfactor,
+            hasCustomizedImplementation: !!rec.customizedImplementation,
+            hasReadyToUseContent: !!rec.readyToUseContent,
+            hasImplementationNotes: !!rec.implementationNotes,
+            hasQuickWins: !!rec.quickWins,
+            hasValidationChecklist: !!rec.validationChecklist,
+            customizedImplLength: rec.customizedImplementation?.length || 0,
+            readyToUseLength: rec.readyToUseContent?.length || 0,
+            implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+            quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+            validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+          });
           out.push(rec);
           continue;
         } else {
