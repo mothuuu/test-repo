@@ -207,10 +207,14 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
 
       // 2a) FAQ Schema - Rich, ready-to-use FAQ content
       if (issue.subfactor === 'faqScore') {
+        console.log(`✅ Detected faqScore issue - calling programmatic FAQ generator`);
         const rec = makeProgrammaticFAQRecommendation(issue, scanEvidence, industry);
         if (rec) {
+          console.log(`✅ FAQ recommendation generated successfully`);
           out.push(rec);
           continue;
+        } else {
+          console.log(`❌ FAQ generator returned null/undefined`);
         }
       }
 
@@ -585,6 +589,7 @@ const FAQ_LIBRARIES = {
 };
 
 function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
+  console.log('🎯 Starting FAQ recommendation generation...');
   const domain = extractDomain(scanEvidence.url);
   const { profile, facts } = normalizeEvidence(scanEvidence);
 
@@ -592,6 +597,7 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   // Industry is passed from V5 analysis (detected from content/metadata)
   const detectedIndustry = industry || 'General';
   const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+  console.log(`📚 Using FAQ library for industry: ${detectedIndustry}`);
 
   // Check if FAQ schema exists (but content might be missing)
   const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
