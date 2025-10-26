@@ -227,9 +227,9 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         if (rec) { out.push(rec); continue; }
       }
 
-      // 2d) Question Headings - Programmatic suggestions
+      // 2d) Question Headings - Programmatic suggestions with ChatGPT intelligence
       if (issue.subfactor === 'questionHeadingsScore') {
-        const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry);
+        const rec = await makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry);
         if (rec) { out.push(rec); continue; }
       }
 
@@ -1014,11 +1014,33 @@ function proposeQuestionHeadings(industryId, facts) {
   return pickUnique([...base, ...topicQs], 12);
 }
 
-function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry) {
+async function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
   const domain = extractDomain(scanEvidence.url);
   const pageUrl = scanEvidence.url || '';
-  const pageTitle = scanEvidence.metadata?.title || '';
+
+  // Extract page name from URL slug or SEO title
+  let pageTitle = '';
+  try {
+    const urlObj = new URL(pageUrl);
+    const pathParts = urlObj.pathname.split('/').filter(p => p.length > 0);
+    if (pathParts.length > 0) {
+      // Get the last meaningful part of the path (the slug)
+      const slug = pathParts[pathParts.length - 1];
+      // Convert slug to title case (e.g., "ai-marketing-services" → "AI Marketing Services")
+      pageTitle = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+  } catch (e) {
+    // Fallback to empty string if URL parsing fails
+  }
+
+  // If no slug, try metadata title, otherwise use generic label
+  if (!pageTitle) {
+    pageTitle = scanEvidence.metadata?.title || 'this page';
+  }
 
   // Extract actual headings from the page
   const allH2s = scanEvidence.content?.headings?.h2 || [];
@@ -1087,18 +1109,25 @@ AI assistants prioritize pages that mirror how users ask questions. Shifting rem
   // Generate customized before/after examples for the top statement headings
   const customizedSections = [];
 
-  statementHeadings.slice(0, 3).forEach((heading, idx) => {
-    const questionVersion = convertToQuestionHeading(heading, industry, facts);
-    const exampleAnswer = generateExampleAnswer(heading, industry, facts);
+  const topHeadings = statementHeadings.slice(0, 3);
 
-    customizedSections.push({
+  // Process all headings in parallel for better performance
+  const sectionPromises = topHeadings.map(async (heading, idx) => {
+    const questionVersion = await convertToQuestionHeading(heading, industry, facts);
+    const exampleAnswer = await generateExampleAnswer(heading, questionVersion, industry, facts);
+
+    return {
       sectionNumber: idx + 1,
       sectionTitle: heading,
       before: `<h2>${heading}</h2>`,
       after: `<h2>${questionVersion}</h2>`,
       suggestedAnswer: exampleAnswer
-    });
+    };
   });
+
+  // Wait for all conversions to complete
+  const sections = await Promise.all(sectionPromises);
+  customizedSections.push(...sections);
 
   // Build customized implementation text
   const customizedImplementation = buildCustomizedImplementationText(customizedSections, pageUrl);
@@ -1165,41 +1194,110 @@ AI assistants prioritize pages that mirror how users ask questions. Shifting rem
   };
 }
 
-// Helper: Convert statement heading to question format
-function convertToQuestionHeading(statement, industry, facts) {
+// Helper: Convert statement heading to question format (ChatGPT-powered)
+async function convertToQuestionHeading(statement, industry, facts) {
   const brandName = factValue(facts, 'brand') || 'your company';
-  const lowerStatement = statement.toLowerCase();
 
-  // Common conversion patterns
-  if (lowerStatement.includes('services') || lowerStatement.includes('solutions')) {
-    return `How does ${brandName} scale AI-first strategies for ${industry || 'your industry'}?`;
-  }
-  if (lowerStatement.includes('strategy') || lowerStatement.includes('intelligence')) {
-    return `What is an AI marketing strategy, and how does it help ${industry || 'technology'} companies grow?`;
-  }
-  if (lowerStatement.includes('getting started') || lowerStatement.includes('begin')) {
-    return `How do I get started with ${statement.toLowerCase().replace('getting started with', '').trim()}?`;
-  }
-  if (lowerStatement.includes('why') || lowerStatement.includes('benefits')) {
-    return `Why should ${industry || 'technology'} companies invest in ${statement.toLowerCase().replace(/why|benefits of/gi, '').trim()}?`;
-  }
-  if (lowerStatement.includes('about') || lowerStatement.includes('overview')) {
-    return `What makes ${statement.toLowerCase().replace(/about|overview of/gi, '').trim()} different?`;
+  // Fallback for when OpenAI is not available
+  if (!process.env.OPENAI_API_KEY) {
+    const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
+    return `What is ${cleanedStatement}?`;
   }
 
-  // Generic fallback: "What is X?" or "How does X work?"
-  const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
-  return lowerStatement.includes('how') || lowerStatement.includes('process')
-    ? `How does ${cleanedStatement} work?`
-    : `What is ${cleanedStatement}?`;
+  try {
+    const prompt = `Convert this heading to a natural, conversational question that preserves the original meaning and intent.
+
+Heading: "${statement}"
+Brand: ${brandName}
+Industry: ${industry || 'general'}
+
+Rules:
+- Preserve the exact meaning and intent of the original heading
+- Make it sound natural (how a real person would ask)
+- Use conversational, engaging tone
+- Keep it under 15 words
+- Don't just add "What is" or "How does" - be creative and contextual
+- If it's already question-like, refine it naturally
+- Return ONLY the question, nothing else
+
+Example transformations:
+- "Stop Marketing Like It's 2019." → "Why should modern companies rethink their marketing strategies?"
+- "Our Services" → "What services do we offer?"
+- "About Our Team" → "Who's behind our work?"`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      temperature: 0.4,
+      max_tokens: 60,
+      messages: [
+        { role: 'system', content: 'You are an expert copywriter converting headings to natural questions. Be creative and preserve meaning.' },
+        { role: 'user', content: prompt }
+      ]
+    });
+
+    const question = response.choices[0].message.content.trim();
+    return question;
+  } catch (error) {
+    console.error('❌ Error converting heading to question:', error.message);
+    // Fallback to simple conversion
+    const cleanedStatement = statement.replace(/^(our|the)\s+/i, '').trim();
+    return `What is ${cleanedStatement}?`;
+  }
 }
 
-// Helper: Generate example answer for a heading
-function generateExampleAnswer(heading, industry, facts) {
+// Helper: Generate example answer for a heading (ChatGPT-powered)
+async function generateExampleAnswer(heading, questionVersion, industry, facts) {
   const brandName = factValue(facts, 'brand') || 'Our company';
+  const location = factValue(facts, 'location') || '';
+  const services = factValue(facts, 'services') || '';
 
-  // Return industry-specific answer template
-  return `${brandName} designs AI-powered frameworks that adapt to each industry's pace. From predictive lead scoring for B2B tech firms to answer-engine optimization for telecom resellers, every campaign scales intelligently while maintaining regional relevance and message consistency.`;
+  // Fallback for when OpenAI is not available
+  if (!process.env.OPENAI_API_KEY) {
+    return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
+  }
+
+  try {
+    const contextInfo = [];
+    if (location) contextInfo.push(`Location: ${location}`);
+    if (services) contextInfo.push(`Services: ${services}`);
+
+    const prompt = `Write a concise, direct answer to this question based on the heading context.
+
+Original Heading: "${heading}"
+Question Version: "${questionVersion}"
+Brand: ${brandName}
+Industry: ${industry || 'general'}
+${contextInfo.length > 0 ? contextInfo.join('\n') : ''}
+
+Requirements:
+- Write 80-150 words maximum
+- Start with a DIRECT answer (no fluff)
+- Use conversational, engaging tone
+- Use active voice and present tense
+- Include specific value or benefits when possible
+- Target Flesch readability > 65
+- Make it sound natural and helpful
+- Return ONLY the answer text, no extra formatting
+
+The answer should help AI understand what ${brandName} offers and why it matters.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      temperature: 0.5,
+      max_tokens: 200,
+      messages: [
+        { role: 'system', content: 'You are a professional copywriter creating clear, engaging answers for website content. Focus on being helpful and direct.' },
+        { role: 'user', content: prompt }
+      ]
+    });
+
+    const answer = response.choices[0].message.content.trim();
+    return answer;
+  } catch (error) {
+    console.error('❌ Error generating example answer:', error.message);
+    // Fallback to generic answer
+    return `${brandName} specializes in ${industry || 'our industry'} solutions. We help businesses achieve their goals through innovative strategies and proven methodologies.`;
+  }
 }
 
 // Helper: Build customized implementation text
