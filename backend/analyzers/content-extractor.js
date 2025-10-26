@@ -296,18 +296,30 @@ const $ = cheerio.load(html);
     
     // Structured data detection (JSON-LD)
     const structuredData = [];
-    $('script[type="application/ld+json"]').each((idx, el) => {
+    const jsonLdScripts = $('script[type="application/ld+json"]');
+    console.log(`[ContentExtractor] Found ${jsonLdScripts.length} JSON-LD script tags`);
+
+    jsonLdScripts.each((idx, el) => {
       try {
-        const data = JSON.parse($(el).html());
+        const scriptContent = $(el).html();
+        console.log(`[ContentExtractor] Parsing JSON-LD #${idx + 1}, length: ${scriptContent?.length || 0} chars`);
+        const data = JSON.parse(scriptContent);
+        const schemaType = data['@type'] || 'Unknown';
+        console.log(`[ContentExtractor] Successfully parsed: ${schemaType}`);
         structuredData.push({
-          type: data['@type'] || 'Unknown',
+          type: schemaType,
           context: data['@context'] || '',
           raw: data
         });
       } catch (e) {
-        // Invalid JSON-LD
+        console.log(`[ContentExtractor] Failed to parse JSON-LD #${idx + 1}:`, e.message);
       }
     });
+
+    console.log(`[ContentExtractor] Total structured data found: ${structuredData.length}`);
+    console.log(`[ContentExtractor] Has Organization: ${structuredData.some(sd => sd.type === 'Organization')}`);
+    console.log(`[ContentExtractor] Has FAQPage: ${structuredData.some(sd => sd.type === 'FAQPage')}`);
+    console.log(`[ContentExtractor] Has LocalBusiness: ${structuredData.some(sd => sd.type === 'LocalBusiness')}`);
 
     return {
       // Structured Data
