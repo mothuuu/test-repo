@@ -202,31 +202,42 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         continue;
       }
 
-      // 2) ChatGPT for DIY/Pro (now used for ALL recommendations)
-      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
-        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
-        out.push(gptRec);
-        continue;
+      // 2) HIGH-VALUE PROGRAMMATIC GENERATORS (run FIRST - these have rich, pre-written content)
+      // These take precedence over ChatGPT for consistency and quality
+
+      // 2a) FAQ Schema - Rich, ready-to-use FAQ content
+      if (issue.subfactor === 'faqScore') {
+        const rec = makeProgrammaticFAQRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          out.push(rec);
+          continue;
+        }
       }
 
-      // 3) Free tier: Use programmatic for specific subfactors, template for others
-      // 3a) Programmatic JSON-LD for structured data
+      // 2b) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
         continue;
       }
 
-      // 3b) Programmatic Question Headings
+      // 2c) Open Graph - Programmatic meta tags
+      if (issue.subfactor === 'openGraphScore') {
+        const rec = makeProgrammaticOpenGraphRecommendation(issue, scanEvidence);
+        if (rec) { out.push(rec); continue; }
+      }
+
+      // 2d) Question Headings - Programmatic suggestions
       if (issue.subfactor === 'questionHeadingsScore') {
         const rec = makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence);
         if (rec) { out.push(rec); continue; }
       }
 
-      // 3c) Programmatic Open Graph meta tags
-      if (issue.subfactor === 'openGraphScore') {
-        const rec = makeProgrammaticOpenGraphRecommendation(issue, scanEvidence);
-        if (rec) { out.push(rec); continue; }
+      // 3) ChatGPT for other subfactors (DIY/Pro tier)
+      if (tier !== 'free' && process.env.OPENAI_API_KEY) {
+        const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
+        out.push(gptRec);
+        continue;
       }
 
       // 4) Smart template fallback
@@ -460,6 +471,230 @@ Rules:
 // -----------------------------------------
 // Programmatic recommendations (deterministic)
 // -----------------------------------------
+
+// Industry-specific FAQ libraries (rich, ready-to-use content)
+const FAQ_LIBRARIES = {
+  Agency: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "How do you measure and report on marketing ROI?",
+        pageAnswer: "We connect every initiative to outcomes like revenue, qualified pipeline, and CAC. You'll get transparent reports that show which channels drive results, plus a live dashboard so you always know what's working.",
+        schemaAnswer: "We connect marketing activity to outcomes like qualified pipeline, revenue influence, and CAC. Our approach uses multi-touch attribution where feasible and clear performance tracking across channels, with scheduled reports and a live dashboard."
+      },
+      {
+        q: "What makes your agency different from others?",
+        pageAnswer: "We're an AI-first, B2B marketing partner specialized in your industry vertical. Instead of generic tactics, we use answer-engine optimization and AI-readable content to help the right buyers find, understand, and trust you.",
+        schemaAnswer: "We are an AI-first, B2B-focused team specializing in answer-engine optimization (AEO) and AI-readable content so assistants can accurately match you to high-fit intent, not generic searches."
+      },
+      {
+        q: "How long until we see results?",
+        pageAnswer: "Quick wins (e.g., conversion improvements, qualified demos) typically appear within weeks; durable gains from programs like content/AEO build over a few months. We set expectations up front and report progress on a regular cadence.",
+        schemaAnswer: "Tactical improvements (e.g., conversion lifts) can appear within weeks; strategic programs like content/AEO typically show meaningful, compounding results over several months. We set milestones and report progress regularly."
+      },
+      {
+        q: "What does it cost to work with you?",
+        pageAnswer: "Investment depends on scope and goals. We share a clear proposal with deliverables and reporting so you can see value-for-spend and make decisions with confidence.",
+        schemaAnswer: "Investment varies by scope and goals. We share transparent proposals with deliverables, reporting, and success metrics so you can evaluate value-for-spend and expected outcomes."
+      },
+      {
+        q: "Do you require long-term contracts?",
+        pageAnswer: "We prefer flexible terms and aim to earn your renewal with results—not lock-ins. We set clear goals, deliverables, and review cadence so you always know where we stand.",
+        schemaAnswer: "We favor flexible terms and aim to earn ongoing partnership through results. Engagements include clear deliverables, communication cadence, and success metrics with reasonable cancellation notice."
+      }
+    ],
+    impact: "FAQs consistently surface in rich results and AI answers. Adding a focused set of agency FAQs improves entity clarity, reduces pre-sales friction, and qualifies leads earlier.",
+    quickWins: [
+      "Link the FAQ headings in-page (anchor links) and from your Help/Resources menu",
+      "Add the FAQ page to your sitemap and include it in your internal linking from Services and Pricing pages",
+      "Reuse these Q&As in your chatbot prompts and Answer Engine optimization"
+    ]
+  },
+  SaaS: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "How does pricing work?",
+        pageAnswer: "We offer flexible pricing based on your team size and feature needs. Start with our free plan to test core features, then upgrade to unlock advanced capabilities, integrations, and priority support.",
+        schemaAnswer: "Pricing is usage-based with free and paid tiers. Free plans include core features; paid plans unlock advanced capabilities, integrations, and priority support scaled to team size."
+      },
+      {
+        q: "What integrations do you support?",
+        pageAnswer: "We integrate with 50+ popular tools including Slack, Salesforce, HubSpot, Zapier, and major CRMs. Native API access lets you build custom integrations for your workflow.",
+        schemaAnswer: "We support 50+ native integrations including Slack, Salesforce, HubSpot, Zapier, and major CRMs, plus REST API for custom integrations."
+      },
+      {
+        q: "How secure is our data?",
+        pageAnswer: "Enterprise-grade security is standard: SOC 2 Type II certified, end-to-end encryption, role-based access controls, and regular third-party audits. Your data stays yours—we never train AI models on customer data.",
+        schemaAnswer: "We maintain SOC 2 Type II certification, end-to-end encryption, role-based access controls, and regular security audits. Customer data is never used for AI training."
+      },
+      {
+        q: "Can I try it before buying?",
+        pageAnswer: "Yes! Start with our 14-day free trial—no credit card required. You'll get full access to premium features so you can test everything with your real workflows before committing.",
+        schemaAnswer: "14-day free trial with full premium access, no credit card required. Test all features with your actual workflows before purchasing."
+      },
+      {
+        q: "What kind of support do you offer?",
+        pageAnswer: "All plans include email support and comprehensive documentation. Paid plans add live chat and priority response times. Enterprise customers get dedicated success managers and custom onboarding.",
+        schemaAnswer: "Support ranges from email and documentation (all plans) to live chat and priority response (paid plans) to dedicated success managers (enterprise)."
+      }
+    ],
+    impact: "FAQs help AI assistants and buyers quickly evaluate fit, reducing friction in the purchase journey and improving qualified demo requests.",
+    quickWins: [
+      "Add FAQ schema to pricing and product pages for rich snippet eligibility",
+      "Link FAQs from your chatbot and support widget for instant answers",
+      "Include FAQ content in your demo request flow to pre-qualify leads"
+    ]
+  },
+  General: {
+    title: "AI Search Readiness: FAQ Section",
+    questions: [
+      {
+        q: "What services or products do you offer?",
+        pageAnswer: "We provide solutions designed to solve specific customer challenges. Our offerings include core products/services, support resources, and ongoing updates to ensure you get maximum value.",
+        schemaAnswer: "We offer comprehensive solutions including core products/services, support resources, and continuous updates for maximum customer value."
+      },
+      {
+        q: "How do I get started?",
+        pageAnswer: "Getting started is simple: explore our offerings, choose what fits your needs, and follow the guided setup process. Our team is available to help with onboarding and answer questions.",
+        schemaAnswer: "Start by exploring offerings, selecting what fits your needs, and following guided setup. Onboarding support is available."
+      },
+      {
+        q: "What makes you different from competitors?",
+        pageAnswer: "We focus on delivering measurable results through proven methodologies, transparent communication, and customer-centric service. Our approach combines innovation with reliability.",
+        schemaAnswer: "We deliver measurable results through proven methodologies, transparent communication, and customer-centric service combining innovation with reliability."
+      },
+      {
+        q: "How long does implementation take?",
+        pageAnswer: "Typical implementations range from days to weeks depending on complexity. We provide clear timelines upfront and keep you informed throughout the process.",
+        schemaAnswer: "Implementation timelines range from days to weeks based on complexity, with clear milestones and regular progress updates."
+      },
+      {
+        q: "What support options are available?",
+        pageAnswer: "We offer multiple support channels including documentation, email support, and live assistance. Premium customers receive priority access and dedicated account management.",
+        schemaAnswer: "Support includes documentation, email, and live assistance, with premium customers receiving priority access and dedicated account management."
+      }
+    ],
+    impact: "FAQs help search engines and AI assistants extract clear answers about your offerings, improving discoverability and reducing barriers to engagement.",
+    quickWins: [
+      "Link FAQs from your main navigation and footer for easy access",
+      "Include FAQ schema in your homepage and key landing pages",
+      "Update FAQs quarterly based on actual customer questions from support tickets"
+    ]
+  }
+};
+
+function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
+  const domain = extractDomain(scanEvidence.url);
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Use provided industry or default to General
+  // Industry is passed from V5 analysis (detected from content/metadata)
+  const detectedIndustry = industry || 'General';
+  const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+
+  // Check if FAQ already exists
+  const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
+  if (hasFAQSchema) {
+    return null; // Don't generate if FAQ schema already exists
+  }
+
+  // Build ready-to-use FAQ page copy
+  const faqPageCopy = faqLib.questions.map((faq, idx) =>
+    `Q${idx + 1}. ${faq.q}\n${faq.pageAnswer}`
+  ).join('\n\n');
+
+  // Build JSON-LD schema
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqLib.questions.map(faq => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.schemaAnswer
+      }
+    }))
+  };
+
+  const schemaCode = `<script type="application/ld+json">\n${JSON.stringify(faqSchema, null, 2)}\n</script>`;
+
+  // Build the recommendation in the exact format requested
+  const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
+  const title = `${categoryName}: FAQ Section`;
+
+  const finding = `Status: Missing
+
+No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
+
+  const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
+
+${faqLib.impact}`;
+
+  const actionSteps = `1. Add the FAQ section below your primary CTA or above the footer with the 5 Q&As provided below
+2. Copy the ready-to-use FAQ content from the "Ready-to-use FAQ" section
+3. Paste the JSON-LD block from the "FAQ Schema" section into your page <head> (or via tag manager)
+4. Validate in Google Rich Results Test (search.google.com/test/rich-results)
+5. Re-scan in the AI Visibility Tool to confirm lift in "AI Search Readiness" and "Entity Clarity"`;
+
+  const implementationNotes = `Implementation notes:
+• Keep each answer concise (80-140 words on page; shorter in JSON-LD is fine)
+• Avoid unverifiable claims (e.g., exact % lifts) unless you have public proof
+• Update FAQ content quarterly based on actual customer questions from support tickets or sales calls
+• Ensure Q&A pairs are visible on the page (not hidden behind collapsed accordions that block crawlers)`;
+
+  const validationChecklist = `Validation checklist:
+✓ Google Rich Results Test: FAQ detected, no warnings
+✓ Page renders Q&A visibly (not hidden behind tabs that block crawl)
+✓ Re-scan in AI Visibility Tool: "FAQ Score" and "Entity Clarity" increase
+✓ FAQPage schema validates at schema.org/validator`;
+
+  const codeSnippet = `# Ready-to-use FAQ (page copy)
+
+${faqPageCopy}
+
+---
+
+# FAQ Schema (JSON-LD – paste into <head>)
+
+\`\`\`html
+${schemaCode}
+\`\`\`
+
+---
+
+${implementationNotes}
+
+---
+
+# Quick wins
+${faqLib.quickWins.map((win, idx) => `${idx + 1}. ${win}`).join('\n')}
+
+---
+
+${validationChecklist}`;
+
+  return {
+    id: `rec_${issue.category}_${issue.subfactor}_${Date.now()}`,
+    title: title,
+    category: issue.category,
+    subfactor: "faqScore",
+    priority: issue.severity || 'high',
+    priorityScore: issue.priority || 85,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps.split('\n').filter(s => s.trim()),
+    codeSnippet: codeSnippet,
+    estimatedTime: "1-2 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(12, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: { faqDetected: false, industry: detectedIndustry },
+    generatedBy: 'programmatic_faq_library'
+  };
+}
 
 function makeProgrammaticStructuredDataRecommendation(issue, scanEvidence) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
