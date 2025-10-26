@@ -66,27 +66,32 @@ window.addEventListener('DOMContentLoaded', async () => {
 // Check if user is authenticated
 async function checkAuth() {
     try {
+        // Get token from localStorage
+        const authToken = localStorage.getItem('authToken');
+
+        if (!authToken) {
+            return false;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
             method: 'GET',
-            credentials: 'include',
             headers: {
+                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
         if (!response.ok) {
             return false;
         }
-        
+
         const data = await response.json();
-        
-        // Check if email is verified
-        if (!data.user.email_verified) {
-            alert('Please verify your email before upgrading');
-            window.location.href = 'verify.html';
+
+        // Check if user data is available
+        if (!data.authenticated) {
             return false;
         }
-        
+
         return true;
     } catch (error) {
         console.error('Auth check failed:', error);
@@ -168,11 +173,18 @@ async function handleCheckoutSubmit(e) {
         btn.disabled = true;
         btn.innerHTML = '<div class="loading-spinner"></div>Creating checkout session...';
         
+        // Get auth token
+        const authToken = localStorage.getItem('authToken');
+
+        if (!authToken) {
+            throw new Error('Please log in to continue');
+        }
+
         // Create Stripe checkout session
         const response = await fetch(`${API_BASE_URL}/api/subscription/create-checkout-session`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
+                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
