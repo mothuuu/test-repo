@@ -174,14 +174,31 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
   
   // Save page-specific recommendations
   let pageSpecificTotal = 0;
-  
+
   for (const page of pagesWithRecs) {
     const pageRecs = pageSpecificRecs.slice(
-      pageSpecificTotal, 
+      pageSpecificTotal,
       pageSpecificTotal + recsPerPage
     );
-    
+
     for (const rec of pageRecs) {
+      // DEBUG: Log ALL page-specific recommendations
+      console.log('📦 PAGE-SPECIFIC Recommendation being saved:', {
+        title: rec.title?.substring(0, 50),
+        category: rec.category,
+        subfactor: rec.subfactor,
+        hasCustomizedImplementation: !!rec.customizedImplementation,
+        hasReadyToUseContent: !!rec.readyToUseContent,
+        hasImplementationNotes: !!rec.implementationNotes,
+        hasQuickWins: !!rec.quickWins,
+        hasValidationChecklist: !!rec.validationChecklist,
+        customizedImplLength: rec.customizedImplementation?.length || 0,
+        readyToUseLength: rec.readyToUseContent?.length || 0,
+        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+      });
+
       await db.query(
         `INSERT INTO scan_recommendations (
           scan_id, category, recommendation_text, priority,
