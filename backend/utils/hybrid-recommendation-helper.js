@@ -116,22 +116,22 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
     const unlockedAt = i < initialActive ? new Date() : null;
     const skipEnabledAt = i < initialActive ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
 
-    // DEBUG: Log structured fields for FAQ recommendations
-    if (rec.category === 'FAQ Schema' || rec.subfactor === 'faqScore') {
-      console.log('📦 FAQ Recommendation object received:', {
-        title: rec.title?.substring(0, 50),
-        hasCustomizedImplementation: !!rec.customizedImplementation,
-        hasReadyToUseContent: !!rec.readyToUseContent,
-        hasImplementationNotes: !!rec.implementationNotes,
-        hasQuickWins: !!rec.quickWins,
-        hasValidationChecklist: !!rec.validationChecklist,
-        customizedImplLength: rec.customizedImplementation?.length || 0,
-        readyToUseLength: rec.readyToUseContent?.length || 0,
-        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
-        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
-        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
-      });
-    }
+    // DEBUG: Log ALL recommendations to diagnose structured fields
+    console.log('📦 Recommendation being saved:', {
+      title: rec.title?.substring(0, 50),
+      category: rec.category,
+      subfactor: rec.subfactor,
+      hasCustomizedImplementation: !!rec.customizedImplementation,
+      hasReadyToUseContent: !!rec.readyToUseContent,
+      hasImplementationNotes: !!rec.implementationNotes,
+      hasQuickWins: !!rec.quickWins,
+      hasValidationChecklist: !!rec.validationChecklist,
+      customizedImplLength: rec.customizedImplementation?.length || 0,
+      readyToUseLength: rec.readyToUseContent?.length || 0,
+      implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+      quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+      validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+    });
 
     if (unlockState === 'active') siteWideActive++;
     if (unlockState === 'locked') siteWideLocked++;
