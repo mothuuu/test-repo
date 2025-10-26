@@ -337,6 +337,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
         estimated_impact, estimated_effort, status,
         action_steps, findings, code_snippet,
         impact_description,
+        customized_implementation, ready_to_use_content,
+        implementation_notes, quick_wins, validation_checklist,
         user_rating, user_feedback, implemented_at
        FROM scan_recommendations
        WHERE scan_id = $1
