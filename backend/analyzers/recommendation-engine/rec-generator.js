@@ -340,6 +340,50 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         if (rec) { out.push(rec); continue; }
       }
 
+      // 2k) XML Sitemap - Technical setup
+      if (issue.subfactor === 'sitemapScore') {
+        console.log(`✅ Detected sitemapScore issue - calling programmatic sitemap generator`);
+        const rec = makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Sitemap recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2l) Robots.txt - Crawler configuration
+      if (issue.subfactor === 'robotsTxtScore') {
+        console.log(`✅ Detected robotsTxtScore issue - calling programmatic robots.txt generator`);
+        const rec = makeProgrammaticRobotsTxtRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Robots.txt recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2m) HTTPS/SSL - Security configuration
+      if (issue.subfactor === 'httpsScore') {
+        console.log(`✅ Detected httpsScore issue - calling programmatic HTTPS generator`);
+        const rec = makeProgrammaticHttpsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ HTTPS recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2n) Crawl Accessibility - Indexability
+      if (issue.subfactor === 'crawlAccessibilityScore') {
+        console.log(`✅ Detected crawlAccessibilityScore issue - calling programmatic crawl accessibility generator`);
+        const rec = makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Crawl accessibility recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
       // 3) ChatGPT for other subfactors (DIY/Pro tier)
       if (tier !== 'free' && process.env.OPENAI_API_KEY) {
         const gptRec = await generateWithChatGPT(issue, scanEvidence, tier, industry);
@@ -3338,6 +3382,1160 @@ document.querySelectorAll('h1, h2, h3, h4').forEach(h => {
       hierarchyIssues: hierarchyIssues
     },
     generatedBy: 'programmatic_heading_hierarchy'
+  };
+}
+
+/**
+ * Generates comprehensive XML sitemap recommendations
+ * with validation and submission guidance
+ */
+function makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  // Check for sitemap
+  const hasSitemap = scanEvidence.technical?.hasSitemap || false;
+  const sitemapUrl = scanEvidence.technical?.sitemapUrl || `${domain}/sitemap.xml`;
+  const pageCount = scanEvidence.technical?.sitemapPageCount || 0;
+  const lastModified = scanEvidence.technical?.sitemapLastModified || 'Unknown';
+
+  // Build finding text
+  const finding = hasSitemap
+    ? `Your sitemap exists at ${sitemapUrl} with ${pageCount} URLs (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). However, it may need optimization or proper submission to search engines and AI crawlers. Last modified: ${lastModified}.`
+    : `Your site is missing an XML sitemap (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Without a sitemap, search engines and AI crawlers have difficulty discovering all your pages, reducing visibility in answer engines like ChatGPT, Perplexity, and Google AI Overviews.`;
+
+  // Build impact description
+  const impact = `**Why XML Sitemaps Matter for AEO:**
+
+Sitemaps help search engines and AI systems discover and index your content efficiently:
+
+- **Faster discovery**: New content appears in AI answer engines 2-5x faster
+- **Complete indexing**: Ensures all pages (not just linked ones) get crawled
+- **Priority signals**: Tells crawlers which pages matter most
+- **AI training data**: Better indexed pages → more likely to be AI training sources
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on XML Sitemap score
+- **+30-50%** faster indexing for new/updated content
+- **Better AI coverage**: More pages available for answer engine citations`;
+
+  // Build action steps
+  const actionSteps = [
+    hasSitemap ? 'Validate existing sitemap with XML Sitemap Validator' : 'Generate XML sitemap for all important pages',
+    'Include only indexable pages (exclude noindex, login, admin pages)',
+    'Set priority and changefreq appropriately',
+    'Submit sitemap to Google Search Console',
+    'Submit sitemap to Bing Webmaster Tools',
+    'Add sitemap reference to robots.txt',
+    'Re-scan page to confirm XML Sitemap score improvement'
+  ];
+
+  // Build customized implementation
+  const customizedImplementation = `### XML Sitemap Setup for ${domain}
+
+**Current Status:** ${hasSitemap ? `✅ Sitemap found at ${sitemapUrl}` : '❌ No sitemap detected'}
+${hasSitemap ? `- Pages included: ${pageCount}\n- Last modified: ${lastModified}\n` : ''}
+**Priority Levels for ${industry || 'General'} Site:**
+
+1. **Priority 1.0** - Homepage, main service/product pages
+2. **Priority 0.8** - Category pages, key landing pages
+3. **Priority 0.6** - Blog posts, case studies, resources
+4. **Priority 0.4** - Author pages, tags, archives
+5. **Priority 0.2** - Legal pages (privacy, terms)
+
+**Change Frequency Guidelines:**
+- **daily**: News/blog homepage, product listings
+- **weekly**: Blog posts, updated services
+- **monthly**: Static service pages, about pages
+- **yearly**: Legal pages, archived content`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `<!-- Basic XML Sitemap Template -->
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Homepage -->
+  <url>
+    <loc>${domain}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Main Service/Product Pages -->
+  <url>
+    <loc>${domain}/services</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog/Content Pages -->
+  <url>
+    <loc>${domain}/blog/article-title</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Add more URLs... -->
+</urlset>
+
+<!-- Add to robots.txt -->
+Sitemap: ${domain}/sitemap.xml`;
+
+  // Build implementation notes
+  const implementationNotes = [
+    '**File location**: Place sitemap.xml in your site root directory',
+    '**Max URLs**: 50,000 URLs per sitemap file (use sitemap index if more)',
+    '**Max file size**: 50MB uncompressed (compress to .xml.gz if needed)',
+    '**Update frequency**: Regenerate whenever you publish/update content',
+    '**Exclude these**: Login pages, admin areas, duplicate content, noindex pages',
+    '**Include these**: All public-facing pages you want indexed and cited by AI',
+    '**Validation**: Test with Google Search Console or XML Sitemap Validator',
+    '**Automation**: Use CMS plugins (Yoast, RankMath) or build scripts to auto-generate'
+  ];
+
+  // Build quick wins
+  const quickWins = [
+    '✅ Generate basic sitemap with online tool (XML-sitemaps.com) (10 min)',
+    '✅ Add sitemap URL to robots.txt (2 min)',
+    '✅ Submit to Google Search Console (5 min)',
+    '✅ Submit to Bing Webmaster Tools (5 min)',
+    '✅ Validate with Google Rich Results Test (3 min)',
+    '✅ Re-scan to confirm XML Sitemap score improvement'
+  ];
+
+  // Build validation checklist
+  const validationChecklist = [
+    {
+      text: 'Sitemap.xml created and accessible at domain root',
+      checked: false
+    },
+    {
+      text: 'All important pages included (no 404s or redirects)',
+      checked: false
+    },
+    {
+      text: 'Excluded admin, login, and noindex pages',
+      checked: false
+    },
+    {
+      text: 'Sitemap reference added to robots.txt',
+      checked: false
+    },
+    {
+      text: 'Submitted to Google Search Console',
+      checked: false
+    },
+    {
+      text: 'Submitted to Bing Webmaster Tools',
+      checked: false
+    },
+    {
+      text: 'Validated with no errors in Search Console',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  // Build code snippet
+  const codeSnippet = `## Complete XML Sitemap Implementation
+
+### 1. Generate Sitemap (Choose One Method)
+
+**Method A: WordPress (Yoast SEO)**
+\`\`\`
+1. Install Yoast SEO plugin
+2. Go to SEO → General → Features
+3. Enable "XML sitemaps"
+4. View sitemap at: ${domain}/sitemap_index.xml
+\`\`\`
+
+**Method B: Node.js/Express**
+\`\`\`javascript
+const { SitemapStream, streamToPromise } = require('sitemap');
+const { createWriteStream } = require('fs');
+
+async function generateSitemap() {
+  const sitemap = new SitemapStream({ hostname: '${domain}' });
+  const writeStream = createWriteStream('./public/sitemap.xml');
+
+  sitemap.pipe(writeStream);
+
+  // Add URLs
+  sitemap.write({ url: '/', changefreq: 'weekly', priority: 1.0 });
+  sitemap.write({ url: '/services', changefreq: 'monthly', priority: 0.8 });
+  sitemap.write({ url: '/blog', changefreq: 'daily', priority: 0.7 });
+
+  sitemap.end();
+
+  await streamToPromise(sitemap);
+  console.log('Sitemap generated!');
+}
+
+generateSitemap();
+\`\`\`
+
+**Method C: Python**
+\`\`\`python
+from datetime import datetime
+
+def generate_sitemap():
+    urls = [
+        {'loc': '${domain}/', 'priority': '1.0', 'changefreq': 'weekly'},
+        {'loc': '${domain}/services', 'priority': '0.8', 'changefreq': 'monthly'},
+        {'loc': '${domain}/blog', 'priority': '0.7', 'changefreq': 'daily'},
+    ]
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n'
+
+    for url in urls:
+        xml += '  <url>\\n'
+        xml += f'    <loc>{url["loc"]}</loc>\\n'
+        xml += f'    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>\\n'
+        xml += f'    <changefreq>{url["changefreq"]}</changefreq>\\n'
+        xml += f'    <priority>{url["priority"]}</priority>\\n'
+        xml += '  </url>\\n'
+
+    xml += '</urlset>'
+
+    with open('sitemap.xml', 'w') as f:
+        f.write(xml)
+
+generate_sitemap()
+\`\`\`
+
+### 2. Add Sitemap to robots.txt
+
+\`\`\`
+# Add to robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: ${domain}/sitemap.xml
+\`\`\`
+
+### 3. Submit to Search Engines
+
+**Google Search Console:**
+1. Visit: https://search.google.com/search-console
+2. Add property for ${domain}
+3. Go to Sitemaps section (left sidebar)
+4. Enter "sitemap.xml" and click Submit
+
+**Bing Webmaster Tools:**
+1. Visit: https://www.bing.com/webmasters
+2. Add site: ${domain}
+3. Go to Sitemaps section
+4. Submit sitemap URL
+
+### 4. Validation
+
+**Check Sitemap Format:**
+\`\`\`bash
+# Test sitemap is accessible
+curl ${domain}/sitemap.xml
+
+# Validate XML format
+xmllint --noout sitemap.xml
+\`\`\`
+
+**Online Validators:**
+- Google Search Console → Sitemaps → View errors
+- XML Sitemap Validator: https://www.xml-sitemaps.com/validate-xml-sitemap.html`;
+
+  return {
+    id: `rec_${issue.category}_sitemap_${Date.now()}`,
+    title: 'Technical Setup: XML Sitemap',
+    category: issue.category,
+    subfactor: 'sitemapScore',
+    priority: 'high',
+    priorityScore: issue.priority || 80,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "30-60 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasSitemap: hasSitemap,
+      sitemapUrl: sitemapUrl,
+      pageCount: pageCount,
+      lastModified: lastModified
+    },
+    generatedBy: 'programmatic_sitemap'
+  };
+}
+
+/**
+ * Generates comprehensive robots.txt recommendations
+ */
+function makeProgrammaticRobotsTxtRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasRobotsTxt = scanEvidence.technical?.hasRobotsTxt || false;
+  const robotsTxtContent = scanEvidence.technical?.robotsTxtContent || '';
+  const blocksAll = /User-agent:\s*\*\s*Disallow:\s*\//i.test(robotsTxtContent);
+  const hasSitemapRef = /Sitemap:/i.test(robotsTxtContent);
+
+  const finding = !hasRobotsTxt
+    ? `Your site is missing a robots.txt file (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This can cause search engines and AI crawlers to miss important configuration and may result in inefficient crawling.`
+    : blocksAll
+    ? `Your robots.txt file blocks ALL crawlers (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This prevents search engines and AI systems from accessing your site, making you invisible to ChatGPT, Perplexity, and Google AI Overviews.`
+    : !hasSitemapRef
+    ? `Your robots.txt exists but is missing sitemap reference (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Adding your sitemap URL helps crawlers discover content faster.`
+    : `Your robots.txt is configured but may need optimization (Score: ${issue.currentScore}/100, Target: ${issue.threshold}).`;
+
+  const impact = `**Why Robots.txt Matters for AEO:**
+
+Proper robots.txt configuration ensures AI crawlers can access and index your content:
+
+- **Crawler guidance**: Tells search engines and AI bots what to crawl
+- **Sitemap discovery**: Points crawlers to your sitemap for efficient indexing
+- **Resource optimization**: Prevents crawling of admin/duplicate pages
+- **AI training access**: Ensures your content is available for AI model training
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Robots.txt score
+- **Better crawl efficiency**: Crawlers focus on important pages
+- **Faster indexing**: Sitemap reference speeds up discovery`;
+
+  const actionSteps = [
+    hasRobotsTxt ? 'Review existing robots.txt for issues' : 'Create robots.txt file in site root',
+    blocksAll ? 'Remove "Disallow: /" to allow crawling' : 'Ensure important pages are not blocked',
+    'Add sitemap reference to robots.txt',
+    'Block admin, login, and duplicate pages',
+    'Allow all major search engine bots',
+    'Test with Google Search Console robots.txt tester',
+    'Re-scan to confirm Robots.txt score improvement'
+  ];
+
+  const customizedImplementation = `### Robots.txt Configuration for ${domain}
+
+**Current Status:** ${hasRobotsTxt ? `✅ File exists at ${domain}/robots.txt` : '❌ No robots.txt found'}
+${blocksAll ? '\n⚠️ **CRITICAL**: Your robots.txt blocks ALL crawlers - fix immediately!' : ''}
+${hasRobotsTxt && !hasSitemapRef ? '\n⚠️ **Missing**: Sitemap reference not found' : ''}
+
+**Recommended Configuration:**
+
+Your robots.txt should:
+1. ✅ Allow all major search engine crawlers
+2. ✅ Block admin, login, and private areas
+3. ✅ Reference your XML sitemap
+4. ✅ Set reasonable crawl delays if needed`;
+
+  const readyToUseContent = `# Robots.txt for ${domain}
+# Allow all search engines and AI crawlers
+
+User-agent: *
+Allow: /
+
+# Block admin and private areas
+Disallow: /admin/
+Disallow: /login/
+Disallow: /wp-admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+
+# Block duplicate content
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /search?
+
+# Sitemap location
+Sitemap: ${domain}/sitemap.xml
+
+# Optional: Crawl delay (use sparingly)
+# Crawl-delay: 10`;
+
+  const implementationNotes = [
+    '**File location**: Must be at ${domain}/robots.txt (site root)',
+    '**Case sensitive**: Use lowercase "robots.txt" (not Robots.txt)',
+    '**Syntax**: One directive per line, blank lines for readability',
+    '**Allow everything**: "User-agent: * / Allow: /" lets all bots crawl',
+    '**Block carefully**: Only block truly private/duplicate content',
+    '**Sitemap reference**: Helps crawlers discover all pages faster',
+    '**Testing**: Always test with Google Search Console before deploying',
+    '**AI crawlers**: GPTBot, CCBot, and other AI bots respect robots.txt'
+  ];
+
+  const quickWins = [
+    hasRobotsTxt ? '✅ Review robots.txt for blocking issues (5 min)' : '✅ Create basic robots.txt file (5 min)',
+    blocksAll ? '✅ Remove "Disallow: /" immediately (2 min)' : '✅ Add sitemap reference (2 min)',
+    '✅ Block admin/login paths (3 min)',
+    '✅ Test with Google Search Console (5 min)',
+    '✅ Re-scan to confirm Robots.txt score improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: 'robots.txt file created at domain root',
+      checked: false
+    },
+    {
+      text: blocksAll ? 'Removed "Disallow: /" blocking rule' : 'All important pages allowed for crawling',
+      checked: false
+    },
+    {
+      text: 'Sitemap reference added',
+      checked: false
+    },
+    {
+      text: 'Admin/login paths blocked appropriately',
+      checked: false
+    },
+    {
+      text: 'Tested with Google Search Console robots.txt tester',
+      checked: false
+    },
+    {
+      text: 'No syntax errors or warnings',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Complete Robots.txt Setup
+
+### 1. Basic Robots.txt Template
+
+\`\`\`
+# Robots.txt for ${domain}
+
+# Allow all search engines and AI crawlers
+User-agent: *
+Allow: /
+
+# Block private areas
+Disallow: /admin/
+Disallow: /login/
+Disallow: /wp-admin/
+Disallow: /private/
+
+# Sitemap
+Sitemap: ${domain}/sitemap.xml
+\`\`\`
+
+### 2. Advanced Configuration (If Needed)
+
+\`\`\`
+# Different rules for specific bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# AI Crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: *
+Crawl-delay: 10
+Disallow: /admin/
+\`\`\`
+
+### 3. Common Patterns to Block
+
+\`\`\`
+# Block query parameters
+Disallow: /*?
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+# Block duplicate content
+Disallow: /print/
+Disallow: /pdf/
+Disallow: /*?print=
+
+# Block search results
+Disallow: /search
+Disallow: /search?*
+
+# Block tracking URLs
+Disallow: /track/
+Disallow: /click/
+\`\`\`
+
+### 4. Testing Robots.txt
+
+**Google Search Console:**
+1. Go to: https://search.google.com/search-console
+2. Select property: ${domain}
+3. Tools → robots.txt Tester
+4. Test specific URLs to verify access
+
+**Manual Test:**
+\`\`\`bash
+# Check robots.txt is accessible
+curl ${domain}/robots.txt
+
+# Verify syntax
+# Visit: https://www.google.com/webmasters/tools/robots-testing-tool
+\`\`\`
+
+### 5. Common Mistakes to Avoid
+
+❌ **DON'T**: Block everything with "Disallow: /"
+❌ **DON'T**: Put robots.txt in subdirectory (/pages/robots.txt)
+❌ **DON'T**: Use wildcards incorrectly (Disallow: /*.pdf wrong syntax)
+❌ **DON'T**: Block CSS/JS files (hurts rendering in Search Console)
+
+✅ **DO**: Allow major crawlers access to public content
+✅ **DO**: Reference sitemap
+✅ **DO**: Block only private/duplicate areas
+✅ **DO**: Test before deploying`;
+
+  return {
+    id: `rec_${issue.category}_robotstxt_${Date.now()}`,
+    title: 'Technical Setup: Robots.txt Configuration',
+    category: issue.category,
+    subfactor: 'robotsTxtScore',
+    priority: blocksAll ? 'critical' : 'medium',
+    priorityScore: issue.priority || (blocksAll ? 95 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: hasRobotsTxt ? "15-30 minutes" : "20-40 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasRobotsTxt: hasRobotsTxt,
+      blocksAll: blocksAll,
+      hasSitemapRef: hasSitemapRef
+    },
+    generatedBy: 'programmatic_robotstxt'
+  };
+}
+
+/**
+ * Generates comprehensive HTTPS/SSL recommendations
+ */
+function makeProgrammaticHttpsRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasHttps = scanEvidence.url?.startsWith('https://') || false;
+  const hasMixedContent = scanEvidence.technical?.hasMixedContent || false;
+  const sslExpiry = scanEvidence.technical?.sslExpiryDays || null;
+  const sslIssuer = scanEvidence.technical?.sslIssuer || 'Unknown';
+
+  const finding = !hasHttps
+    ? `Your site is not using HTTPS (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This is a CRITICAL security issue. Sites without HTTPS are penalized by search engines, flagged as "Not Secure" by browsers, and excluded from many AI training datasets.`
+    : hasMixedContent
+    ? `Your site uses HTTPS but has mixed content warnings (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Some resources load over HTTP, triggering browser warnings and reducing trust signals for AI systems.`
+    : sslExpiry && sslExpiry < 30
+    ? `Your SSL certificate expires in ${sslExpiry} days (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Renew soon to avoid downtime and trust issues.`
+    : `Your site uses HTTPS (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may need optimization for better security posture.`;
+
+  const impact = `**Why HTTPS Matters for AEO:**
+
+HTTPS is a foundational trust signal for search engines and AI systems:
+
+- **Search ranking factor**: Google penalizes non-HTTPS sites
+- **Browser warnings**: Chrome/Firefox flag HTTP sites as "Not Secure"
+- **AI training exclusion**: Many AI models exclude insecure sites from training data
+- **User trust**: Visitors bounce from sites showing security warnings
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.8)} points** on HTTPS Security score
+- **Required for indexing**: Some AI crawlers skip non-HTTPS sites entirely
+- **Trust signals**: SSL certificate = legitimacy indicator for answer engines`;
+
+  const actionSteps = [
+    !hasHttps ? 'Obtain SSL certificate (free from Let\'s Encrypt)' : 'Verify SSL certificate is valid and up-to-date',
+    !hasHttps ? 'Install SSL certificate on web server' : hasMixedContent ? 'Fix mixed content warnings' : 'Ensure all resources load over HTTPS',
+    !hasHttps ? 'Redirect all HTTP traffic to HTTPS' : 'Verify HTTPS redirects work correctly',
+    'Test SSL configuration with SSL Labs',
+    'Enable HSTS (HTTP Strict Transport Security)',
+    'Update internal links to use HTTPS',
+    'Re-scan to confirm HTTPS Security score improvement'
+  ];
+
+  const customizedImplementation = `### HTTPS Setup for ${domain}
+
+**Current Status:** ${hasHttps ? `✅ HTTPS enabled` : '❌ **CRITICAL**: No HTTPS detected'}
+${hasHttps && sslIssuer ? `- SSL Issuer: ${sslIssuer}\n` : ''}${hasHttps && sslExpiry ? `- Certificate expires in: ${sslExpiry} days ${sslExpiry < 30 ? '⚠️ **Renew soon!**' : ''}\n` : ''}${hasMixedContent ? '- ⚠️ **Mixed content detected** - some resources load over HTTP\n' : ''}
+
+${!hasHttps ? '**URGENT**: You must implement HTTPS immediately. This is non-negotiable for modern web presence and AI visibility.' : ''}
+
+**Implementation Path:**
+
+${!hasHttps ? `1. **Get SSL Certificate** (Free from Let's Encrypt)
+2. **Install on Server** (varies by host/platform)
+3. **Force HTTPS Redirects** (301 redirects from HTTP → HTTPS)
+4. **Update Internal Links** (change http:// → https://)
+5. **Enable HSTS** (prevents downgrade attacks)` : `1. ${hasMixedContent ? '**Fix mixed content** - update all HTTP resources to HTTPS' : '**Verify certificate validity**'}
+2. **Test SSL configuration** with SSL Labs
+3. **Enable HSTS** if not already active
+4. **Set up auto-renewal** (Let's Encrypt certs expire every 90 days)`}`;
+
+  const readyToUseContent = `**Apache .htaccess - Force HTTPS:**
+\`\`\`apache
+# Redirect all HTTP to HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Enable HSTS (HTTP Strict Transport Security)
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+\`\`\`
+
+**Nginx - Force HTTPS:**
+\`\`\`nginx
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name ${domain.replace('https://', '').replace('http://', '')};
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS server block
+server {
+    listen 443 ssl http2;
+    server_name ${domain.replace('https://', '').replace('http://', '')};
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    # Enable HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+}
+\`\`\``;
+
+  const implementationNotes = [
+    '**SSL Certificate**: Use Let\'s Encrypt for free, auto-renewing certificates',
+    '**Installation**: Varies by hosting provider (cPanel, Plesk, AWS, etc.)',
+    '**Redirects**: Always use 301 (permanent) redirects from HTTP → HTTPS',
+    '**Mixed content**: Check browser console for http:// resources on https:// pages',
+    '**HSTS**: Forces browsers to only connect via HTTPS (prevents downgrade attacks)',
+    '**Auto-renewal**: Set up certbot or hosting auto-renewal (Let\'s Encrypt certs expire in 90 days)',
+    '**Testing**: Use SSL Labs (ssllabs.com/ssltest) to verify configuration',
+    '**CDN**: If using Cloudflare/CDN, enable SSL there too (Full or Full Strict mode)'
+  ];
+
+  const quickWins = [
+    !hasHttps ? '✅ Get Let\'s Encrypt certificate (free, 15 min)' : '✅ Test SSL with SSL Labs (5 min)',
+    !hasHttps ? '✅ Install SSL on server/hosting (10-30 min)' : hasMixedContent ? '✅ Fix mixed content warnings (10-20 min)' : '✅ Verify HSTS is enabled (5 min)',
+    '✅ Set up 301 redirects HTTP → HTTPS (10 min)',
+    '✅ Update sitemap URLs to HTTPS (5 min)',
+    '✅ Test with browser (check for padlock icon) (2 min)',
+    '✅ Re-scan to confirm HTTPS score improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: !hasHttps ? 'SSL certificate obtained and installed' : 'SSL certificate is valid and not expiring soon',
+      checked: false
+    },
+    {
+      text: 'All HTTP URLs redirect to HTTPS (301 redirects)',
+      checked: false
+    },
+    {
+      text: hasMixedContent ? 'Fixed all mixed content warnings' : 'No mixed content warnings in browser console',
+      checked: false
+    },
+    {
+      text: 'HSTS header enabled (Strict-Transport-Security)',
+      checked: false
+    },
+    {
+      text: 'SSL Labs test shows A or A+ rating',
+      checked: false
+    },
+    {
+      text: 'Browser shows padlock icon (secure connection)',
+      checked: false
+    },
+    {
+      text: 'Auto-renewal configured (for Let\'s Encrypt)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed HTTPS score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Complete HTTPS Implementation
+
+### 1. Get Free SSL Certificate (Let's Encrypt)
+
+**Ubuntu/Debian with Certbot:**
+\`\`\`bash
+# Install Certbot
+sudo apt update
+sudo apt install certbot python3-certbot-nginx
+
+# Get certificate (Nginx)
+sudo certbot --nginx -d ${domain.replace('https://', '').replace('http://', '')}
+
+# Get certificate (Apache)
+sudo certbot --apache -d ${domain.replace('https://', '').replace('http://', '')}
+
+# Test auto-renewal
+sudo certbot renew --dry-run
+\`\`\`
+
+**cPanel/Shared Hosting:**
+1. Log into cPanel
+2. Go to "SSL/TLS Status"
+3. Enable "AutoSSL" or install Let's Encrypt certificate
+4. Force HTTPS in .htaccess (see ready-to-use content)
+
+### 2. Force HTTPS Redirects
+
+**Node.js/Express:**
+\`\`\`javascript
+// Redirect HTTP to HTTPS middleware
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(301, 'https://' + req.headers.host + req.url);
+  }
+  next();
+});
+
+// Enable HSTS
+app.use((req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+\`\`\`
+
+**WordPress (wp-config.php):**
+\`\`\`php
+// Force HTTPS
+define('FORCE_SSL_ADMIN', true);
+
+// Update site URL
+define('WP_HOME', 'https://${domain.replace('https://', '').replace('http://', '')}');
+define('WP_SITEURL', 'https://${domain.replace('https://', '').replace('http://', '')}');
+
+// Add to .htaccess for full site redirect
+// (see Apache config in ready-to-use content)
+\`\`\`
+
+### 3. Fix Mixed Content
+
+**Find Mixed Content:**
+\`\`\`javascript
+// Run in browser console on your HTTPS page
+const insecureResources = [];
+performance.getEntriesByType('resource').forEach(resource => {
+  if (resource.name.startsWith('http://')) {
+    insecureResources.push(resource.name);
+  }
+});
+console.log('Insecure resources:', insecureResources);
+\`\`\`
+
+**Fix Pattern:**
+\`\`\`html
+<!-- Before (insecure) -->
+<img src="http://example.com/image.jpg">
+<script src="http://cdn.example.com/lib.js"></script>
+
+<!-- After (secure) -->
+<img src="https://example.com/image.jpg">
+<script src="https://cdn.example.com/lib.js"></script>
+
+<!-- Or use protocol-relative URLs -->
+<img src="//example.com/image.jpg">
+\`\`\`
+
+### 4. Test SSL Configuration
+
+**SSL Labs Test:**
+1. Visit: https://www.ssllabs.com/ssltest/
+2. Enter your domain
+3. Wait for test to complete
+4. Aim for A or A+ rating
+
+**Common Issues:**
+- ❌ Weak cipher suites → Update SSL configuration
+- ❌ Missing HSTS → Add Strict-Transport-Security header
+- ❌ Certificate chain incomplete → Reinstall with full chain
+- ❌ Mixed content → Fix HTTP resources on HTTPS pages
+
+### 5. Enable HSTS (HTTP Strict Transport Security)
+
+**What HSTS Does:**
+- Forces browsers to only connect via HTTPS
+- Prevents SSL stripping attacks
+- Required for A+ rating on SSL Labs
+
+**Implementation:**
+Add header to every HTTPS response:
+\`\`\`
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+\`\`\`
+
+**Preload List (Optional):**
+1. Visit: https://hstspreload.org/
+2. Submit your domain
+3. Browsers will force HTTPS even on first visit`;
+
+  return {
+    id: `rec_${issue.category}_https_${Date.now()}`,
+    title: 'Technical Setup: HTTPS/SSL Security',
+    category: issue.category,
+    subfactor: 'httpsScore',
+    priority: !hasHttps ? 'critical' : hasMixedContent ? 'high' : 'medium',
+    priorityScore: issue.priority || (!hasHttps ? 100 : hasMixedContent ? 85 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: !hasHttps ? "1-2 hours" : "30-60 minutes",
+    difficulty: !hasHttps ? "Medium" : "Easy",
+    estimatedScoreGain: Math.max(10, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasHttps: hasHttps,
+      hasMixedContent: hasMixedContent,
+      sslExpiry: sslExpiry,
+      sslIssuer: sslIssuer
+    },
+    generatedBy: 'programmatic_https'
+  };
+}
+
+/**
+ * Generates comprehensive crawl accessibility recommendations
+ */
+function makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasNoIndex = /<meta[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(scanEvidence.html || '');
+  const hasNoFollow = /<meta[^>]*name=["']robots["'][^>]*content=["'][^"']*nofollow/i.test(scanEvidence.html || '');
+  const hasCanonical = /<link[^>]*rel=["']canonical["']/i.test(scanEvidence.html || '');
+  const isJsRendered = scanEvidence.technical?.requiresJsRendering || false;
+  const has404Links = scanEvidence.technical?.broken404Links > 0;
+  const brokenLinkCount = scanEvidence.technical?.broken404Links || 0;
+
+  const crawlIssues = [];
+  if (hasNoIndex) crawlIssues.push('noindex meta tag blocks indexing');
+  if (hasNoFollow) crawlIssues.push('nofollow blocks link crawling');
+  if (isJsRendered) crawlIssues.push('content requires JavaScript rendering');
+  if (has404Links) crawlIssues.push(`${brokenLinkCount} broken links (404s)`);
+
+  const finding = crawlIssues.length > 0
+    ? `Your page has crawl accessibility issues (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Detected: ${crawlIssues.join(', ')}. These prevent search engines and AI crawlers from fully accessing and indexing your content.`
+    : `Your page is generally crawlable (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may have minor accessibility issues affecting AI visibility.`;
+
+  const impact = `**Why Crawl Accessibility Matters for AEO:**
+
+If crawlers can't access your content, you're invisible to search engines and AI systems:
+
+- **Indexing blocked**: noindex prevents page from appearing in search results and AI training
+- **Link equity lost**: nofollow prevents crawlers from following links
+- **JS rendering issues**: AI crawlers may not execute JavaScript, missing content
+- **Broken links**: 404s signal poor site quality, reducing trust scores
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on Crawl Accessibility score
+- **Full indexing**: Ensures AI can access all public content
+- **Better link graph**: Proper crawling strengthens site authority`;
+
+  const actionSteps = [
+    hasNoIndex ? 'Remove noindex meta tag (unless intentional)' : 'Verify no accidental noindex tags',
+    hasNoFollow ? 'Remove nofollow from internal links' : 'Ensure important pages are followable',
+    isJsRendered ? 'Implement server-side rendering or prerendering' : 'Verify content is in HTML source',
+    has404Links ? `Fix ${brokenLinkCount} broken links` : 'Run broken link checker periodically',
+    'Ensure robots.txt allows crawling',
+    'Test with Google Search Console URL Inspection',
+    'Re-scan to confirm Crawl Accessibility score improvement'
+  ];
+
+  const customizedImplementation = `### Crawl Accessibility Fixes for ${domain}
+
+**Current Issues:**
+${hasNoIndex ? '- ⚠️ **noindex meta tag** detected - page won\'t be indexed\n' : ''}${hasNoFollow ? '- ⚠️ **nofollow meta tag** detected - links won\'t be followed\n' : ''}${isJsRendered ? '- ⚠️ **JavaScript-rendered content** - may not be crawlable\n' : ''}${has404Links ? `- ⚠️ **${brokenLinkCount} broken links** found - fix to improve crawlability\n` : ''}${crawlIssues.length === 0 ? '- ✅ No major crawl blockers detected\n' : ''}
+
+**Priority Fixes:**
+
+${hasNoIndex ? '1. **Remove noindex** - This is blocking your page from all search engines and AI indexes\n' : ''}${isJsRendered ? `${hasNoIndex ? '2' : '1'}. **Make content crawlable** - Ensure critical content is in HTML source, not JS-only\n` : ''}${has404Links ? `${hasNoIndex || isJsRendered ? '3' : '1'}. **Fix broken links** - Update or remove ${brokenLinkCount} broken link${brokenLinkCount > 1 ? 's' : ''}\n` : ''}`;
+
+  const readyToUseContent = `**Remove noindex (if present):**
+\`\`\`html
+<!-- REMOVE this if found in <head> -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="noindex">
+
+<!-- OR replace with this to allow indexing -->
+<meta name="robots" content="index, follow">
+\`\`\`
+
+**Canonical Tag (Prevent Duplicate Content):**
+\`\`\`html
+<!-- Add to <head> to specify preferred URL -->
+<link rel="canonical" href="${domain}${scanEvidence.url?.replace(domain, '') || '/'}">
+\`\`\`
+
+**X-Robots-Tag (Server-level):**
+\`\`\`nginx
+# Nginx - Allow indexing (remove any blocking headers)
+# DON'T send this header for public pages:
+# add_header X-Robots-Tag "noindex, nofollow";
+
+# Only use X-Robots-Tag for private/admin pages:
+location /admin/ {
+    add_header X-Robots-Tag "noindex, nofollow";
+}
+\`\`\``;
+
+  const implementationNotes = [
+    '**noindex removal**: Only remove if page should be public/indexed',
+    '**nofollow usage**: Reserve for user-generated content (comments, forums)',
+    '**JS rendering**: Critical content must be in HTML source, not loaded via JS',
+    '**Canonical tags**: Use to prevent duplicate content issues',
+    '**404 fixes**: Update broken internal links or implement 301 redirects',
+    '**Pagination**: Use rel="next" and rel="prev" for paginated content',
+    '**Testing**: Use Google Search Console URL Inspection to verify crawlability',
+    '**Mobile**: Ensure mobile version is equally crawlable (responsive design preferred)'
+  ];
+
+  const quickWins = [
+    hasNoIndex ? '✅ Remove noindex meta tag immediately (2 min)' : '✅ Verify no accidental noindex tags (5 min)',
+    has404Links ? `✅ Fix top ${Math.min(5, brokenLinkCount)} broken links (15-30 min)` : '✅ Run broken link checker (10 min)',
+    isJsRendered ? '✅ Verify critical content in HTML source (10 min)' : '✅ Test with Fetch as Google (5 min)',
+    '✅ Check robots.txt allows crawling (3 min)',
+    '✅ Re-scan to confirm Crawl Accessibility improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: hasNoIndex ? 'Removed noindex meta tag' : 'Verified no blocking meta tags present',
+      checked: false
+    },
+    {
+      text: has404Links ? `Fixed ${brokenLinkCount} broken links` : 'No broken links detected',
+      checked: false
+    },
+    {
+      text: isJsRendered ? 'Critical content available in HTML source' : 'Content is server-rendered or prerendered',
+      checked: false
+    },
+    {
+      text: 'Canonical tags implemented correctly',
+      checked: false
+    },
+    {
+      text: 'robots.txt allows crawling of important pages',
+      checked: false
+    },
+    {
+      text: 'Tested with Google Search Console URL Inspection',
+      checked: false
+    },
+    {
+      text: 'No X-Robots-Tag blocking headers',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Crawl Accessibility Fixes
+
+### 1. Remove Indexing Blocks
+
+**Check for noindex:**
+\`\`\`bash
+# Search your HTML for noindex tags
+curl ${domain} | grep -i noindex
+
+# Check HTTP headers
+curl -I ${domain} | grep -i x-robots-tag
+\`\`\`
+
+**Remove noindex meta tag:**
+\`\`\`html
+<!-- Remove these from <head>: -->
+<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
+<meta name="googlebot" content="noindex">
+
+<!-- Allow indexing with: -->
+<meta name="robots" content="index, follow">
+<!-- Or simply remove the meta tag entirely (default is index, follow) -->
+\`\`\`
+
+### 2. Server-Side Rendering (SSR) for JS Apps
+
+**Next.js (React SSR):**
+\`\`\`javascript
+// pages/index.js - automatically server-rendered
+export default function HomePage({ data }) {
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      <p>{data.content}</p>
+    </div>
+  );
+}
+
+// Data is fetched server-side (crawlable)
+export async function getServerSideProps() {
+  const data = await fetchData();
+  return { props: { data } };
+}
+\`\`\`
+
+**Prerendering for SPAs:**
+\`\`\`bash
+# Use Prerender.io or similar service
+# Or use Puppeteer to pre-render:
+
+npm install puppeteer
+
+# prerender.js
+const puppeteer = require('puppeteer');
+
+async function prerenderPage(url) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  const html = await page.content();
+  await browser.close();
+  return html;
+}
+\`\`\`
+
+### 3. Fix Broken Links
+
+**Find Broken Links:**
+\`\`\`bash
+# Use broken-link-checker (npm package)
+npm install -g broken-link-checker
+
+# Scan site for 404s
+blc ${domain} -ro
+
+# Or use online tool:
+# https://www.deadlinkchecker.com/
+\`\`\`
+
+**Fix Patterns:**
+\`\`\`javascript
+// Implement 301 redirects for moved pages
+// Express.js example:
+app.get('/old-page', (req, res) => {
+  res.redirect(301, '/new-page');
+});
+
+// Or update links in HTML:
+// Before: <a href="/old-page">Link</a>
+// After:  <a href="/new-page">Link</a>
+\`\`\`
+
+### 4. Canonical Tags (Prevent Duplicates)
+
+**Implementation:**
+\`\`\`html
+<!-- Add to every page in <head> -->
+<link rel="canonical" href="${domain}/current-page-url">
+
+<!-- For paginated content -->
+<link rel="canonical" href="${domain}/products">
+<link rel="prev" href="${domain}/products?page=1">
+<link rel="next" href="${domain}/products?page=3">
+\`\`\`
+
+### 5. Testing Tools
+
+**Google Search Console:**
+1. Go to: https://search.google.com/search-console
+2. Tools → URL Inspection
+3. Enter page URL
+4. Check "Coverage" section for issues
+
+**Manual Crawl Test:**
+\`\`\`bash
+# Test if content is in HTML source
+curl ${domain} | grep "important content phrase"
+
+# Check for JavaScript-only content
+# If phrase doesn't appear, it's JS-rendered (bad for crawlers)
+\`\`\`
+
+**Screaming Frog SEO Spider:**
+- Download free version
+- Crawl your site
+- Check "Response Codes" tab for 404s
+- Check "Directives" tab for noindex pages`;
+
+  return {
+    id: `rec_${issue.category}_crawl_${Date.now()}`,
+    title: 'Technical Setup: Crawl Accessibility',
+    category: issue.category,
+    subfactor: 'crawlAccessibilityScore',
+    priority: hasNoIndex ? 'critical' : has404Links || isJsRendered ? 'high' : 'medium',
+    priorityScore: issue.priority || (hasNoIndex ? 95 : has404Links ? 80 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: hasNoIndex ? "10-20 minutes" : isJsRendered ? "2-4 hours" : "30-60 minutes",
+    difficulty: isJsRendered ? "Hard" : hasNoIndex ? "Easy" : "Medium",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasNoIndex: hasNoIndex,
+      hasNoFollow: hasNoFollow,
+      hasCanonical: hasCanonical,
+      isJsRendered: isJsRendered,
+      has404Links: has404Links,
+      brokenLinkCount: brokenLinkCount,
+      crawlIssues: crawlIssues
+    },
+    generatedBy: 'programmatic_crawl_accessibility'
   };
 }
 
