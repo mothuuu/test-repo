@@ -113,8 +113,11 @@ function displayResults(scan, quota) {
         displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
     }
 
-    // Display recommendations based on tier
-    if (userTier === 'guest') {
+    // Display recommendations based on tier and scan type
+    if (scan.is_competitor || scan.domain_type === 'competitor') {
+        // Competitor scan - show info message instead of recommendations
+        displayCompetitorScanMessage(scan);
+    } else if (userTier === 'guest') {
         // Guest: Show NO recommendations, only signup CTA
         displayGuestRecommendations(scan);
     } else if (scan.recommendations && scan.recommendations.length > 0) {
@@ -181,6 +184,45 @@ function displayCategoryScores(categories, recommendations) {
 }
 
 // Guest recommendations - show signup CTA instead of recommendations
+function displayCompetitorScanMessage(scan) {
+    const container = document.getElementById('recommendationsList');
+    container.innerHTML = `
+        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-12 text-center border-2 border-orange-300">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Competitor Scan Complete</h3>
+            <p class="text-gray-700 mb-6 max-w-2xl mx-auto">
+                This is a <span class="font-bold text-orange-600">competitor domain scan</span>.
+                Your primary domain is <span class="font-bold text-blue-600">${scan.primary_domain}</span>.
+            </p>
+            <div class="bg-white rounded-lg p-6 mb-6 max-w-xl mx-auto border border-orange-200">
+                <h4 class="font-bold text-lg mb-3 text-gray-900">Competitor Scan Includes:</h4>
+                <div class="text-left mx-auto" style="max-width: 300px;">
+                    <div class="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                        <span>✅</span> <span>AI Visibility Score</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                        <span>✅</span> <span>8 Category Scores</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400 font-semibold mb-2 line-through">
+                        <span>❌</span> <span>Recommendations</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400 font-semibold line-through">
+                        <span>❌</span> <span>Implementation Guidance</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                To get recommendations and implementation guidance, scan your primary domain:
+                <span class="font-bold text-blue-600">${scan.primary_domain}</span>
+            </p>
+            <a href="dashboard.html"
+               class="inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-full text-lg hover:shadow-xl transition-all transform hover:scale-105">
+                ← Back to Dashboard
+            </a>
+        </div>
+    `;
+}
+
 function displayGuestRecommendations(scan) {
     const container = document.getElementById('recommendationsList');
     container.innerHTML = `

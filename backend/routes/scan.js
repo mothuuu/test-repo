@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db/database');
 
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
+const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -31,9 +32,9 @@ const authenticateToken = (req, res, next) => {
 
 // Plan limits
 const PLAN_LIMITS = {
-  free: { scansPerMonth: 2, pagesPerScan: 1 },
-  diy: { scansPerMonth: 25, pagesPerScan: 5 },
-  pro: { scansPerMonth: 50, pagesPerScan: 25 }
+  free: { scansPerMonth: 2, pagesPerScan: 1, competitorScans: 0 },
+  diy: { scansPerMonth: 25, pagesPerScan: 5, competitorScans: 2 },
+  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 }
 };
 
 // V5 Rubric Category Weights
@@ -128,9 +129,11 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get user info (including industry preference)
+    // Get user info (including industry preference and primary domain)
     const userResult = await db.query(
-      'SELECT plan, scans_used_this_month, industry, industry_custom FROM users WHERE id = $1',
+      `SELECT plan, scans_used_this_month, industry, industry_custom,
+              primary_domain, competitor_scans_used_this_month, primary_domain_changed_at
+       FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -146,11 +149,61 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       console.log(`👤 User industry preference: ${user.industry}${user.industry_custom ? ` (${user.industry_custom})` : ''}`);
     }
 
-    // Check quota
-    if (user.scans_used_this_month >= planLimits.scansPerMonth) {
+    // Extract domain from scan URL
+    const scanDomain = extractRootDomain(url);
+    if (!scanDomain) {
+      return res.status(400).json({ error: 'Unable to extract domain from URL' });
+    }
+
+    // Determine if this is a primary domain or competitor scan
+    let domainType = 'primary';
+    let isCompetitorScan = false;
+
+    if (!user.primary_domain) {
+      // First scan - set as primary domain
+      console.log(`🏠 Setting primary domain for user ${userId}: ${scanDomain}`);
+      await db.query(
+        'UPDATE users SET primary_domain = $1 WHERE id = $2',
+        [scanDomain, userId]
+      );
+      user.primary_domain = scanDomain;
+    } else if (!isPrimaryDomain(url, user.primary_domain)) {
+      // Different domain - this is a competitor scan
+      domainType = 'competitor';
+      isCompetitorScan = true;
+      console.log(`🔍 Competitor scan detected: ${scanDomain} (primary: ${user.primary_domain})`);
+
+      // Check competitor scan quota
+      const competitorScansUsed = user.competitor_scans_used_this_month || 0;
+      if (competitorScansUsed >= planLimits.competitorScans) {
+        return res.status(403).json({
+          error: 'Competitor scan quota exceeded',
+          message: `Your ${user.plan} plan allows ${planLimits.competitorScans} competitor scans per month. You've used ${competitorScansUsed}.`,
+          quota: {
+            type: 'competitor',
+            used: competitorScansUsed,
+            limit: planLimits.competitorScans
+          },
+          primaryDomain: user.primary_domain,
+          upgrade: user.plan === 'free' ? {
+            message: 'Upgrade to DIY to scan 2 competitors per month',
+            cta: 'Upgrade to DIY - $29/month',
+            ctaUrl: '/checkout.html?plan=diy'
+          } : user.plan === 'diy' ? {
+            message: 'Upgrade to Pro for 10 competitor scans per month',
+            cta: 'Upgrade to Pro - $99/month',
+            ctaUrl: '/checkout.html?plan=pro'
+          } : null
+        });
+      }
+    }
+
+    // Check primary scan quota (only for primary domain scans)
+    if (!isCompetitorScan && user.scans_used_this_month >= planLimits.scansPerMonth) {
       return res.status(403).json({
         error: 'Scan quota exceeded',
         quota: {
+          type: 'primary',
           used: user.scans_used_this_month,
           limit: planLimits.scansPerMonth
         }
@@ -160,34 +213,52 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // Validate page count for plan
     const pageCount = pages ? Math.min(pages.length, planLimits.pagesPerScan) : 1;
 
-    console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url}`);
+    console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url} [${domainType}]`);
 
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version
-      ) VALUES ($1, $2, $3, $4, $5) 
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5']
+      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain]
     );
 
     const scan = scanRecord.rows[0];
 
-    // Get existing user progress for this scan (if any)
-    const existingProgressResult = await db.query(
-      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
-      [userId, scan.id]
-    );
-    const userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+    // Get existing user progress for this scan (if any) - only for primary domain scans
+    let userProgress = null;
+    if (!isCompetitorScan) {
+      const existingProgressResult = await db.query(
+        `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+        [userId, scan.id]
+      );
+      userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+    }
 
-    // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
+    // Perform appropriate scan type
+    let scanResult;
+    if (isCompetitorScan) {
+      // Lightweight competitor scan (scores only, no recommendations)
+      console.log(`🔍 Performing lightweight competitor scan (scores only)`);
+      scanResult = await performCompetitorScan(url);
+    } else {
+      // Full V5 rubric scan with recommendations
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
+    }
 
-    // Increment user's scan count AFTER successful scan
-    await db.query(
-      'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-      [userId]
-    );
+    // Increment appropriate scan count AFTER successful scan
+    if (isCompetitorScan) {
+      await db.query(
+        'UPDATE users SET competitor_scans_used_this_month = competitor_scans_used_this_month + 1 WHERE id = $1',
+        [userId]
+      );
+    } else {
+      await db.query(
+        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
+        [userId]
+      );
+    }
 
     // Update scan record with results
     await db.query(
@@ -223,18 +294,19 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       ]
     );
     
-    
+
     // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
+    // Skip saving recommendations for competitor scans
 let progressInfo = null;
-if (scanResult.recommendations && scanResult.recommendations.length > 0) {
+if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0) {
   // Prepare page priorities from request
-  const selectedPages = pages && pages.length > 0 
+  const selectedPages = pages && pages.length > 0
     ? pages.map((pageUrl, index) => ({
         url: pageUrl,
         priority: index + 1 // First page = priority 1, etc.
       }))
     : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
-  
+
   // Save with hybrid system
   progressInfo = await saveHybridRecommendations(
     scan.id,
@@ -244,7 +316,7 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
     scanResult.recommendations,
     user.plan
   );
-  
+
   console.log(`   📊 Recommendations saved:`);
   console.log(`      Site-wide: ${progressInfo.siteWideTotal} (${progressInfo.siteWideActive} active)`);
   console.log(`      Page-specific: ${progressInfo.pageSpecificTotal} (all locked)`);
@@ -276,16 +348,29 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
         status: 'completed',
         total_score: scanResult.totalScore,
         rubric_version: 'V5',
+        domain_type: domainType,
+        extracted_domain: scanDomain,
+        primary_domain: user.primary_domain,
         categories: scanResult.categories,
-        recommendations: scanResult.recommendations,
-        faq: scanResult.faq || null,
+        recommendations: scanResult.recommendations || [],
+        faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
-        created_at: scan.created_at
+        created_at: scan.created_at,
+        is_competitor: isCompetitorScan
       },
       quota: {
-        used: user.scans_used_this_month + 1,
-        limit: planLimits.scansPerMonth
-      }
+        primary: {
+          used: user.scans_used_this_month + (isCompetitorScan ? 0 : 1),
+          limit: planLimits.scansPerMonth
+        },
+        competitor: {
+          used: (user.competitor_scans_used_this_month || 0) + (isCompetitorScan ? 1 : 0),
+          limit: planLimits.competitorScans
+        }
+      },
+      message: isCompetitorScan
+        ? `Competitor scan complete. Scores only - recommendations not available for competitor domains.`
+        : null
     });
 
   } catch (error) {
@@ -645,6 +730,59 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
 // Now properly uses the V5RubricEngine class!
 // ============================================
+/**
+ * Lightweight Competitor Scan - Scores Only
+ * Skips recommendation generation to save API tokens
+ */
+async function performCompetitorScan(url) {
+  console.log('🔬 Starting lightweight competitor scan for:', url);
+
+  try {
+    // Run V5 Rubric Engine for scoring only
+    console.log('📊 Running V5 Rubric Engine (scores only)...');
+    const engine = new V5RubricEngine(url, {});
+    const v5Results = await engine.analyze();
+
+    // Extract scores from category results
+    const categories = {
+      aiReadability: v5Results.categories.aiReadability.score || 0,
+      aiSearchReadiness: v5Results.categories.aiSearchReadiness.score || 0,
+      contentFreshness: v5Results.categories.contentFreshness.score || 0,
+      contentStructure: v5Results.categories.contentStructure.score || 0,
+      speedUX: v5Results.categories.speedUX.score || 0,
+      technicalSetup: v5Results.categories.technicalSetup.score || 0,
+      trustAuthority: v5Results.categories.trustAuthority.score || 0,
+      voiceOptimization: v5Results.categories.voiceOptimization.score || 0
+    };
+
+    const totalScore = v5Results.totalScore;
+
+    console.log(`✅ Competitor scan complete. Total score: ${totalScore}/100`);
+    console.log(`💰 Saved token costs by skipping recommendations`);
+
+    return {
+      totalScore,
+      categories,
+      recommendations: [], // No recommendations for competitor scans
+      faq: null, // No FAQ for competitor scans
+      upgrade: null,
+      industry: v5Results.industry || 'General',
+      detailedAnalysis: {
+        url,
+        scannedAt: new Date().toISOString(),
+        rubricVersion: 'V5',
+        categoryBreakdown: categories,
+        summary: 'Competitor scan - scores only',
+        metadata: v5Results.metadata
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Competitor scan error:', error);
+    throw new Error(`Competitor scan failed: ${error.message}`);
+  }
+}
+
 async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
 
