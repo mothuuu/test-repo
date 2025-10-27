@@ -98,7 +98,11 @@ router.post('/login', async (req, res) => {
     
     // Get user
     const result = await db.query(
-      'SELECT id, email, password_hash, name, plan, email_verified, industry, industry_custom FROM users WHERE email = $1',
+      `SELECT id, email, password_hash, name, plan, email_verified,
+              scans_used_this_month, competitor_scans_used_this_month,
+              primary_domain, primary_domain_changed_at,
+              industry, industry_custom
+       FROM users WHERE email = $1`,
       [email]
     );
     
@@ -128,6 +132,10 @@ router.post('/login', async (req, res) => {
         name: user.name,
         plan: user.plan,
         email_verified: user.email_verified,
+        scans_used_this_month: user.scans_used_this_month || 0,
+        competitor_scans_used_this_month: user.competitor_scans_used_this_month || 0,
+        primary_domain: user.primary_domain,
+        primary_domain_changed_at: user.primary_domain_changed_at,
         industry: user.industry,
         industry_custom: user.industry_custom
       },
@@ -150,7 +158,9 @@ router.post('/logout', authenticateToken, async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, email, name, plan, email_verified, scans_used_this_month, created_at, last_login 
+      `SELECT id, email, name, plan, email_verified, scans_used_this_month,
+              competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
+              industry, industry_custom, created_at, last_login
        FROM users WHERE id = $1`,
       [req.userId]
     );
