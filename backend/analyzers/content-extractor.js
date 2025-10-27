@@ -183,6 +183,27 @@ const $ = cheerio.load(html);
       }
     });
 
+    // Debug: Log extracted paragraphs for quality analysis
+    console.log(`[ContentExtractor] 📋 Extracted ${paragraphs.length} total paragraphs`);
+    if (paragraphs.length > 0) {
+      console.log('[ContentExtractor] First 3 paragraphs:');
+      paragraphs.slice(0, 3).forEach((p, idx) => {
+        const preview = p.length > 150 ? p.substring(0, 150) + '...' : p;
+        console.log(`  ${idx + 1}. (${p.length} chars) ${preview}`);
+      });
+
+      // Show longest paragraphs (these are what the scannability generator uses)
+      const longParagraphs = paragraphs.filter(p => p.length > 150).sort((a, b) => b.length - a.length);
+      if (longParagraphs.length > 0) {
+        console.log(`[ContentExtractor] 📊 Found ${longParagraphs.length} long paragraphs (>150 chars)`);
+        console.log('[ContentExtractor] Top 3 longest paragraphs:');
+        longParagraphs.slice(0, 3).forEach((p, idx) => {
+          const preview = p.substring(0, 100) + '...';
+          console.log(`  ${idx + 1}. (${p.length} chars) ${preview}`);
+        });
+      }
+    }
+
     // Extract lists
     const lists = [];
     $('ul, ol').each((idx, el) => {
