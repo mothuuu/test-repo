@@ -128,9 +128,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get user info
+    // Get user info (including industry preference)
     const userResult = await db.query(
-      'SELECT plan, scans_used_this_month FROM users WHERE id = $1',
+      'SELECT plan, scans_used_this_month, industry, industry_custom FROM users WHERE id = $1',
       [userId]
     );
 
@@ -140,6 +140,11 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
     const user = userResult.rows[0];
     const planLimits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
+
+    // Log user's industry preference if set
+    if (user.industry) {
+      console.log(`👤 User industry preference: ${user.industry}${user.industry_custom ? ` (${user.industry_custom})` : ''}`);
+    }
 
     // Check quota
     if (user.scans_used_this_month >= planLimits.scansPerMonth) {
@@ -176,7 +181,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     const userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
 
     // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan, pages, userProgress);
+    const scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
 
     // Increment user's scan count AFTER successful scan
     await db.query(
@@ -640,7 +645,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
 // Now properly uses the V5RubricEngine class!
 // ============================================
-async function performV5Scan(url, plan, pages = null, userProgress = null) {
+async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
 
   try {
@@ -670,6 +675,12 @@ async function performV5Scan(url, plan, pages = null, userProgress = null) {
       subfactorScores[category] = data.subfactors;
     }
 
+    // Determine industry: Prioritize user-selected > auto-detected > fallback
+    const finalIndustry = userIndustry || v5Results.industry || 'General';
+    const industrySource = userIndustry ? 'user-selected' : (v5Results.industry ? 'auto-detected' : 'default');
+
+    console.log(`🏢 Industry for recommendations: ${finalIndustry} (${industrySource})`);
+
     // Step 2: Generate recommendations with user progress for DIY tier
     console.log('🤖 Generating recommendations...');
 
@@ -679,11 +690,11 @@ async function performV5Scan(url, plan, pages = null, userProgress = null) {
         scanEvidence: scanEvidence
       },
       plan,
-      v5Results.industry || 'General',
+      finalIndustry,
       userProgress // Pass userProgress for progressive unlock
     );
 
-    console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${v5Results.industry})`);
+    console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
     console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
     return {
