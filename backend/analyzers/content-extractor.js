@@ -174,32 +174,94 @@ const $ = cheerio.load(html);
       });
     }
 
-    // Extract paragraphs
-    const paragraphs = [];
+    // Extract paragraphs with intelligent prioritization
+    const allParagraphs = [];
     $('p').each((idx, el) => {
-      const text = $(el).text().trim();
-      if (text.length > 20) { // Filter out very short paragraphs
-        paragraphs.push(text);
-      }
+      const $el = $(el);
+      const text = $el.text().trim();
+
+      // Skip very short paragraphs or common boilerplate patterns
+      if (text.length < 20) return;
+      if (text.match(/^(copyright|©|all rights reserved|privacy policy|terms of service)/i)) return;
+
+      // Check if paragraph is likely hidden
+      const style = $el.attr('style') || '';
+      const classAttr = $el.attr('class') || '';
+      const isHidden = style.includes('display:none') ||
+                       style.includes('display: none') ||
+                       style.includes('visibility:hidden') ||
+                       style.includes('visibility: hidden') ||
+                       classAttr.includes('hidden') ||
+                       $el.css('display') === 'none';
+
+      if (isHidden) return;
+
+      // Calculate relevance score for this paragraph
+      let score = 0;
+
+      // Higher score for paragraphs in main content areas
+      const inMain = $el.closest('main, article, [role="main"], .content, .post-content, .entry-content').length > 0;
+      const inModal = $el.closest('.modal, .popup, [role="dialog"], .overlay').length > 0;
+      const inSidebar = $el.closest('aside, .sidebar, .widget').length > 0;
+
+      if (inMain) score += 10;
+      if (inModal) score -= 5;  // Deprioritize modal content
+      if (inSidebar) score -= 3; // Deprioritize sidebar content
+
+      // Longer paragraphs are generally more substantial
+      if (text.length > 100) score += 2;
+      if (text.length > 200) score += 3;
+      if (text.length > 400) score += 2;
+
+      // Paragraphs with proper sentence structure are more valuable
+      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      if (sentences.length >= 2) score += 2;
+      if (sentences.length >= 4) score += 2;
+
+      // Avoid common template/boilerplate text
+      const boilerplatePatterns = [
+        /click here/i,
+        /read more/i,
+        /learn more/i,
+        /^(yes|no|ok|cancel|submit|continue)/i,
+        /cookie/i,
+        /subscribe to (our|the) newsletter/i
+      ];
+
+      const hasBoilerplate = boilerplatePatterns.some(pattern => pattern.test(text));
+      if (hasBoilerplate) score -= 2;
+
+      allParagraphs.push({ text, score });
     });
 
+    // Sort by score (highest first), then by length for tie-breaking
+    allParagraphs.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.text.length - a.text.length;
+    });
+
+    // Extract just the text, prioritizing highest-scored paragraphs
+    const paragraphs = allParagraphs.map(p => p.text);
+
     // Debug: Log extracted paragraphs for quality analysis
-    console.log(`[ContentExtractor] 📋 Extracted ${paragraphs.length} total paragraphs`);
+    console.log(`[ContentExtractor] 📋 Extracted ${paragraphs.length} total paragraphs (scored and prioritized)`);
     if (paragraphs.length > 0) {
-      console.log('[ContentExtractor] First 3 paragraphs:');
-      paragraphs.slice(0, 3).forEach((p, idx) => {
-        const preview = p.length > 150 ? p.substring(0, 150) + '...' : p;
-        console.log(`  ${idx + 1}. (${p.length} chars) ${preview}`);
+      console.log('[ContentExtractor] Top 3 highest-priority paragraphs:');
+      allParagraphs.slice(0, 3).forEach((p, idx) => {
+        const preview = p.text.length > 150 ? p.text.substring(0, 150) + '...' : p.text;
+        console.log(`  ${idx + 1}. Score: ${p.score}, Length: ${p.text.length} chars`);
+        console.log(`     "${preview}"`);
       });
 
       // Show longest paragraphs (these are what the scannability generator uses)
-      const longParagraphs = paragraphs.filter(p => p.length > 150).sort((a, b) => b.length - a.length);
+      const longParagraphs = allParagraphs.filter(p => p.text.length > 150);
       if (longParagraphs.length > 0) {
         console.log(`[ContentExtractor] 📊 Found ${longParagraphs.length} long paragraphs (>150 chars)`);
-        console.log('[ContentExtractor] Top 3 longest paragraphs:');
+        console.log('[ContentExtractor] Top 3 longest high-quality paragraphs:');
         longParagraphs.slice(0, 3).forEach((p, idx) => {
-          const preview = p.substring(0, 100) + '...';
-          console.log(`  ${idx + 1}. (${p.length} chars) ${preview}`);
+          const preview = p.text.substring(0, 100) + '...';
+          console.log(`  ${idx + 1}. Score: ${p.score}, Length: ${p.text.length} chars`);
+          console.log(`     "${preview}"`);
         });
       }
     }
