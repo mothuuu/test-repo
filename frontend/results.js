@@ -554,6 +554,13 @@ function createRecommendationCard(rec, index, userPlan) {
                         ⊘ Skip this recommendation
                     </button>
                 </div>
+
+                <!-- Feedback Widget -->
+                ${createFeedbackWidget(
+                    `${rec.category || 'general'}_${rec.id || index}`,
+                    rec.category || 'general',
+                    scanId
+                )}
             </div>
         </div>
     `;
@@ -711,13 +718,26 @@ function displayUpgradeCTA(upgradeData, userPlan) {
 function toggleRecommendation(index) {
     const content = document.getElementById(`content-${index}`);
     const toggle = document.getElementById(`toggle-${index}`);
-    
+
     if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
         toggle.textContent = 'Collapse ▲';
+
+        // Track expansion (implicit engagement signal)
+        if (typeof startTrackingTime === 'function') {
+            startTrackingTime(`rec-${index}`);
+        }
+        if (typeof trackInteraction === 'function') {
+            trackInteraction(`rec-${index}`, scanId, { expanded: true });
+        }
     } else {
         content.classList.add('hidden');
         toggle.textContent = 'Expand ▼';
+
+        // Track time spent when collapsing
+        if (typeof stopTrackingTime === 'function') {
+            stopTrackingTime(`rec-${index}`, scanId);
+        }
     }
 }
 
@@ -726,6 +746,12 @@ function copyCode(elementId) {
     if (codeElement) {
         navigator.clipboard.writeText(codeElement.textContent);
         alert('Code copied to clipboard!');
+
+        // Track code copy interaction
+        const recIndex = elementId.match(/\d+/)?.[0];
+        if (recIndex && typeof trackCodeCopy === 'function') {
+            trackCodeCopy(`rec-${recIndex}`, scanId);
+        }
     }
 }
 

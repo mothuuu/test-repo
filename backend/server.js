@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 // const subscriptionRoutes = require('./routes/subscription');
 const scanRoutes = require('./routes/scan'); // ✅ ADD THIS LINE
 const recommendationRoutes = require('./routes/recommendations');
+const feedbackRoutes = require('./routes/feedback');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,6 +58,7 @@ app.use('/api', aiTestingRoutes);
 // app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/scan', scanRoutes); // ✅ ADD THIS LINE
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/api/test', require('./routes/test-routes'));  // ⬅️ ADD THIS LINE
 
 // Health check
