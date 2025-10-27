@@ -19,29 +19,41 @@ async function resetQuota() {
 
     // Show current quota
     const before = await pool.query(
-      'SELECT id, email, plan, scans_used_this_month FROM users ORDER BY id'
+      `SELECT id, email, plan, scans_used_this_month,
+              competitor_scans_used_this_month, primary_domain
+       FROM users ORDER BY id`
     );
 
     console.log('📊 Current quota usage:');
     before.rows.forEach(user => {
-      console.log(`   ${user.email} (${user.plan}): ${user.scans_used_this_month} scans used`);
+      const competitorScans = user.competitor_scans_used_this_month || 0;
+      const domain = user.primary_domain || 'not set';
+      console.log(`   ${user.email} (${user.plan}): ${user.scans_used_this_month} primary scans, ${competitorScans} competitor scans | Domain: ${domain}`);
     });
 
-    // Reset quota
-    await pool.query('UPDATE users SET scans_used_this_month = 0');
+    // Reset quotas (both primary and competitor scans)
+    await pool.query(`
+      UPDATE users
+      SET scans_used_this_month = 0,
+          competitor_scans_used_this_month = 0
+    `);
 
     // Show updated quota
     const after = await pool.query(
-      'SELECT id, email, plan, scans_used_this_month FROM users ORDER BY id'
+      `SELECT id, email, plan, scans_used_this_month,
+              competitor_scans_used_this_month
+       FROM users ORDER BY id`
     );
 
     console.log('\n✅ Quota reset successful!\n');
     console.log('📊 Updated quota usage:');
     after.rows.forEach(user => {
-      console.log(`   ${user.email} (${user.plan}): ${user.scans_used_this_month} scans used`);
+      const competitorScans = user.competitor_scans_used_this_month || 0;
+      console.log(`   ${user.email} (${user.plan}): ${user.scans_used_this_month} primary scans, ${competitorScans} competitor scans`);
     });
 
     console.log('\n🎉 All users now have fresh monthly scan quota!');
+    console.log('📅 Next reset: 1st of next month');
 
   } catch (error) {
     console.error('❌ Error resetting quota:', error.message);
