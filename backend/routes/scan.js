@@ -444,13 +444,119 @@ router.get('/:id', authenticateToken, async (req, res) => {
         current_batch, last_unlock_date, unlocks_today,
         site_wide_total, site_wide_completed, site_wide_active,
         page_specific_total, page_specific_completed,
-        site_wide_complete
+        site_wide_complete,
+        batch_1_unlock_date, batch_2_unlock_date,
+        batch_3_unlock_date, batch_4_unlock_date,
+        total_batches
        FROM user_progress
        WHERE user_id = $1 AND scan_id = $2`,
       [userId, scanId]
     );
 
     const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
+
+    // Check if any batches should be auto-unlocked based on date
+    let batchesUnlocked = 0;
+    if (userProgress && userProgress.total_batches > 0) {
+      const now = new Date();
+      const batchDates = [
+        userProgress.batch_1_unlock_date,
+        userProgress.batch_2_unlock_date,
+        userProgress.batch_3_unlock_date,
+        userProgress.batch_4_unlock_date
+      ];
+
+      // Find which batch should be unlocked based on current date
+      let targetBatch = 1;
+      for (let i = 0; i < 4; i++) {
+        if (batchDates[i] && new Date(batchDates[i]) <= now) {
+          targetBatch = i + 1;
+        }
+      }
+
+      // If we should unlock more batches than currently unlocked
+      if (targetBatch > userProgress.current_batch) {
+        console.log(`🔓 Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
+
+        // Calculate how many recommendations to unlock
+        const recsPerBatch = 5;
+        const currentlyActive = userProgress.active_recommendations || 0;
+        const shouldBeActive = Math.min(targetBatch * recsPerBatch, userProgress.total_recommendations);
+        const toUnlock = shouldBeActive - currentlyActive;
+
+        if (toUnlock > 0) {
+          // Unlock the next batch of recommendations
+          await db.query(
+            `UPDATE scan_recommendations
+             SET unlock_state = 'active',
+                 unlocked_at = NOW(),
+                 skip_enabled_at = NOW() + INTERVAL '5 days'
+             WHERE scan_id = $1
+               AND unlock_state = 'locked'
+               AND batch_number <= $2
+             ORDER BY batch_number, id
+             LIMIT $3`,
+            [scanId, targetBatch, toUnlock]
+          );
+
+          // Update user progress
+          await db.query(
+            `UPDATE user_progress
+             SET current_batch = $1,
+                 active_recommendations = $2
+             WHERE user_id = $3 AND scan_id = $4`,
+            [targetBatch, shouldBeActive, userId, scanId]
+          );
+
+          batchesUnlocked = targetBatch - userProgress.current_batch;
+          console.log(`   ✅ Unlocked ${toUnlock} recommendations (batches ${userProgress.current_batch + 1}-${targetBatch})`);
+
+          // Refresh user progress
+          const updatedProgress = await db.query(
+            `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+            [userId, scanId]
+          );
+          Object.assign(userProgress, updatedProgress.rows[0]);
+        }
+      }
+    }
+
+    // Get updated recommendations after potential unlock
+    const updatedRecResult = await db.query(
+      `SELECT
+        id, category, recommendation_text, priority,
+        estimated_impact, estimated_effort, status,
+        action_steps, findings, code_snippet,
+        impact_description,
+        customized_implementation, ready_to_use_content,
+        implementation_notes, quick_wins, validation_checklist,
+        user_rating, user_feedback, implemented_at,
+        unlock_state, batch_number, unlocked_at, skipped_at,
+        recommendation_type, page_url
+       FROM scan_recommendations
+       WHERE scan_id = $1
+       ORDER BY batch_number, priority DESC, estimated_impact DESC`,
+      [scanId]
+    );
+
+    // Calculate next batch unlock info
+    let nextBatchUnlock = null;
+    if (userProgress && userProgress.current_batch < userProgress.total_batches) {
+      const nextBatchNum = userProgress.current_batch + 1;
+      const nextBatchDate = userProgress[`batch_${nextBatchNum}_unlock_date`];
+      if (nextBatchDate) {
+        const now = new Date();
+        const unlockDate = new Date(nextBatchDate);
+        const daysUntilUnlock = Math.ceil((unlockDate - now) / (1000 * 60 * 60 * 24));
+
+        nextBatchUnlock = {
+          batchNumber: nextBatchNum,
+          unlockDate: nextBatchDate,
+          daysRemaining: Math.max(0, daysUntilUnlock),
+          recommendationsInBatch: 5
+        };
+      }
+    }
 
     res.json({
       success: true,
@@ -466,9 +572,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
           trustAuthority: scan.trust_authority_score,
           voiceOptimization: scan.voice_optimization_score
         },
-        recommendations: recResult.rows,
+        recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
-        userProgress: userProgress // Include progress for DIY tier
+        userProgress: userProgress, // Include progress for DIY tier
+        nextBatchUnlock: nextBatchUnlock, // Next batch unlock info
+        batchesUnlocked: batchesUnlocked // How many batches were just unlocked
       }
     });
 
@@ -695,6 +803,99 @@ router.post('/:id/recommendation/:recId/feedback', authenticateToken, async (req
   } catch (error) {
     console.error('❌ Feedback error:', error);
     res.status(500).json({ error: 'Failed to record feedback' });
+  }
+});
+
+// ============================================
+// POST /api/scan/:id/recommendation/:recId/skip
+// Skip a recommendation (available after 5 days)
+// ============================================
+router.post('/:id/recommendation/:recId/skip', authenticateToken, async (req, res) => {
+  try {
+    const { id: scanId, recId } = req.params;
+    const userId = req.userId;
+
+    // Verify scan belongs to user
+    const scanCheck = await db.query(
+      'SELECT id FROM scans WHERE id = $1 AND user_id = $2',
+      [scanId, userId]
+    );
+
+    if (scanCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    // Get recommendation details
+    const recResult = await db.query(
+      `SELECT id, unlock_state, skip_enabled_at, skipped_at, status
+       FROM scan_recommendations
+       WHERE id = $1 AND scan_id = $2`,
+      [recId, scanId]
+    );
+
+    if (recResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+
+    const recommendation = recResult.rows[0];
+
+    // Check if already skipped
+    if (recommendation.skipped_at) {
+      return res.status(400).json({
+        error: 'Already skipped',
+        message: 'This recommendation has already been skipped.'
+      });
+    }
+
+    // Check if recommendation is locked
+    if (recommendation.unlock_state === 'locked') {
+      return res.status(403).json({
+        error: 'Recommendation not yet unlocked',
+        message: 'You can only skip unlocked recommendations.'
+      });
+    }
+
+    // Check if skip is enabled (5 days after unlock)
+    const now = new Date();
+    const skipEnabledAt = recommendation.skip_enabled_at ? new Date(recommendation.skip_enabled_at) : null;
+
+    if (skipEnabledAt && skipEnabledAt > now) {
+      const daysRemaining = Math.ceil((skipEnabledAt - now) / (1000 * 60 * 60 * 24));
+      return res.status(403).json({
+        error: 'Skip not yet available',
+        message: `You can skip this recommendation in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}.`,
+        skipEnabledAt: skipEnabledAt.toISOString(),
+        daysRemaining
+      });
+    }
+
+    // Mark as skipped
+    await db.query(
+      `UPDATE scan_recommendations
+       SET skipped_at = NOW(),
+           status = 'skipped'
+       WHERE id = $1 AND scan_id = $2`,
+      [recId, scanId]
+    );
+
+    // Update user progress (skipped counts as completed)
+    await db.query(
+      `UPDATE user_progress
+       SET completed_recommendations = completed_recommendations + 1
+       WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scanId]
+    );
+
+    console.log(`⏭️  User ${userId} skipped recommendation ${recId} for scan ${scanId}`);
+
+    res.json({
+      success: true,
+      message: 'Recommendation skipped. It will appear in your "Skipped" tab.'
+    });
+
+  } catch (error) {
+    console.error('❌ Skip recommendation error:', error);
+    res.status(500).json({ error: 'Failed to skip recommendation' });
   }
 });
 

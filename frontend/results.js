@@ -122,7 +122,7 @@ function displayResults(scan, quota) {
         displayGuestRecommendations(scan);
     } else if (scan.recommendations && scan.recommendations.length > 0) {
         // Authenticated: Show recommendations based on plan
-        displayRecommendations(scan.recommendations, userTier, scan.userProgress);
+        displayRecommendations(scan.recommendations, userTier, scan.userProgress, scan.nextBatchUnlock, scan.batchesUnlocked);
     } else {
         document.getElementById('recommendationsList').innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
     }
@@ -255,39 +255,128 @@ function displayGuestRecommendations(scan) {
     `;
 }
 
-function displayRecommendations(recommendations, userTier, userProgress) {
+function displayRecommendations(recommendations, userTier, userProgress, nextBatchUnlock, batchesUnlocked) {
     const container = document.getElementById('recommendationsList');
     container.innerHTML = '';
 
     console.log('Displaying recommendations:', recommendations); // Debug log
     console.log('User tier:', userTier);
     console.log('User progress:', userProgress);
+    console.log('Next batch unlock:', nextBatchUnlock);
+    console.log('Batches just unlocked:', batchesUnlocked);
 
-    // Determine how many recommendations to show based on tier
+    // Show batch unlock notification if batches were just unlocked
+    if (batchesUnlocked && batchesUnlocked > 0) {
+        const notification = document.createElement('div');
+        notification.className = 'mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-300';
+        notification.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">🎉</span>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">New Recommendations Unlocked!</h3>
+                    <p class="text-gray-700">
+                        Batch ${batchesUnlocked} has been automatically unlocked.
+                        ${nextBatchUnlock ? `Next batch unlocks in ${nextBatchUnlock.daysRemaining} day${nextBatchUnlock.daysRemaining !== 1 ? 's' : ''}.` : 'All batches unlocked!'}
+                    </p>
+                </div>
+            </div>
+        `;
+        container.appendChild(notification);
+    }
+
+    // Show batch countdown timer if next batch is available
+    if (nextBatchUnlock && nextBatchUnlock.daysRemaining > 0) {
+        const countdownTimer = document.createElement('div');
+        countdownTimer.className = 'mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200';
+        countdownTimer.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⏰</span>
+                    <div>
+                        <h4 class="font-bold text-gray-900">Next Batch Unlock</h4>
+                        <p class="text-sm text-gray-600">
+                            ${nextBatchUnlock.recommendationsInBatch} more recommendations unlock in
+                            <span class="font-bold text-purple-600">${nextBatchUnlock.daysRemaining} day${nextBatchUnlock.daysRemaining !== 1 ? 's' : ''}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-purple-600">${nextBatchUnlock.daysRemaining}</div>
+                    <div class="text-xs text-gray-600">days left</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(countdownTimer);
+    }
+
+    // Separate active and skipped recommendations
+    const activeRecs = recommendations.filter(rec => !rec.skipped_at && rec.unlock_state !== 'locked');
+    const skippedRecs = recommendations.filter(rec => rec.skipped_at);
+    const lockedRecs = recommendations.filter(rec => rec.unlock_state === 'locked');
+
+    // Determine how many active recommendations to show based on tier
     let displayRecs;
     if (userTier === 'free') {
         // Free: Top 3 only
-        displayRecs = recommendations.slice(0, 3);
+        displayRecs = activeRecs.slice(0, 3);
     } else if (userTier === 'diy' && userProgress) {
-        // DIY: Based on active_recommendations from userProgress
+        // DIY: Show based on active_recommendations count
         const activeCount = userProgress.active_recommendations || 5;
-        displayRecs = recommendations.slice(0, activeCount);
+        displayRecs = activeRecs.slice(0, activeCount);
     } else {
-        // Pro: All recommendations
-        displayRecs = recommendations;
+        // Pro: All active recommendations
+        displayRecs = activeRecs;
     }
 
-    if (displayRecs.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
+    // Create tab interface if there are skipped recommendations
+    if (skippedRecs.length > 0) {
+        const tabsHTML = `
+            <div class="mb-6 border-b border-gray-200">
+                <div class="flex gap-4">
+                    <button onclick="switchTab('active')" id="tab-active"
+                            class="tab-button px-6 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">
+                        Active (${displayRecs.length})
+                    </button>
+                    <button onclick="switchTab('skipped')" id="tab-skipped"
+                            class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
+                        Skipped (${skippedRecs.length})
+                    </button>
+                </div>
+            </div>
+            <div id="tab-content-active" class="tab-content"></div>
+            <div id="tab-content-skipped" class="tab-content hidden"></div>
+        `;
+        container.innerHTML = tabsHTML;
+    }
+
+    // Get containers for active and skipped
+    const activeContainer = document.getElementById('tab-content-active') || container;
+    const skippedContainer = document.getElementById('tab-content-skipped');
+
+    if (displayRecs.length === 0 && skippedRecs.length === 0) {
+        activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
         return;
     }
 
-    displayRecs.forEach((rec, index) => {
-        const recCard = createRecommendationCard(rec, index, userTier);
-        container.appendChild(recCard);
-    });
+    // Display active recommendations
+    if (displayRecs.length > 0) {
+        displayRecs.forEach((rec, index) => {
+            const recCard = createRecommendationCard(rec, index, userTier);
+            activeContainer.appendChild(recCard);
+        });
+    } else if (activeRecs.length === 0) {
+        activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
+    }
 
-    // Show DIY unlock button if applicable
+    // Display skipped recommendations
+    if (skippedContainer && skippedRecs.length > 0) {
+        skippedRecs.forEach((rec, index) => {
+            const recCard = createRecommendationCard(rec, index + displayRecs.length, userTier, true);
+            skippedContainer.appendChild(recCard);
+        });
+    }
+
+    // Show DIY unlock button if applicable (only in active tab)
     if (userTier === 'diy' && userProgress) {
         const activeCount = userProgress.active_recommendations || 5;
         const totalCount = userProgress.total_recommendations || recommendations.length;
@@ -298,19 +387,45 @@ function displayRecommendations(recommendations, userTier, userProgress) {
         }
     }
 
-    // Show upgrade message if free tier
+    // Show upgrade message if free tier (only in active tab)
     if (userTier === 'free' && recommendations.length > 3) {
         const upgradeMsg = document.createElement('div');
         upgradeMsg.className = 'mt-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200 text-center';
         upgradeMsg.innerHTML = `
             <h3 class="text-xl font-bold mb-2">🔒 ${recommendations.length - 5} More Recommendations Available</h3>
             <p class="text-gray-700 mb-4">Upgrade to DIY Starter to unlock all recommendations, FAQ generation, and unlimited scans.</p>
-            <a href="checkout.html?url=${encodeURIComponent(document.getElementById('scanUrl').textContent)}" 
+            <a href="checkout.html?url=${encodeURIComponent(document.getElementById('scanUrl').textContent)}"
                class="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all">
                 Upgrade to DIY - $29/month
             </a>
         `;
-        container.appendChild(upgradeMsg);
+        activeContainer.appendChild(upgradeMsg);
+    }
+}
+
+// Tab switching function
+function switchTab(tabName) {
+    // Update tab button styles
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('border-blue-600', 'text-blue-600');
+        btn.classList.add('text-gray-500');
+    });
+
+    const activeTabBtn = document.getElementById(`tab-${tabName}`);
+    if (activeTabBtn) {
+        activeTabBtn.classList.remove('text-gray-500');
+        activeTabBtn.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
+    }
+
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Show selected tab content
+    const selectedContent = document.getElementById(`tab-content-${tabName}`);
+    if (selectedContent) {
+        selectedContent.classList.remove('hidden');
     }
 }
 
@@ -422,13 +537,24 @@ function displayUpgradeCTA(userTier, totalRecs) {
     }
 }
 
-function createRecommendationCard(rec, index, userPlan) {
+function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     const card = document.createElement('div');
-    card.className = `recommendation-card bg-white rounded-lg shadow-md border-l-4 ${priorityColors[rec.priority]?.border || 'border-gray-300'} overflow-hidden`;
+    const cardClass = isSkipped
+        ? 'bg-gray-50 rounded-lg shadow-md border-l-4 border-gray-400 overflow-hidden opacity-75'
+        : `recommendation-card bg-white rounded-lg shadow-md border-l-4 ${priorityColors[rec.priority]?.border || 'border-gray-300'} overflow-hidden`;
+    card.className = cardClass;
     card.id = `rec-${index}`;
 
     const priorityClass = priorityColors[rec.priority] || priorityColors.medium;
     const showCodeSnippet = userPlan !== 'free' && rec.code_snippet;
+
+    // Check if skip is enabled (5 days after unlock)
+    const now = new Date();
+    const skipEnabledAt = rec.skip_enabled_at ? new Date(rec.skip_enabled_at) : null;
+    const canSkip = !isSkipped && (!skipEnabledAt || skipEnabledAt <= now);
+    const daysUntilSkip = skipEnabledAt && skipEnabledAt > now
+        ? Math.ceil((skipEnabledAt - now) / (1000 * 60 * 60 * 24))
+        : 0;
 
     // Use the correct field names from API
     const title = rec.recommendation_text || rec.title || 'Recommendation';
@@ -586,15 +712,29 @@ function createRecommendationCard(rec, index, userPlan) {
                 ` : ''}
 
                 <!-- Action Buttons -->
-                <div class="pt-4 border-t flex gap-3">
-                    <button onclick="markImplemented(${rec.id || index})"
-                            class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
-                        ✓ Mark as Implemented
-                    </button>
-                    <button onclick="skipRecommendation(${rec.id || index})"
-                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
-                        ⊘ Skip this recommendation
-                    </button>
+                <div class="pt-4 border-t flex gap-3 flex-wrap">
+                    ${!isSkipped ? `
+                        <button onclick="markImplemented(${rec.id || index})"
+                                class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
+                            ✓ Mark as Implemented
+                        </button>
+                        ${canSkip ? `
+                            <button onclick="skipRecommendation(${rec.id || index})"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
+                                ⊘ Skip this recommendation
+                            </button>
+                        ` : daysUntilSkip > 0 ? `
+                            <button disabled
+                                    class="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                    title="Skip will be available in ${daysUntilSkip} day${daysUntilSkip > 1 ? 's' : ''}">
+                                ⊘ Skip (Available in ${daysUntilSkip}d)
+                            </button>
+                        ` : ''}
+                    ` : `
+                        <div class="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold">
+                            ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
+                        </div>
+                    `}
                 </div>
 
                 <!-- Feedback Widget -->
@@ -811,11 +951,38 @@ function markImplemented(recId) {
     alert('Feature coming soon: This will track your implementation progress and improve future recommendations!');
 }
 
-function skipRecommendation(recId) {
+async function skipRecommendation(recId) {
     console.log('Skipping recommendation:', recId);
-    if (confirm('Are you sure you want to skip this recommendation? You can always come back to it later.')) {
-        // TODO: Implement skip logic - hide the card and mark in database
-        alert('Feature coming soon: This will hide the recommendation and you can view skipped items in settings.');
+
+    if (!authToken) {
+        alert('You must be logged in to skip recommendations.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to skip this recommendation? It will be available after 5 days from when it was unlocked.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/skip`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('✅ ' + data.message);
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            alert(`❌ ${data.error || 'Failed to skip recommendation'}\n${data.message || ''}`);
+        }
+    } catch (error) {
+        console.error('Skip error:', error);
+        alert('❌ Failed to skip recommendation. Please try again.');
     }
 }
 
