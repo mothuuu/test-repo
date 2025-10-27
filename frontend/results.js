@@ -548,10 +548,13 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     const priorityClass = priorityColors[rec.priority] || priorityColors.medium;
     const showCodeSnippet = userPlan !== 'free' && rec.code_snippet;
 
+    // Check if implemented or skipped
+    const isImplemented = rec.status === 'implemented';
+
     // Check if skip is enabled (5 days after unlock)
     const now = new Date();
     const skipEnabledAt = rec.skip_enabled_at ? new Date(rec.skip_enabled_at) : null;
-    const canSkip = !isSkipped && (!skipEnabledAt || skipEnabledAt <= now);
+    const canSkip = !isSkipped && !isImplemented && (!skipEnabledAt || skipEnabledAt <= now);
     const daysUntilSkip = skipEnabledAt && skipEnabledAt > now
         ? Math.ceil((skipEnabledAt - now) / (1000 * 60 * 60 * 24))
         : 0;
@@ -577,7 +580,12 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
             <!-- Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                        ${isImplemented ? `
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-500">
+                                ✓ IMPLEMENTED
+                            </span>
+                        ` : ''}
                         <span class="px-3 py-1 rounded-full text-xs font-semibold ${priorityClass.bg} ${priorityClass.text}">
                             ${(rec.priority || 'medium').toUpperCase()}
                         </span>
@@ -713,7 +721,12 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
 
                 <!-- Action Buttons -->
                 <div class="pt-4 border-t flex gap-3 flex-wrap">
-                    ${!isSkipped ? `
+                    ${isImplemented ? `
+                        <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold flex items-center gap-2">
+                            <span>✓</span>
+                            <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
+                        </div>
+                    ` : !isSkipped ? `
                         <button onclick="markImplemented(${rec.id || index})"
                                 class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
                             ✓ Mark as Implemented
@@ -946,9 +959,43 @@ function copySchemaCode() {
     }
 }
 
-function markImplemented(recId) {
+async function markImplemented(recId) {
     console.log('Marking recommendation as implemented:', recId);
-    alert('Feature coming soon: This will track your implementation progress and improve future recommendations!');
+
+    if (!authToken) {
+        alert('You must be logged in to mark recommendations as implemented.');
+        return;
+    }
+
+    if (!confirm('Mark this recommendation as implemented? This will help track your progress and improve future recommendations.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                status: 'implemented'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('✅ Great work! This recommendation has been marked as implemented.\n\nYour progress is being tracked to help improve future recommendations.');
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            alert(`❌ ${data.error || 'Failed to mark as implemented'}`);
+        }
+    } catch (error) {
+        console.error('Mark implemented error:', error);
+        alert('❌ Failed to mark recommendation as implemented. Please try again.');
+    }
 }
 
 async function skipRecommendation(recId) {

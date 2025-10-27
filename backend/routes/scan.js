@@ -784,15 +784,27 @@ router.post('/:id/recommendation/:recId/feedback', authenticateToken, async (req
     updateValues.push(recId, scanId);
 
     await db.query(
-      `UPDATE scan_recommendations 
+      `UPDATE scan_recommendations
        SET ${updateFields.join(', ')}
        WHERE id = $${paramCount++} AND scan_id = $${paramCount}`,
       updateValues
     );
 
+    // If marking as implemented, update user progress
+    if (status === 'implemented') {
+      await db.query(
+        `UPDATE user_progress
+         SET completed_recommendations = completed_recommendations + 1
+         WHERE user_id = $1 AND scan_id = $2`,
+        [userId, scanId]
+      );
+    }
+
     res.json({
       success: true,
-      message: 'Feedback recorded for learning loop'
+      message: status === 'implemented'
+        ? 'Recommendation marked as implemented! Your progress has been updated.'
+        : 'Feedback recorded for learning loop'
     });
 
   } catch (error) {
