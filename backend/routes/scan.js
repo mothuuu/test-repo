@@ -316,11 +316,6 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     scanResult.recommendations,
     user.plan
   );
-
-  console.log(`   📊 Recommendations saved:`);
-  console.log(`      Site-wide: ${progressInfo.siteWideTotal} (${progressInfo.siteWideActive} active)`);
-  console.log(`      Page-specific: ${progressInfo.pageSpecificTotal} (all locked)`);
-  console.log(`      Total: ${progressInfo.totalRecommendations}`);
 }
 
     // 🔥 Save FAQ schema if available (DIY tier only)
