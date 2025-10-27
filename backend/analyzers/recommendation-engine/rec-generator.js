@@ -277,7 +277,18 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         }
       }
 
-      // 2f) Structured Data - Deterministic JSON-LD
+      // 2f) Location & Geographic Content - AEO-optimized service areas
+      if (issue.subfactor === 'geoContentScore') {
+        console.log(`✅ Detected geoContentScore issue - calling programmatic location/geographic generator`);
+        const rec = makeProgrammaticGeoContentRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Location/geographic recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2g) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
@@ -1665,6 +1676,414 @@ notify_indexnow([
       domain: domain
     },
     generatedBy: 'programmatic_indexnow'
+  };
+}
+
+/**
+ * Generates comprehensive location/geographic content recommendations
+ * with AEO-focused question-based headings and schema markup
+ */
+function makeProgrammaticGeoContentRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'Technology';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Analyze current location content
+  const html = scanEvidence.html || '';
+  const hasLocationContent = /\b(serve|service area|location|region|country|city|local|area)\b/i.test(html);
+  const hasAreaServedSchema = /"areaServed"/i.test(html) || /<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?"areaServed"/i.test(html);
+  const hasQuestionHeadings = /(where|who|what|when|why|how)\s+(do|can|will|should|does|are|is)/i.test(html);
+
+  // Extract any existing location mentions
+  const locationMentions = [];
+  const locationPattern = /\b(Canada|United States|USA|UK|United Kingdom|Australia|Global|Europe|Asia|North America)\b/gi;
+  const matches = html.match(locationPattern);
+  if (matches) {
+    const uniqueLocations = [...new Set(matches)];
+    locationMentions.push(...uniqueLocations.slice(0, 5));
+  }
+
+  const currentLocations = locationMentions.length;
+  const hasGoodCoverage = currentLocations >= 2 && hasLocationContent;
+
+  // Build finding text
+  const finding = hasGoodCoverage
+    ? `Your page mentions ${currentLocations} location(s), but lacks the structured format and schema markup that answer engines need to understand your service areas. Current location mentions: ${locationMentions.join(', ')}. Score: ${issue.currentScore}/100 (Target: ${issue.threshold}).`
+    : `Your page has minimal geographic content (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Answer engines like ChatGPT, Perplexity, and Google's AI Overviews prioritize businesses with clear service areas and location-specific value propositions.`;
+
+  // Build impact description
+  const impact = `**Why Location Content Matters for AEO:**
+
+Answer engines need explicit geographic signals to recommend your business for location-specific queries. Without clear service areas:
+
+- **Local intent queries miss you**: "AI marketing services in Toronto" won't surface your business
+- **Answer engines can't verify relevance**: ChatGPT/Perplexity won't cite you for regional queries
+- **Schema validation fails**: Missing \`areaServed\` schema prevents rich result eligibility
+- **Multi-market queries exclude you**: "US vs Canada providers" comparisons won't include you
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on Location & Geographic Content score
+- **+15-25%** visibility in location-qualified answer engine responses
+- **Improved entity clarity**: Helps AI understand your market scope`;
+
+  // Build action steps
+  const actionSteps = [
+    'Add a "Where We Work" section with 2-3 core regions',
+    'Include one-sentence value promise per region tied to outcomes',
+    'Implement areaServed schema markup in <head>',
+    'Use question-based H2/H3 headings for AEO optimization',
+    'Keep location content visible in HTML (not hidden in tabs/JS)',
+    'Re-scan page to confirm lift in Location & Geographic Content score'
+  ];
+
+  // Build customized implementation (blue box)
+  const customizedImplementation = `### Comprehensive Location Content for ${pageTitle}
+
+${currentLocations > 0 ? `**Current Locations Detected:** ${locationMentions.join(', ')}\n\n` : ''}**Add AEO-Optimized Location Section**
+
+Answer engines prioritize question-based headings. Add this section below your main services/intro content:
+
+\`\`\`html
+<!-- Question-based heading for AEO (Answer Engine Optimization) -->
+<section class="service-areas">
+  <h2>Where do we deliver ${detectedIndustry.toLowerCase()} services?</h2>
+
+  <p>
+    [Your Company Name] partners with ${detectedIndustry.toLowerCase()} companies across
+    Canada, the United States, and globally. Our solutions adapt to local market needs
+    while keeping your brand consistently visible to AI assistants and answer engines.
+  </p>
+
+  <ul>
+    <li>
+      <strong>Canada:</strong> AI-first strategy and growth programs for B2B ${detectedIndustry.toLowerCase()}
+      companies seeking answer engine visibility.
+    </li>
+    <li>
+      <strong>United States:</strong> Answer-engine optimization and AI content intelligence
+      for ${detectedIndustry.toLowerCase()} growth-stage teams.
+    </li>
+    <li>
+      <strong>Global:</strong> Scalable frameworks for multi-region visibility and
+      localized intent coverage in AI search.
+    </li>
+  </ul>
+</section>
+\`\`\`
+
+**Alternative Question-Based Headings** (choose what fits your tone):
+- "Where can you find our ${detectedIndustry.toLowerCase()} services?"
+- "What regions do we serve?"
+- "Which markets benefit from our ${detectedIndustry.toLowerCase()} expertise?"
+- "Where are we available?"
+
+**Key Principles:**
+✅ **Intent-matched copy**: Each region ties to an outcome/benefit
+✅ **Visible HTML**: Don't hide in JavaScript tabs/accordions
+✅ **Question format**: Improves answer engine extraction
+✅ **Schema support**: Backs up visible copy with structured data`;
+
+  // Build ready-to-use schema markup
+  const readyToUseContent = `<!-- Page-Scoped Schema Markup for Service Areas -->
+<!-- Add this to your <head> section or before </body> -->
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "url": "${domain}",
+  "areaServed": [
+    {
+      "@type": "Country",
+      "name": "Canada"
+    },
+    {
+      "@type": "Country",
+      "name": "United States"
+    },
+    {
+      "@type": "Place",
+      "name": "Global"
+    }
+  ],
+  "audience": {
+    "@type": "BusinessAudience",
+    "name": "B2B ${detectedIndustry.toLowerCase()} companies"
+  },
+  "provider": {
+    "@type": "Organization",
+    "@id": "${domain}#organization"
+  }
+}
+</script>
+
+<!-- If you want to specify provinces/states instead of countries: -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service-regional",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "areaServed": [
+    {
+      "@type": "State",
+      "name": "Ontario",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "Canada"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "British Columbia",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "Canada"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "California",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "United States"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "New York",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "United States"
+      }
+    }
+  ]
+}
+</script>`;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**Placement**: Add location section after your main service intro, before case studies or testimonials',
+    '**Length**: Keep 2-3 core regions. More than 5 dilutes focus for answer engines',
+    '**Value propositions**: Each region needs one sentence tied to an outcome (not just "we serve X")',
+    '**Question headings**: Use natural question format (Where/What/Who) to match how users query AI',
+    '**Schema validation**: Test with Google Rich Results Test after adding schema',
+    '**Visibility**: Location copy must be in HTML source - not loaded via JavaScript tabs/modals',
+    '**Entity linking**: If you have physical offices, link to location pages with LocalBusiness schema',
+    '**Update frequency**: Revise when you expand to new markets (then notify IndexNow)'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    '✅ Add 2-3 core regions in visible copy (5 min)',
+    '✅ Write one outcome-focused sentence per region (10 min)',
+    '✅ Paste areaServed schema into <head> (2 min)',
+    '✅ Change section heading to question format (2 min)',
+    '✅ Re-scan to confirm Location & Geographic Content score lift'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: 'Location section added with 2-3 regions',
+      checked: false
+    },
+    {
+      text: 'Each region has outcome/value statement (not just "we serve X")',
+      checked: false
+    },
+    {
+      text: 'Heading uses question format (Where/What/Who)',
+      checked: false
+    },
+    {
+      text: 'areaServed schema added to <head>',
+      checked: false
+    },
+    {
+      text: 'Schema validated with Google Rich Results Test',
+      checked: false
+    },
+    {
+      text: 'Location content visible in HTML source (not JS-loaded)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Complete Location Content Implementation
+
+### 1. HTML Section (Add to page body)
+
+\`\`\`html
+<section class="service-areas" id="locations">
+  <!-- Question-based heading for AEO -->
+  <h2>Where do we deliver ${detectedIndustry.toLowerCase()} services?</h2>
+
+  <p>
+    [Your Company Name] partners with ${detectedIndustry.toLowerCase()} companies across
+    Canada, the United States, and globally. Our solutions adapt to local buying behavior
+    while keeping your brand consistently visible to AI assistants and answer engines.
+  </p>
+
+  <!-- Region-specific value propositions -->
+  <ul class="region-list">
+    <li>
+      <strong>Canada:</strong> AI-first strategy and demand programs for B2B ${detectedIndustry.toLowerCase()}
+      companies and MSPs seeking answer engine visibility.
+    </li>
+    <li>
+      <strong>United States:</strong> Answer-engine optimization and AI content intelligence
+      for growth-stage ${detectedIndustry.toLowerCase()} teams.
+    </li>
+    <li>
+      <strong>Global:</strong> Scalable frameworks for multi-region visibility and
+      localized intent coverage.
+    </li>
+  </ul>
+
+  <!-- Optional: Link to location pages if you have them -->
+  <p>
+    <a href="/locations/">View all service locations →</a>
+  </p>
+</section>
+\`\`\`
+
+### 2. Schema Markup (Add to <head>)
+
+\`\`\`html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "url": "${domain}",
+  "description": "Professional ${detectedIndustry.toLowerCase()} services for businesses across North America and globally",
+  "areaServed": [
+    {
+      "@type": "Country",
+      "name": "Canada"
+    },
+    {
+      "@type": "Country",
+      "name": "United States"
+    },
+    {
+      "@type": "Place",
+      "name": "Global"
+    }
+  ],
+  "audience": {
+    "@type": "BusinessAudience",
+    "name": "B2B ${detectedIndustry.toLowerCase()} companies"
+  },
+  "provider": {
+    "@type": "Organization",
+    "@id": "${domain}#organization"
+  }
+}
+</script>
+\`\`\`
+
+### 3. CSS Styling (Optional)
+
+\`\`\`css
+.service-areas {
+  margin: 3rem 0;
+  padding: 2rem;
+  background: #f9fafb;
+  border-left: 4px solid #3b82f6;
+}
+
+.service-areas h2 {
+  color: #1e40af;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+}
+
+.region-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.region-list li {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.region-list li:before {
+  content: "📍";
+  position: absolute;
+  left: 0;
+}
+
+.region-list strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+\`\`\`
+
+### 4. Validation Steps
+
+**Test Schema Markup:**
+1. Visit: https://search.google.com/test/rich-results
+2. Paste your page URL or code
+3. Verify "Service" type appears with areaServed property
+
+**Test Answer Engine Visibility:**
+1. Re-scan with AI Visibility Tool
+2. Check Location & Geographic Content score increase
+3. Query ChatGPT/Perplexity: "[your service] providers in [region]"
+4. Verify your business appears in responses
+
+**Common Issues:**
+- ❌ Location content hidden in collapsed tabs → Move to visible HTML
+- ❌ Generic "we serve globally" → Add specific regions with value props
+- ❌ Schema validation errors → Check JSON syntax and required fields
+- ❌ No score improvement → Ensure content is crawlable (not JS-rendered)`;
+
+  return {
+    id: `rec_${issue.category}_geo_${Date.now()}`,
+    title: 'AI Search Readiness: Location & Geographic Content',
+    category: issue.category,
+    subfactor: 'geoContentScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "30-45 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasLocationContent: hasLocationContent,
+      hasAreaServedSchema: hasAreaServedSchema,
+      hasQuestionHeadings: hasQuestionHeadings,
+      currentLocations: currentLocations,
+      locationMentions: locationMentions
+    },
+    generatedBy: 'programmatic_geocontent'
   };
 }
 
