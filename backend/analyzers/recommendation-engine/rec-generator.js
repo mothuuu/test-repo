@@ -1165,10 +1165,13 @@ Well-structured content gets cited more frequently because AI can quickly find r
   // Customized Implementation
   let customizedImplementation = '';
   if (longParagraphs.length > 0) {
-    const longestParagraph = longParagraphs[0];
-    const previewText = longestParagraph.substring(0, 300) + (longestParagraph.length > 300 ? '...' : '');
+    // Use the first long paragraph (now prioritized by relevance scoring)
+    const targetParagraph = longParagraphs[0];
+    const wordCount = targetParagraph.split(/\s+/).length;
+    const charCount = targetParagraph.length;
+    const previewText = targetParagraph.substring(0, 300) + (charCount > 300 ? '...' : '');
 
-    customizedImplementation = `### Reformatting Your Content for Better Scannability\n\n**Before:** One long paragraph (${longestParagraph.length} words)\n\n${previewText}\n\n---\n\n**After:** Broken into scannable sections with headings and bullets\n\n## [Add Descriptive H2 Here]\n\n[First key point in 2-3 sentences]\n\n**Key benefits:**\n- [Benefit 1]\n- [Benefit 2]\n- [Benefit 3]\n\n## [Add Second H2 Here]\n\n[Next point in 2-3 sentences]\n\n---\n\n**Why This Works:**\n- AI assistants can quickly scan headings to find relevant sections\n- Bullets make individual points easy to extract and cite\n- Shorter paragraphs improve comprehension and keep readers engaged`;
+    customizedImplementation = `### Reformatting Your Content for Better Scannability\n\n**Before:** One long paragraph (${wordCount} words, ${charCount} characters)\n\n> ${previewText}\n\n---\n\n**After:** Broken into scannable sections with headings and bullets\n\n## [Add Descriptive H2 Here]\n\n[First key point in 2-3 sentences]\n\n**Key benefits:**\n- [Benefit 1]\n- [Benefit 2]\n- [Benefit 3]\n\n## [Add Second H2 Here]\n\n[Next point in 2-3 sentences]\n\n---\n\n**Why This Works:**\n- AI assistants can quickly scan headings to find relevant sections\n- Bullets make individual points easy to extract and cite\n- Shorter paragraphs improve comprehension and keep readers engaged\n\n💡 **Note:** This example is from your main content area - one of the most visible paragraphs on your page.`;
   } else {
     customizedImplementation = `### Optimizing Your Content Structure\n\nYour content is already fairly scannable! Here's how to make it even better:\n\n**Current Structure:**\n- ${totalHeadings} headings dividing ${wordCount} words\n- Average ${avgWordsPerHeading} words per section\n\n**Optimization Opportunities:**\n1. Ensure every 150-250 words has a descriptive H2 or H3 heading\n2. Convert any process descriptions or feature lists to bullet points\n3. Add bold formatting to key terms AI should pay attention to\n4. Use short paragraphs (3-4 sentences max) for easy scanning`;
   }
