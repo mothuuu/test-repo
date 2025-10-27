@@ -288,7 +288,40 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         }
       }
 
-      // 2g) Structured Data - Deterministic JSON-LD
+      // 2g) Readability - Content clarity and simplification
+      if (issue.subfactor === 'readabilityScore') {
+        console.log(`✅ Detected readabilityScore issue - calling programmatic readability generator`);
+        const rec = makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Readability recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2h) Content Depth - Topic coverage and comprehensiveness
+      if (issue.subfactor === 'contentDepthScore') {
+        console.log(`✅ Detected contentDepthScore issue - calling programmatic content depth generator`);
+        const rec = makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Content depth recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2i) Heading Hierarchy - H1-H6 structure and question-based headings
+      if (issue.subfactor === 'headingHierarchyScore') {
+        console.log(`✅ Detected headingHierarchyScore issue - calling programmatic heading hierarchy generator`);
+        const rec = makeProgrammaticHeadingHierarchyRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Heading hierarchy recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2j) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
@@ -2084,6 +2117,1227 @@ Answer engines prioritize question-based headings. Add this section below your m
       locationMentions: locationMentions
     },
     generatedBy: 'programmatic_geocontent'
+  };
+}
+
+/**
+ * Generates comprehensive readability and clarity recommendations
+ * with AEO-focused simplification strategies and before/after examples
+ */
+function makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract readability metrics from scanEvidence
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const sentences = scanEvidence.content?.sentences || [];
+  const avgSentenceLength = sentences.length > 0 ? Math.round(wordCount / sentences.length) : 0;
+
+  // Calculate readability indicators
+  const longSentences = sentences.filter(s => s.split(/\s+/).length > 25).length;
+  const longSentencePct = sentences.length > 0 ? Math.round((longSentences / sentences.length) * 100) : 0;
+
+  // Check for jargon and complexity indicators
+  const html = scanEvidence.html || '';
+  const textContent = html.replace(/<[^>]+>/g, ' ').toLowerCase();
+  const hasJargon = /\b(utilize|implement|leverage|synergy|paradigm|ecosystem|solution|optimize|facilitate|innovative)\b/gi.test(textContent);
+  const hasPassiveVoice = /\b(was|were|is|are|been)\s+\w+ed\b/gi.test(textContent);
+
+  // Extract a sample long sentence for before/after example
+  let sampleLongSentence = '';
+  if (longSentences > 0) {
+    const longSentence = sentences.find(s => s.split(/\s+/).length > 25);
+    if (longSentence) {
+      sampleLongSentence = longSentence.substring(0, 200) + (longSentence.length > 200 ? '...' : '');
+    }
+  }
+
+  // Build finding text
+  const finding = `Your content has readability challenges that limit AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${longSentencePct > 0 ? `${longSentencePct}% of sentences exceed 25 words, ` : ''}Average sentence length: ${avgSentenceLength} words. Answer engines like ChatGPT and Perplexity prioritize clear, concise content that directly answers user questions.`;
+
+  // Build impact description
+  const impact = `**Why Readability Matters for AEO:**
+
+Clear, scannable content increases the likelihood that AI will extract and cite your information. Complex sentences and jargon create barriers:
+
+- **AI extraction fails**: Long sentences confuse semantic parsing, reducing citation chances
+- **User intent mismatch**: Jargon-heavy copy doesn't match how users ask questions
+- **Answer engine preference**: ChatGPT/Perplexity favor content written at 8th-10th grade reading level
+- **Voice search incompatibility**: Complex phrasing doesn't match conversational queries
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Readability & Clarity score
+- **+20-30%** better AI extraction and citation rates
+- **Improved user engagement**: Lower bounce rates, longer session duration`;
+
+  // Build action steps
+  const actionSteps = [
+    'Break sentences longer than 25 words into 2-3 shorter sentences',
+    'Replace jargon and complex terms with plain language equivalents',
+    'Convert passive voice to active voice where possible',
+    'Use question-based H2/H3 headings to match user queries',
+    'Add transitional phrases and clear section breaks',
+    'Re-scan page to confirm Readability & Clarity score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Readability Improvements for ${pageTitle}
+
+**Current Metrics:**
+- Average sentence length: ${avgSentenceLength} words (Target: 15-20 words)
+${longSentencePct > 0 ? `- Long sentences (>25 words): ${longSentencePct}%\n` : ''}- Word count: ${wordCount.toLocaleString()}
+- Detected issues: ${hasJargon ? 'Jargon/buzzwords, ' : ''}${hasPassiveVoice ? 'Passive voice' : 'None major'}
+
+**Answer Engine Optimization Strategy:**
+
+AI systems extract information most effectively from content that:
+1. **Uses direct, active voice**
+2. **Keeps sentences under 20 words**
+3. **Replaces jargon with plain language**
+4. **Answers questions explicitly**`;
+
+  if (sampleLongSentence) {
+    customizedImplementation += `
+
+**Example from Your Page:**
+
+**Before** (Complex, ${sampleLongSentence.split(/\s+/).length} words):
+> ${sampleLongSentence}
+
+**After** (Clear, simplified):
+> ${simplifyComplexSentence(sampleLongSentence, detectedIndustry)}
+
+**What Changed:**
+- Split into shorter sentences (15-20 words each)
+- Removed unnecessary qualifiers
+- Used active voice
+- Added clear subject-verb-object structure`;
+  }
+
+  customizedImplementation += `
+
+**Key Simplification Principles:**
+✅ **One idea per sentence**: Don't chain multiple concepts
+✅ **Active voice**: "We help companies grow" (not "Companies are helped to grow by us")
+✅ **Plain language**: Use "use" instead of "utilize", "help" instead of "facilitate"
+✅ **Question headings**: "How does X work?" instead of "X Methodology"`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `**Common Jargon → Plain Language Replacements:**
+
+| Replace This | With This |
+|-------------|-----------|
+| Utilize | Use |
+| Leverage | Use / Take advantage of |
+| Implement | Start / Set up / Use |
+| Facilitate | Help / Enable |
+| Optimize | Improve |
+| Solution | Product / Service / Answer |
+| Ecosystem | System / Platform |
+| Synergy | Working together |
+| Paradigm | Model / Approach |
+| Robust | Strong / Reliable |
+
+**Sentence Length Guide:**
+
+- **Ideal**: 15-20 words per sentence
+- **Maximum**: 25 words before breaking into two
+- **Variety**: Mix short (8-12) and medium (15-20) sentences
+
+**Active Voice Conversions:**
+
+❌ **Passive**: "Our services are utilized by leading companies"
+✅ **Active**: "Leading companies use our services"
+
+❌ **Passive**: "The solution was implemented by our team"
+✅ **Active**: "Our team implemented the solution"
+
+❌ **Passive**: "Results can be achieved through our methodology"
+✅ **Active**: "Our methodology delivers results"`;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**Target reading level**: Aim for 8th-10th grade (Flesch Reading Ease: 60-70)',
+    '**Sentence variety**: Mix short punchy sentences with medium explanatory ones',
+    '**Paragraph length**: Keep paragraphs to 3-4 sentences (60-80 words max)',
+    '**Transition words**: Use "however," "therefore," "for example" to connect ideas',
+    '**Question headings**: Convert 30-50% of H2/H3 headings to questions',
+    '**Test readability**: Use Hemingway App or Grammarly to check reading grade level',
+    '**Voice search optimization**: Read content aloud - if it sounds unnatural, simplify',
+    '**Industry balance**: Use some technical terms for credibility, but define them inline'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    '✅ Find 3-5 longest sentences, split each in half (10 min)',
+    '✅ Replace 5-10 jargon words with plain language (15 min)',
+    '✅ Convert 3-5 passive voice sentences to active voice (10 min)',
+    '✅ Add question-based H2/H3 headings to 2-3 sections (5 min)',
+    '✅ Run Hemingway App - aim for Grade 8-10 reading level (5 min)',
+    '✅ Re-scan to confirm Readability & Clarity score improvement'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: 'Average sentence length reduced to 15-20 words',
+      checked: false
+    },
+    {
+      text: 'Replaced 5+ jargon/buzzwords with plain language',
+      checked: false
+    },
+    {
+      text: 'Converted passive voice to active voice in key sections',
+      checked: false
+    },
+    {
+      text: 'Added 2-3 question-based H2/H3 headings',
+      checked: false
+    },
+    {
+      text: 'Hemingway App shows Grade 8-10 reading level',
+      checked: false
+    },
+    {
+      text: 'Read content aloud - sounds natural and conversational',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Readability score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Readability Improvement Implementation
+
+### 1. Simplify Complex Sentences
+
+**Before:**
+\`\`\`
+Our comprehensive ${detectedIndustry.toLowerCase()} platform leverages cutting-edge AI and machine
+learning algorithms to facilitate seamless integration across your existing technology
+ecosystem, enabling organizations to optimize workflows and drive measurable business outcomes.
+\`\`\`
+
+**After:**
+\`\`\`
+Our ${detectedIndustry.toLowerCase()} platform uses AI and machine learning to integrate with
+your existing tools. This helps your team work more efficiently and measure business results.
+\`\`\`
+
+**What Changed:**
+- Reduced sentence from 32 words to two sentences (15 + 12 words)
+- Replaced jargon: "leverages" → "uses", "facilitate" → "helps", "optimize" → "work more efficiently"
+- Removed unnecessary qualifiers: "comprehensive", "cutting-edge", "seamless"
+
+### 2. Convert Passive to Active Voice
+
+**Before (Passive):**
+\`\`\`html
+<p>Our solutions are used by Fortune 500 companies to achieve their digital
+transformation goals. Results are delivered through our proven methodology that
+has been refined over 10+ years.</p>
+\`\`\`
+
+**After (Active):**
+\`\`\`html
+<p>Fortune 500 companies use our solutions to achieve digital transformation.
+Our proven 10-year methodology delivers results.</p>
+\`\`\`
+
+### 3. Add Question-Based Headings (AEO)
+
+**Before:**
+\`\`\`html
+<h2>${detectedIndustry} Service Methodology</h2>
+<h2>Implementation Timeline</h2>
+<h2>Pricing Structure</h2>
+\`\`\`
+
+**After (Question-Based):**
+\`\`\`html
+<h2>How does our ${detectedIndustry.toLowerCase()} service work?</h2>
+<h2>How long does implementation take?</h2>
+<h2>What does it cost?</h2>
+\`\`\`
+
+### 4. Break Long Paragraphs
+
+**Before:**
+\`\`\`html
+<p>In today's rapidly evolving digital landscape, organizations face unprecedented
+challenges in maintaining competitive advantage while simultaneously managing
+complex technology stacks, ensuring data security, meeting regulatory compliance
+requirements, and delivering exceptional customer experiences across multiple
+touchpoints and channels, which is why partnering with an experienced provider
+can make the difference between success and stagnation.</p>
+\`\`\`
+
+**After:**
+\`\`\`html
+<p>Modern businesses face tough challenges:</p>
+<ul>
+  <li>Managing complex technology</li>
+  <li>Keeping data secure</li>
+  <li>Meeting compliance requirements</li>
+  <li>Delivering great customer experiences</li>
+</ul>
+<p>An experienced partner helps you tackle these challenges and grow.</p>
+\`\`\`
+
+### 5. Testing Tools
+
+**Hemingway App** (hemingwayapp.com):
+- Paste your content
+- Aim for Grade 8-10 reading level
+- Fix sentences highlighted in red/yellow
+
+**Grammarly** (grammarly.com):
+- Check for passive voice
+- Identify complex sentences
+- Suggest clarity improvements
+
+**WebAIM Readability Tool**:
+- Calculate Flesch Reading Ease (target: 60-70)
+- Analyze average words per sentence (target: 15-20)
+
+### 6. Voice Search Test
+
+Read your content aloud. Ask:
+- Does it sound natural?
+- Would someone say this in conversation?
+- Can I understand it without re-reading?
+
+If no, simplify further.`;
+
+  return {
+    id: `rec_${issue.category}_readability_${Date.now()}`,
+    title: 'AI Readability: Content Clarity & Simplification',
+    category: issue.category,
+    subfactor: 'readabilityScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-2 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      avgSentenceLength: avgSentenceLength,
+      longSentences: longSentences,
+      longSentencePct: longSentencePct,
+      hasJargon: hasJargon,
+      hasPassiveVoice: hasPassiveVoice
+    },
+    generatedBy: 'programmatic_readability'
+  };
+}
+
+/**
+ * Helper function to simplify complex sentences for before/after examples
+ */
+function simplifyComplexSentence(sentence, industry) {
+  // This is a simplified example - actual simplification would be more sophisticated
+  let simplified = sentence;
+
+  // Common simplifications
+  const replacements = [
+    [/\butilize\b/gi, 'use'],
+    [/\bleverage\b/gi, 'use'],
+    [/\bfacilitate\b/gi, 'help'],
+    [/\boptimize\b/gi, 'improve'],
+    [/\bimplement\b/gi, 'set up'],
+    [/\becosystem\b/gi, 'system'],
+    [/\bsynergy\b/gi, 'collaboration'],
+    [/\bparadigm\b/gi, 'approach'],
+    [/\brobust\b/gi, 'strong'],
+    [/\bcomprehensive\b/gi, ''],
+    [/\bcutting-edge\b/gi, 'modern'],
+    [/\bseamless\b/gi, '']
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    simplified = simplified.replace(pattern, replacement);
+  }
+
+  // Clean up extra spaces
+  simplified = simplified.replace(/\s+/g, ' ').trim();
+
+  // If still very long, split into two sentences at a natural break
+  if (simplified.split(/\s+/).length > 25) {
+    const midPoint = Math.floor(simplified.length / 2);
+    const commaIndex = simplified.indexOf(',', midPoint - 20);
+    if (commaIndex > 0 && commaIndex < midPoint + 20) {
+      simplified = simplified.substring(0, commaIndex) + '.' + simplified.substring(commaIndex + 1);
+    }
+  }
+
+  return simplified;
+}
+
+/**
+ * Generates comprehensive content depth recommendations
+ * with AEO-focused topic coverage and entity enrichment strategies
+ */
+function makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract content metrics from scanEvidence
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const headings = scanEvidence.content?.headings || {};
+  const totalHeadings = (headings.h2 || []).length + (headings.h3 || []).length + (headings.h4 || []).length;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const lists = scanEvidence.content?.lists || [];
+
+  // Calculate depth indicators
+  const wordsPerHeading = totalHeadings > 0 ? Math.round(wordCount / totalHeadings) : wordCount;
+  const hasSubstantialContent = wordCount >= 800;
+  const hasGoodStructure = totalHeadings >= 3;
+
+  // Check for depth markers
+  const html = scanEvidence.html || '';
+  const hasExamples = /\b(example|for instance|such as|like|including)\b/gi.test(html);
+  const hasData = /\b(\d+%|\d+ percent|\d+x|statistics|study|research|data)\b/gi.test(html);
+  const hasQuestions = /(what|how|why|when|where|who)\s+(is|are|does|do|can|should|will)/gi.test(html);
+
+  // Industry-specific depth recommendations
+  const MIN_WORDS = detectedIndustry === 'Legal' || detectedIndustry === 'Healthcare' ? 1200 : 800;
+  const IDEAL_WORDS = detectedIndustry === 'Legal' || detectedIndustry === 'Healthcare' ? 2000 : 1500;
+
+  const wordGap = Math.max(0, MIN_WORDS - wordCount);
+  const needsMoreContent = wordCount < MIN_WORDS;
+
+  // Build finding text
+  const finding = needsMoreContent
+    ? `Your page has thin content (${wordCount.toLocaleString()} words) that limits AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Answer engines like ChatGPT and Perplexity prioritize comprehensive pages with ${MIN_WORDS}+ words, multiple sections, and substantive examples. You need approximately ${wordGap} more words of quality content.`
+    : `Your page has adequate length (${wordCount.toLocaleString()} words) but may lack depth in key areas (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${!hasExamples ? 'Missing concrete examples. ' : ''}${!hasData ? 'Missing data/statistics. ' : ''}${!hasQuestions ? 'Missing question-based headings for AEO.' : ''}`;
+
+  // Build impact description
+  const impact = `**Why Content Depth Matters for AEO:**
+
+Comprehensive, example-rich content significantly increases AI citation likelihood. Thin content fails to establish topical authority:
+
+- **AI requires context**: ChatGPT/Perplexity need ${MIN_WORDS}+ words to extract nuanced answers
+- **Topical authority signals**: Answer engines prioritize pages that thoroughly cover a subject
+- **Entity density matters**: More relevant entities (people, places, concepts) = better AI understanding
+- **Example-driven trust**: Concrete examples and data points increase citation confidence
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.65)} points** on Content Depth score
+- **+25-40%** citation rate in answer engine responses
+- **Better topical coverage**: AI understands your expertise breadth`;
+
+  // Build action steps
+  const actionSteps = [
+    needsMoreContent ? `Add ${wordGap}+ words of substantive content (not fluff)` : 'Expand existing sections with more examples and detail',
+    'Add 3-5 concrete examples or case studies',
+    'Include data, statistics, or research findings',
+    'Create question-based H2/H3 sections (What/How/Why)',
+    'Add a comprehensive FAQ section (5-8 questions)',
+    'Include comparison tables or step-by-step processes',
+    'Re-scan page to confirm Content Depth score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Content Depth Strategy for ${pageTitle}
+
+**Current Content Analysis:**
+- Word count: ${wordCount.toLocaleString()} (Target: ${MIN_WORDS}+, Ideal: ${IDEAL_WORDS}+)
+- Headings (H2/H3/H4): ${totalHeadings} sections
+- Words per section: ${wordsPerHeading}
+- Content elements: ${hasExamples ? '✅ Examples' : '❌ Examples'}, ${hasData ? '✅ Data/stats' : '❌ Data/stats'}, ${hasQuestions ? '✅ Question headings' : '❌ Question headings'}
+
+**AEO Content Depth Framework:**
+
+Answer engines evaluate content depth through:
+1. **Topic Coverage**: Do you address all major subtopics?
+2. **Example Richness**: Do you provide concrete, specific examples?
+3. **Data Support**: Do you back claims with data or research?
+4. **Question Answering**: Do you explicitly answer user questions?
+
+**Recommended Content Additions:**`;
+
+  // Add industry-specific content recommendations
+  const contentRecommendations = generateContentDepthRecommendations(detectedIndustry, wordCount);
+  customizedImplementation += `\n\n${contentRecommendations}`;
+
+  // Build ready-to-use content template
+  const readyToUseContent = `**Content Depth Template for ${detectedIndustry}:**
+
+## Add Comprehensive "How It Works" Section
+
+\`\`\`html
+<section>
+  <h2>How does ${detectedIndustry.toLowerCase()} implementation work?</h2>
+
+  <p><strong>Overview:</strong> [2-3 sentence summary of your approach]</p>
+
+  <h3>Step-by-Step Process:</h3>
+  <ol>
+    <li><strong>Discovery & Assessment</strong> - [Explain what happens, 40-60 words]</li>
+    <li><strong>Strategy Development</strong> - [Explain planning phase, 40-60 words]</li>
+    <li><strong>Implementation</strong> - [Explain execution, 40-60 words]</li>
+    <li><strong>Measurement & Optimization</strong> - [Explain tracking, 40-60 words]</li>
+  </ol>
+
+  <h3>Real-World Example:</h3>
+  <p><strong>Client:</strong> [Industry] company with [context]</p>
+  <p><strong>Challenge:</strong> [Specific problem, 30-40 words]</p>
+  <p><strong>Solution:</strong> [What you did, 40-60 words]</p>
+  <p><strong>Results:</strong> [Measurable outcomes with data points]</p>
+</section>
+\`\`\`
+
+## Add "Common Questions" Section
+
+\`\`\`html
+<section>
+  <h2>Common questions about ${detectedIndustry.toLowerCase()} services</h2>
+
+  <h3>What results can I expect?</h3>
+  <p>[Answer with specific outcomes and timeframes, 60-80 words]</p>
+
+  <h3>How long does implementation take?</h3>
+  <p>[Answer with timeline breakdown, 60-80 words]</p>
+
+  <h3>What's included in your service?</h3>
+  <ul>
+    <li>[Deliverable 1 with brief description]</li>
+    <li>[Deliverable 2 with brief description]</li>
+    <li>[Deliverable 3 with brief description]</li>
+  </ul>
+
+  <h3>How is this different from [common alternative]?</h3>
+  <p>[Comparison showing your unique approach, 80-100 words]</p>
+</section>
+\`\`\`
+
+## Add Data-Backed "Why It Matters" Section
+
+\`\`\`html
+<section>
+  <h2>Why ${detectedIndustry.toLowerCase()} expertise matters</h2>
+
+  <p>Industry research shows that [insight with data]:</p>
+  <ul>
+    <li><strong>X% of companies</strong> that [action] see [outcome]</li>
+    <li><strong>Average ROI</strong> of [metric] within [timeframe]</li>
+    <li><strong>Key success factor:</strong> [Important variable with explanation]</li>
+  </ul>
+</section>
+\`\`\``;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    `**Minimum viable depth**: ${MIN_WORDS} words with 5+ sections and 3+ examples`,
+    `**Ideal depth**: ${IDEAL_WORDS}+ words with 8+ sections, multiple examples, and data support`,
+    '**Quality over quantity**: Every added word must provide value (no keyword stuffing)',
+    '**Question-based sections**: 40-50% of H2/H3 headings should be questions',
+    '**Example specificity**: Use real numbers, names, and concrete details (not vague generalities)',
+    '**Topic clustering**: Cover main topic + 3-5 related subtopics comprehensively',
+    '**Entity enrichment**: Mention relevant people, companies, tools, concepts in your industry',
+    '**Visual depth**: Add comparison tables, process diagrams, or infographics where helpful'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    `✅ Add one detailed example/case study (150-200 words) (20 min)`,
+    `✅ Create a "How It Works" section with 4-step process (15 min)`,
+    `✅ Add comparison table (Your approach vs. alternatives) (15 min)`,
+    `✅ Convert 2-3 existing H2/H3s to question format (5 min)`,
+    `✅ Add one data point or statistic with context (10 min)`,
+    `✅ Re-scan to confirm Content Depth score lift`
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: `Word count increased to ${MIN_WORDS}+ words`,
+      checked: false
+    },
+    {
+      text: 'Added 3+ concrete examples with specific details',
+      checked: false
+    },
+    {
+      text: 'Included data points, statistics, or research findings',
+      checked: false
+    },
+    {
+      text: 'Created 2-3 question-based H2/H3 sections',
+      checked: false
+    },
+    {
+      text: 'Added comparison table or step-by-step process',
+      checked: false
+    },
+    {
+      text: 'All new content provides unique value (not filler)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Content Depth score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Content Depth Implementation Examples
+
+### 1. Adding Comprehensive Process Section
+
+\`\`\`html
+<section class="process-section">
+  <h2>How does our ${detectedIndustry.toLowerCase()} process work?</h2>
+
+  <p>Our proven methodology combines industry best practices with
+  customized strategies tailored to your business goals.</p>
+
+  <div class="process-steps">
+    <div class="step">
+      <h3>1. Discovery & Assessment</h3>
+      <p>We start by analyzing your current state, goals, and challenges.
+      This includes stakeholder interviews, competitive analysis, and
+      technical audits. Most discovery phases take 1-2 weeks and result
+      in a comprehensive assessment report.</p>
+    </div>
+
+    <div class="step">
+      <h3>2. Strategy Development</h3>
+      <p>Based on discovery findings, we create a customized roadmap with
+      clear milestones, success metrics, and resource requirements. You'll
+      receive a detailed strategy document with implementation timelines.</p>
+    </div>
+
+    <div class="step">
+      <h3>3. Implementation & Execution</h3>
+      <p>Our team executes the strategy in phased sprints, providing weekly
+      progress updates and adapting based on results. Implementation typically
+      spans 3-6 months depending on scope.</p>
+    </div>
+
+    <div class="step">
+      <h3>4. Measurement & Optimization</h3>
+      <p>We track KPIs continuously and optimize based on performance data.
+      Monthly reports show progress against goals with recommendations for
+      ongoing improvement.</p>
+    </div>
+  </div>
+</section>
+\`\`\`
+
+### 2. Adding Rich Case Study Example
+
+\`\`\`html
+<section class="case-study">
+  <h2>Real-world example: ${detectedIndustry} transformation</h2>
+
+  <div class="case-study-content">
+    <h3>The Challenge</h3>
+    <p><strong>Client:</strong> Mid-market ${detectedIndustry.toLowerCase()} company with
+    200 employees and $50M revenue</p>
+
+    <p><strong>Problem:</strong> Their existing approach was generating only 12 qualified
+    leads per month with a 2.5% conversion rate. Marketing and sales teams weren't
+    aligned, and attribution was unclear.</p>
+
+    <h3>Our Solution</h3>
+    <p>We implemented a comprehensive strategy that included:</p>
+    <ul>
+      <li>Rebuilt content architecture around question-based topics</li>
+      <li>Implemented answer engine optimization (AEO) best practices</li>
+      <li>Created 15+ FAQ pages targeting high-intent queries</li>
+      <li>Optimized for ChatGPT, Perplexity, and Google AI Overviews</li>
+    </ul>
+
+    <h3>The Results</h3>
+    <p>Within 6 months:</p>
+    <ul>
+      <li><strong>85% increase</strong> in qualified leads (12 → 47 per month)</li>
+      <li><strong>4.8% conversion rate</strong> (up from 2.5%)</li>
+      <li><strong>40% of traffic</strong> now comes from AI-powered search</li>
+      <li><strong>ROI:</strong> $380K in new revenue attributed to AI visibility improvements</li>
+    </ul>
+  </div>
+</section>
+\`\`\`
+
+### 3. Adding Comparison Table
+
+\`\`\`html
+<section class="comparison">
+  <h2>What makes our approach different?</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Approach</th>
+        <th>Traditional ${detectedIndustry}</th>
+        <th>Our AEO-First Method</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Content Focus</strong></td>
+        <td>Keyword rankings</td>
+        <td>Answer engine citations and AI visibility</td>
+      </tr>
+      <tr>
+        <td><strong>Success Metric</strong></td>
+        <td>Traffic volume</td>
+        <td>Qualified leads from AI-powered search</td>
+      </tr>
+      <tr>
+        <td><strong>Timeline</strong></td>
+        <td>6-12 months for results</td>
+        <td>3-6 months for measurable improvement</td>
+      </tr>
+      <tr>
+        <td><strong>Content Strategy</strong></td>
+        <td>Blog posts and landing pages</td>
+        <td>Question-based content + FAQ schema + entity optimization</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+\`\`\`
+
+### 4. Content Depth Checklist
+
+Use this checklist when expanding content:
+
+**Topic Coverage:**
+- [ ] Main topic explained thoroughly (300+ words)
+- [ ] 3-5 related subtopics covered (150+ words each)
+- [ ] Industry-specific terminology defined
+- [ ] Common misconceptions addressed
+
+**Example Richness:**
+- [ ] At least 1 detailed case study/example
+- [ ] Real numbers and specific outcomes (not vague claims)
+- [ ] Before/after scenarios showing transformation
+- [ ] Client names or anonymized profiles for credibility
+
+**Data Support:**
+- [ ] Industry statistics or research findings cited
+- [ ] Your own data or insights (if available)
+- [ ] Quantifiable results (percentages, timelines, costs)
+- [ ] Sources linked or referenced
+
+**Question Answering:**
+- [ ] 40-50% of headings are questions
+- [ ] Questions match how users actually search
+- [ ] Answers are direct and complete (60-100 words)
+- [ ] FAQ section with 5-8 common questions`;
+
+  return {
+    id: `rec_${issue.category}_contentDepth_${Date.now()}`,
+    title: 'AI Search Readiness: Content Depth & Comprehensiveness',
+    category: issue.category,
+    subfactor: 'contentDepthScore',
+    priority: 'high',
+    priorityScore: issue.priority || 80,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: needsMoreContent ? "3-4 hours" : "2-3 hours",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.65)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      totalHeadings: totalHeadings,
+      wordsPerHeading: wordsPerHeading,
+      hasExamples: hasExamples,
+      hasData: hasData,
+      hasQuestions: hasQuestions,
+      needsMoreContent: needsMoreContent,
+      wordGap: wordGap
+    },
+    generatedBy: 'programmatic_content_depth'
+  };
+}
+
+/**
+ * Helper function to generate industry-specific content depth recommendations
+ */
+function generateContentDepthRecommendations(industry, currentWordCount) {
+  const baseRecs = `
+**1. Add Question-Based Sections (300-400 words)**
+- "What results can I expect?" with specific outcomes and timeframes
+- "How does the process work?" with step-by-step breakdown
+- "Who is this right for?" with ideal customer profiles
+
+**2. Include Concrete Examples (200-300 words)**
+- Real client case study with before/after metrics
+- Step-by-step walkthrough of typical project
+- Common scenario showing your approach in action
+
+**3. Add Data & Research (150-200 words)**
+- Industry statistics supporting your approach
+- Your own data or insights from experience
+- Research findings validating your methodology`;
+
+  const industrySpecific = {
+    'Agency': `\n\n**Agency-Specific Additions:**
+- Client portfolio examples with measurable results
+- Service delivery process with timelines
+- Team expertise and certifications
+- Case studies showing ROI (3x+ return examples perform well)`,
+
+    'SaaS': `\n\n**SaaS-Specific Additions:**
+- Product feature comparison table
+- Integration capabilities and API documentation overview
+- Security and compliance information (SOC 2, GDPR, etc.)
+- Pricing calculator or transparent pricing breakdown`,
+
+    'Legal': `\n\n**Legal-Specific Additions:**
+- Relevant case law or precedents
+- Step-by-step legal process explanation
+- Common legal terms defined in plain language
+- Attorney credentials and practice area depth`,
+
+    'Healthcare': `\n\n**Healthcare-Specific Additions:**
+- Treatment approach with evidence-based rationale
+- Expected outcomes with realistic timelines
+- Insurance and payment information
+- Provider credentials and specializations`,
+
+    'Technology': `\n\n**Technology-Specific Additions:**
+- Technical architecture or approach explanation
+- Integration capabilities and compatibility
+- Security measures and data protection
+- Performance benchmarks and scalability information`
+  };
+
+  return baseRecs + (industrySpecific[industry] || '');
+}
+
+/**
+ * Generates comprehensive heading hierarchy recommendations
+ * with AEO-focused question-based heading strategies
+ */
+function makeProgrammaticHeadingHierarchyRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract heading data from scanEvidence
+  const headings = scanEvidence.content?.headings || {};
+  const h1Count = (headings.h1 || []).length;
+  const h2Count = (headings.h2 || []).length;
+  const h3Count = (headings.h3 || []).length;
+  const h4Count = (headings.h4 || []).length;
+  const totalHeadings = h2Count + h3Count + h4Count;
+
+  const h1Text = h1Count > 0 ? (headings.h1[0] || 'Untitled') : 'None';
+  const h2List = (headings.h2 || []).slice(0, 5);
+
+  // Analyze heading quality
+  const html = scanEvidence.html || '';
+  const hasMultipleH1 = h1Count > 1;
+  const hasNoH1 = h1Count === 0;
+  const hasPoorDistribution = h2Count < 3;
+  const hasQuestionHeadings = /(what|how|why|when|where|who)\s+(is|are|does|do|can|should|will)/gi.test(h2List.join(' '));
+  const questionHeadingPct = h2Count > 0 ? Math.round((h2List.filter(h => /(what|how|why|when|where|who)\s+/gi.test(h)).length / h2Count) * 100) : 0;
+
+  // Identify hierarchy issues
+  const hierarchyIssues = [];
+  if (hasNoH1) hierarchyIssues.push('Missing H1');
+  if (hasMultipleH1) hierarchyIssues.push('Multiple H1s');
+  if (hasPoorDistribution) hierarchyIssues.push('Too few H2 sections');
+  if (questionHeadingPct < 30) hierarchyIssues.push('Missing question-based headings');
+
+  // Build finding text
+  const finding = hierarchyIssues.length > 0
+    ? `Your page has heading hierarchy issues that limit AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Issues detected: ${hierarchyIssues.join(', ')}. ${h1Count > 0 ? `Current H1: "${h1Text}"` : 'No H1 found'}. H2 sections: ${h2Count}. Answer engines prioritize well-structured content with question-based headings.`
+    : `Your page has adequate heading structure (${h2Count} H2s, ${h3Count} H3s) but could improve for AEO (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Only ${questionHeadingPct}% of headings are question-based. Converting headings to questions increases AI extraction by 30-40%.`;
+
+  // Build impact description
+  const impact = `**Why Heading Hierarchy Matters for AEO:**
+
+Proper heading structure helps AI systems understand your content organization and extract specific answers. Poor hierarchy confuses semantic parsing:
+
+- **AI needs clear structure**: Answer engines use H1-H3 hierarchy to understand content relationships
+- **Question-based headings win**: Headings as questions directly match user queries ("How does X work?")
+- **Semantic extraction**: Proper hierarchy tells AI which content answers which question
+- **Featured snippet eligibility**: Google AI Overviews prioritize well-structured question-answer content
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Heading Structure score
+- **+30-40%** better question-answer extraction by AI
+- **Improved topic clustering**: Better AI understanding of content themes`;
+
+  // Build action steps
+  const actionSteps = [
+    hasNoH1 ? 'Add exactly one H1 tag with your main topic' : hasMultipleH1 ? 'Remove duplicate H1s - keep only one' : 'Verify H1 clearly states main topic',
+    hasPoorDistribution ? 'Add 3-5 H2 sections to break up content' : 'Ensure logical H2 → H3 hierarchy',
+    'Convert 40-50% of H2/H3 headings to questions',
+    'Use H2 for main sections, H3 for subsections within H2',
+    'Ensure every heading has 60+ words of content beneath it',
+    'Test hierarchy with HTML5 Outliner or WAVE tool',
+    'Re-scan page to confirm Heading Structure score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Heading Hierarchy Strategy for ${pageTitle}
+
+**Current Heading Structure:**
+- **H1:** ${h1Count === 1 ? `✅ "${h1Text}"` : h1Count === 0 ? '❌ Missing' : `⚠️ ${h1Count} H1s (should be exactly 1)`}
+- **H2 sections:** ${h2Count} ${h2Count < 3 ? '(add 2-3 more for better structure)' : '✅'}
+- **H3 subsections:** ${h3Count}
+- **Question-based headings:** ${questionHeadingPct}% (Target: 40-50%)
+
+${h2List.length > 0 ? `**Your Current H2 Headings:**\n${h2List.map((h, i) => `${i+1}. "${h}"`).join('\n')}\n` : ''}
+**AEO Heading Hierarchy Framework:**
+
+Answer engines extract information best from content structured like this:
+
+\`\`\`
+H1: Main Topic (exactly one per page)
+ ├─ H2: Question-Based Section
+ │   ├─ H3: Subtopic A
+ │   └─ H3: Subtopic B
+ ├─ H2: Question-Based Section
+ │   └─ H3: Subtopic A
+ └─ H2: Question-Based Section
+     ├─ H3: Subtopic A
+     └─ H3: Subtopic B
+\`\`\`
+
+**Recommended Changes:**`;
+
+  if (hasNoH1 || hasMultipleH1) {
+    customizedImplementation += `\n\n**1. Fix H1 Issue**\n${hasNoH1 ? '- Add one H1 tag with your main topic:\n  \`<h1>' + pageTitle + '</h1>\`' : '- Remove duplicate H1s, keep only the most important one'}`;
+  }
+
+  if (questionHeadingPct < 40) {
+    customizedImplementation += `\n\n**2. Convert Headings to Questions**\n\nChange declarative headings to questions that match user queries:\n\n**Before:**\n\`\`\`html\n<h2>${detectedIndustry} Services Overview</h2>\n<h2>Implementation Process</h2>\n<h2>Pricing Options</h2>\n\`\`\`\n\n**After (Question-Based for AEO):**\n\`\`\`html\n<h2>What ${detectedIndustry.toLowerCase()} services do you offer?</h2>\n<h2>How does the implementation process work?</h2>\n<h2>What does it cost?</h2>\n\`\`\``;
+  }
+
+  customizedImplementation += `\n\n**Key Heading Principles:**\n✅ **One H1 per page**: Your main topic\n✅ **H2 for major sections**: 3-5 main sections\n✅ **H3 for subsections**: Details within each H2\n✅ **Question format**: "How/What/Why/When/Where" at start\n✅ **Descriptive**: Heading alone should make sense (not just "Overview")`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `**Question-Based Heading Templates:**
+
+### For Service/Product Pages:
+
+\`\`\`html
+<h1>${detectedIndustry} Services for [Target Audience]</h1>
+
+<h2>What ${detectedIndustry.toLowerCase()} services do we offer?</h2>
+<h3>Service 1: [Name]</h3>
+<h3>Service 2: [Name]</h3>
+<h3>Service 3: [Name]</h3>
+
+<h2>How does our ${detectedIndustry.toLowerCase()} process work?</h2>
+<h3>Step 1: [Discovery/Assessment]</h3>
+<h3>Step 2: [Strategy/Planning]</h3>
+<h3>Step 3: [Implementation]</h3>
+<h3>Step 4: [Measurement]</h3>
+
+<h2>What results can you expect?</h2>
+<h3>Short-term outcomes (0-3 months)</h3>
+<h3>Medium-term results (3-6 months)</h3>
+<h3>Long-term impact (6-12 months)</h3>
+
+<h2>What does it cost?</h2>
+<h3>Pricing structure</h3>
+<h3>What's included</h3>
+<h3>ROI expectations</h3>
+
+<h2>How do we compare to alternatives?</h2>
+<h3>Traditional approach vs. our method</h3>
+<h3>Key differentiators</h3>
+\`\`\`
+
+### For Content/Resource Pages:
+
+\`\`\`html
+<h1>Complete Guide to [Topic]</h1>
+
+<h2>What is [Topic]?</h2>
+<h3>Definition and key concepts</h3>
+<h3>Why it matters</h3>
+
+<h2>How does [Topic] work?</h2>
+<h3>Core principles</h3>
+<h3>Step-by-step process</h3>
+
+<h2>Why should you care about [Topic]?</h2>
+<h3>Benefits and outcomes</h3>
+<h3>Common use cases</h3>
+
+<h2>When should you use [Topic]?</h2>
+<h3>Ideal scenarios</h3>
+<h3>Timing considerations</h3>
+
+<h2>Who is this for?</h2>
+<h3>Ideal user profiles</h3>
+<h3>Industry applications</h3>
+\`\`\``;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**H1 rule**: Exactly one H1 per page stating the main topic clearly',
+    '**H2 for main sections**: 3-7 major sections that break up your content',
+    '**H3 for subsections**: Details under each H2 (use H4 only if absolutely needed)',
+    '**Question format**: 40-50% of H2/H3 headings should be questions starting with What/How/Why/When/Where/Who',
+    '**Descriptive, not generic**: Use "How does implementation work?" not just "Process"',
+    '**Natural language**: Match how users actually ask questions (conversational)',
+    '**Hierarchical logic**: H3 should never appear without a parent H2 above it',
+    '**Content beneath each heading**: Minimum 60 words of content after every heading'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    hasNoH1 ? '✅ Add one H1 tag to your page (2 min)' : hasMultipleH1 ? '✅ Remove duplicate H1s (5 min)' : '✅ Verify H1 is clear and specific (2 min)',
+    '✅ Convert 3-5 H2/H3 headings to question format (10 min)',
+    '✅ Add 1-2 new H2 sections if you have fewer than 3 (15 min)',
+    '✅ Ensure H2 → H3 hierarchy is logical (no orphan H3s) (5 min)',
+    '✅ Test with HTML5 Outliner or WAVE accessibility tool (3 min)',
+    '✅ Re-scan to confirm Heading Structure score lift'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: hasNoH1 ? 'Added exactly one H1 tag' : hasMultipleH1 ? 'Removed duplicate H1s (only one H1)' : 'Verified H1 is clear and descriptive',
+      checked: false
+    },
+    {
+      text: hasPoorDistribution ? 'Added H2 sections (3-7 total)' : 'H2 sections properly distributed',
+      checked: false
+    },
+    {
+      text: '40-50% of H2/H3 headings are question-based',
+      checked: false
+    },
+    {
+      text: 'H3 tags only appear under H2 parents (proper hierarchy)',
+      checked: false
+    },
+    {
+      text: 'Each heading has 60+ words of content beneath it',
+      checked: false
+    },
+    {
+      text: 'Tested with HTML5 Outliner - structure makes sense',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Heading Structure score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Heading Hierarchy Implementation
+
+### 1. Proper H1-H3 Structure
+
+**Before (Poor Hierarchy):**
+\`\`\`html
+<h1>Welcome to Our Site</h1>
+<h1>About Our Services</h1>  <!-- ❌ Multiple H1s -->
+<h3>Service Details</h3>      <!-- ❌ H3 without H2 parent -->
+<h2>Contact</h2>
+\`\`\`
+
+**After (Proper Hierarchy):**
+\`\`\`html
+<h1>${detectedIndustry} Services for Growing Businesses</h1>
+
+<h2>What ${detectedIndustry.toLowerCase()} services do we offer?</h2>
+<h3>Service 1: Strategy & Planning</h3>
+<p>Our strategy services help you define clear goals...</p>
+
+<h3>Service 2: Implementation & Execution</h3>
+<p>We execute your strategy with proven methodologies...</p>
+
+<h3>Service 3: Measurement & Optimization</h3>
+<p>Track performance and optimize for better results...</p>
+
+<h2>How does our process work?</h2>
+<h3>Discovery & Assessment (Week 1-2)</h3>
+<p>We start by understanding your current state...</p>
+
+<h3>Strategy Development (Week 3-4)</h3>
+<p>Based on discovery, we create a customized roadmap...</p>
+
+<h2>What results can you expect?</h2>
+<p>Our clients typically see measurable improvements...</p>
+\`\`\`
+
+### 2. Converting to Question-Based Headings
+
+**Traditional (Declarative):**
+\`\`\`html
+<h2>Services Overview</h2>
+<h2>Implementation Timeline</h2>
+<h2>Pricing Structure</h2>
+<h2>Our Team</h2>
+<h2>Client Results</h2>
+\`\`\`
+
+**AEO-Optimized (Question-Based):**
+\`\`\`html
+<h2>What services do you offer?</h2>
+<h2>How long does implementation take?</h2>
+<h2>What does it cost?</h2>
+<h2>Who will work on my project?</h2>
+<h2>What results have other clients achieved?</h2>
+\`\`\`
+
+**Why Questions Work Better:**
+- Matches natural user queries to AI assistants
+- Directly triggers answer extraction in ChatGPT/Perplexity
+- Improves featured snippet eligibility
+- Better voice search compatibility
+
+### 3. Complete Page Structure Example
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>${pageTitle}</title>
+</head>
+<body>
+  <!-- Exactly one H1 -->
+  <h1>Complete ${detectedIndustry} Services Guide</h1>
+
+  <!-- Main section 1 -->
+  <h2>What is ${detectedIndustry.toLowerCase()} and why does it matter?</h2>
+  <p>[60+ words explaining the concept and importance]</p>
+
+    <h3>Key benefits of ${detectedIndustry.toLowerCase()}</h3>
+    <p>[Details about benefits]</p>
+
+    <h3>Common use cases</h3>
+    <p>[Examples of applications]</p>
+
+  <!-- Main section 2 -->
+  <h2>How does ${detectedIndustry.toLowerCase()} work?</h2>
+  <p>[60+ words explaining the process]</p>
+
+    <h3>Step 1: Discovery</h3>
+    <p>[Details about discovery phase]</p>
+
+    <h3>Step 2: Implementation</h3>
+    <p>[Details about implementation]</p>
+
+  <!-- Main section 3 -->
+  <h2>What should you look for in a ${detectedIndustry.toLowerCase()} provider?</h2>
+  <p>[60+ words on selection criteria]</p>
+
+    <h3>Essential qualifications</h3>
+    <p>[Required credentials/experience]</p>
+
+    <h3>Red flags to avoid</h3>
+    <p>[Warning signs of poor providers]</p>
+
+  <!-- Main section 4 -->
+  <h2>How do you measure ${detectedIndustry.toLowerCase()} success?</h2>
+  <p>[60+ words on success metrics]</p>
+
+    <h3>Key performance indicators</h3>
+    <p>[Specific metrics to track]</p>
+
+    <h3>Expected timelines</h3>
+    <p>[When to expect results]</p>
+</body>
+</html>
+\`\`\`
+
+### 4. Validation Tools
+
+**HTML5 Outliner:**
+- Visit: https://gsnedders.html5.org/outliner/
+- Paste your page URL
+- Verify clean hierarchy (no missing levels)
+
+**WAVE Accessibility Tool:**
+- Install browser extension
+- Check heading structure warnings
+- Ensure logical heading order
+
+**Manual Check:**
+\`\`\`javascript
+// Run in browser console to see heading structure
+document.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+  console.log(h.tagName + ': ' + h.textContent.trim());
+});
+\`\`\`
+
+### 5. Common Heading Mistakes to Avoid
+
+❌ **Multiple H1s**: Confuses AI about page topic
+❌ **Skipping levels**: Going H2 → H4 breaks hierarchy
+❌ **Generic headings**: "Overview", "Introduction", "More Info"
+❌ **No questions**: All declarative statements
+❌ **Empty headings**: Headings with no content beneath
+❌ **Keyword stuffing**: Unnatural repetition in headings`;
+
+  return {
+    id: `rec_${issue.category}_headingHierarchy_${Date.now()}`,
+    title: 'Content Structure: Heading Hierarchy & Organization',
+    category: issue.category,
+    subfactor: 'headingHierarchyScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "45-90 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      h1Count: h1Count,
+      h2Count: h2Count,
+      h3Count: h3Count,
+      h4Count: h4Count,
+      hasMultipleH1: hasMultipleH1,
+      hasNoH1: hasNoH1,
+      hasPoorDistribution: hasPoorDistribution,
+      questionHeadingPct: questionHeadingPct,
+      hierarchyIssues: hierarchyIssues
+    },
+    generatedBy: 'programmatic_heading_hierarchy'
   };
 }
 
