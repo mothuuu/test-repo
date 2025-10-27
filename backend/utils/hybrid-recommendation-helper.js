@@ -246,8 +246,24 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
   }
   
   console.log(`   ✅ Saved ${pageSpecificTotal} page-specific recommendations`);
-  
-  // Create user_progress record
+
+  // Calculate batch unlock dates (every 5 days)
+  const now = new Date();
+  const batch1Date = now; // Immediate
+  const batch2Date = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // +5 days
+  const batch3Date = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000); // +10 days
+  const batch4Date = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // +15 days
+
+  const totalRecs = limitedSiteWide.length + pageSpecificTotal;
+  const totalBatches = Math.ceil(totalRecs / 5);
+
+  console.log(`   📅 Batch unlock schedule:`);
+  console.log(`      Batch 1: ${batch1Date.toLocaleDateString()} (now)`);
+  console.log(`      Batch 2: ${batch2Date.toLocaleDateString()} (+5 days)`);
+  if (totalBatches >= 3) console.log(`      Batch 3: ${batch3Date.toLocaleDateString()} (+10 days)`);
+  if (totalBatches >= 4) console.log(`      Batch 4: ${batch4Date.toLocaleDateString()} (+15 days)`);
+
+  // Create user_progress record with batch unlock dates
   await db.query(
     `INSERT INTO user_progress (
       user_id, scan_id,
@@ -256,12 +272,15 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       current_batch, last_unlock_date, unlocks_today,
       site_wide_total, site_wide_completed, site_wide_active,
       page_specific_total, page_specific_completed,
-      site_wide_complete
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13)`,
+      site_wide_complete,
+      batch_1_unlock_date, batch_2_unlock_date,
+      batch_3_unlock_date, batch_4_unlock_date,
+      total_batches
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
     [
       userId,
       scanId,
-      limitedSiteWide.length + pageSpecificTotal, // Total
+      totalRecs, // Total
       siteWideActive, // Active (first 5 site-wide)
       0, // Completed
       0, // Verified
@@ -271,11 +290,16 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       siteWideActive, // Site-wide active
       pageSpecificTotal, // Page-specific total
       0, // Page-specific completed
-      false // Site-wide not complete yet
+      false, // Site-wide not complete yet
+      batch1Date, // Batch 1 unlock date (now)
+      totalBatches >= 2 ? batch2Date : null, // Batch 2 unlock date
+      totalBatches >= 3 ? batch3Date : null, // Batch 3 unlock date
+      totalBatches >= 4 ? batch4Date : null, // Batch 4 unlock date
+      totalBatches // Total number of batches
     ]
   );
-  
-  console.log(`   ✅ Progress tracking initialized`);
+
+  console.log(`   ✅ Progress tracking initialized with ${totalBatches} batch${totalBatches > 1 ? 'es' : ''}`);
   
   return {
     siteWideTotal: limitedSiteWide.length,
