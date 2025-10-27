@@ -3,6 +3,25 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
     ? 'http://localhost:3001/api'
     : 'https://ai-visibility-tool.onrender.com/api';
 
+// Industry categories for signup dropdown
+const INDUSTRY_CATEGORIES = [
+  { category: 'Marketing & Advertising', industries: ['Marketing Agency', 'MarTech / Marketing Technology', 'Media & Advertising', 'Public Relations', 'Content Marketing'] },
+  { category: 'Sales & Customer', industries: ['Sales Technology / CRM', 'Customer Support', 'Customer Success Platform'] },
+  { category: 'Finance & Banking', industries: ['Finance', 'FinTech / Financial Technology', 'Banking', 'Insurance', 'InsurTech / Insurance Technology', 'Accounting', 'Accounting Software', 'Wealth Management'] },
+  { category: 'Technology & Software', industries: ['SaaS / Cloud Software', 'AI / Machine Learning', 'Cybersecurity', 'Developer Tools / DevOps', 'Data & Analytics', 'IT Services', 'Computer Hardware & Software'] },
+  { category: 'Infrastructure & Cloud', industries: ['Data Infrastructure', 'Digital Infrastructure', 'Cloud Infrastructure', 'Network Infrastructure'] },
+  { category: 'Telecommunications', industries: ['Telecommunications', 'Telecom Software', 'Unified Communications', 'VoIP / Cloud Communications'] },
+  { category: 'Hardware & Equipment', industries: ['ICT Hardware', 'Computer Hardware', 'Networking Equipment', 'Enterprise Hardware'] },
+  { category: 'Healthcare', industries: ['Healthcare / Medical Services', 'HealthTech / Healthcare Technology', 'Telemedicine', 'Medical Devices'] },
+  { category: 'Ecommerce & Retail', industries: ['Ecommerce', 'Retail', 'Marketplace Platform'] },
+  { category: 'Real Estate & Construction', industries: ['Real Estate', 'PropTech / Property Technology', 'Construction', 'Construction Technology'] },
+  { category: 'Education', industries: ['Education / Training', 'EdTech / Education Technology', 'Corporate Training'] },
+  { category: 'Professional Services', industries: ['Legal / Law Firm', 'LegalTech / Legal Technology', 'Consulting', 'Accounting Services', 'HR / Recruiting', 'HR Technology / HCM'] },
+  { category: 'Operations & Logistics', industries: ['Manufacturing', 'Logistics / Supply Chain', 'Transportation', 'Warehouse Management'] },
+  { category: 'Utilities & Energy', industries: ['Utilities', 'Energy', 'Water & Wastewater', 'Power & Electric'] },
+  { category: 'Nonprofit & Government', industries: ['Nonprofit Organization', 'Government / Public Sector'] }
+];
+
 // UI Elements
 const loginForm = document.getElementById('loginForm');
 const signupForm = document.getElementById('signupForm');
@@ -122,47 +141,66 @@ signupForm.addEventListener('submit', async (e) => {
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   const confirmPassword = document.getElementById('signupPasswordConfirm').value;
-  
+  const industry = document.getElementById('signupIndustry').value;
+  const industryCustom = document.getElementById('signupIndustryCustom').value.trim();
+
   // Client-side validation
   if (!email || !password || !confirmPassword) {
     showError('Please fill in all fields');
     return;
   }
-  
+
   if (password.length < 8) {
     showError('Password must be at least 8 characters');
     return;
   }
-  
+
   if (password !== confirmPassword) {
     showError('Passwords do not match');
     return;
   }
-  
+
   // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     showError('Please enter a valid email address');
     return;
   }
-  
+
+  // Validate custom industry if "Other" is selected
+  if (industry === 'Other' && !industryCustom) {
+    showError('Please specify your industry');
+    return;
+  }
+
   // Disable submit button
   const submitBtn = signupForm.querySelector('button[type="submit"]');
   const originalBtnText = submitBtn.textContent;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Creating account...';
-  
+
+  // Prepare signup data
+  const signupData = {
+    email,
+    password,
+    name: email.split('@')[0] // Use email prefix as name
+  };
+
+  // Add industry if provided
+  if (industry) {
+    signupData.industry = industry === 'Other' ? industryCustom : industry;
+    if (industry === 'Other') {
+      signupData.industryCustom = industryCustom;
+    }
+  }
+
   try {
     const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 
-        email, 
-        password,
-        name: email.split('@')[0] // Use email prefix as name
-      })
+      body: JSON.stringify(signupData)
     });
     
     const data = await response.json();
@@ -194,8 +232,58 @@ signupForm.addEventListener('submit', async (e) => {
   }
 });
 
+// Populate industry dropdown
+function populateIndustryDropdown() {
+  const select = document.getElementById('signupIndustry');
+  if (!select) return;
+
+  // Add optgroups for each category
+  INDUSTRY_CATEGORIES.forEach(category => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = category.category;
+
+    category.industries.forEach(industry => {
+      const option = document.createElement('option');
+      option.value = industry;
+      option.textContent = industry;
+      optgroup.appendChild(option);
+    });
+
+    select.appendChild(optgroup);
+  });
+
+  // Add "Other" option at the end
+  const otherOption = document.createElement('option');
+  otherOption.value = 'Other';
+  otherOption.textContent = 'Other (please specify)';
+  select.appendChild(otherOption);
+}
+
+// Handle industry dropdown change (show/hide custom field)
+function handleIndustryChange() {
+  const select = document.getElementById('signupIndustry');
+  const customGroup = document.getElementById('customIndustryGroup');
+
+  if (!select || !customGroup) return;
+
+  select.addEventListener('change', () => {
+    if (select.value === 'Other') {
+      customGroup.style.display = 'block';
+      document.getElementById('signupIndustryCustom').setAttribute('required', 'required');
+    } else {
+      customGroup.style.display = 'none';
+      document.getElementById('signupIndustryCustom').removeAttribute('required');
+      document.getElementById('signupIndustryCustom').value = '';
+    }
+  });
+}
+
 // Check if user is already logged in
 window.addEventListener('DOMContentLoaded', () => {
+  // Populate industry dropdown
+  populateIndustryDropdown();
+  handleIndustryChange();
+
   const token = localStorage.getItem('authToken');
   if (token) {
     // Verify token is still valid
