@@ -6,96 +6,82 @@
     <title>AI Visibility Score - Optimize Your Site for AI Search</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Custom design per specifications */
-        :root {
-            --headline-primary: #FFFFFF;
-            --headline-accent: #FFFFFF;
-            --subheadline: rgba(255, 255, 255, 0.9);
-            --trust-indicators: rgba(255, 255, 255, 0.85);
-            --checkmarks: #FFFFFF;
-            --cta-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --cta-text: #FFFFFF;
-            --signin-text: rgba(255, 255, 255, 0.9);
-            --input-bg: #FFFFFF;
-            --input-text: #333333;
-            --input-placeholder: #999999;
-            --input-border: rgba(255, 255, 255, 0.3);
+        /* White Content Box Wrapper */
+        .white-content-box {
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 60px 80px;
+            max-width: 1100px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         }
 
         .hero-section {
             text-align: center;
-            padding: 80px 20px;
         }
 
         .hero-title {
-            font-size: 4rem;
+            font-size: 52px;
             font-weight: 800;
-            color: var(--headline-primary);
+            color: #F31C7E;
             margin-bottom: 20px;
             line-height: 1.2;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
             font-family: 'Inter', 'Poppins', -apple-system, sans-serif;
         }
 
-        .hero-gradient {
-            color: var(--headline-accent);
-            display: block;
-        }
-
         .hero-subtitle {
-            font-size: 1.375rem;
-            color: var(--subheadline);
-            max-width: 700px;
+            font-size: 20px;
+            color: #333333;
+            max-width: 900px;
             margin: 0 auto 40px;
             font-weight: 400;
             line-height: 1.6;
         }
 
         .hero-form {
-            max-width: 700px;
-            margin: 0 auto;
+            max-width: 900px;
+            margin: 0 auto 30px;
             display: flex;
             gap: 15px;
             align-items: stretch;
         }
 
         .hero-input {
-            flex: 70%;
+            flex: 1;
             padding: 18px 24px;
-            border: 2px solid var(--input-border);
-            border-radius: 50px;
+            border: 2px solid #E5E5E5;
+            border-radius: 12px;
             font-size: 1.1rem;
-            background: var(--input-bg);
-            color: var(--input-text);
+            background: #FFFFFF;
+            color: #333333;
         }
 
         .hero-input::placeholder {
-            color: var(--input-placeholder);
+            color: #999999;
         }
 
         .hero-input:focus {
             outline: none;
-            border-color: rgba(255,255,255,0.6);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-color: #F31C7E;
+            box-shadow: 0 4px 20px rgba(243,28,126,0.15);
         }
 
         .hero-button {
-            flex: 30%;
-            padding: 18px 32px;
-            background: var(--cta-gradient);
-            color: var(--cta-text);
+            padding: 18px 40px;
+            background: #F31C7E;
+            color: #FFFFFF;
             border: none;
-            border-radius: 50px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            white-space: nowrap;
         }
 
         .hero-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            background: #D91869;
         }
 
         .hero-button:disabled {
@@ -105,15 +91,16 @@
 
         .trust-indicator {
             margin-top: 20px;
-            color: var(--trust-indicators);
-            font-size: 1rem;
+            color: #7030A0;
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .trust-badges {
             display: flex;
             justify-content: center;
             gap: 50px;
-            margin-top: 40px;
+            margin-top: 30px;
             flex-wrap: wrap;
         }
 
@@ -121,14 +108,23 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: var(--checkmarks);
-            font-weight: 500;
-            font-size: 1.1rem;
+            color: #4DACA6;
+            font-weight: 600;
+            font-size: 15px;
         }
 
         .trust-badge-icon {
             font-size: 1.5rem;
-            color: var(--checkmarks);
+            color: #4DACA6;
+        }
+
+        .white-box-footer {
+            text-align: center;
+            color: #888888;
+            font-size: 14px;
+            border-top: 1px solid #F0F0F0;
+            padding-top: 30px;
+            margin-top: 40px;
         }
 
         .features-grid {
@@ -168,6 +164,69 @@
         .feature-card p {
             color: rgba(255,255,255,0.9);
         }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .white-content-box {
+                padding: 40px 30px;
+                border-radius: 20px;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 18px;
+            }
+
+            .hero-form {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .hero-button {
+                width: 100%;
+                padding: 16px 32px;
+            }
+
+            .trust-badges {
+                gap: 30px;
+            }
+
+            .feature-card h4 {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .white-content-box {
+                padding: 30px 20px;
+                border-radius: 16px;
+            }
+
+            .hero-title {
+                font-size: 30px;
+            }
+
+            .hero-subtitle {
+                font-size: 16px;
+            }
+
+            .hero-input,
+            .hero-button {
+                font-size: 1rem;
+            }
+
+            .trust-badges {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -178,49 +237,56 @@
                 AI Visibility Score
             </h1>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="auth.html?mode=login" style="color: rgba(255,255,255,0.9); text-decoration: none; font-weight: 600; background: transparent; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Sign In</a>
+                <a href="auth.html?mode=login" style="padding: 12px 28px; text-decoration: none; background: #F31C7E; color: #ffffff; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#D91869'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#F31C7E'">Sign In</a>
                 <a href="auth.html?mode=signup" style="padding: 12px 28px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Get Started</a>
             </div>
         </div>
 
-        <!-- Hero Section -->
-        <section class="hero-section">
-            <h2 class="hero-title">
-                Optimize Your Site for
-                <span class="hero-gradient">AI Answer Engines</span>
-            </h2>
-            <p class="hero-subtitle">
-                Get your AI Visibility Score and discover how to rank higher in ChatGPT, Perplexity, and other AI-powered search tools.
-            </p>
-            
-            <form class="hero-form" onsubmit="handleHeroScan(event)">
-                <input 
-                    type="url" 
-                    class="hero-input" 
-                    id="heroUrl" 
-                    placeholder="Enter your website URL (e.g., example.com)" 
-                    required
-                >
-                <button type="submit" class="hero-button">
-                    Analyze Now
-                </button>
-            </form>
-            
-            <p class="trust-indicator">
-                🚀 Free scan • No credit card required • Results in 30 seconds
-            </p>
-            
-            <div class="trust-badges">
-                <div class="trust-badge">
-                    <span class="trust-badge-icon">✓</span>
-                    <span>1000+ Sites Analyzed</span>
+        <!-- White Content Box -->
+        <div class="white-content-box">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <h2 class="hero-title">
+                    Optimize Your Site for AI Answer Engines
+                </h2>
+                <p class="hero-subtitle">
+                    Get your AI Visibility Score and discover how to rank higher in ChatGPT, Perplexity, and other AI-powered search tools.
+                </p>
+
+                <form class="hero-form" onsubmit="handleHeroScan(event)">
+                    <input
+                        type="url"
+                        class="hero-input"
+                        id="heroUrl"
+                        placeholder="Enter your website URL (e.g., example.com)"
+                        required
+                    >
+                    <button type="submit" class="hero-button">
+                        Analyze Now
+                    </button>
+                </form>
+
+                <p class="trust-indicator">
+                    🚀 Free scan • No credit card required • Results in 30 seconds
+                </p>
+
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <span class="trust-badge-icon">✓</span>
+                        <span>1000+ Sites Analyzed</span>
+                    </div>
+                    <div class="trust-badge">
+                        <span class="trust-badge-icon">✓</span>
+                        <span>No Signup Required</span>
+                    </div>
                 </div>
-                <div class="trust-badge">
-                    <span class="trust-badge-icon">✓</span>
-                    <span>No Signup Required</span>
-                </div>
+            </section>
+
+            <!-- Footer text inside white box -->
+            <div class="white-box-footer">
+                Powered by Xeo AI Hub | AI Readiness Assessment Tool
             </div>
-        </section>
+        </div>
 
         <!-- Features Section -->
         <section style="padding: 60px 0;">
@@ -280,21 +346,29 @@
         </section>
 
         <!-- CTA Section -->
-        <section style="padding: 80px 20px; text-align: center; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); border-radius: 20px; color: white; margin: 60px 0;">
-            <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px;">
+        <section style="padding: 80px 40px; text-align: center; background: #00B9DA; border-radius: 20px; color: white; margin: 60px 0; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+            <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; color: #FFFFFF; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 Ready to Dominate AI Search?
             </h3>
-            <p style="font-size: 1.2rem; margin-bottom: 30px; opacity: 0.9;">
+            <p style="font-size: 1.2rem; margin-bottom: 30px; color: rgba(255,255,255,0.95);">
                 Start optimizing your website for AI-powered search engines today.
             </p>
-            <button onclick="window.location.href='auth.html'" style="padding: 18px 40px; background: white; color: #7030A0; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
+            <button onclick="window.location.href='auth.html'" style="padding: 18px 40px; background: #F31C7E; color: #FFFFFF; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#D91869'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#F31C7E'">
                 Get Started Free →
             </button>
         </section>
 
         <!-- Footer -->
-        <footer style="text-align: center; padding: 40px 0; color: #999; border-top: 1px solid #e0e0e0;">
-            <p>© 2025 AI Visibility Score. Powered by Xeo AI Hub & Xeo Marketing All rights reserved.</p>
+        <footer style="background: #1A2B44; text-align: center; padding: 50px 20px; margin-top: 80px; border-radius: 0;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <p style="color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 15px;">
+                    Powered by Xeo AI Hub &
+                    <a href="https://xeo.marketing/" target="_blank" rel="noopener noreferrer" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#F31C7E'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Xeo Marketing</a>
+                </p>
+                <p style="color: rgba(255,255,255,0.5); font-size: 14px;">
+                    © 2025 AI Visibility Score. All rights reserved.
+                </p>
+            </div>
         </footer>
     </div>
 
