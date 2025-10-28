@@ -113,13 +113,16 @@ function displayResults(scan, quota) {
         displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
     }
 
-    // Display recommendations based on tier
-    if (userTier === 'guest') {
+    // Display recommendations based on tier and scan type
+    if (scan.is_competitor || scan.domain_type === 'competitor') {
+        // Competitor scan - show info message instead of recommendations
+        displayCompetitorScanMessage(scan);
+    } else if (userTier === 'guest') {
         // Guest: Show NO recommendations, only signup CTA
         displayGuestRecommendations(scan);
     } else if (scan.recommendations && scan.recommendations.length > 0) {
         // Authenticated: Show recommendations based on plan
-        displayRecommendations(scan.recommendations, userTier, scan.userProgress);
+        displayRecommendations(scan.recommendations, userTier, scan.userProgress, scan.nextBatchUnlock, scan.batchesUnlocked);
     } else {
         document.getElementById('recommendationsList').innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
     }
@@ -181,6 +184,45 @@ function displayCategoryScores(categories, recommendations) {
 }
 
 // Guest recommendations - show signup CTA instead of recommendations
+function displayCompetitorScanMessage(scan) {
+    const container = document.getElementById('recommendationsList');
+    container.innerHTML = `
+        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-12 text-center border-2 border-orange-300">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Competitor Scan Complete</h3>
+            <p class="text-gray-700 mb-6 max-w-2xl mx-auto">
+                This is a <span class="font-bold text-orange-600">competitor domain scan</span>.
+                Your primary domain is <span class="font-bold text-blue-600">${scan.primary_domain}</span>.
+            </p>
+            <div class="bg-white rounded-lg p-6 mb-6 max-w-xl mx-auto border border-orange-200">
+                <h4 class="font-bold text-lg mb-3 text-gray-900">Competitor Scan Includes:</h4>
+                <div class="text-left mx-auto" style="max-width: 300px;">
+                    <div class="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                        <span>✅</span> <span>AI Visibility Score</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                        <span>✅</span> <span>8 Category Scores</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400 font-semibold mb-2 line-through">
+                        <span>❌</span> <span>Recommendations</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-400 font-semibold line-through">
+                        <span>❌</span> <span>Implementation Guidance</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                To get recommendations and implementation guidance, scan your primary domain:
+                <span class="font-bold text-blue-600">${scan.primary_domain}</span>
+            </p>
+            <a href="dashboard.html"
+               class="inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-full text-lg hover:shadow-xl transition-all transform hover:scale-105">
+                ← Back to Dashboard
+            </a>
+        </div>
+    `;
+}
+
 function displayGuestRecommendations(scan) {
     const container = document.getElementById('recommendationsList');
     container.innerHTML = `
@@ -213,39 +255,128 @@ function displayGuestRecommendations(scan) {
     `;
 }
 
-function displayRecommendations(recommendations, userTier, userProgress) {
+function displayRecommendations(recommendations, userTier, userProgress, nextBatchUnlock, batchesUnlocked) {
     const container = document.getElementById('recommendationsList');
     container.innerHTML = '';
 
     console.log('Displaying recommendations:', recommendations); // Debug log
     console.log('User tier:', userTier);
     console.log('User progress:', userProgress);
+    console.log('Next batch unlock:', nextBatchUnlock);
+    console.log('Batches just unlocked:', batchesUnlocked);
 
-    // Determine how many recommendations to show based on tier
+    // Show batch unlock notification if batches were just unlocked
+    if (batchesUnlocked && batchesUnlocked > 0) {
+        const notification = document.createElement('div');
+        notification.className = 'mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-300';
+        notification.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">🎉</span>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">New Recommendations Unlocked!</h3>
+                    <p class="text-gray-700">
+                        Batch ${batchesUnlocked} has been automatically unlocked.
+                        ${nextBatchUnlock ? `Next batch unlocks in ${nextBatchUnlock.daysRemaining} day${nextBatchUnlock.daysRemaining !== 1 ? 's' : ''}.` : 'All batches unlocked!'}
+                    </p>
+                </div>
+            </div>
+        `;
+        container.appendChild(notification);
+    }
+
+    // Show batch countdown timer if next batch is available
+    if (nextBatchUnlock && nextBatchUnlock.daysRemaining > 0) {
+        const countdownTimer = document.createElement('div');
+        countdownTimer.className = 'mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200';
+        countdownTimer.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⏰</span>
+                    <div>
+                        <h4 class="font-bold text-gray-900">Next Batch Unlock</h4>
+                        <p class="text-sm text-gray-600">
+                            ${nextBatchUnlock.recommendationsInBatch} more recommendations unlock in
+                            <span class="font-bold text-purple-600">${nextBatchUnlock.daysRemaining} day${nextBatchUnlock.daysRemaining !== 1 ? 's' : ''}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-purple-600">${nextBatchUnlock.daysRemaining}</div>
+                    <div class="text-xs text-gray-600">days left</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(countdownTimer);
+    }
+
+    // Separate active and skipped recommendations
+    const activeRecs = recommendations.filter(rec => !rec.skipped_at && rec.unlock_state !== 'locked');
+    const skippedRecs = recommendations.filter(rec => rec.skipped_at);
+    const lockedRecs = recommendations.filter(rec => rec.unlock_state === 'locked');
+
+    // Determine how many active recommendations to show based on tier
     let displayRecs;
     if (userTier === 'free') {
         // Free: Top 3 only
-        displayRecs = recommendations.slice(0, 3);
+        displayRecs = activeRecs.slice(0, 3);
     } else if (userTier === 'diy' && userProgress) {
-        // DIY: Based on active_recommendations from userProgress
+        // DIY: Show based on active_recommendations count
         const activeCount = userProgress.active_recommendations || 5;
-        displayRecs = recommendations.slice(0, activeCount);
+        displayRecs = activeRecs.slice(0, activeCount);
     } else {
-        // Pro: All recommendations
-        displayRecs = recommendations;
+        // Pro: All active recommendations
+        displayRecs = activeRecs;
     }
 
-    if (displayRecs.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
+    // Create tab interface if there are skipped recommendations
+    if (skippedRecs.length > 0) {
+        const tabsHTML = `
+            <div class="mb-6 border-b border-gray-200">
+                <div class="flex gap-4">
+                    <button onclick="switchTab('active')" id="tab-active"
+                            class="tab-button px-6 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">
+                        Active (${displayRecs.length})
+                    </button>
+                    <button onclick="switchTab('skipped')" id="tab-skipped"
+                            class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
+                        Skipped (${skippedRecs.length})
+                    </button>
+                </div>
+            </div>
+            <div id="tab-content-active" class="tab-content"></div>
+            <div id="tab-content-skipped" class="tab-content hidden"></div>
+        `;
+        container.innerHTML = tabsHTML;
+    }
+
+    // Get containers for active and skipped
+    const activeContainer = document.getElementById('tab-content-active') || container;
+    const skippedContainer = document.getElementById('tab-content-skipped');
+
+    if (displayRecs.length === 0 && skippedRecs.length === 0) {
+        activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
         return;
     }
 
-    displayRecs.forEach((rec, index) => {
-        const recCard = createRecommendationCard(rec, index, userTier);
-        container.appendChild(recCard);
-    });
+    // Display active recommendations
+    if (displayRecs.length > 0) {
+        displayRecs.forEach((rec, index) => {
+            const recCard = createRecommendationCard(rec, index, userTier);
+            activeContainer.appendChild(recCard);
+        });
+    } else if (activeRecs.length === 0) {
+        activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
+    }
 
-    // Show DIY unlock button if applicable
+    // Display skipped recommendations
+    if (skippedContainer && skippedRecs.length > 0) {
+        skippedRecs.forEach((rec, index) => {
+            const recCard = createRecommendationCard(rec, index + displayRecs.length, userTier, true);
+            skippedContainer.appendChild(recCard);
+        });
+    }
+
+    // Show DIY unlock button if applicable (only in active tab)
     if (userTier === 'diy' && userProgress) {
         const activeCount = userProgress.active_recommendations || 5;
         const totalCount = userProgress.total_recommendations || recommendations.length;
@@ -256,19 +387,45 @@ function displayRecommendations(recommendations, userTier, userProgress) {
         }
     }
 
-    // Show upgrade message if free tier
+    // Show upgrade message if free tier (only in active tab)
     if (userTier === 'free' && recommendations.length > 3) {
         const upgradeMsg = document.createElement('div');
         upgradeMsg.className = 'mt-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200 text-center';
         upgradeMsg.innerHTML = `
             <h3 class="text-xl font-bold mb-2">🔒 ${recommendations.length - 5} More Recommendations Available</h3>
             <p class="text-gray-700 mb-4">Upgrade to DIY Starter to unlock all recommendations, FAQ generation, and unlimited scans.</p>
-            <a href="checkout.html?url=${encodeURIComponent(document.getElementById('scanUrl').textContent)}" 
+            <a href="checkout.html?url=${encodeURIComponent(document.getElementById('scanUrl').textContent)}"
                class="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all">
                 Upgrade to DIY - $29/month
             </a>
         `;
-        container.appendChild(upgradeMsg);
+        activeContainer.appendChild(upgradeMsg);
+    }
+}
+
+// Tab switching function
+function switchTab(tabName) {
+    // Update tab button styles
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('border-blue-600', 'text-blue-600');
+        btn.classList.add('text-gray-500');
+    });
+
+    const activeTabBtn = document.getElementById(`tab-${tabName}`);
+    if (activeTabBtn) {
+        activeTabBtn.classList.remove('text-gray-500');
+        activeTabBtn.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
+    }
+
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Show selected tab content
+    const selectedContent = document.getElementById(`tab-content-${tabName}`);
+    if (selectedContent) {
+        selectedContent.classList.remove('hidden');
     }
 }
 
@@ -380,13 +537,27 @@ function displayUpgradeCTA(userTier, totalRecs) {
     }
 }
 
-function createRecommendationCard(rec, index, userPlan) {
+function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     const card = document.createElement('div');
-    card.className = `recommendation-card bg-white rounded-lg shadow-md border-l-4 ${priorityColors[rec.priority]?.border || 'border-gray-300'} overflow-hidden`;
+    const cardClass = isSkipped
+        ? 'bg-gray-50 rounded-lg shadow-md border-l-4 border-gray-400 overflow-hidden opacity-75'
+        : `recommendation-card bg-white rounded-lg shadow-md border-l-4 ${priorityColors[rec.priority]?.border || 'border-gray-300'} overflow-hidden`;
+    card.className = cardClass;
     card.id = `rec-${index}`;
 
     const priorityClass = priorityColors[rec.priority] || priorityColors.medium;
     const showCodeSnippet = userPlan !== 'free' && rec.code_snippet;
+
+    // Check if implemented or skipped
+    const isImplemented = rec.status === 'implemented';
+
+    // Check if skip is enabled (5 days after unlock)
+    const now = new Date();
+    const skipEnabledAt = rec.skip_enabled_at ? new Date(rec.skip_enabled_at) : null;
+    const canSkip = !isSkipped && !isImplemented && (!skipEnabledAt || skipEnabledAt <= now);
+    const daysUntilSkip = skipEnabledAt && skipEnabledAt > now
+        ? Math.ceil((skipEnabledAt - now) / (1000 * 60 * 60 * 24))
+        : 0;
 
     // Use the correct field names from API
     const title = rec.recommendation_text || rec.title || 'Recommendation';
@@ -409,7 +580,12 @@ function createRecommendationCard(rec, index, userPlan) {
             <!-- Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                        ${isImplemented ? `
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-500">
+                                ✓ IMPLEMENTED
+                            </span>
+                        ` : ''}
                         <span class="px-3 py-1 rounded-full text-xs font-semibold ${priorityClass.bg} ${priorityClass.text}">
                             ${(rec.priority || 'medium').toUpperCase()}
                         </span>
@@ -544,16 +720,42 @@ function createRecommendationCard(rec, index, userPlan) {
                 ` : ''}
 
                 <!-- Action Buttons -->
-                <div class="pt-4 border-t flex gap-3">
-                    <button onclick="markImplemented(${rec.id || index})"
-                            class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
-                        ✓ Mark as Implemented
-                    </button>
-                    <button onclick="skipRecommendation(${rec.id || index})"
-                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
-                        ⊘ Skip this recommendation
-                    </button>
+                <div class="pt-4 border-t flex gap-3 flex-wrap">
+                    ${isImplemented ? `
+                        <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold flex items-center gap-2">
+                            <span>✓</span>
+                            <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
+                        </div>
+                    ` : !isSkipped ? `
+                        <button onclick="markImplemented(${rec.id || index})"
+                                class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
+                            ✓ Mark as Implemented
+                        </button>
+                        ${canSkip ? `
+                            <button onclick="skipRecommendation(${rec.id || index})"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
+                                ⊘ Skip this recommendation
+                            </button>
+                        ` : daysUntilSkip > 0 ? `
+                            <button disabled
+                                    class="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                    title="Skip will be available in ${daysUntilSkip} day${daysUntilSkip > 1 ? 's' : ''}">
+                                ⊘ Skip (Available in ${daysUntilSkip}d)
+                            </button>
+                        ` : ''}
+                    ` : `
+                        <div class="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold">
+                            ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
+                        </div>
+                    `}
                 </div>
+
+                <!-- Feedback Widget -->
+                ${createFeedbackWidget(
+                    `${rec.category || 'general'}_${rec.id || index}`,
+                    rec.category || 'general',
+                    scanId
+                )}
             </div>
         </div>
     `;
@@ -711,13 +913,26 @@ function displayUpgradeCTA(upgradeData, userPlan) {
 function toggleRecommendation(index) {
     const content = document.getElementById(`content-${index}`);
     const toggle = document.getElementById(`toggle-${index}`);
-    
+
     if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
         toggle.textContent = 'Collapse ▲';
+
+        // Track expansion (implicit engagement signal)
+        if (typeof startTrackingTime === 'function') {
+            startTrackingTime(`rec-${index}`);
+        }
+        if (typeof trackInteraction === 'function') {
+            trackInteraction(`rec-${index}`, scanId, { expanded: true });
+        }
     } else {
         content.classList.add('hidden');
         toggle.textContent = 'Expand ▼';
+
+        // Track time spent when collapsing
+        if (typeof stopTrackingTime === 'function') {
+            stopTrackingTime(`rec-${index}`, scanId);
+        }
     }
 }
 
@@ -726,6 +941,12 @@ function copyCode(elementId) {
     if (codeElement) {
         navigator.clipboard.writeText(codeElement.textContent);
         alert('Code copied to clipboard!');
+
+        // Track code copy interaction
+        const recIndex = elementId.match(/\d+/)?.[0];
+        if (recIndex && typeof trackCodeCopy === 'function') {
+            trackCodeCopy(`rec-${recIndex}`, scanId);
+        }
     }
 }
 
@@ -738,16 +959,88 @@ function copySchemaCode() {
     }
 }
 
-function markImplemented(recId) {
+async function markImplemented(recId) {
     console.log('Marking recommendation as implemented:', recId);
-    alert('Feature coming soon: This will track your implementation progress and improve future recommendations!');
+
+    if (!authToken) {
+        showNotification('You must be logged in to mark recommendations as implemented.', 'info');
+        return;
+    }
+
+    const confirmed = await showConfirmModal(
+        'Mark as Implemented',
+        'Mark this recommendation as implemented? This will help track your progress and improve future recommendations.'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                status: 'implemented'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('Great work! This recommendation has been marked as implemented. Your progress is being tracked to help improve future recommendations.', 'success');
+            // Reload page after 2 seconds to update UI
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification(data.error || 'Failed to mark as implemented', 'error');
+        }
+    } catch (error) {
+        console.error('Mark implemented error:', error);
+        showNotification('Failed to mark recommendation as implemented. Please try again.', 'error');
+    }
 }
 
-function skipRecommendation(recId) {
+async function skipRecommendation(recId) {
     console.log('Skipping recommendation:', recId);
-    if (confirm('Are you sure you want to skip this recommendation? You can always come back to it later.')) {
-        // TODO: Implement skip logic - hide the card and mark in database
-        alert('Feature coming soon: This will hide the recommendation and you can view skipped items in settings.');
+
+    if (!authToken) {
+        showNotification('You must be logged in to skip recommendations.', 'info');
+        return;
+    }
+
+    const confirmed = await showConfirmModal(
+        'Skip Recommendation',
+        'Are you sure you want to skip this recommendation? You can view skipped recommendations in the "Skipped" tab.'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/skip`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Reload page after 2 seconds to update UI
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
+            showNotification(errorMsg, 'error');
+        }
+    } catch (error) {
+        console.error('Skip error:', error);
+        showNotification('Failed to skip recommendation. Please try again.', 'error');
     }
 }
 
@@ -814,6 +1107,53 @@ function showError(message) {
     `;
     document.body.appendChild(errorDiv);
     setTimeout(() => errorDiv.remove(), 5000);
+}
+
+// Show progress summary
+function showProgressSummary() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentScanId = urlParams.get('scanId');
+
+    if (!currentScanId) {
+        showNotification('No scan data available to show progress.', 'info');
+        return;
+    }
+
+    // Get the current scan data from the page
+    fetch(`${API_BASE_URL}/scan/${currentScanId}`, {
+        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success || !data.scan.userProgress) {
+            showNotification('Unable to load progress data. This feature is available for authenticated users with DIY or Pro plans.', 'info');
+            return;
+        }
+
+        const progress = data.scan.userProgress;
+        const total = progress.total_recommendations || 0;
+        const active = progress.active_recommendations || 0;
+        const completed = progress.completed_recommendations || 0;
+        const percentComplete = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const progressMessage = `
+Progress Summary:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Total Recommendations: ${total}
+🔓 Active Recommendations: ${active}
+✅ Completed: ${completed}
+📈 Progress: ${percentComplete}%
+
+Keep up the great work! Each implementation improves your AI visibility score.
+        `.trim();
+
+        showNotification(progressMessage, 'success');
+    })
+    .catch(error => {
+        console.error('Error loading progress:', error);
+        showNotification('Failed to load progress data. Please try again.', 'error');
+    });
 }
 
 // Initialize on page load

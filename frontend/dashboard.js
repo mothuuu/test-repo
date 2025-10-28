@@ -99,19 +99,23 @@ function updateUserInfo() {
 // Update quota display
 function updateQuota() {
     const planLimits = {
-        free: 2,
-        diy: 25,
-        pro: 50
+        free: { primary: 2, competitor: 0 },
+        diy: { primary: 25, competitor: 2 },
+        pro: { primary: 50, competitor: 10 }
     };
-    
+
+    const limits = planLimits[user.plan] || planLimits.free;
+
+    // Primary scan quota
     quota = {
         used: user.scans_used_this_month || 0,
-        limit: planLimits[user.plan] || 2
+        limit: limits.primary
     };
-    
+
     const quotaBadge = document.getElementById('quotaBadge');
-    quotaBadge.textContent = `${quota.used} / ${quota.limit} scans used`;
-    
+    quotaBadge.textContent = `${quota.used} / ${quota.limit} primary scans`;
+    quotaBadge.title = 'Scans of your primary domain';
+
     // Update badge color based on usage
     quotaBadge.className = 'quota-badge';
     if (quota.used >= quota.limit) {
@@ -119,22 +123,51 @@ function updateQuota() {
     } else if (quota.used >= quota.limit * 0.8) {
         quotaBadge.classList.add('quota-warning');
     }
-    
+
+    // Competitor scan quota (show only for DIY and Pro)
+    const competitorQuotaBadge = document.getElementById('competitorQuotaBadge');
+    if (limits.competitor > 0) {
+        const competitorUsed = user.competitor_scans_used_this_month || 0;
+        competitorQuotaBadge.textContent = `${competitorUsed} / ${limits.competitor} competitors`;
+        competitorQuotaBadge.title = 'Competitor scans (scores only)';
+        competitorQuotaBadge.style.display = 'inline-block';
+
+        // Color code competitor quota
+        competitorQuotaBadge.className = 'quota-badge';
+        if (competitorUsed >= limits.competitor) {
+            competitorQuotaBadge.classList.add('quota-error');
+        } else if (competitorUsed >= limits.competitor * 0.8) {
+            competitorQuotaBadge.classList.add('quota-warning');
+        }
+    } else {
+        competitorQuotaBadge.style.display = 'none';
+    }
+
+    // Primary domain badge
+    const primaryDomainBadge = document.getElementById('primaryDomainBadge');
+    if (user.primary_domain) {
+        primaryDomainBadge.textContent = `🏠 ${user.primary_domain}`;
+        primaryDomainBadge.title = `Your primary domain: ${user.primary_domain}`;
+    } else {
+        primaryDomainBadge.textContent = '🏠 Not set';
+        primaryDomainBadge.title = 'Primary domain will be set on first scan';
+    }
+
     // Show quota warning
     const quotaWarning = document.getElementById('quotaWarning');
     const quotaWarningText = document.getElementById('quotaWarningText');
-    
+
     if (quota.used >= quota.limit) {
         quotaWarning.style.display = 'block';
         quotaWarning.className = 'quota-error';
         quotaWarningText.innerHTML = `
-            ⚠️ You've used all ${quota.limit} scans this month. 
+            ⚠️ You've used all ${quota.limit} primary domain scans this month.
             <a href="checkout.html?plan=diy" style="color: inherit; text-decoration: underline; font-weight: bold;">Upgrade to continue scanning</a>
         `;
     } else if (quota.used >= quota.limit * 0.8) {
         quotaWarning.style.display = 'block';
         quotaWarning.className = 'quota-warning';
-        quotaWarningText.textContent = `⚠️ You've used ${quota.used} of ${quota.limit} scans. ${quota.limit - quota.used} remaining this month.`;
+        quotaWarningText.textContent = `⚠️ You've used ${quota.used} of ${quota.limit} primary scans. ${quota.limit - quota.used} remaining this month.`;
     }
 }
 
@@ -201,23 +234,113 @@ async function loadRecentScans() {
 }
 
 // Handle scan form submission
+// Helper function to extract root domain
+function extractRootDomain(urlString) {
+    try {
+        const parsedUrl = new URL(urlString);
+        let hostname = parsedUrl.hostname.toLowerCase();
+
+        // Remove www prefix
+        if (hostname.startsWith('www.')) {
+            hostname = hostname.substring(4);
+        }
+
+        // Get root domain (last 2 parts)
+        const parts = hostname.split('.');
+        if (parts.length >= 2) {
+            return parts.slice(-2).join('.');
+        }
+        return hostname;
+    } catch (error) {
+        return null;
+    }
+}
+
 document.getElementById('scanForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const url = document.getElementById('scanUrl').value.trim();
     const scanBtn = document.getElementById('scanBtn');
     const authToken = localStorage.getItem('authToken');
-    
-    // Check quota
-    if (quota.used >= quota.limit) {
-        alert(`You've reached your scan limit (${quota.limit}/month). Please upgrade to continue.`);
+
+    // Extract domain from URL
+    const scanDomain = extractRootDomain(url);
+
+    // Check if this is a competitor scan
+    let isCompetitorScan = false;
+    if (user.primary_domain && scanDomain !== user.primary_domain) {
+        isCompetitorScan = true;
+
+        const planLimits = {
+            free: { competitor: 0 },
+            diy: { competitor: 2 },
+            pro: { competitor: 10 }
+        };
+
+        const competitorLimit = planLimits[user.plan]?.competitor || 0;
+        const competitorUsed = user.competitor_scans_used_this_month || 0;
+
+        // Check competitor quota
+        if (competitorLimit === 0) {
+            const proceed = confirm(
+                `⚠️ COMPETITOR SCAN DETECTED\n\n` +
+                `You're trying to scan: ${scanDomain}\n` +
+                `Your primary domain: ${user.primary_domain}\n\n` +
+                `Free plan doesn't include competitor scans.\n\n` +
+                `Upgrade to DIY ($29/month) for 2 competitor scans per month, or Pro ($99/month) for 10 competitor scans.\n\n` +
+                `Click OK to view upgrade options.`
+            );
+
+            if (proceed) {
+                window.location.href = 'checkout.html?plan=diy';
+            }
+            return;
+        }
+
+        if (competitorUsed >= competitorLimit) {
+            const proceed = confirm(
+                `⚠️ COMPETITOR SCAN QUOTA EXCEEDED\n\n` +
+                `You've used all ${competitorLimit} competitor scans this month (${competitorUsed}/${competitorLimit}).\n\n` +
+                user.plan === 'diy'
+                    ? `Upgrade to Pro ($99/month) for 10 competitor scans per month.\n\nClick OK to upgrade.`
+                    : `Your quota will reset next month.\n\nClick OK to return to dashboard.`
+            );
+
+            if (proceed && user.plan === 'diy') {
+                window.location.href = 'checkout.html?plan=pro';
+            }
+            return;
+        }
+
+        // Warn user about competitor scan limitations
+        const proceed = confirm(
+            `⚠️ COMPETITOR SCAN\n\n` +
+            `You're scanning: ${scanDomain} (competitor)\n` +
+            `Your primary domain: ${user.primary_domain}\n\n` +
+            `Competitor scans provide:\n` +
+            `✅ AI Visibility Scores\n` +
+            `✅ Category breakdown\n` +
+            `❌ NO recommendations\n` +
+            `❌ NO implementation guidance\n\n` +
+            `Quota: ${competitorUsed + 1} / ${competitorLimit} competitor scans used\n\n` +
+            `Continue with competitor scan?`
+        );
+
+        if (!proceed) {
+            return;
+        }
+    }
+
+    // Check primary scan quota (only for primary domain scans)
+    if (!isCompetitorScan && quota.used >= quota.limit) {
+        alert(`You've reached your primary scan limit (${quota.limit}/month). Please upgrade to continue.`);
         window.location.href = 'checkout.html?plan=diy';
         return;
     }
-    
+
     // Disable button
     scanBtn.disabled = true;
-    scanBtn.textContent = 'Starting scan...';
+    scanBtn.textContent = isCompetitorScan ? 'Scanning competitor...' : 'Starting scan...';
     
     try {
         // For free users - scan homepage immediately
@@ -265,14 +388,30 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
     }
 });
 
-// Logout function
+// Logout functions
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        window.location.href = 'index.html';
-    }
+    // Show the styled logout modal instead of browser confirm
+    document.getElementById('logoutModal').style.display = 'flex';
 }
+
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
+
+function confirmLogout() {
+    // Perform actual logout
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    window.location.href = 'index.html';
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('logoutModal');
+    if (modal && event.target === modal) {
+        closeLogoutModal();
+    }
+});
 
 // Loading helpers
 function showLoading() {

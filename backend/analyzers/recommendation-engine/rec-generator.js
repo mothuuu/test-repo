@@ -211,6 +211,21 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         const rec = makeProgrammaticFAQRecommendation(issue, scanEvidence, industry);
         if (rec) {
           console.log(`✅ FAQ recommendation generated successfully`);
+          console.log(`🔍 FAQ GENERATOR RETURNED:`, {
+            title: rec.title?.substring(0, 50),
+            category: rec.category,
+            subfactor: rec.subfactor,
+            hasCustomizedImplementation: !!rec.customizedImplementation,
+            hasReadyToUseContent: !!rec.readyToUseContent,
+            hasImplementationNotes: !!rec.implementationNotes,
+            hasQuickWins: !!rec.quickWins,
+            hasValidationChecklist: !!rec.validationChecklist,
+            customizedImplLength: rec.customizedImplementation?.length || 0,
+            readyToUseLength: rec.readyToUseContent?.length || 0,
+            implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+            quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+            validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+          });
           out.push(rec);
           continue;
         } else {
@@ -218,7 +233,95 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         }
       }
 
-      // 2b) Structured Data - Deterministic JSON-LD
+      // 2b) Alt Text - Image accessibility
+      if (issue.subfactor === 'altTextScore') {
+        console.log(`✅ Detected altTextScore issue - calling programmatic alt text generator`);
+        const rec = makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Alt text recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2c) Scannability - Content formatting
+      if (issue.subfactor === 'scannabilityScore') {
+        console.log(`✅ Detected scannabilityScore issue - calling programmatic scannability generator`);
+        const rec = makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Scannability recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2d) Captions/Transcripts - Video accessibility
+      if (issue.subfactor === 'captionsTranscriptsScore') {
+        console.log(`✅ Detected captionsTranscriptsScore issue - calling programmatic transcripts generator`);
+        const rec = makeProgrammaticCaptionsTranscriptsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Transcripts recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2e) IndexNow - Instant indexing
+      if (issue.subfactor === 'indexNowScore') {
+        console.log(`✅ Detected indexNowScore issue - calling programmatic IndexNow generator`);
+        const rec = makeProgrammaticIndexNowRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ IndexNow recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2f) Location & Geographic Content - AEO-optimized service areas
+      if (issue.subfactor === 'geoContentScore') {
+        console.log(`✅ Detected geoContentScore issue - calling programmatic location/geographic generator`);
+        const rec = makeProgrammaticGeoContentRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Location/geographic recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2g) Readability - Content clarity and simplification
+      if (issue.subfactor === 'readabilityScore') {
+        console.log(`✅ Detected readabilityScore issue - calling programmatic readability generator`);
+        const rec = makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Readability recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2h) Content Depth - Topic coverage and comprehensiveness
+      if (issue.subfactor === 'contentDepthScore') {
+        console.log(`✅ Detected contentDepthScore issue - calling programmatic content depth generator`);
+        const rec = makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Content depth recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2i) Heading Hierarchy - H1-H6 structure and question-based headings
+      if (issue.subfactor === 'headingHierarchyScore') {
+        console.log(`✅ Detected headingHierarchyScore issue - calling programmatic heading hierarchy generator`);
+        const rec = makeProgrammaticHeadingHierarchyRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Heading hierarchy recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2j) Structured Data - Deterministic JSON-LD
       if (issue.subfactor === 'structuredDataScore') {
         const rec = makeProgrammaticStructuredDataRecommendation(issue, scanEvidence);
         out.push(rec);
@@ -235,6 +338,50 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
       if (issue.subfactor === 'questionHeadingsScore') {
         const rec = await makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidence, industry);
         if (rec) { out.push(rec); continue; }
+      }
+
+      // 2k) XML Sitemap - Technical setup
+      if (issue.subfactor === 'sitemapScore') {
+        console.log(`✅ Detected sitemapScore issue - calling programmatic sitemap generator`);
+        const rec = makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Sitemap recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2l) Robots.txt - Crawler configuration
+      if (issue.subfactor === 'robotsTxtScore') {
+        console.log(`✅ Detected robotsTxtScore issue - calling programmatic robots.txt generator`);
+        const rec = makeProgrammaticRobotsTxtRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Robots.txt recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2m) HTTPS/SSL - Security configuration
+      if (issue.subfactor === 'httpsScore') {
+        console.log(`✅ Detected httpsScore issue - calling programmatic HTTPS generator`);
+        const rec = makeProgrammaticHttpsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ HTTPS recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2n) Crawl Accessibility - Indexability
+      if (issue.subfactor === 'crawlAccessibilityScore') {
+        console.log(`✅ Detected crawlAccessibilityScore issue - calling programmatic crawl accessibility generator`);
+        const rec = makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Crawl accessibility recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
       }
 
       // 3) ChatGPT for other subfactors (DIY/Pro tier)
@@ -748,6 +895,3650 @@ ${faqLib.impact}`;
     targetScore: issue.threshold,
     evidence: { faqDetected: false, industry: detectedIndustry },
     generatedBy: 'programmatic_faq_library'
+  };
+}
+
+// ========================================
+// ALT TEXT GENERATOR
+// ========================================
+
+function makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+
+  // Extract image data
+  const images = scanEvidence.content?.images || [];
+  const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
+  const imagesWithAlt = images.filter(img => img.alt && img.alt.trim() !== '');
+
+  const totalImages = images.length;
+  const missingAltCount = imagesWithoutAlt.length;
+  const altCoverage = totalImages > 0 ? Math.round((imagesWithAlt.length / totalImages) * 100) : 0;
+
+  // Build Finding
+  const finding = `Status: ${missingAltCount === 0 ? 'Good' : 'Needs Improvement'}
+
+Your page contains ${totalImages} image${totalImages === 1 ? '' : 's'}:
+• ${imagesWithAlt.length} image${imagesWithAlt.length === 1 ? '' : 's'} with alt text (${altCoverage}% coverage)
+• ${missingAltCount} image${missingAltCount === 1 ? '' : 's'} missing alt text
+
+${missingAltCount > 0 ? `Images without alt text cannot be understood by AI assistants, screen readers, or search engines. This reduces your content's accessibility and discoverability.` : `Great job! All your images have alt text. Make sure the descriptions are meaningful and descriptive.`}`;
+
+  // Build Impact
+  const impact = `Impact: ${missingAltCount > 5 ? 'High' : missingAltCount > 0 ? 'Medium' : 'Low'} | +${Math.max(5, Math.round(issue.gap * 0.7))} to +${Math.max(10, Math.round(issue.gap))} pts potential
+
+Alt text serves three critical purposes:
+• **AI Understanding:** ChatGPT, Perplexity, and other AI assistants can reference your images in answers
+• **Accessibility:** Screen readers can describe images to visually impaired users
+• **SEO:** Search engines index alt text for image search results
+
+Missing alt text means AI systems skip your visual content entirely, reducing citation opportunities.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Audit all ${totalImages} images on this page to identify those missing alt text`,
+    `Write descriptive alt text for each image (8-15 words recommended)`,
+    `Include relevant keywords naturally - describe what's actually in the image`,
+    `For decorative images (borders, spacers), use empty alt="" to indicate they're decorative`,
+    `Validate implementation using an accessibility checker (WAVE, axe DevTools)`,
+    `Re-scan this page to confirm alt text coverage reaches 100%`
+  ];
+
+  // Customized Implementation - Show actual images that need alt text
+  let customizedImplementation = '';
+  if (missingAltCount > 0) {
+    const exampleImages = imagesWithoutAlt.slice(0, 3);
+    customizedImplementation = `### Your Images That Need Alt Text\n\nWe detected ${missingAltCount} image${missingAltCount === 1 ? '' : 's'} without alt text. Here are ${Math.min(3, missingAltCount)} that need attention:\n\n`;
+
+    exampleImages.forEach((img, idx) => {
+      const fileName = img.src ? img.src.split('/').pop() : 'unknown';
+      const suggestedAlt = generateAltTextSuggestion(fileName, detectedIndustry);
+      customizedImplementation += `**Image ${idx + 1}:** \`${fileName}\`\n`;
+      customizedImplementation += `- **Current:** No alt text\n`;
+      customizedImplementation += `- **Suggested:** "${suggestedAlt}"\n`;
+      customizedImplementation += `- **Code:** \`<img src="${img.src}" alt="${suggestedAlt}">\`\n\n`;
+    });
+
+    if (missingAltCount > 3) {
+      customizedImplementation += `*...and ${missingAltCount - 3} more image${missingAltCount - 3 === 1 ? '' : 's'} need${missingAltCount - 3 === 1 ? 's' : ''} alt text.*\n\n`;
+    }
+
+    customizedImplementation += `**Why These Matter:**\n- AI assistants can now reference your visual content in answers\n- Screen readers can describe images to visually impaired visitors\n- Google Images can index and rank these images for relevant searches`;
+  } else {
+    customizedImplementation = `### Excellent Alt Text Coverage!\n\nAll ${totalImages} images on your page have alt text. To maximize AI visibility:\n\n1. **Review quality:** Make sure alt text is descriptive, not just "image" or "photo"\n2. **Include context:** Describe what's happening in the image and why it matters\n3. **Natural keywords:** Include relevant terms naturally without keyword stuffing\n\n**Example of good vs. poor alt text:**\n- ❌ Poor: "team photo"\n- ✅ Good: "AI startup team collaborating on product roadmap in modern office"\n\nWell-written alt text helps AI assistants cite your content with visual context.`;
+  }
+
+  // Ready-to-use content - HTML template
+  const readyToUseContent = missingAltCount > 0 ? `Copy-paste this HTML template for adding alt text to your images:
+
+\`\`\`html
+<!-- Before: Missing alt text -->
+<img src="/images/hero.jpg">
+
+<!-- After: With descriptive alt text -->
+<img src="/images/hero.jpg" alt="${generateAltTextSuggestion('hero', detectedIndustry)}">
+\`\`\`
+
+**Alt Text Formula:** [What's in the image] + [Context/Purpose] + [Relevant keyword if natural]
+
+Example: "Marketing team reviewing analytics dashboard on laptop"` : null;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Keep alt text between 8-15 words - descriptive but concise',
+    'Avoid starting with "image of" or "picture of" - it\'s implied',
+    'For complex images (charts, diagrams), provide detailed descriptions or link to full text alternative',
+    'Decorative images should have empty alt="" to indicate they add no informational value',
+    'Use your industry terminology naturally - helps with topical relevance'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Add alt text to your logo: "' + (facts.brand || 'Your Company') + ' logo"',
+    'Add alt text to hero/banner image first - most visible to visitors',
+    'Update team photos with names and roles when appropriate',
+    'For product images, include product name and key feature'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Run WAVE accessibility checker - no alt text errors',
+    'Test with screen reader (NVDA, JAWS, or VoiceOver) - images described correctly',
+    'Google Lighthouse accessibility score improved',
+    'Re-scan in AI Visibility Tool - altTextScore increases',
+    'All images have meaningful alt text (not "image1.jpg" or generic descriptions)'
+  ];
+
+  // Code Snippet
+  const codeSnippet = missingAltCount > 0 ? `## Adding Alt Text to Images
+
+### Step 1: Locate Images Without Alt Text
+
+Use browser DevTools or view page source to find \`<img>\` tags missing alt attributes.
+
+### Step 2: Add Descriptive Alt Text
+
+\`\`\`html
+<!-- Generic example -->
+<img src="/images/product-demo.jpg"
+     alt="${generateAltTextSuggestion('product-demo', detectedIndustry)}">
+
+<!-- Logo -->
+<img src="/images/logo.png"
+     alt="${facts.brand || 'Company'} logo">
+
+<!-- Team photo -->
+<img src="/images/team.jpg"
+     alt="Marketing team collaborating in ${detectedIndustry} strategy session">
+
+<!-- Decorative image (no informational value) -->
+<img src="/images/decorative-border.svg"
+     alt=""
+     role="presentation">
+\`\`\`
+
+### Step 3: Validate
+
+Test with a screen reader or use WAVE browser extension to verify alt text is present and meaningful.` : `## Maintaining Good Alt Text
+
+Your images already have alt text! Here's how to keep it high-quality:
+
+\`\`\`html
+<!-- Good alt text example -->
+<img src="/images/case-study.jpg"
+     alt="AI startup dashboard showing 40% increase in user engagement">
+
+<!-- Poor alt text example - too generic -->
+<img src="/images/case-study.jpg"
+     alt="screenshot">
+\`\`\`
+
+**Quality Checklist:**
+✓ Describes what's actually in the image
+✓ Provides context about why it matters
+✓ Uses natural language (not keyword stuffing)
+✓ Concise but informative (8-15 words ideal)
+\`\`\``;
+
+  return {
+    id: `rec_${issue.category}_altText_${Date.now()}`,
+    title: 'AI Readability: Image Alt Text',
+    category: issue.category,
+    subfactor: 'altTextScore',
+    priority: missingAltCount > 5 ? 'high' : missingAltCount > 0 ? 'medium' : 'low',
+    priorityScore: issue.priority || 70,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: missingAltCount > 10 ? "2-3 hours" : missingAltCount > 0 ? "1-2 hours" : "30 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(5, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      totalImages: totalImages,
+      missingAlt: missingAltCount,
+      altCoverage: altCoverage
+    },
+    generatedBy: 'programmatic_alt_text'
+  };
+}
+
+// Helper: Generate alt text suggestions based on filename and industry
+function generateAltTextSuggestion(filename, industry) {
+  const name = filename.replace(/\.(jpg|jpeg|png|gif|svg|webp)$/i, '').replace(/[-_]/g, ' ');
+
+  // Common patterns
+  if (/logo/i.test(name)) return `${industry} company logo`;
+  if (/hero|banner/i.test(name)) return `${industry} professional services hero image`;
+  if (/team|people|staff/i.test(name)) return `${industry} team members collaborating`;
+  if (/product|demo|screenshot/i.test(name)) return `${industry} product demonstration screenshot`;
+  if (/office|workspace/i.test(name)) return `Modern ${industry} office workspace`;
+
+  // Generic fallback
+  return `${name} - ${industry} visual content`;
+}
+
+// ========================================
+// SCANNABILITY GENERATOR
+// ========================================
+
+function makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Extract scannability metrics
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const headings = {
+    h1: scanEvidence.content?.headings?.h1 || [],
+    h2: scanEvidence.content?.headings?.h2 || [],
+    h3: scanEvidence.content?.headings?.h3 || [],
+  };
+
+  const totalHeadings = headings.h1.length + headings.h2.length + headings.h3.length;
+  const avgWordsPerHeading = totalHeadings > 0 ? Math.round(wordCount / totalHeadings) : wordCount;
+
+  // Find long paragraphs (>150 words)
+  const longParagraphs = paragraphs.filter(p => p.length > 150);
+
+  // Detect lists/bullets
+  const hasBullets = /<ul|<ol|<li/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${avgWordsPerHeading > 300 ? 'Needs Improvement' : avgWordsPerHeading > 200 ? 'Fair' : 'Good'}
+
+**Page Structure:**
+• Total word count: ${wordCount}
+• Headings: ${totalHeadings} (${headings.h2.length} H2s, ${headings.h3.length} H3s)
+• Average words per section: ${avgWordsPerHeading}
+• Long paragraphs (>150 words): ${longParagraphs.length}
+• Bullet points/lists: ${hasBullets ? 'Detected' : 'Not detected'}
+
+${avgWordsPerHeading > 300 ? `Your content has large sections without headings. AI assistants prefer content broken into clear, scannable sections with descriptive headings every 150-250 words.` : `Your content structure is reasonable, but optimizing scannability will improve AI comprehension and user engagement.`}`;
+
+  // Build Impact
+  const impact = `Impact: Medium | +${Math.max(8, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
+
+Scannable content helps AI assistants:
+• **Extract answers faster:** Clear headings signal what each section covers
+• **Cite specific points:** Bullet points are easier to reference than dense paragraphs
+• **Understand hierarchy:** Proper H2/H3 structure shows content organization
+
+Well-structured content gets cited more frequently because AI can quickly find relevant information.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Break long paragraphs (>150 words) into smaller chunks of 3-4 sentences each`,
+    `Add descriptive H2/H3 headings every 150-250 words to segment content`,
+    `Convert process lists or feature lists into bullet points for clarity`,
+    `Use bold text to highlight key terms and important concepts`,
+    `Add white space between sections to improve visual scannability`,
+    `Test readability score - aim for Flesch Reading Ease >65`
+  ];
+
+  // Customized Implementation
+  let customizedImplementation = '';
+  if (longParagraphs.length > 0) {
+    // Use the first long paragraph (now prioritized by relevance scoring)
+    const targetParagraph = longParagraphs[0];
+    const wordCount = targetParagraph.split(/\s+/).length;
+    const charCount = targetParagraph.length;
+    const previewText = targetParagraph.substring(0, 300) + (charCount > 300 ? '...' : '');
+
+    customizedImplementation = `### Reformatting Your Content for Better Scannability\n\n**Before:** One long paragraph (${wordCount} words, ${charCount} characters)\n\n> ${previewText}\n\n---\n\n**After:** Broken into scannable sections with headings and bullets\n\n## [Add Descriptive H2 Here]\n\n[First key point in 2-3 sentences]\n\n**Key benefits:**\n- [Benefit 1]\n- [Benefit 2]\n- [Benefit 3]\n\n## [Add Second H2 Here]\n\n[Next point in 2-3 sentences]\n\n---\n\n**Why This Works:**\n- AI assistants can quickly scan headings to find relevant sections\n- Bullets make individual points easy to extract and cite\n- Shorter paragraphs improve comprehension and keep readers engaged\n\n💡 **Note:** This example is from your main content area - one of the most visible paragraphs on your page.`;
+  } else {
+    customizedImplementation = `### Optimizing Your Content Structure\n\nYour content is already fairly scannable! Here's how to make it even better:\n\n**Current Structure:**\n- ${totalHeadings} headings dividing ${wordCount} words\n- Average ${avgWordsPerHeading} words per section\n\n**Optimization Opportunities:**\n1. Ensure every 150-250 words has a descriptive H2 or H3 heading\n2. Convert any process descriptions or feature lists to bullet points\n3. Add bold formatting to key terms AI should pay attention to\n4. Use short paragraphs (3-4 sentences max) for easy scanning`;
+  }
+
+  // Ready-to-use content
+  const readyToUseContent = `### Scannability Checklist\n\nApply these formatting rules to your content:\n\n**Heading Frequency:** Add H2/H3 every 150-250 words\n**Paragraph Length:** Keep paragraphs to 3-4 sentences (50-100 words)\n**Lists:** Convert 3+ related items to bullet points\n**White Space:** Add line breaks between sections\n**Bold Text:** Highlight 1-2 key terms per section\n\n**Example Format:**\n\n## Clear, Descriptive Heading\n\nShort introductory paragraph (2-3 sentences) that previews what this section covers.\n\n**Key points:**\n- First important point\n- Second important point\n- Third important point\n\nBrief conclusion or transition (1-2 sentences).`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Aim for Flesch Reading Ease score above 65 (readable by 13-15 year olds)',
+    'Average sentence length should be under 20 words',
+    'Use transition words (However, Therefore, Additionally) to connect ideas',
+    'Bold key terms but avoid over-formatting (3-5 bold terms per section max)',
+    'Test on mobile - scannable content is even more critical on small screens'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Break your longest paragraph in half - add a subheading between the two parts',
+    'Find one list of items in sentence form - convert it to bullet points',
+    'Add bold formatting to 5-10 key terms throughout the page',
+    'Review your H2 headings - make them more descriptive and keyword-rich'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Hemingway App or similar tool shows readability grade of 8th grade or lower',
+    'Every section has a clear H2 or H3 heading',
+    'No paragraphs exceed 4-5 sentences',
+    'Important lists are formatted as bullet points',
+    'Re-scan shows improved scannabilityScore'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## Content Formatting Template
+
+### Before: Dense, Hard-to-Scan Content
+
+\`\`\`html
+<p>
+  This is a very long paragraph that covers multiple topics without any breaks.
+  It discusses the first topic at length, then moves to a second topic, and
+  eventually covers a third topic. There are no headings, no bullets, and no
+  clear visual breaks. AI assistants struggle to extract specific information
+  from this format because everything is jumbled together in one continuous block.
+  [continues for 200+ words...]
+</p>
+\`\`\`
+
+### After: Scannable, AI-Friendly Format
+
+\`\`\`html
+<h2>First Topic: Clear Descriptive Heading</h2>
+
+<p>
+  Short introduction to this topic (2-3 sentences that summarize the key point).
+</p>
+
+<p><strong>Key benefits:</strong></p>
+<ul>
+  <li>First specific benefit</li>
+  <li>Second specific benefit</li>
+  <li>Third specific benefit</li>
+</ul>
+
+<h2>Second Topic: Another Clear Heading</h2>
+
+<p>
+  Brief explanation of this topic with <strong>key terms</strong> highlighted for emphasis.
+</p>
+
+<p>
+  Additional details in a separate paragraph (keeps each para to 3-4 sentences).
+</p>
+\`\`\`
+
+**Key Improvements:**
+- Clear H2 headings every 150-250 words
+- Short paragraphs (3-4 sentences each)
+- Bullet points for lists
+- Bold text on key terms`;
+
+  return {
+    id: `rec_${issue.category}_scannability_${Date.now()}`,
+    title: 'AI Search Readiness: Content Scannability',
+    category: issue.category,
+    subfactor: 'scannabilityScore',
+    priority: avgWordsPerHeading > 400 ? 'high' : 'medium',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-3 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      totalHeadings: totalHeadings,
+      avgWordsPerHeading: avgWordsPerHeading,
+      longParagraphs: longParagraphs.length
+    },
+    generatedBy: 'programmatic_scannability'
+  };
+}
+
+// ========================================
+// CAPTIONS/TRANSCRIPTS GENERATOR
+// ========================================
+
+function makeProgrammaticCaptionsTranscriptsRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+
+  // Detect videos
+  const videos = scanEvidence.content?.videos || [];
+  const videoCount = videos.length;
+  const hasTranscripts = /transcript|caption/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${hasTranscripts ? 'Partial' : videoCount > 0 ? 'Missing' : 'N/A'}
+
+${videoCount > 0 ? `**Video Content Detected:**
+• Videos on page: ${videoCount}
+• Transcripts detected: ${hasTranscripts ? 'Yes (partial)' : 'No'}
+
+${!hasTranscripts ? `Without transcripts, AI assistants cannot index or reference your video content. Search engines skip video content entirely unless transcripts are provided.` : `You have some transcript content, but ensure all videos have complete, properly formatted transcripts for maximum AI visibility.`}` : `No video content detected on this page. This recommendation will apply when you add video content.`}`;
+
+  // Build Impact
+  const impact = `Impact: ${videoCount > 0 && !hasTranscripts ? 'High' : 'Medium'} | +${Math.max(6, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
+
+Video transcripts unlock AI visibility in three ways:
+• **AI Citations:** ChatGPT and Perplexity can reference specific quotes from your videos
+• **Search Indexing:** Google indexes transcript text for traditional and video search
+• **Accessibility:** Screen readers and deaf/hard-of-hearing users can access video content
+
+Without transcripts, your video content is invisible to AI systems - regardless of how valuable the information is.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Identify all ${videoCount > 0 ? videoCount : ''} video${videoCount === 1 ? '' : 's'} on your page that need transcripts`,
+    `Use a transcription service (Rev, Otter.ai, YouTube auto-captions) to generate initial transcript`,
+    `Edit transcript for accuracy - fix technical terms, company names, and industry jargon`,
+    `Format transcript with timestamps and speaker labels for clarity`,
+    `Add transcript to page in accessible location (expandable section below video, separate tab, or dedicated transcript page)`,
+    `Test with screen reader to ensure transcript is properly labeled and accessible`,
+    `Validate with Google Rich Results Test - transcript should be crawlable`
+  ];
+
+  // Customized Implementation
+  const customizedImplementation = videoCount > 0 ? `### Adding Transcripts to Your Video Content\n\n**Videos Detected:** ${videoCount}\n\nEach video needs a complete, accurate transcript to be AI-readable. Here's what to do:\n\n**Option 1: Embedded Transcript (Recommended)**\nAdd an expandable transcript section directly below each video:\n\n\`\`\`html
+<div class="video-container">
+  <video src="your-video.mp4" controls></video>
+
+  <details class="transcript">
+    <summary>📄 View Transcript</summary>
+    <div class="transcript-content">
+      <p><strong>[00:00]</strong> Introduction to ${facts.brand || 'our service'}...</p>
+      <p><strong>[00:30]</strong> Key feature explanation...</p>
+      <p><strong>[01:15]</strong> Customer success story...</p>
+    </div>
+  </details>
+</div>
+\`\`\`
+
+**Option 2: Separate Transcript Page**\nCreate a dedicated transcript page and link to it below the video:
+
+\`\`\`html
+<video src="your-video.mp4" controls></video>
+<p><a href="/transcripts/video-1-transcript">Read full transcript</a></p>
+\`\`\`
+
+**Why This Matters:**\n- AI assistants can now cite specific quotes from your video\n- Search engines index the transcript text\n- Accessible to all users regardless of ability to hear audio` : `### Preparing for Video Content\n\nWhen you add video content to your site, follow this transcript workflow:\n\n1. **Record video** with clear audio\n2. **Generate transcript** using Rev.com, Otter.ai, or YouTube auto-captions\n3. **Edit for accuracy** - fix technical terms and jargon\n4. **Format with timestamps** for easy reference\n5. **Embed on page** below video or link to separate transcript page\n6. **Validate accessibility** with screen reader testing\n\nProper transcripts can increase video content's AI citation rate by 300%+.`;
+
+  // Ready-to-use content
+  const readyToUseContent = `### Video Transcript Template\n\n\`\`\`html
+<div class="video-with-transcript">
+  <h2>Video Title Here</h2>
+
+  <video controls>
+    <source src="/videos/demo.mp4" type="video/mp4">
+    <track kind="captions" src="/captions/demo.vtt" srclang="en" label="English">
+  </video>
+
+  <details class="video-transcript" open>
+    <summary><strong>📄 Transcript</strong></summary>
+
+    <div class="transcript-content">
+      <p>
+        <span class="timestamp">[00:00]</span>
+        <span class="speaker">Speaker:</span>
+        Welcome to this overview of [topic]. In this video, we'll cover...
+      </p>
+
+      <p>
+        <span class="timestamp">[00:30]</span>
+        First key point about [topic]...
+      </p>
+
+      <p>
+        <span class="timestamp">[01:15]</span>
+        Second key point...
+      </p>
+    </div>
+  </details>
+</div>
+\`\`\`
+
+Copy this template and fill in your actual video content.`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'Use professional transcription services (Rev, Otter.ai) for accuracy - auto-captions need heavy editing',
+    'Include timestamps every 30-60 seconds for easy navigation',
+    'Add speaker labels if multiple people appear in video',
+    'Correct all technical terms, company names, and industry jargon',
+    'Make transcripts accessible via <details> element, accordion, or separate linked page'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Start with your homepage video - it likely gets the most traffic',
+    'Use YouTube auto-captions as a starting point (free)',
+    'For short videos (<5 min), manually transcribe - faster than editing auto-captions',
+    'Add VTT caption files for native browser caption support'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'Every video on the page has a complete transcript',
+    'Transcript is visible and accessible (not hidden in code comments)',
+    'Screen reader can navigate and read transcript properly',
+    'Transcript includes timestamps for longer videos (>5 minutes)',
+    'Google Rich Results Test can crawl the transcript text'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## Video Transcript Implementation
+
+### Complete Example with Styles
+
+\`\`\`html
+<style>
+.video-transcript {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-left: 4px solid #0066cc;
+  border-radius: 4px;
+}
+
+.video-transcript summary {
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.transcript-content p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.timestamp {
+  font-weight: bold;
+  color: #0066cc;
+  margin-right: 8px;
+}
+
+.speaker {
+  font-style: italic;
+  margin-right: 8px;
+}
+</style>
+
+<div class="video-container">
+  <h2>Product Demo Video</h2>
+
+  <video width="100%" controls>
+    <source src="/videos/product-demo.mp4" type="video/mp4">
+    <track kind="captions" src="/captions/demo.vtt" srclang="en" label="English">
+    Your browser does not support the video tag.
+  </video>
+
+  <details class="video-transcript" open>
+    <summary>📄 Full Transcript</summary>
+
+    <div class="transcript-content">
+      <p>
+        <span class="timestamp">[00:00]</span>
+        <span class="speaker">Presenter:</span>
+        Welcome to our product demo. Today I'll show you how our platform helps ${industry} companies improve their efficiency.
+      </p>
+
+      <p>
+        <span class="timestamp">[00:30]</span>
+        Let's start with the dashboard. As you can see, all your key metrics are displayed in real-time...
+      </p>
+
+      <p>
+        <span class="timestamp">[01:00]</span>
+        Now let's look at the reporting features. You can generate custom reports by...
+      </p>
+
+      <!-- Continue with full transcript -->
+    </div>
+  </details>
+</div>
+\`\`\`
+
+### VTT Caption File Format
+
+Create a \`.vtt\` file for native browser captions:
+
+\`\`\`
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+Welcome to our product demo.
+
+00:00:05.000 --> 00:00:10.000
+Today I'll show you how our platform helps companies improve efficiency.
+
+00:00:10.000 --> 00:00:15.000
+Let's start with the dashboard.
+\`\`\`
+
+Save as \`demo.vtt\` and reference in video tag.`;
+
+  return {
+    id: `rec_${issue.category}_transcripts_${Date.now()}`,
+    title: 'AI Readability: Video Transcripts',
+    category: issue.category,
+    subfactor: 'captionsTranscriptsScore',
+    priority: videoCount > 0 && !hasTranscripts ? 'high' : 'medium',
+    priorityScore: issue.priority || 70,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: videoCount > 0 ? `${videoCount * 2}-${videoCount * 4} hours` : "2-3 hours per video",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.75)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      videoCount: videoCount,
+      hasTranscripts: hasTranscripts
+    },
+    generatedBy: 'programmatic_transcripts'
+  };
+}
+
+// ========================================
+// INDEXNOW GENERATOR
+// ========================================
+
+function makeProgrammaticIndexNowRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  // Check if IndexNow is already implemented
+  const hasIndexNow = /indexnow/i.test(scanEvidence.html);
+
+  // Build Finding
+  const finding = `Status: ${hasIndexNow ? 'Detected (verify implementation)' : 'Missing'}
+
+${!hasIndexNow ? `**IndexNow Protocol:** Not detected
+
+IndexNow is a protocol that instantly notifies search engines when your content changes. Without it, search engines may take days or weeks to discover your updates.
+
+**Current situation:**
+• No IndexNow implementation detected
+• Search engines rely on periodic crawling to discover changes
+• New or updated content may remain unindexed for extended periods` : `**IndexNow Protocol:** Detected
+
+You appear to have IndexNow implemented. Verify that:
+• The API key is valid and properly configured
+• Notifications are sent automatically on content updates
+• All major search engines (Bing, Yandex) are receiving notifications`}`;
+
+  // Build Impact
+  const impact = `Impact: Medium | +${Math.max(5, Math.round(issue.gap * 0.5))} to +${Math.max(10, Math.round(issue.gap))} pts potential
+
+IndexNow provides instant indexing benefits:
+• **Immediate Discovery:** Search engines notified within seconds of content updates
+• **Faster Rankings:** New content can rank within hours instead of days/weeks
+• **API Efficiency:** One API call notifies multiple search engines simultaneously
+• **Competitive Advantage:** Your content gets indexed before competitors using traditional crawling
+
+For news sites, blogs, or frequently updated content, IndexNow can dramatically accelerate visibility.`;
+
+  // Build Action Steps
+  const actionSteps = [
+    `Generate an IndexNow API key at bing.com/indexnow`,
+    `Create a text file containing your API key (e.g., abc123.txt) in your site root`,
+    `Add the API key file to your site root directory (${domain}/abc123.txt)`,
+    `Implement automatic notifications: send POST request to api.indexnow.org when content changes`,
+    `Test implementation by updating a page and verifying notification was sent`,
+    `Monitor IndexNow submissions in Bing Webmaster Tools`,
+    `Set up automatic notifications for CMS publish/update events`
+  ];
+
+  // Customized Implementation
+  const customizedImplementation = `### IndexNow Setup for ${domain}\n\n**Step-by-Step Implementation:**\n\n**1. Generate Your API Key**\n- Visit https://www.bing.com/indexnow\n- Generate a unique API key (e.g., \`8f3d2c1b9a7e5f4d3c2b1a0987654321\`)\n- Save this key securely\n\n**2. Create Key File**\nCreate a text file named \`[your-key].txt\` containing only your API key:\n\n\`\`\`
+8f3d2c1b9a7e5f4d3c2b1a0987654321
+\`\`\`
+
+Upload to: \`${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\`\n\n**3. Verify Key File**\nConfirm the file is publicly accessible by visiting the URL in your browser.\n\n**4. Send Notifications**\nWhen you publish or update content, send a POST request to IndexNow API (implementation code in the Code section below).\n\n**Why This Matters for ${industry}:**\n- Your content gets discovered immediately instead of waiting for the next crawl\n- Critical updates (pricing changes, new features, breaking news) are indexed within hours\n- Competitive advantage over companies relying on traditional crawling`;
+
+  // Ready-to-use content
+  const readyToUseContent = `### Quick IndexNow Setup\n\n**1. Get Your API Key:**\nhttps://www.bing.com/indexnow\n\n**2. Create Key File:**\nCreate \`[your-api-key].txt\` with just the key inside\n\n**3. Upload to Site Root:**\n\`${domain}/[your-api-key].txt\`\n\n**4. Submit URLs:**\nUse the code examples in the Code section to notify search engines when content changes.\n\n**Supported Search Engines:**\n- Bing\n- Yandex\n- Seznam.cz\n- Naver\n\n(Google doesn't support IndexNow but uses its own instant indexing API)`;
+
+  // Implementation Notes
+  const implementationNotes = [
+    'API key file must be publicly accessible at [domain]/[key].txt',
+    'Send notifications only when content actually changes - not on every page view',
+    'You can submit up to 10,000 URLs per batch',
+    'Notifications are free - no rate limits or usage fees',
+    'Test with a single URL first before implementing site-wide'
+  ];
+
+  // Quick Wins
+  const quickWins = [
+    'Start with manual submissions for important pages using the web interface',
+    'Implement automatic notifications for blog posts first',
+    'Add IndexNow to your CMS publish workflow',
+    'Monitor Bing Webmaster Tools to confirm submissions are working'
+  ];
+
+  // Validation Checklist
+  const validationChecklist = [
+    'API key file accessible at public URL',
+    'Test notification sent successfully (check response code 200)',
+    'Bing Webmaster Tools shows submitted URLs',
+    'New content appears in Bing search within 24-48 hours',
+    'Automatic notifications trigger on CMS publish/update events'
+  ];
+
+  // Code Snippet
+  const codeSnippet = `## IndexNow Implementation
+
+### 1. Create API Key File
+
+Create a file named \`8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\` (use your actual key):
+
+\`\`\`
+8f3d2c1b9a7e5f4d3c2b1a0987654321
+\`\`\`
+
+Upload to your site root: \`${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt\`
+
+---
+
+### 2. Manual Submission (Test First)
+
+\`\`\`bash
+curl -X POST "https://api.indexnow.org/indexnow" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "host": "${domain}",
+    "key": "8f3d2c1b9a7e5f4d3c2b1a0987654321",
+    "keyLocation": "https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt",
+    "urlList": [
+      "https://${domain}/new-page",
+      "https://${domain}/updated-page"
+    ]
+  }'
+\`\`\`
+
+---
+
+### 3. Node.js/Express Implementation
+
+\`\`\`javascript
+const axios = require('axios');
+
+async function notifyIndexNow(urls) {
+  try {
+    const response = await axios.post('https://api.indexnow.org/indexnow', {
+      host: '${domain}',
+      key: '8f3d2c1b9a7e5f4d3c2b1a0987654321',
+      keyLocation: 'https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt',
+      urlList: Array.isArray(urls) ? urls : [urls]
+    });
+
+    console.log('IndexNow notification sent:', response.status);
+    return response.status === 200;
+  } catch (error) {
+    console.error('IndexNow error:', error.message);
+    return false;
+  }
+}
+
+// Usage: Call when content is published/updated
+notifyIndexNow([
+  'https://${domain}/new-blog-post',
+  'https://${domain}/updated-service-page'
+]);
+\`\`\`
+
+---
+
+### 4. WordPress Plugin Alternative
+
+If using WordPress, install the **IndexNow** plugin:
+1. Go to Plugins → Add New
+2. Search for "IndexNow"
+3. Install and activate
+4. Enter your API key in Settings → IndexNow
+5. URLs auto-submitted on publish/update
+
+---
+
+### 5. Python Implementation
+
+\`\`\`python
+import requests
+import json
+
+def notify_indexnow(urls):
+    payload = {
+        "host": "${domain}",
+        "key": "8f3d2c1b9a7e5f4d3c2b1a0987654321",
+        "keyLocation": "https://${domain}/8f3d2c1b9a7e5f4d3c2b1a0987654321.txt",
+        "urlList": urls if isinstance(urls, list) else [urls]
+    }
+
+    response = requests.post(
+        "https://api.indexnow.org/indexnow",
+        json=payload
+    )
+
+    return response.status_code == 200
+
+# Usage
+notify_indexnow([
+    "https://${domain}/new-page",
+    "https://${domain}/updated-page"
+])
+\`\`\`
+
+**Response Codes:**
+- \`200\`: Success - URL submitted
+- \`400\`: Bad request - check your JSON format
+- \`403\`: Forbidden - verify key file is accessible
+- \`422\`: Unprocessable - invalid URL format`;
+
+  return {
+    id: `rec_${issue.category}_indexnow_${Date.now()}`,
+    title: 'Technical Setup: IndexNow Protocol',
+    category: issue.category,
+    subfactor: 'indexNowScore',
+    priority: 'medium',
+    priorityScore: issue.priority || 65,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-2 hours",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(5, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasIndexNow: hasIndexNow,
+      domain: domain
+    },
+    generatedBy: 'programmatic_indexnow'
+  };
+}
+
+/**
+ * Generates comprehensive location/geographic content recommendations
+ * with AEO-focused question-based headings and schema markup
+ */
+function makeProgrammaticGeoContentRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'Technology';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Analyze current location content
+  const html = scanEvidence.html || '';
+  const hasLocationContent = /\b(serve|service area|location|region|country|city|local|area)\b/i.test(html);
+  const hasAreaServedSchema = /"areaServed"/i.test(html) || /<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?"areaServed"/i.test(html);
+  const hasQuestionHeadings = /(where|who|what|when|why|how)\s+(do|can|will|should|does|are|is)/i.test(html);
+
+  // Extract any existing location mentions
+  const locationMentions = [];
+  const locationPattern = /\b(Canada|United States|USA|UK|United Kingdom|Australia|Global|Europe|Asia|North America)\b/gi;
+  const matches = html.match(locationPattern);
+  if (matches) {
+    const uniqueLocations = [...new Set(matches)];
+    locationMentions.push(...uniqueLocations.slice(0, 5));
+  }
+
+  const currentLocations = locationMentions.length;
+  const hasGoodCoverage = currentLocations >= 2 && hasLocationContent;
+
+  // Build finding text
+  const finding = hasGoodCoverage
+    ? `Your page mentions ${currentLocations} location(s), but lacks the structured format and schema markup that answer engines need to understand your service areas. Current location mentions: ${locationMentions.join(', ')}. Score: ${issue.currentScore}/100 (Target: ${issue.threshold}).`
+    : `Your page has minimal geographic content (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Answer engines like ChatGPT, Perplexity, and Google's AI Overviews prioritize businesses with clear service areas and location-specific value propositions.`;
+
+  // Build impact description
+  const impact = `**Why Location Content Matters for AEO:**
+
+Answer engines need explicit geographic signals to recommend your business for location-specific queries. Without clear service areas:
+
+- **Local intent queries miss you**: "AI marketing services in Toronto" won't surface your business
+- **Answer engines can't verify relevance**: ChatGPT/Perplexity won't cite you for regional queries
+- **Schema validation fails**: Missing \`areaServed\` schema prevents rich result eligibility
+- **Multi-market queries exclude you**: "US vs Canada providers" comparisons won't include you
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on Location & Geographic Content score
+- **+15-25%** visibility in location-qualified answer engine responses
+- **Improved entity clarity**: Helps AI understand your market scope`;
+
+  // Build action steps
+  const actionSteps = [
+    'Add a "Where We Work" section with 2-3 core regions',
+    'Include one-sentence value promise per region tied to outcomes',
+    'Implement areaServed schema markup in <head>',
+    'Use question-based H2/H3 headings for AEO optimization',
+    'Keep location content visible in HTML (not hidden in tabs/JS)',
+    'Re-scan page to confirm lift in Location & Geographic Content score'
+  ];
+
+  // Build customized implementation (blue box)
+  const customizedImplementation = `### Comprehensive Location Content for ${pageTitle}
+
+${currentLocations > 0 ? `**Current Locations Detected:** ${locationMentions.join(', ')}\n\n` : ''}**Add AEO-Optimized Location Section**
+
+Answer engines prioritize question-based headings. Add this section below your main services/intro content:
+
+\`\`\`html
+<!-- Question-based heading for AEO (Answer Engine Optimization) -->
+<section class="service-areas">
+  <h2>Where do we deliver ${detectedIndustry.toLowerCase()} services?</h2>
+
+  <p>
+    [Your Company Name] partners with ${detectedIndustry.toLowerCase()} companies across
+    Canada, the United States, and globally. Our solutions adapt to local market needs
+    while keeping your brand consistently visible to AI assistants and answer engines.
+  </p>
+
+  <ul>
+    <li>
+      <strong>Canada:</strong> AI-first strategy and growth programs for B2B ${detectedIndustry.toLowerCase()}
+      companies seeking answer engine visibility.
+    </li>
+    <li>
+      <strong>United States:</strong> Answer-engine optimization and AI content intelligence
+      for ${detectedIndustry.toLowerCase()} growth-stage teams.
+    </li>
+    <li>
+      <strong>Global:</strong> Scalable frameworks for multi-region visibility and
+      localized intent coverage in AI search.
+    </li>
+  </ul>
+</section>
+\`\`\`
+
+**Alternative Question-Based Headings** (choose what fits your tone):
+- "Where can you find our ${detectedIndustry.toLowerCase()} services?"
+- "What regions do we serve?"
+- "Which markets benefit from our ${detectedIndustry.toLowerCase()} expertise?"
+- "Where are we available?"
+
+**Key Principles:**
+✅ **Intent-matched copy**: Each region ties to an outcome/benefit
+✅ **Visible HTML**: Don't hide in JavaScript tabs/accordions
+✅ **Question format**: Improves answer engine extraction
+✅ **Schema support**: Backs up visible copy with structured data`;
+
+  // Build ready-to-use schema markup
+  const readyToUseContent = `<!-- Page-Scoped Schema Markup for Service Areas -->
+<!-- Add this to your <head> section or before </body> -->
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "url": "${domain}",
+  "areaServed": [
+    {
+      "@type": "Country",
+      "name": "Canada"
+    },
+    {
+      "@type": "Country",
+      "name": "United States"
+    },
+    {
+      "@type": "Place",
+      "name": "Global"
+    }
+  ],
+  "audience": {
+    "@type": "BusinessAudience",
+    "name": "B2B ${detectedIndustry.toLowerCase()} companies"
+  },
+  "provider": {
+    "@type": "Organization",
+    "@id": "${domain}#organization"
+  }
+}
+</script>
+
+<!-- If you want to specify provinces/states instead of countries: -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service-regional",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "areaServed": [
+    {
+      "@type": "State",
+      "name": "Ontario",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "Canada"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "British Columbia",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "Canada"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "California",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "United States"
+      }
+    },
+    {
+      "@type": "State",
+      "name": "New York",
+      "containedInPlace": {
+        "@type": "Country",
+        "name": "United States"
+      }
+    }
+  ]
+}
+</script>`;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**Placement**: Add location section after your main service intro, before case studies or testimonials',
+    '**Length**: Keep 2-3 core regions. More than 5 dilutes focus for answer engines',
+    '**Value propositions**: Each region needs one sentence tied to an outcome (not just "we serve X")',
+    '**Question headings**: Use natural question format (Where/What/Who) to match how users query AI',
+    '**Schema validation**: Test with Google Rich Results Test after adding schema',
+    '**Visibility**: Location copy must be in HTML source - not loaded via JavaScript tabs/modals',
+    '**Entity linking**: If you have physical offices, link to location pages with LocalBusiness schema',
+    '**Update frequency**: Revise when you expand to new markets (then notify IndexNow)'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    '✅ Add 2-3 core regions in visible copy (5 min)',
+    '✅ Write one outcome-focused sentence per region (10 min)',
+    '✅ Paste areaServed schema into <head> (2 min)',
+    '✅ Change section heading to question format (2 min)',
+    '✅ Re-scan to confirm Location & Geographic Content score lift'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: 'Location section added with 2-3 regions',
+      checked: false
+    },
+    {
+      text: 'Each region has outcome/value statement (not just "we serve X")',
+      checked: false
+    },
+    {
+      text: 'Heading uses question format (Where/What/Who)',
+      checked: false
+    },
+    {
+      text: 'areaServed schema added to <head>',
+      checked: false
+    },
+    {
+      text: 'Schema validated with Google Rich Results Test',
+      checked: false
+    },
+    {
+      text: 'Location content visible in HTML source (not JS-loaded)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Complete Location Content Implementation
+
+### 1. HTML Section (Add to page body)
+
+\`\`\`html
+<section class="service-areas" id="locations">
+  <!-- Question-based heading for AEO -->
+  <h2>Where do we deliver ${detectedIndustry.toLowerCase()} services?</h2>
+
+  <p>
+    [Your Company Name] partners with ${detectedIndustry.toLowerCase()} companies across
+    Canada, the United States, and globally. Our solutions adapt to local buying behavior
+    while keeping your brand consistently visible to AI assistants and answer engines.
+  </p>
+
+  <!-- Region-specific value propositions -->
+  <ul class="region-list">
+    <li>
+      <strong>Canada:</strong> AI-first strategy and demand programs for B2B ${detectedIndustry.toLowerCase()}
+      companies and MSPs seeking answer engine visibility.
+    </li>
+    <li>
+      <strong>United States:</strong> Answer-engine optimization and AI content intelligence
+      for growth-stage ${detectedIndustry.toLowerCase()} teams.
+    </li>
+    <li>
+      <strong>Global:</strong> Scalable frameworks for multi-region visibility and
+      localized intent coverage.
+    </li>
+  </ul>
+
+  <!-- Optional: Link to location pages if you have them -->
+  <p>
+    <a href="/locations/">View all service locations →</a>
+  </p>
+</section>
+\`\`\`
+
+### 2. Schema Markup (Add to <head>)
+
+\`\`\`html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "${domain}#service",
+  "serviceType": "${detectedIndustry}Service",
+  "name": "${detectedIndustry} Services",
+  "url": "${domain}",
+  "description": "Professional ${detectedIndustry.toLowerCase()} services for businesses across North America and globally",
+  "areaServed": [
+    {
+      "@type": "Country",
+      "name": "Canada"
+    },
+    {
+      "@type": "Country",
+      "name": "United States"
+    },
+    {
+      "@type": "Place",
+      "name": "Global"
+    }
+  ],
+  "audience": {
+    "@type": "BusinessAudience",
+    "name": "B2B ${detectedIndustry.toLowerCase()} companies"
+  },
+  "provider": {
+    "@type": "Organization",
+    "@id": "${domain}#organization"
+  }
+}
+</script>
+\`\`\`
+
+### 3. CSS Styling (Optional)
+
+\`\`\`css
+.service-areas {
+  margin: 3rem 0;
+  padding: 2rem;
+  background: #f9fafb;
+  border-left: 4px solid #3b82f6;
+}
+
+.service-areas h2 {
+  color: #1e40af;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+}
+
+.region-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.region-list li {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.region-list li:before {
+  content: "📍";
+  position: absolute;
+  left: 0;
+}
+
+.region-list strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+\`\`\`
+
+### 4. Validation Steps
+
+**Test Schema Markup:**
+1. Visit: https://search.google.com/test/rich-results
+2. Paste your page URL or code
+3. Verify "Service" type appears with areaServed property
+
+**Test Answer Engine Visibility:**
+1. Re-scan with AI Visibility Tool
+2. Check Location & Geographic Content score increase
+3. Query ChatGPT/Perplexity: "[your service] providers in [region]"
+4. Verify your business appears in responses
+
+**Common Issues:**
+- ❌ Location content hidden in collapsed tabs → Move to visible HTML
+- ❌ Generic "we serve globally" → Add specific regions with value props
+- ❌ Schema validation errors → Check JSON syntax and required fields
+- ❌ No score improvement → Ensure content is crawlable (not JS-rendered)`;
+
+  return {
+    id: `rec_${issue.category}_geo_${Date.now()}`,
+    title: 'AI Search Readiness: Location & Geographic Content',
+    category: issue.category,
+    subfactor: 'geoContentScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "30-45 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasLocationContent: hasLocationContent,
+      hasAreaServedSchema: hasAreaServedSchema,
+      hasQuestionHeadings: hasQuestionHeadings,
+      currentLocations: currentLocations,
+      locationMentions: locationMentions
+    },
+    generatedBy: 'programmatic_geocontent'
+  };
+}
+
+/**
+ * Generates comprehensive readability and clarity recommendations
+ * with AEO-focused simplification strategies and before/after examples
+ */
+function makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract readability metrics from scanEvidence
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const sentences = scanEvidence.content?.sentences || [];
+  const avgSentenceLength = sentences.length > 0 ? Math.round(wordCount / sentences.length) : 0;
+
+  // Calculate readability indicators
+  const longSentences = sentences.filter(s => s.split(/\s+/).length > 25).length;
+  const longSentencePct = sentences.length > 0 ? Math.round((longSentences / sentences.length) * 100) : 0;
+
+  // Check for jargon and complexity indicators
+  const html = scanEvidence.html || '';
+  const textContent = html.replace(/<[^>]+>/g, ' ').toLowerCase();
+  const hasJargon = /\b(utilize|implement|leverage|synergy|paradigm|ecosystem|solution|optimize|facilitate|innovative)\b/gi.test(textContent);
+  const hasPassiveVoice = /\b(was|were|is|are|been)\s+\w+ed\b/gi.test(textContent);
+
+  // Extract a sample long sentence for before/after example
+  let sampleLongSentence = '';
+  if (longSentences > 0) {
+    const longSentence = sentences.find(s => s.split(/\s+/).length > 25);
+    if (longSentence) {
+      sampleLongSentence = longSentence.substring(0, 200) + (longSentence.length > 200 ? '...' : '');
+    }
+  }
+
+  // Build finding text
+  const finding = `Your content has readability challenges that limit AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${longSentencePct > 0 ? `${longSentencePct}% of sentences exceed 25 words, ` : ''}Average sentence length: ${avgSentenceLength} words. Answer engines like ChatGPT and Perplexity prioritize clear, concise content that directly answers user questions.`;
+
+  // Build impact description
+  const impact = `**Why Readability Matters for AEO:**
+
+Clear, scannable content increases the likelihood that AI will extract and cite your information. Complex sentences and jargon create barriers:
+
+- **AI extraction fails**: Long sentences confuse semantic parsing, reducing citation chances
+- **User intent mismatch**: Jargon-heavy copy doesn't match how users ask questions
+- **Answer engine preference**: ChatGPT/Perplexity favor content written at 8th-10th grade reading level
+- **Voice search incompatibility**: Complex phrasing doesn't match conversational queries
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Readability & Clarity score
+- **+20-30%** better AI extraction and citation rates
+- **Improved user engagement**: Lower bounce rates, longer session duration`;
+
+  // Build action steps
+  const actionSteps = [
+    'Break sentences longer than 25 words into 2-3 shorter sentences',
+    'Replace jargon and complex terms with plain language equivalents',
+    'Convert passive voice to active voice where possible',
+    'Use question-based H2/H3 headings to match user queries',
+    'Add transitional phrases and clear section breaks',
+    'Re-scan page to confirm Readability & Clarity score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Readability Improvements for ${pageTitle}
+
+**Current Metrics:**
+- Average sentence length: ${avgSentenceLength} words (Target: 15-20 words)
+${longSentencePct > 0 ? `- Long sentences (>25 words): ${longSentencePct}%\n` : ''}- Word count: ${wordCount.toLocaleString()}
+- Detected issues: ${hasJargon ? 'Jargon/buzzwords, ' : ''}${hasPassiveVoice ? 'Passive voice' : 'None major'}
+
+**Answer Engine Optimization Strategy:**
+
+AI systems extract information most effectively from content that:
+1. **Uses direct, active voice**
+2. **Keeps sentences under 20 words**
+3. **Replaces jargon with plain language**
+4. **Answers questions explicitly**`;
+
+  if (sampleLongSentence) {
+    customizedImplementation += `
+
+**Example from Your Page:**
+
+**Before** (Complex, ${sampleLongSentence.split(/\s+/).length} words):
+> ${sampleLongSentence}
+
+**After** (Clear, simplified):
+> ${simplifyComplexSentence(sampleLongSentence, detectedIndustry)}
+
+**What Changed:**
+- Split into shorter sentences (15-20 words each)
+- Removed unnecessary qualifiers
+- Used active voice
+- Added clear subject-verb-object structure`;
+  }
+
+  customizedImplementation += `
+
+**Key Simplification Principles:**
+✅ **One idea per sentence**: Don't chain multiple concepts
+✅ **Active voice**: "We help companies grow" (not "Companies are helped to grow by us")
+✅ **Plain language**: Use "use" instead of "utilize", "help" instead of "facilitate"
+✅ **Question headings**: "How does X work?" instead of "X Methodology"`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `**Common Jargon → Plain Language Replacements:**
+
+| Replace This | With This |
+|-------------|-----------|
+| Utilize | Use |
+| Leverage | Use / Take advantage of |
+| Implement | Start / Set up / Use |
+| Facilitate | Help / Enable |
+| Optimize | Improve |
+| Solution | Product / Service / Answer |
+| Ecosystem | System / Platform |
+| Synergy | Working together |
+| Paradigm | Model / Approach |
+| Robust | Strong / Reliable |
+
+**Sentence Length Guide:**
+
+- **Ideal**: 15-20 words per sentence
+- **Maximum**: 25 words before breaking into two
+- **Variety**: Mix short (8-12) and medium (15-20) sentences
+
+**Active Voice Conversions:**
+
+❌ **Passive**: "Our services are utilized by leading companies"
+✅ **Active**: "Leading companies use our services"
+
+❌ **Passive**: "The solution was implemented by our team"
+✅ **Active**: "Our team implemented the solution"
+
+❌ **Passive**: "Results can be achieved through our methodology"
+✅ **Active**: "Our methodology delivers results"`;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**Target reading level**: Aim for 8th-10th grade (Flesch Reading Ease: 60-70)',
+    '**Sentence variety**: Mix short punchy sentences with medium explanatory ones',
+    '**Paragraph length**: Keep paragraphs to 3-4 sentences (60-80 words max)',
+    '**Transition words**: Use "however," "therefore," "for example" to connect ideas',
+    '**Question headings**: Convert 30-50% of H2/H3 headings to questions',
+    '**Test readability**: Use Hemingway App or Grammarly to check reading grade level',
+    '**Voice search optimization**: Read content aloud - if it sounds unnatural, simplify',
+    '**Industry balance**: Use some technical terms for credibility, but define them inline'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    '✅ Find 3-5 longest sentences, split each in half (10 min)',
+    '✅ Replace 5-10 jargon words with plain language (15 min)',
+    '✅ Convert 3-5 passive voice sentences to active voice (10 min)',
+    '✅ Add question-based H2/H3 headings to 2-3 sections (5 min)',
+    '✅ Run Hemingway App - aim for Grade 8-10 reading level (5 min)',
+    '✅ Re-scan to confirm Readability & Clarity score improvement'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: 'Average sentence length reduced to 15-20 words',
+      checked: false
+    },
+    {
+      text: 'Replaced 5+ jargon/buzzwords with plain language',
+      checked: false
+    },
+    {
+      text: 'Converted passive voice to active voice in key sections',
+      checked: false
+    },
+    {
+      text: 'Added 2-3 question-based H2/H3 headings',
+      checked: false
+    },
+    {
+      text: 'Hemingway App shows Grade 8-10 reading level',
+      checked: false
+    },
+    {
+      text: 'Read content aloud - sounds natural and conversational',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Readability score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Readability Improvement Implementation
+
+### 1. Simplify Complex Sentences
+
+**Before:**
+\`\`\`
+Our comprehensive ${detectedIndustry.toLowerCase()} platform leverages cutting-edge AI and machine
+learning algorithms to facilitate seamless integration across your existing technology
+ecosystem, enabling organizations to optimize workflows and drive measurable business outcomes.
+\`\`\`
+
+**After:**
+\`\`\`
+Our ${detectedIndustry.toLowerCase()} platform uses AI and machine learning to integrate with
+your existing tools. This helps your team work more efficiently and measure business results.
+\`\`\`
+
+**What Changed:**
+- Reduced sentence from 32 words to two sentences (15 + 12 words)
+- Replaced jargon: "leverages" → "uses", "facilitate" → "helps", "optimize" → "work more efficiently"
+- Removed unnecessary qualifiers: "comprehensive", "cutting-edge", "seamless"
+
+### 2. Convert Passive to Active Voice
+
+**Before (Passive):**
+\`\`\`html
+<p>Our solutions are used by Fortune 500 companies to achieve their digital
+transformation goals. Results are delivered through our proven methodology that
+has been refined over 10+ years.</p>
+\`\`\`
+
+**After (Active):**
+\`\`\`html
+<p>Fortune 500 companies use our solutions to achieve digital transformation.
+Our proven 10-year methodology delivers results.</p>
+\`\`\`
+
+### 3. Add Question-Based Headings (AEO)
+
+**Before:**
+\`\`\`html
+<h2>${detectedIndustry} Service Methodology</h2>
+<h2>Implementation Timeline</h2>
+<h2>Pricing Structure</h2>
+\`\`\`
+
+**After (Question-Based):**
+\`\`\`html
+<h2>How does our ${detectedIndustry.toLowerCase()} service work?</h2>
+<h2>How long does implementation take?</h2>
+<h2>What does it cost?</h2>
+\`\`\`
+
+### 4. Break Long Paragraphs
+
+**Before:**
+\`\`\`html
+<p>In today's rapidly evolving digital landscape, organizations face unprecedented
+challenges in maintaining competitive advantage while simultaneously managing
+complex technology stacks, ensuring data security, meeting regulatory compliance
+requirements, and delivering exceptional customer experiences across multiple
+touchpoints and channels, which is why partnering with an experienced provider
+can make the difference between success and stagnation.</p>
+\`\`\`
+
+**After:**
+\`\`\`html
+<p>Modern businesses face tough challenges:</p>
+<ul>
+  <li>Managing complex technology</li>
+  <li>Keeping data secure</li>
+  <li>Meeting compliance requirements</li>
+  <li>Delivering great customer experiences</li>
+</ul>
+<p>An experienced partner helps you tackle these challenges and grow.</p>
+\`\`\`
+
+### 5. Testing Tools
+
+**Hemingway App** (hemingwayapp.com):
+- Paste your content
+- Aim for Grade 8-10 reading level
+- Fix sentences highlighted in red/yellow
+
+**Grammarly** (grammarly.com):
+- Check for passive voice
+- Identify complex sentences
+- Suggest clarity improvements
+
+**WebAIM Readability Tool**:
+- Calculate Flesch Reading Ease (target: 60-70)
+- Analyze average words per sentence (target: 15-20)
+
+### 6. Voice Search Test
+
+Read your content aloud. Ask:
+- Does it sound natural?
+- Would someone say this in conversation?
+- Can I understand it without re-reading?
+
+If no, simplify further.`;
+
+  return {
+    id: `rec_${issue.category}_readability_${Date.now()}`,
+    title: 'AI Readability: Content Clarity & Simplification',
+    category: issue.category,
+    subfactor: 'readabilityScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "1-2 hours",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      avgSentenceLength: avgSentenceLength,
+      longSentences: longSentences,
+      longSentencePct: longSentencePct,
+      hasJargon: hasJargon,
+      hasPassiveVoice: hasPassiveVoice
+    },
+    generatedBy: 'programmatic_readability'
+  };
+}
+
+/**
+ * Helper function to simplify complex sentences for before/after examples
+ */
+function simplifyComplexSentence(sentence, industry) {
+  // This is a simplified example - actual simplification would be more sophisticated
+  let simplified = sentence;
+
+  // Common simplifications
+  const replacements = [
+    [/\butilize\b/gi, 'use'],
+    [/\bleverage\b/gi, 'use'],
+    [/\bfacilitate\b/gi, 'help'],
+    [/\boptimize\b/gi, 'improve'],
+    [/\bimplement\b/gi, 'set up'],
+    [/\becosystem\b/gi, 'system'],
+    [/\bsynergy\b/gi, 'collaboration'],
+    [/\bparadigm\b/gi, 'approach'],
+    [/\brobust\b/gi, 'strong'],
+    [/\bcomprehensive\b/gi, ''],
+    [/\bcutting-edge\b/gi, 'modern'],
+    [/\bseamless\b/gi, '']
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    simplified = simplified.replace(pattern, replacement);
+  }
+
+  // Clean up extra spaces
+  simplified = simplified.replace(/\s+/g, ' ').trim();
+
+  // If still very long, split into two sentences at a natural break
+  if (simplified.split(/\s+/).length > 25) {
+    const midPoint = Math.floor(simplified.length / 2);
+    const commaIndex = simplified.indexOf(',', midPoint - 20);
+    if (commaIndex > 0 && commaIndex < midPoint + 20) {
+      simplified = simplified.substring(0, commaIndex) + '.' + simplified.substring(commaIndex + 1);
+    }
+  }
+
+  return simplified;
+}
+
+/**
+ * Generates comprehensive content depth recommendations
+ * with AEO-focused topic coverage and entity enrichment strategies
+ */
+function makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract content metrics from scanEvidence
+  const wordCount = scanEvidence.content?.word_count || 0;
+  const headings = scanEvidence.content?.headings || {};
+  const totalHeadings = (headings.h2 || []).length + (headings.h3 || []).length + (headings.h4 || []).length;
+  const paragraphs = scanEvidence.content?.paragraphs || [];
+  const lists = scanEvidence.content?.lists || [];
+
+  // Calculate depth indicators
+  const wordsPerHeading = totalHeadings > 0 ? Math.round(wordCount / totalHeadings) : wordCount;
+  const hasSubstantialContent = wordCount >= 800;
+  const hasGoodStructure = totalHeadings >= 3;
+
+  // Check for depth markers
+  const html = scanEvidence.html || '';
+  const hasExamples = /\b(example|for instance|such as|like|including)\b/gi.test(html);
+  const hasData = /\b(\d+%|\d+ percent|\d+x|statistics|study|research|data)\b/gi.test(html);
+  const hasQuestions = /(what|how|why|when|where|who)\s+(is|are|does|do|can|should|will)/gi.test(html);
+
+  // Industry-specific depth recommendations
+  const MIN_WORDS = detectedIndustry === 'Legal' || detectedIndustry === 'Healthcare' ? 1200 : 800;
+  const IDEAL_WORDS = detectedIndustry === 'Legal' || detectedIndustry === 'Healthcare' ? 2000 : 1500;
+
+  const wordGap = Math.max(0, MIN_WORDS - wordCount);
+  const needsMoreContent = wordCount < MIN_WORDS;
+
+  // Build finding text
+  const finding = needsMoreContent
+    ? `Your page has thin content (${wordCount.toLocaleString()} words) that limits AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Answer engines like ChatGPT and Perplexity prioritize comprehensive pages with ${MIN_WORDS}+ words, multiple sections, and substantive examples. You need approximately ${wordGap} more words of quality content.`
+    : `Your page has adequate length (${wordCount.toLocaleString()} words) but may lack depth in key areas (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${!hasExamples ? 'Missing concrete examples. ' : ''}${!hasData ? 'Missing data/statistics. ' : ''}${!hasQuestions ? 'Missing question-based headings for AEO.' : ''}`;
+
+  // Build impact description
+  const impact = `**Why Content Depth Matters for AEO:**
+
+Comprehensive, example-rich content significantly increases AI citation likelihood. Thin content fails to establish topical authority:
+
+- **AI requires context**: ChatGPT/Perplexity need ${MIN_WORDS}+ words to extract nuanced answers
+- **Topical authority signals**: Answer engines prioritize pages that thoroughly cover a subject
+- **Entity density matters**: More relevant entities (people, places, concepts) = better AI understanding
+- **Example-driven trust**: Concrete examples and data points increase citation confidence
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.65)} points** on Content Depth score
+- **+25-40%** citation rate in answer engine responses
+- **Better topical coverage**: AI understands your expertise breadth`;
+
+  // Build action steps
+  const actionSteps = [
+    needsMoreContent ? `Add ${wordGap}+ words of substantive content (not fluff)` : 'Expand existing sections with more examples and detail',
+    'Add 3-5 concrete examples or case studies',
+    'Include data, statistics, or research findings',
+    'Create question-based H2/H3 sections (What/How/Why)',
+    'Add a comprehensive FAQ section (5-8 questions)',
+    'Include comparison tables or step-by-step processes',
+    'Re-scan page to confirm Content Depth score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Content Depth Strategy for ${pageTitle}
+
+**Current Content Analysis:**
+- Word count: ${wordCount.toLocaleString()} (Target: ${MIN_WORDS}+, Ideal: ${IDEAL_WORDS}+)
+- Headings (H2/H3/H4): ${totalHeadings} sections
+- Words per section: ${wordsPerHeading}
+- Content elements: ${hasExamples ? '✅ Examples' : '❌ Examples'}, ${hasData ? '✅ Data/stats' : '❌ Data/stats'}, ${hasQuestions ? '✅ Question headings' : '❌ Question headings'}
+
+**AEO Content Depth Framework:**
+
+Answer engines evaluate content depth through:
+1. **Topic Coverage**: Do you address all major subtopics?
+2. **Example Richness**: Do you provide concrete, specific examples?
+3. **Data Support**: Do you back claims with data or research?
+4. **Question Answering**: Do you explicitly answer user questions?
+
+**Recommended Content Additions:**`;
+
+  // Add industry-specific content recommendations
+  const contentRecommendations = generateContentDepthRecommendations(detectedIndustry, wordCount);
+  customizedImplementation += `\n\n${contentRecommendations}`;
+
+  // Build ready-to-use content template
+  const readyToUseContent = `**Content Depth Template for ${detectedIndustry}:**
+
+## Add Comprehensive "How It Works" Section
+
+\`\`\`html
+<section>
+  <h2>How does ${detectedIndustry.toLowerCase()} implementation work?</h2>
+
+  <p><strong>Overview:</strong> [2-3 sentence summary of your approach]</p>
+
+  <h3>Step-by-Step Process:</h3>
+  <ol>
+    <li><strong>Discovery & Assessment</strong> - [Explain what happens, 40-60 words]</li>
+    <li><strong>Strategy Development</strong> - [Explain planning phase, 40-60 words]</li>
+    <li><strong>Implementation</strong> - [Explain execution, 40-60 words]</li>
+    <li><strong>Measurement & Optimization</strong> - [Explain tracking, 40-60 words]</li>
+  </ol>
+
+  <h3>Real-World Example:</h3>
+  <p><strong>Client:</strong> [Industry] company with [context]</p>
+  <p><strong>Challenge:</strong> [Specific problem, 30-40 words]</p>
+  <p><strong>Solution:</strong> [What you did, 40-60 words]</p>
+  <p><strong>Results:</strong> [Measurable outcomes with data points]</p>
+</section>
+\`\`\`
+
+## Add "Common Questions" Section
+
+\`\`\`html
+<section>
+  <h2>Common questions about ${detectedIndustry.toLowerCase()} services</h2>
+
+  <h3>What results can I expect?</h3>
+  <p>[Answer with specific outcomes and timeframes, 60-80 words]</p>
+
+  <h3>How long does implementation take?</h3>
+  <p>[Answer with timeline breakdown, 60-80 words]</p>
+
+  <h3>What's included in your service?</h3>
+  <ul>
+    <li>[Deliverable 1 with brief description]</li>
+    <li>[Deliverable 2 with brief description]</li>
+    <li>[Deliverable 3 with brief description]</li>
+  </ul>
+
+  <h3>How is this different from [common alternative]?</h3>
+  <p>[Comparison showing your unique approach, 80-100 words]</p>
+</section>
+\`\`\`
+
+## Add Data-Backed "Why It Matters" Section
+
+\`\`\`html
+<section>
+  <h2>Why ${detectedIndustry.toLowerCase()} expertise matters</h2>
+
+  <p>Industry research shows that [insight with data]:</p>
+  <ul>
+    <li><strong>X% of companies</strong> that [action] see [outcome]</li>
+    <li><strong>Average ROI</strong> of [metric] within [timeframe]</li>
+    <li><strong>Key success factor:</strong> [Important variable with explanation]</li>
+  </ul>
+</section>
+\`\`\``;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    `**Minimum viable depth**: ${MIN_WORDS} words with 5+ sections and 3+ examples`,
+    `**Ideal depth**: ${IDEAL_WORDS}+ words with 8+ sections, multiple examples, and data support`,
+    '**Quality over quantity**: Every added word must provide value (no keyword stuffing)',
+    '**Question-based sections**: 40-50% of H2/H3 headings should be questions',
+    '**Example specificity**: Use real numbers, names, and concrete details (not vague generalities)',
+    '**Topic clustering**: Cover main topic + 3-5 related subtopics comprehensively',
+    '**Entity enrichment**: Mention relevant people, companies, tools, concepts in your industry',
+    '**Visual depth**: Add comparison tables, process diagrams, or infographics where helpful'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    `✅ Add one detailed example/case study (150-200 words) (20 min)`,
+    `✅ Create a "How It Works" section with 4-step process (15 min)`,
+    `✅ Add comparison table (Your approach vs. alternatives) (15 min)`,
+    `✅ Convert 2-3 existing H2/H3s to question format (5 min)`,
+    `✅ Add one data point or statistic with context (10 min)`,
+    `✅ Re-scan to confirm Content Depth score lift`
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: `Word count increased to ${MIN_WORDS}+ words`,
+      checked: false
+    },
+    {
+      text: 'Added 3+ concrete examples with specific details',
+      checked: false
+    },
+    {
+      text: 'Included data points, statistics, or research findings',
+      checked: false
+    },
+    {
+      text: 'Created 2-3 question-based H2/H3 sections',
+      checked: false
+    },
+    {
+      text: 'Added comparison table or step-by-step process',
+      checked: false
+    },
+    {
+      text: 'All new content provides unique value (not filler)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Content Depth score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Content Depth Implementation Examples
+
+### 1. Adding Comprehensive Process Section
+
+\`\`\`html
+<section class="process-section">
+  <h2>How does our ${detectedIndustry.toLowerCase()} process work?</h2>
+
+  <p>Our proven methodology combines industry best practices with
+  customized strategies tailored to your business goals.</p>
+
+  <div class="process-steps">
+    <div class="step">
+      <h3>1. Discovery & Assessment</h3>
+      <p>We start by analyzing your current state, goals, and challenges.
+      This includes stakeholder interviews, competitive analysis, and
+      technical audits. Most discovery phases take 1-2 weeks and result
+      in a comprehensive assessment report.</p>
+    </div>
+
+    <div class="step">
+      <h3>2. Strategy Development</h3>
+      <p>Based on discovery findings, we create a customized roadmap with
+      clear milestones, success metrics, and resource requirements. You'll
+      receive a detailed strategy document with implementation timelines.</p>
+    </div>
+
+    <div class="step">
+      <h3>3. Implementation & Execution</h3>
+      <p>Our team executes the strategy in phased sprints, providing weekly
+      progress updates and adapting based on results. Implementation typically
+      spans 3-6 months depending on scope.</p>
+    </div>
+
+    <div class="step">
+      <h3>4. Measurement & Optimization</h3>
+      <p>We track KPIs continuously and optimize based on performance data.
+      Monthly reports show progress against goals with recommendations for
+      ongoing improvement.</p>
+    </div>
+  </div>
+</section>
+\`\`\`
+
+### 2. Adding Rich Case Study Example
+
+\`\`\`html
+<section class="case-study">
+  <h2>Real-world example: ${detectedIndustry} transformation</h2>
+
+  <div class="case-study-content">
+    <h3>The Challenge</h3>
+    <p><strong>Client:</strong> Mid-market ${detectedIndustry.toLowerCase()} company with
+    200 employees and $50M revenue</p>
+
+    <p><strong>Problem:</strong> Their existing approach was generating only 12 qualified
+    leads per month with a 2.5% conversion rate. Marketing and sales teams weren't
+    aligned, and attribution was unclear.</p>
+
+    <h3>Our Solution</h3>
+    <p>We implemented a comprehensive strategy that included:</p>
+    <ul>
+      <li>Rebuilt content architecture around question-based topics</li>
+      <li>Implemented answer engine optimization (AEO) best practices</li>
+      <li>Created 15+ FAQ pages targeting high-intent queries</li>
+      <li>Optimized for ChatGPT, Perplexity, and Google AI Overviews</li>
+    </ul>
+
+    <h3>The Results</h3>
+    <p>Within 6 months:</p>
+    <ul>
+      <li><strong>85% increase</strong> in qualified leads (12 → 47 per month)</li>
+      <li><strong>4.8% conversion rate</strong> (up from 2.5%)</li>
+      <li><strong>40% of traffic</strong> now comes from AI-powered search</li>
+      <li><strong>ROI:</strong> $380K in new revenue attributed to AI visibility improvements</li>
+    </ul>
+  </div>
+</section>
+\`\`\`
+
+### 3. Adding Comparison Table
+
+\`\`\`html
+<section class="comparison">
+  <h2>What makes our approach different?</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Approach</th>
+        <th>Traditional ${detectedIndustry}</th>
+        <th>Our AEO-First Method</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Content Focus</strong></td>
+        <td>Keyword rankings</td>
+        <td>Answer engine citations and AI visibility</td>
+      </tr>
+      <tr>
+        <td><strong>Success Metric</strong></td>
+        <td>Traffic volume</td>
+        <td>Qualified leads from AI-powered search</td>
+      </tr>
+      <tr>
+        <td><strong>Timeline</strong></td>
+        <td>6-12 months for results</td>
+        <td>3-6 months for measurable improvement</td>
+      </tr>
+      <tr>
+        <td><strong>Content Strategy</strong></td>
+        <td>Blog posts and landing pages</td>
+        <td>Question-based content + FAQ schema + entity optimization</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+\`\`\`
+
+### 4. Content Depth Checklist
+
+Use this checklist when expanding content:
+
+**Topic Coverage:**
+- [ ] Main topic explained thoroughly (300+ words)
+- [ ] 3-5 related subtopics covered (150+ words each)
+- [ ] Industry-specific terminology defined
+- [ ] Common misconceptions addressed
+
+**Example Richness:**
+- [ ] At least 1 detailed case study/example
+- [ ] Real numbers and specific outcomes (not vague claims)
+- [ ] Before/after scenarios showing transformation
+- [ ] Client names or anonymized profiles for credibility
+
+**Data Support:**
+- [ ] Industry statistics or research findings cited
+- [ ] Your own data or insights (if available)
+- [ ] Quantifiable results (percentages, timelines, costs)
+- [ ] Sources linked or referenced
+
+**Question Answering:**
+- [ ] 40-50% of headings are questions
+- [ ] Questions match how users actually search
+- [ ] Answers are direct and complete (60-100 words)
+- [ ] FAQ section with 5-8 common questions`;
+
+  return {
+    id: `rec_${issue.category}_contentDepth_${Date.now()}`,
+    title: 'AI Search Readiness: Content Depth & Comprehensiveness',
+    category: issue.category,
+    subfactor: 'contentDepthScore',
+    priority: 'high',
+    priorityScore: issue.priority || 80,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: needsMoreContent ? "3-4 hours" : "2-3 hours",
+    difficulty: "Medium",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.65)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      wordCount: wordCount,
+      totalHeadings: totalHeadings,
+      wordsPerHeading: wordsPerHeading,
+      hasExamples: hasExamples,
+      hasData: hasData,
+      hasQuestions: hasQuestions,
+      needsMoreContent: needsMoreContent,
+      wordGap: wordGap
+    },
+    generatedBy: 'programmatic_content_depth'
+  };
+}
+
+/**
+ * Helper function to generate industry-specific content depth recommendations
+ */
+function generateContentDepthRecommendations(industry, currentWordCount) {
+  const baseRecs = `
+**1. Add Question-Based Sections (300-400 words)**
+- "What results can I expect?" with specific outcomes and timeframes
+- "How does the process work?" with step-by-step breakdown
+- "Who is this right for?" with ideal customer profiles
+
+**2. Include Concrete Examples (200-300 words)**
+- Real client case study with before/after metrics
+- Step-by-step walkthrough of typical project
+- Common scenario showing your approach in action
+
+**3. Add Data & Research (150-200 words)**
+- Industry statistics supporting your approach
+- Your own data or insights from experience
+- Research findings validating your methodology`;
+
+  const industrySpecific = {
+    'Agency': `\n\n**Agency-Specific Additions:**
+- Client portfolio examples with measurable results
+- Service delivery process with timelines
+- Team expertise and certifications
+- Case studies showing ROI (3x+ return examples perform well)`,
+
+    'SaaS': `\n\n**SaaS-Specific Additions:**
+- Product feature comparison table
+- Integration capabilities and API documentation overview
+- Security and compliance information (SOC 2, GDPR, etc.)
+- Pricing calculator or transparent pricing breakdown`,
+
+    'Legal': `\n\n**Legal-Specific Additions:**
+- Relevant case law or precedents
+- Step-by-step legal process explanation
+- Common legal terms defined in plain language
+- Attorney credentials and practice area depth`,
+
+    'Healthcare': `\n\n**Healthcare-Specific Additions:**
+- Treatment approach with evidence-based rationale
+- Expected outcomes with realistic timelines
+- Insurance and payment information
+- Provider credentials and specializations`,
+
+    'Technology': `\n\n**Technology-Specific Additions:**
+- Technical architecture or approach explanation
+- Integration capabilities and compatibility
+- Security measures and data protection
+- Performance benchmarks and scalability information`
+  };
+
+  return baseRecs + (industrySpecific[industry] || '');
+}
+
+/**
+ * Generates comprehensive heading hierarchy recommendations
+ * with AEO-focused question-based heading strategies
+ */
+function makeProgrammaticHeadingHierarchyRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const detectedIndustry = industry || 'General';
+  const domain = extractDomain(scanEvidence.url);
+  const pageTitle = scanEvidence.metadata?.title || 'Your Page';
+
+  // Extract heading data from scanEvidence
+  const headings = scanEvidence.content?.headings || {};
+  const h1Count = (headings.h1 || []).length;
+  const h2Count = (headings.h2 || []).length;
+  const h3Count = (headings.h3 || []).length;
+  const h4Count = (headings.h4 || []).length;
+  const totalHeadings = h2Count + h3Count + h4Count;
+
+  const h1Text = h1Count > 0 ? (headings.h1[0] || 'Untitled') : 'None';
+  const h2List = (headings.h2 || []).slice(0, 5);
+
+  // Analyze heading quality
+  const html = scanEvidence.html || '';
+  const hasMultipleH1 = h1Count > 1;
+  const hasNoH1 = h1Count === 0;
+  const hasPoorDistribution = h2Count < 3;
+  const hasQuestionHeadings = /(what|how|why|when|where|who)\s+(is|are|does|do|can|should|will)/gi.test(h2List.join(' '));
+  const questionHeadingPct = h2Count > 0 ? Math.round((h2List.filter(h => /(what|how|why|when|where|who)\s+/gi.test(h)).length / h2Count) * 100) : 0;
+
+  // Identify hierarchy issues
+  const hierarchyIssues = [];
+  if (hasNoH1) hierarchyIssues.push('Missing H1');
+  if (hasMultipleH1) hierarchyIssues.push('Multiple H1s');
+  if (hasPoorDistribution) hierarchyIssues.push('Too few H2 sections');
+  if (questionHeadingPct < 30) hierarchyIssues.push('Missing question-based headings');
+
+  // Build finding text
+  const finding = hierarchyIssues.length > 0
+    ? `Your page has heading hierarchy issues that limit AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Issues detected: ${hierarchyIssues.join(', ')}. ${h1Count > 0 ? `Current H1: "${h1Text}"` : 'No H1 found'}. H2 sections: ${h2Count}. Answer engines prioritize well-structured content with question-based headings.`
+    : `Your page has adequate heading structure (${h2Count} H2s, ${h3Count} H3s) but could improve for AEO (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Only ${questionHeadingPct}% of headings are question-based. Converting headings to questions increases AI extraction by 30-40%.`;
+
+  // Build impact description
+  const impact = `**Why Heading Hierarchy Matters for AEO:**
+
+Proper heading structure helps AI systems understand your content organization and extract specific answers. Poor hierarchy confuses semantic parsing:
+
+- **AI needs clear structure**: Answer engines use H1-H3 hierarchy to understand content relationships
+- **Question-based headings win**: Headings as questions directly match user queries ("How does X work?")
+- **Semantic extraction**: Proper hierarchy tells AI which content answers which question
+- **Featured snippet eligibility**: Google AI Overviews prioritize well-structured question-answer content
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Heading Structure score
+- **+30-40%** better question-answer extraction by AI
+- **Improved topic clustering**: Better AI understanding of content themes`;
+
+  // Build action steps
+  const actionSteps = [
+    hasNoH1 ? 'Add exactly one H1 tag with your main topic' : hasMultipleH1 ? 'Remove duplicate H1s - keep only one' : 'Verify H1 clearly states main topic',
+    hasPoorDistribution ? 'Add 3-5 H2 sections to break up content' : 'Ensure logical H2 → H3 hierarchy',
+    'Convert 40-50% of H2/H3 headings to questions',
+    'Use H2 for main sections, H3 for subsections within H2',
+    'Ensure every heading has 60+ words of content beneath it',
+    'Test hierarchy with HTML5 Outliner or WAVE tool',
+    'Re-scan page to confirm Heading Structure score improvement'
+  ];
+
+  // Build customized implementation (blue box)
+  let customizedImplementation = `### Heading Hierarchy Strategy for ${pageTitle}
+
+**Current Heading Structure:**
+- **H1:** ${h1Count === 1 ? `✅ "${h1Text}"` : h1Count === 0 ? '❌ Missing' : `⚠️ ${h1Count} H1s (should be exactly 1)`}
+- **H2 sections:** ${h2Count} ${h2Count < 3 ? '(add 2-3 more for better structure)' : '✅'}
+- **H3 subsections:** ${h3Count}
+- **Question-based headings:** ${questionHeadingPct}% (Target: 40-50%)
+
+${h2List.length > 0 ? `**Your Current H2 Headings:**\n${h2List.map((h, i) => `${i+1}. "${h}"`).join('\n')}\n` : ''}
+**AEO Heading Hierarchy Framework:**
+
+Answer engines extract information best from content structured like this:
+
+\`\`\`
+H1: Main Topic (exactly one per page)
+ ├─ H2: Question-Based Section
+ │   ├─ H3: Subtopic A
+ │   └─ H3: Subtopic B
+ ├─ H2: Question-Based Section
+ │   └─ H3: Subtopic A
+ └─ H2: Question-Based Section
+     ├─ H3: Subtopic A
+     └─ H3: Subtopic B
+\`\`\`
+
+**Recommended Changes:**`;
+
+  if (hasNoH1 || hasMultipleH1) {
+    customizedImplementation += `\n\n**1. Fix H1 Issue**\n${hasNoH1 ? '- Add one H1 tag with your main topic:\n  \`<h1>' + pageTitle + '</h1>\`' : '- Remove duplicate H1s, keep only the most important one'}`;
+  }
+
+  if (questionHeadingPct < 40) {
+    customizedImplementation += `\n\n**2. Convert Headings to Questions**\n\nChange declarative headings to questions that match user queries:\n\n**Before:**\n\`\`\`html\n<h2>${detectedIndustry} Services Overview</h2>\n<h2>Implementation Process</h2>\n<h2>Pricing Options</h2>\n\`\`\`\n\n**After (Question-Based for AEO):**\n\`\`\`html\n<h2>What ${detectedIndustry.toLowerCase()} services do you offer?</h2>\n<h2>How does the implementation process work?</h2>\n<h2>What does it cost?</h2>\n\`\`\``;
+  }
+
+  customizedImplementation += `\n\n**Key Heading Principles:**\n✅ **One H1 per page**: Your main topic\n✅ **H2 for major sections**: 3-5 main sections\n✅ **H3 for subsections**: Details within each H2\n✅ **Question format**: "How/What/Why/When/Where" at start\n✅ **Descriptive**: Heading alone should make sense (not just "Overview")`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `**Question-Based Heading Templates:**
+
+### For Service/Product Pages:
+
+\`\`\`html
+<h1>${detectedIndustry} Services for [Target Audience]</h1>
+
+<h2>What ${detectedIndustry.toLowerCase()} services do we offer?</h2>
+<h3>Service 1: [Name]</h3>
+<h3>Service 2: [Name]</h3>
+<h3>Service 3: [Name]</h3>
+
+<h2>How does our ${detectedIndustry.toLowerCase()} process work?</h2>
+<h3>Step 1: [Discovery/Assessment]</h3>
+<h3>Step 2: [Strategy/Planning]</h3>
+<h3>Step 3: [Implementation]</h3>
+<h3>Step 4: [Measurement]</h3>
+
+<h2>What results can you expect?</h2>
+<h3>Short-term outcomes (0-3 months)</h3>
+<h3>Medium-term results (3-6 months)</h3>
+<h3>Long-term impact (6-12 months)</h3>
+
+<h2>What does it cost?</h2>
+<h3>Pricing structure</h3>
+<h3>What's included</h3>
+<h3>ROI expectations</h3>
+
+<h2>How do we compare to alternatives?</h2>
+<h3>Traditional approach vs. our method</h3>
+<h3>Key differentiators</h3>
+\`\`\`
+
+### For Content/Resource Pages:
+
+\`\`\`html
+<h1>Complete Guide to [Topic]</h1>
+
+<h2>What is [Topic]?</h2>
+<h3>Definition and key concepts</h3>
+<h3>Why it matters</h3>
+
+<h2>How does [Topic] work?</h2>
+<h3>Core principles</h3>
+<h3>Step-by-step process</h3>
+
+<h2>Why should you care about [Topic]?</h2>
+<h3>Benefits and outcomes</h3>
+<h3>Common use cases</h3>
+
+<h2>When should you use [Topic]?</h2>
+<h3>Ideal scenarios</h3>
+<h3>Timing considerations</h3>
+
+<h2>Who is this for?</h2>
+<h3>Ideal user profiles</h3>
+<h3>Industry applications</h3>
+\`\`\``;
+
+  // Build implementation notes (yellow box)
+  const implementationNotes = [
+    '**H1 rule**: Exactly one H1 per page stating the main topic clearly',
+    '**H2 for main sections**: 3-7 major sections that break up your content',
+    '**H3 for subsections**: Details under each H2 (use H4 only if absolutely needed)',
+    '**Question format**: 40-50% of H2/H3 headings should be questions starting with What/How/Why/When/Where/Who',
+    '**Descriptive, not generic**: Use "How does implementation work?" not just "Process"',
+    '**Natural language**: Match how users actually ask questions (conversational)',
+    '**Hierarchical logic**: H3 should never appear without a parent H2 above it',
+    '**Content beneath each heading**: Minimum 60 words of content after every heading'
+  ];
+
+  // Build quick wins (purple box)
+  const quickWins = [
+    hasNoH1 ? '✅ Add one H1 tag to your page (2 min)' : hasMultipleH1 ? '✅ Remove duplicate H1s (5 min)' : '✅ Verify H1 is clear and specific (2 min)',
+    '✅ Convert 3-5 H2/H3 headings to question format (10 min)',
+    '✅ Add 1-2 new H2 sections if you have fewer than 3 (15 min)',
+    '✅ Ensure H2 → H3 hierarchy is logical (no orphan H3s) (5 min)',
+    '✅ Test with HTML5 Outliner or WAVE accessibility tool (3 min)',
+    '✅ Re-scan to confirm Heading Structure score lift'
+  ];
+
+  // Build validation checklist (indigo box)
+  const validationChecklist = [
+    {
+      text: hasNoH1 ? 'Added exactly one H1 tag' : hasMultipleH1 ? 'Removed duplicate H1s (only one H1)' : 'Verified H1 is clear and descriptive',
+      checked: false
+    },
+    {
+      text: hasPoorDistribution ? 'Added H2 sections (3-7 total)' : 'H2 sections properly distributed',
+      checked: false
+    },
+    {
+      text: '40-50% of H2/H3 headings are question-based',
+      checked: false
+    },
+    {
+      text: 'H3 tags only appear under H2 parents (proper hierarchy)',
+      checked: false
+    },
+    {
+      text: 'Each heading has 60+ words of content beneath it',
+      checked: false
+    },
+    {
+      text: 'Tested with HTML5 Outliner - structure makes sense',
+      checked: false
+    },
+    {
+      text: 'Re-scanned page and confirmed Heading Structure score improvement',
+      checked: false
+    }
+  ];
+
+  // Build comprehensive code snippet
+  const codeSnippet = `## Heading Hierarchy Implementation
+
+### 1. Proper H1-H3 Structure
+
+**Before (Poor Hierarchy):**
+\`\`\`html
+<h1>Welcome to Our Site</h1>
+<h1>About Our Services</h1>  <!-- ❌ Multiple H1s -->
+<h3>Service Details</h3>      <!-- ❌ H3 without H2 parent -->
+<h2>Contact</h2>
+\`\`\`
+
+**After (Proper Hierarchy):**
+\`\`\`html
+<h1>${detectedIndustry} Services for Growing Businesses</h1>
+
+<h2>What ${detectedIndustry.toLowerCase()} services do we offer?</h2>
+<h3>Service 1: Strategy & Planning</h3>
+<p>Our strategy services help you define clear goals...</p>
+
+<h3>Service 2: Implementation & Execution</h3>
+<p>We execute your strategy with proven methodologies...</p>
+
+<h3>Service 3: Measurement & Optimization</h3>
+<p>Track performance and optimize for better results...</p>
+
+<h2>How does our process work?</h2>
+<h3>Discovery & Assessment (Week 1-2)</h3>
+<p>We start by understanding your current state...</p>
+
+<h3>Strategy Development (Week 3-4)</h3>
+<p>Based on discovery, we create a customized roadmap...</p>
+
+<h2>What results can you expect?</h2>
+<p>Our clients typically see measurable improvements...</p>
+\`\`\`
+
+### 2. Converting to Question-Based Headings
+
+**Traditional (Declarative):**
+\`\`\`html
+<h2>Services Overview</h2>
+<h2>Implementation Timeline</h2>
+<h2>Pricing Structure</h2>
+<h2>Our Team</h2>
+<h2>Client Results</h2>
+\`\`\`
+
+**AEO-Optimized (Question-Based):**
+\`\`\`html
+<h2>What services do you offer?</h2>
+<h2>How long does implementation take?</h2>
+<h2>What does it cost?</h2>
+<h2>Who will work on my project?</h2>
+<h2>What results have other clients achieved?</h2>
+\`\`\`
+
+**Why Questions Work Better:**
+- Matches natural user queries to AI assistants
+- Directly triggers answer extraction in ChatGPT/Perplexity
+- Improves featured snippet eligibility
+- Better voice search compatibility
+
+### 3. Complete Page Structure Example
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>${pageTitle}</title>
+</head>
+<body>
+  <!-- Exactly one H1 -->
+  <h1>Complete ${detectedIndustry} Services Guide</h1>
+
+  <!-- Main section 1 -->
+  <h2>What is ${detectedIndustry.toLowerCase()} and why does it matter?</h2>
+  <p>[60+ words explaining the concept and importance]</p>
+
+    <h3>Key benefits of ${detectedIndustry.toLowerCase()}</h3>
+    <p>[Details about benefits]</p>
+
+    <h3>Common use cases</h3>
+    <p>[Examples of applications]</p>
+
+  <!-- Main section 2 -->
+  <h2>How does ${detectedIndustry.toLowerCase()} work?</h2>
+  <p>[60+ words explaining the process]</p>
+
+    <h3>Step 1: Discovery</h3>
+    <p>[Details about discovery phase]</p>
+
+    <h3>Step 2: Implementation</h3>
+    <p>[Details about implementation]</p>
+
+  <!-- Main section 3 -->
+  <h2>What should you look for in a ${detectedIndustry.toLowerCase()} provider?</h2>
+  <p>[60+ words on selection criteria]</p>
+
+    <h3>Essential qualifications</h3>
+    <p>[Required credentials/experience]</p>
+
+    <h3>Red flags to avoid</h3>
+    <p>[Warning signs of poor providers]</p>
+
+  <!-- Main section 4 -->
+  <h2>How do you measure ${detectedIndustry.toLowerCase()} success?</h2>
+  <p>[60+ words on success metrics]</p>
+
+    <h3>Key performance indicators</h3>
+    <p>[Specific metrics to track]</p>
+
+    <h3>Expected timelines</h3>
+    <p>[When to expect results]</p>
+</body>
+</html>
+\`\`\`
+
+### 4. Validation Tools
+
+**HTML5 Outliner:**
+- Visit: https://gsnedders.html5.org/outliner/
+- Paste your page URL
+- Verify clean hierarchy (no missing levels)
+
+**WAVE Accessibility Tool:**
+- Install browser extension
+- Check heading structure warnings
+- Ensure logical heading order
+
+**Manual Check:**
+\`\`\`javascript
+// Run in browser console to see heading structure
+document.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+  console.log(h.tagName + ': ' + h.textContent.trim());
+});
+\`\`\`
+
+### 5. Common Heading Mistakes to Avoid
+
+❌ **Multiple H1s**: Confuses AI about page topic
+❌ **Skipping levels**: Going H2 → H4 breaks hierarchy
+❌ **Generic headings**: "Overview", "Introduction", "More Info"
+❌ **No questions**: All declarative statements
+❌ **Empty headings**: Headings with no content beneath
+❌ **Keyword stuffing**: Unnatural repetition in headings`;
+
+  return {
+    id: `rec_${issue.category}_headingHierarchy_${Date.now()}`,
+    title: 'Content Structure: Heading Hierarchy & Organization',
+    category: issue.category,
+    subfactor: 'headingHierarchyScore',
+    priority: 'high',
+    priorityScore: issue.priority || 75,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "45-90 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      h1Count: h1Count,
+      h2Count: h2Count,
+      h3Count: h3Count,
+      h4Count: h4Count,
+      hasMultipleH1: hasMultipleH1,
+      hasNoH1: hasNoH1,
+      hasPoorDistribution: hasPoorDistribution,
+      questionHeadingPct: questionHeadingPct,
+      hierarchyIssues: hierarchyIssues
+    },
+    generatedBy: 'programmatic_heading_hierarchy'
+  };
+}
+
+/**
+ * Generates comprehensive XML sitemap recommendations
+ * with validation and submission guidance
+ */
+function makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  // Check for sitemap
+  const hasSitemap = scanEvidence.technical?.hasSitemap || false;
+  const sitemapUrl = scanEvidence.technical?.sitemapUrl || `${domain}/sitemap.xml`;
+  const pageCount = scanEvidence.technical?.sitemapPageCount || 0;
+  const lastModified = scanEvidence.technical?.sitemapLastModified || 'Unknown';
+
+  // Build finding text
+  const finding = hasSitemap
+    ? `Your sitemap exists at ${sitemapUrl} with ${pageCount} URLs (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). However, it may need optimization or proper submission to search engines and AI crawlers. Last modified: ${lastModified}.`
+    : `Your site is missing an XML sitemap (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Without a sitemap, search engines and AI crawlers have difficulty discovering all your pages, reducing visibility in answer engines like ChatGPT, Perplexity, and Google AI Overviews.`;
+
+  // Build impact description
+  const impact = `**Why XML Sitemaps Matter for AEO:**
+
+Sitemaps help search engines and AI systems discover and index your content efficiently:
+
+- **Faster discovery**: New content appears in AI answer engines 2-5x faster
+- **Complete indexing**: Ensures all pages (not just linked ones) get crawled
+- **Priority signals**: Tells crawlers which pages matter most
+- **AI training data**: Better indexed pages → more likely to be AI training sources
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on XML Sitemap score
+- **+30-50%** faster indexing for new/updated content
+- **Better AI coverage**: More pages available for answer engine citations`;
+
+  // Build action steps
+  const actionSteps = [
+    hasSitemap ? 'Validate existing sitemap with XML Sitemap Validator' : 'Generate XML sitemap for all important pages',
+    'Include only indexable pages (exclude noindex, login, admin pages)',
+    'Set priority and changefreq appropriately',
+    'Submit sitemap to Google Search Console',
+    'Submit sitemap to Bing Webmaster Tools',
+    'Add sitemap reference to robots.txt',
+    'Re-scan page to confirm XML Sitemap score improvement'
+  ];
+
+  // Build customized implementation
+  const customizedImplementation = `### XML Sitemap Setup for ${domain}
+
+**Current Status:** ${hasSitemap ? `✅ Sitemap found at ${sitemapUrl}` : '❌ No sitemap detected'}
+${hasSitemap ? `- Pages included: ${pageCount}\n- Last modified: ${lastModified}\n` : ''}
+**Priority Levels for ${industry || 'General'} Site:**
+
+1. **Priority 1.0** - Homepage, main service/product pages
+2. **Priority 0.8** - Category pages, key landing pages
+3. **Priority 0.6** - Blog posts, case studies, resources
+4. **Priority 0.4** - Author pages, tags, archives
+5. **Priority 0.2** - Legal pages (privacy, terms)
+
+**Change Frequency Guidelines:**
+- **daily**: News/blog homepage, product listings
+- **weekly**: Blog posts, updated services
+- **monthly**: Static service pages, about pages
+- **yearly**: Legal pages, archived content`;
+
+  // Build ready-to-use content
+  const readyToUseContent = `<!-- Basic XML Sitemap Template -->
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Homepage -->
+  <url>
+    <loc>${domain}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Main Service/Product Pages -->
+  <url>
+    <loc>${domain}/services</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog/Content Pages -->
+  <url>
+    <loc>${domain}/blog/article-title</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Add more URLs... -->
+</urlset>
+
+<!-- Add to robots.txt -->
+Sitemap: ${domain}/sitemap.xml`;
+
+  // Build implementation notes
+  const implementationNotes = [
+    '**File location**: Place sitemap.xml in your site root directory',
+    '**Max URLs**: 50,000 URLs per sitemap file (use sitemap index if more)',
+    '**Max file size**: 50MB uncompressed (compress to .xml.gz if needed)',
+    '**Update frequency**: Regenerate whenever you publish/update content',
+    '**Exclude these**: Login pages, admin areas, duplicate content, noindex pages',
+    '**Include these**: All public-facing pages you want indexed and cited by AI',
+    '**Validation**: Test with Google Search Console or XML Sitemap Validator',
+    '**Automation**: Use CMS plugins (Yoast, RankMath) or build scripts to auto-generate'
+  ];
+
+  // Build quick wins
+  const quickWins = [
+    '✅ Generate basic sitemap with online tool (XML-sitemaps.com) (10 min)',
+    '✅ Add sitemap URL to robots.txt (2 min)',
+    '✅ Submit to Google Search Console (5 min)',
+    '✅ Submit to Bing Webmaster Tools (5 min)',
+    '✅ Validate with Google Rich Results Test (3 min)',
+    '✅ Re-scan to confirm XML Sitemap score improvement'
+  ];
+
+  // Build validation checklist
+  const validationChecklist = [
+    {
+      text: 'Sitemap.xml created and accessible at domain root',
+      checked: false
+    },
+    {
+      text: 'All important pages included (no 404s or redirects)',
+      checked: false
+    },
+    {
+      text: 'Excluded admin, login, and noindex pages',
+      checked: false
+    },
+    {
+      text: 'Sitemap reference added to robots.txt',
+      checked: false
+    },
+    {
+      text: 'Submitted to Google Search Console',
+      checked: false
+    },
+    {
+      text: 'Submitted to Bing Webmaster Tools',
+      checked: false
+    },
+    {
+      text: 'Validated with no errors in Search Console',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  // Build code snippet
+  const codeSnippet = `## Complete XML Sitemap Implementation
+
+### 1. Generate Sitemap (Choose One Method)
+
+**Method A: WordPress (Yoast SEO)**
+\`\`\`
+1. Install Yoast SEO plugin
+2. Go to SEO → General → Features
+3. Enable "XML sitemaps"
+4. View sitemap at: ${domain}/sitemap_index.xml
+\`\`\`
+
+**Method B: Node.js/Express**
+\`\`\`javascript
+const { SitemapStream, streamToPromise } = require('sitemap');
+const { createWriteStream } = require('fs');
+
+async function generateSitemap() {
+  const sitemap = new SitemapStream({ hostname: '${domain}' });
+  const writeStream = createWriteStream('./public/sitemap.xml');
+
+  sitemap.pipe(writeStream);
+
+  // Add URLs
+  sitemap.write({ url: '/', changefreq: 'weekly', priority: 1.0 });
+  sitemap.write({ url: '/services', changefreq: 'monthly', priority: 0.8 });
+  sitemap.write({ url: '/blog', changefreq: 'daily', priority: 0.7 });
+
+  sitemap.end();
+
+  await streamToPromise(sitemap);
+  console.log('Sitemap generated!');
+}
+
+generateSitemap();
+\`\`\`
+
+**Method C: Python**
+\`\`\`python
+from datetime import datetime
+
+def generate_sitemap():
+    urls = [
+        {'loc': '${domain}/', 'priority': '1.0', 'changefreq': 'weekly'},
+        {'loc': '${domain}/services', 'priority': '0.8', 'changefreq': 'monthly'},
+        {'loc': '${domain}/blog', 'priority': '0.7', 'changefreq': 'daily'},
+    ]
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n'
+
+    for url in urls:
+        xml += '  <url>\\n'
+        xml += f'    <loc>{url["loc"]}</loc>\\n'
+        xml += f'    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>\\n'
+        xml += f'    <changefreq>{url["changefreq"]}</changefreq>\\n'
+        xml += f'    <priority>{url["priority"]}</priority>\\n'
+        xml += '  </url>\\n'
+
+    xml += '</urlset>'
+
+    with open('sitemap.xml', 'w') as f:
+        f.write(xml)
+
+generate_sitemap()
+\`\`\`
+
+### 2. Add Sitemap to robots.txt
+
+\`\`\`
+# Add to robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: ${domain}/sitemap.xml
+\`\`\`
+
+### 3. Submit to Search Engines
+
+**Google Search Console:**
+1. Visit: https://search.google.com/search-console
+2. Add property for ${domain}
+3. Go to Sitemaps section (left sidebar)
+4. Enter "sitemap.xml" and click Submit
+
+**Bing Webmaster Tools:**
+1. Visit: https://www.bing.com/webmasters
+2. Add site: ${domain}
+3. Go to Sitemaps section
+4. Submit sitemap URL
+
+### 4. Validation
+
+**Check Sitemap Format:**
+\`\`\`bash
+# Test sitemap is accessible
+curl ${domain}/sitemap.xml
+
+# Validate XML format
+xmllint --noout sitemap.xml
+\`\`\`
+
+**Online Validators:**
+- Google Search Console → Sitemaps → View errors
+- XML Sitemap Validator: https://www.xml-sitemaps.com/validate-xml-sitemap.html`;
+
+  return {
+    id: `rec_${issue.category}_sitemap_${Date.now()}`,
+    title: 'Technical Setup: XML Sitemap',
+    category: issue.category,
+    subfactor: 'sitemapScore',
+    priority: 'high',
+    priorityScore: issue.priority || 80,
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: "30-60 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasSitemap: hasSitemap,
+      sitemapUrl: sitemapUrl,
+      pageCount: pageCount,
+      lastModified: lastModified
+    },
+    generatedBy: 'programmatic_sitemap'
+  };
+}
+
+/**
+ * Generates comprehensive robots.txt recommendations
+ */
+function makeProgrammaticRobotsTxtRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasRobotsTxt = scanEvidence.technical?.hasRobotsTxt || false;
+  const robotsTxtContent = scanEvidence.technical?.robotsTxtContent || '';
+  const blocksAll = /User-agent:\s*\*\s*Disallow:\s*\//i.test(robotsTxtContent);
+  const hasSitemapRef = /Sitemap:/i.test(robotsTxtContent);
+
+  const finding = !hasRobotsTxt
+    ? `Your site is missing a robots.txt file (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This can cause search engines and AI crawlers to miss important configuration and may result in inefficient crawling.`
+    : blocksAll
+    ? `Your robots.txt file blocks ALL crawlers (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This prevents search engines and AI systems from accessing your site, making you invisible to ChatGPT, Perplexity, and Google AI Overviews.`
+    : !hasSitemapRef
+    ? `Your robots.txt exists but is missing sitemap reference (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Adding your sitemap URL helps crawlers discover content faster.`
+    : `Your robots.txt is configured but may need optimization (Score: ${issue.currentScore}/100, Target: ${issue.threshold}).`;
+
+  const impact = `**Why Robots.txt Matters for AEO:**
+
+Proper robots.txt configuration ensures AI crawlers can access and index your content:
+
+- **Crawler guidance**: Tells search engines and AI bots what to crawl
+- **Sitemap discovery**: Points crawlers to your sitemap for efficient indexing
+- **Resource optimization**: Prevents crawling of admin/duplicate pages
+- **AI training access**: Ensures your content is available for AI model training
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.6)} points** on Robots.txt score
+- **Better crawl efficiency**: Crawlers focus on important pages
+- **Faster indexing**: Sitemap reference speeds up discovery`;
+
+  const actionSteps = [
+    hasRobotsTxt ? 'Review existing robots.txt for issues' : 'Create robots.txt file in site root',
+    blocksAll ? 'Remove "Disallow: /" to allow crawling' : 'Ensure important pages are not blocked',
+    'Add sitemap reference to robots.txt',
+    'Block admin, login, and duplicate pages',
+    'Allow all major search engine bots',
+    'Test with Google Search Console robots.txt tester',
+    'Re-scan to confirm Robots.txt score improvement'
+  ];
+
+  const customizedImplementation = `### Robots.txt Configuration for ${domain}
+
+**Current Status:** ${hasRobotsTxt ? `✅ File exists at ${domain}/robots.txt` : '❌ No robots.txt found'}
+${blocksAll ? '\n⚠️ **CRITICAL**: Your robots.txt blocks ALL crawlers - fix immediately!' : ''}
+${hasRobotsTxt && !hasSitemapRef ? '\n⚠️ **Missing**: Sitemap reference not found' : ''}
+
+**Recommended Configuration:**
+
+Your robots.txt should:
+1. ✅ Allow all major search engine crawlers
+2. ✅ Block admin, login, and private areas
+3. ✅ Reference your XML sitemap
+4. ✅ Set reasonable crawl delays if needed`;
+
+  const readyToUseContent = `# Robots.txt for ${domain}
+# Allow all search engines and AI crawlers
+
+User-agent: *
+Allow: /
+
+# Block admin and private areas
+Disallow: /admin/
+Disallow: /login/
+Disallow: /wp-admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+
+# Block duplicate content
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /search?
+
+# Sitemap location
+Sitemap: ${domain}/sitemap.xml
+
+# Optional: Crawl delay (use sparingly)
+# Crawl-delay: 10`;
+
+  const implementationNotes = [
+    '**File location**: Must be at ${domain}/robots.txt (site root)',
+    '**Case sensitive**: Use lowercase "robots.txt" (not Robots.txt)',
+    '**Syntax**: One directive per line, blank lines for readability',
+    '**Allow everything**: "User-agent: * / Allow: /" lets all bots crawl',
+    '**Block carefully**: Only block truly private/duplicate content',
+    '**Sitemap reference**: Helps crawlers discover all pages faster',
+    '**Testing**: Always test with Google Search Console before deploying',
+    '**AI crawlers**: GPTBot, CCBot, and other AI bots respect robots.txt'
+  ];
+
+  const quickWins = [
+    hasRobotsTxt ? '✅ Review robots.txt for blocking issues (5 min)' : '✅ Create basic robots.txt file (5 min)',
+    blocksAll ? '✅ Remove "Disallow: /" immediately (2 min)' : '✅ Add sitemap reference (2 min)',
+    '✅ Block admin/login paths (3 min)',
+    '✅ Test with Google Search Console (5 min)',
+    '✅ Re-scan to confirm Robots.txt score improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: 'robots.txt file created at domain root',
+      checked: false
+    },
+    {
+      text: blocksAll ? 'Removed "Disallow: /" blocking rule' : 'All important pages allowed for crawling',
+      checked: false
+    },
+    {
+      text: 'Sitemap reference added',
+      checked: false
+    },
+    {
+      text: 'Admin/login paths blocked appropriately',
+      checked: false
+    },
+    {
+      text: 'Tested with Google Search Console robots.txt tester',
+      checked: false
+    },
+    {
+      text: 'No syntax errors or warnings',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Complete Robots.txt Setup
+
+### 1. Basic Robots.txt Template
+
+\`\`\`
+# Robots.txt for ${domain}
+
+# Allow all search engines and AI crawlers
+User-agent: *
+Allow: /
+
+# Block private areas
+Disallow: /admin/
+Disallow: /login/
+Disallow: /wp-admin/
+Disallow: /private/
+
+# Sitemap
+Sitemap: ${domain}/sitemap.xml
+\`\`\`
+
+### 2. Advanced Configuration (If Needed)
+
+\`\`\`
+# Different rules for specific bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# AI Crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: *
+Crawl-delay: 10
+Disallow: /admin/
+\`\`\`
+
+### 3. Common Patterns to Block
+
+\`\`\`
+# Block query parameters
+Disallow: /*?
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+# Block duplicate content
+Disallow: /print/
+Disallow: /pdf/
+Disallow: /*?print=
+
+# Block search results
+Disallow: /search
+Disallow: /search?*
+
+# Block tracking URLs
+Disallow: /track/
+Disallow: /click/
+\`\`\`
+
+### 4. Testing Robots.txt
+
+**Google Search Console:**
+1. Go to: https://search.google.com/search-console
+2. Select property: ${domain}
+3. Tools → robots.txt Tester
+4. Test specific URLs to verify access
+
+**Manual Test:**
+\`\`\`bash
+# Check robots.txt is accessible
+curl ${domain}/robots.txt
+
+# Verify syntax
+# Visit: https://www.google.com/webmasters/tools/robots-testing-tool
+\`\`\`
+
+### 5. Common Mistakes to Avoid
+
+❌ **DON'T**: Block everything with "Disallow: /"
+❌ **DON'T**: Put robots.txt in subdirectory (/pages/robots.txt)
+❌ **DON'T**: Use wildcards incorrectly (Disallow: /*.pdf wrong syntax)
+❌ **DON'T**: Block CSS/JS files (hurts rendering in Search Console)
+
+✅ **DO**: Allow major crawlers access to public content
+✅ **DO**: Reference sitemap
+✅ **DO**: Block only private/duplicate areas
+✅ **DO**: Test before deploying`;
+
+  return {
+    id: `rec_${issue.category}_robotstxt_${Date.now()}`,
+    title: 'Technical Setup: Robots.txt Configuration',
+    category: issue.category,
+    subfactor: 'robotsTxtScore',
+    priority: blocksAll ? 'critical' : 'medium',
+    priorityScore: issue.priority || (blocksAll ? 95 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: hasRobotsTxt ? "15-30 minutes" : "20-40 minutes",
+    difficulty: "Easy",
+    estimatedScoreGain: Math.max(6, Math.round(issue.gap * 0.6)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasRobotsTxt: hasRobotsTxt,
+      blocksAll: blocksAll,
+      hasSitemapRef: hasSitemapRef
+    },
+    generatedBy: 'programmatic_robotstxt'
+  };
+}
+
+/**
+ * Generates comprehensive HTTPS/SSL recommendations
+ */
+function makeProgrammaticHttpsRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasHttps = scanEvidence.url?.startsWith('https://') || false;
+  const hasMixedContent = scanEvidence.technical?.hasMixedContent || false;
+  const sslExpiry = scanEvidence.technical?.sslExpiryDays || null;
+  const sslIssuer = scanEvidence.technical?.sslIssuer || 'Unknown';
+
+  const finding = !hasHttps
+    ? `Your site is not using HTTPS (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). This is a CRITICAL security issue. Sites without HTTPS are penalized by search engines, flagged as "Not Secure" by browsers, and excluded from many AI training datasets.`
+    : hasMixedContent
+    ? `Your site uses HTTPS but has mixed content warnings (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Some resources load over HTTP, triggering browser warnings and reducing trust signals for AI systems.`
+    : sslExpiry && sslExpiry < 30
+    ? `Your SSL certificate expires in ${sslExpiry} days (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Renew soon to avoid downtime and trust issues.`
+    : `Your site uses HTTPS (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may need optimization for better security posture.`;
+
+  const impact = `**Why HTTPS Matters for AEO:**
+
+HTTPS is a foundational trust signal for search engines and AI systems:
+
+- **Search ranking factor**: Google penalizes non-HTTPS sites
+- **Browser warnings**: Chrome/Firefox flag HTTP sites as "Not Secure"
+- **AI training exclusion**: Many AI models exclude insecure sites from training data
+- **User trust**: Visitors bounce from sites showing security warnings
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.8)} points** on HTTPS Security score
+- **Required for indexing**: Some AI crawlers skip non-HTTPS sites entirely
+- **Trust signals**: SSL certificate = legitimacy indicator for answer engines`;
+
+  const actionSteps = [
+    !hasHttps ? 'Obtain SSL certificate (free from Let\'s Encrypt)' : 'Verify SSL certificate is valid and up-to-date',
+    !hasHttps ? 'Install SSL certificate on web server' : hasMixedContent ? 'Fix mixed content warnings' : 'Ensure all resources load over HTTPS',
+    !hasHttps ? 'Redirect all HTTP traffic to HTTPS' : 'Verify HTTPS redirects work correctly',
+    'Test SSL configuration with SSL Labs',
+    'Enable HSTS (HTTP Strict Transport Security)',
+    'Update internal links to use HTTPS',
+    'Re-scan to confirm HTTPS Security score improvement'
+  ];
+
+  const customizedImplementation = `### HTTPS Setup for ${domain}
+
+**Current Status:** ${hasHttps ? `✅ HTTPS enabled` : '❌ **CRITICAL**: No HTTPS detected'}
+${hasHttps && sslIssuer ? `- SSL Issuer: ${sslIssuer}\n` : ''}${hasHttps && sslExpiry ? `- Certificate expires in: ${sslExpiry} days ${sslExpiry < 30 ? '⚠️ **Renew soon!**' : ''}\n` : ''}${hasMixedContent ? '- ⚠️ **Mixed content detected** - some resources load over HTTP\n' : ''}
+
+${!hasHttps ? '**URGENT**: You must implement HTTPS immediately. This is non-negotiable for modern web presence and AI visibility.' : ''}
+
+**Implementation Path:**
+
+${!hasHttps ? `1. **Get SSL Certificate** (Free from Let's Encrypt)
+2. **Install on Server** (varies by host/platform)
+3. **Force HTTPS Redirects** (301 redirects from HTTP → HTTPS)
+4. **Update Internal Links** (change http:// → https://)
+5. **Enable HSTS** (prevents downgrade attacks)` : `1. ${hasMixedContent ? '**Fix mixed content** - update all HTTP resources to HTTPS' : '**Verify certificate validity**'}
+2. **Test SSL configuration** with SSL Labs
+3. **Enable HSTS** if not already active
+4. **Set up auto-renewal** (Let's Encrypt certs expire every 90 days)`}`;
+
+  const readyToUseContent = `**Apache .htaccess - Force HTTPS:**
+\`\`\`apache
+# Redirect all HTTP to HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Enable HSTS (HTTP Strict Transport Security)
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+\`\`\`
+
+**Nginx - Force HTTPS:**
+\`\`\`nginx
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name ${domain.replace('https://', '').replace('http://', '')};
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS server block
+server {
+    listen 443 ssl http2;
+    server_name ${domain.replace('https://', '').replace('http://', '')};
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    # Enable HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+}
+\`\`\``;
+
+  const implementationNotes = [
+    '**SSL Certificate**: Use Let\'s Encrypt for free, auto-renewing certificates',
+    '**Installation**: Varies by hosting provider (cPanel, Plesk, AWS, etc.)',
+    '**Redirects**: Always use 301 (permanent) redirects from HTTP → HTTPS',
+    '**Mixed content**: Check browser console for http:// resources on https:// pages',
+    '**HSTS**: Forces browsers to only connect via HTTPS (prevents downgrade attacks)',
+    '**Auto-renewal**: Set up certbot or hosting auto-renewal (Let\'s Encrypt certs expire in 90 days)',
+    '**Testing**: Use SSL Labs (ssllabs.com/ssltest) to verify configuration',
+    '**CDN**: If using Cloudflare/CDN, enable SSL there too (Full or Full Strict mode)'
+  ];
+
+  const quickWins = [
+    !hasHttps ? '✅ Get Let\'s Encrypt certificate (free, 15 min)' : '✅ Test SSL with SSL Labs (5 min)',
+    !hasHttps ? '✅ Install SSL on server/hosting (10-30 min)' : hasMixedContent ? '✅ Fix mixed content warnings (10-20 min)' : '✅ Verify HSTS is enabled (5 min)',
+    '✅ Set up 301 redirects HTTP → HTTPS (10 min)',
+    '✅ Update sitemap URLs to HTTPS (5 min)',
+    '✅ Test with browser (check for padlock icon) (2 min)',
+    '✅ Re-scan to confirm HTTPS score improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: !hasHttps ? 'SSL certificate obtained and installed' : 'SSL certificate is valid and not expiring soon',
+      checked: false
+    },
+    {
+      text: 'All HTTP URLs redirect to HTTPS (301 redirects)',
+      checked: false
+    },
+    {
+      text: hasMixedContent ? 'Fixed all mixed content warnings' : 'No mixed content warnings in browser console',
+      checked: false
+    },
+    {
+      text: 'HSTS header enabled (Strict-Transport-Security)',
+      checked: false
+    },
+    {
+      text: 'SSL Labs test shows A or A+ rating',
+      checked: false
+    },
+    {
+      text: 'Browser shows padlock icon (secure connection)',
+      checked: false
+    },
+    {
+      text: 'Auto-renewal configured (for Let\'s Encrypt)',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed HTTPS score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Complete HTTPS Implementation
+
+### 1. Get Free SSL Certificate (Let's Encrypt)
+
+**Ubuntu/Debian with Certbot:**
+\`\`\`bash
+# Install Certbot
+sudo apt update
+sudo apt install certbot python3-certbot-nginx
+
+# Get certificate (Nginx)
+sudo certbot --nginx -d ${domain.replace('https://', '').replace('http://', '')}
+
+# Get certificate (Apache)
+sudo certbot --apache -d ${domain.replace('https://', '').replace('http://', '')}
+
+# Test auto-renewal
+sudo certbot renew --dry-run
+\`\`\`
+
+**cPanel/Shared Hosting:**
+1. Log into cPanel
+2. Go to "SSL/TLS Status"
+3. Enable "AutoSSL" or install Let's Encrypt certificate
+4. Force HTTPS in .htaccess (see ready-to-use content)
+
+### 2. Force HTTPS Redirects
+
+**Node.js/Express:**
+\`\`\`javascript
+// Redirect HTTP to HTTPS middleware
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(301, 'https://' + req.headers.host + req.url);
+  }
+  next();
+});
+
+// Enable HSTS
+app.use((req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+\`\`\`
+
+**WordPress (wp-config.php):**
+\`\`\`php
+// Force HTTPS
+define('FORCE_SSL_ADMIN', true);
+
+// Update site URL
+define('WP_HOME', 'https://${domain.replace('https://', '').replace('http://', '')}');
+define('WP_SITEURL', 'https://${domain.replace('https://', '').replace('http://', '')}');
+
+// Add to .htaccess for full site redirect
+// (see Apache config in ready-to-use content)
+\`\`\`
+
+### 3. Fix Mixed Content
+
+**Find Mixed Content:**
+\`\`\`javascript
+// Run in browser console on your HTTPS page
+const insecureResources = [];
+performance.getEntriesByType('resource').forEach(resource => {
+  if (resource.name.startsWith('http://')) {
+    insecureResources.push(resource.name);
+  }
+});
+console.log('Insecure resources:', insecureResources);
+\`\`\`
+
+**Fix Pattern:**
+\`\`\`html
+<!-- Before (insecure) -->
+<img src="http://example.com/image.jpg">
+<script src="http://cdn.example.com/lib.js"></script>
+
+<!-- After (secure) -->
+<img src="https://example.com/image.jpg">
+<script src="https://cdn.example.com/lib.js"></script>
+
+<!-- Or use protocol-relative URLs -->
+<img src="//example.com/image.jpg">
+\`\`\`
+
+### 4. Test SSL Configuration
+
+**SSL Labs Test:**
+1. Visit: https://www.ssllabs.com/ssltest/
+2. Enter your domain
+3. Wait for test to complete
+4. Aim for A or A+ rating
+
+**Common Issues:**
+- ❌ Weak cipher suites → Update SSL configuration
+- ❌ Missing HSTS → Add Strict-Transport-Security header
+- ❌ Certificate chain incomplete → Reinstall with full chain
+- ❌ Mixed content → Fix HTTP resources on HTTPS pages
+
+### 5. Enable HSTS (HTTP Strict Transport Security)
+
+**What HSTS Does:**
+- Forces browsers to only connect via HTTPS
+- Prevents SSL stripping attacks
+- Required for A+ rating on SSL Labs
+
+**Implementation:**
+Add header to every HTTPS response:
+\`\`\`
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+\`\`\`
+
+**Preload List (Optional):**
+1. Visit: https://hstspreload.org/
+2. Submit your domain
+3. Browsers will force HTTPS even on first visit`;
+
+  return {
+    id: `rec_${issue.category}_https_${Date.now()}`,
+    title: 'Technical Setup: HTTPS/SSL Security',
+    category: issue.category,
+    subfactor: 'httpsScore',
+    priority: !hasHttps ? 'critical' : hasMixedContent ? 'high' : 'medium',
+    priorityScore: issue.priority || (!hasHttps ? 100 : hasMixedContent ? 85 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: !hasHttps ? "1-2 hours" : "30-60 minutes",
+    difficulty: !hasHttps ? "Medium" : "Easy",
+    estimatedScoreGain: Math.max(10, Math.round(issue.gap * 0.8)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasHttps: hasHttps,
+      hasMixedContent: hasMixedContent,
+      sslExpiry: sslExpiry,
+      sslIssuer: sslIssuer
+    },
+    generatedBy: 'programmatic_https'
+  };
+}
+
+/**
+ * Generates comprehensive crawl accessibility recommendations
+ */
+function makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry) {
+  const { profile, facts } = normalizeEvidence(scanEvidence);
+  const domain = extractDomain(scanEvidence.url);
+
+  const hasNoIndex = /<meta[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(scanEvidence.html || '');
+  const hasNoFollow = /<meta[^>]*name=["']robots["'][^>]*content=["'][^"']*nofollow/i.test(scanEvidence.html || '');
+  const hasCanonical = /<link[^>]*rel=["']canonical["']/i.test(scanEvidence.html || '');
+  const isJsRendered = scanEvidence.technical?.requiresJsRendering || false;
+  const has404Links = scanEvidence.technical?.broken404Links > 0;
+  const brokenLinkCount = scanEvidence.technical?.broken404Links || 0;
+
+  const crawlIssues = [];
+  if (hasNoIndex) crawlIssues.push('noindex meta tag blocks indexing');
+  if (hasNoFollow) crawlIssues.push('nofollow blocks link crawling');
+  if (isJsRendered) crawlIssues.push('content requires JavaScript rendering');
+  if (has404Links) crawlIssues.push(`${brokenLinkCount} broken links (404s)`);
+
+  const finding = crawlIssues.length > 0
+    ? `Your page has crawl accessibility issues (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Detected: ${crawlIssues.join(', ')}. These prevent search engines and AI crawlers from fully accessing and indexing your content.`
+    : `Your page is generally crawlable (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may have minor accessibility issues affecting AI visibility.`;
+
+  const impact = `**Why Crawl Accessibility Matters for AEO:**
+
+If crawlers can't access your content, you're invisible to search engines and AI systems:
+
+- **Indexing blocked**: noindex prevents page from appearing in search results and AI training
+- **Link equity lost**: nofollow prevents crawlers from following links
+- **JS rendering issues**: AI crawlers may not execute JavaScript, missing content
+- **Broken links**: 404s signal poor site quality, reducing trust scores
+
+**Estimated Impact:**
+- **+${Math.round(issue.gap * 0.7)} points** on Crawl Accessibility score
+- **Full indexing**: Ensures AI can access all public content
+- **Better link graph**: Proper crawling strengthens site authority`;
+
+  const actionSteps = [
+    hasNoIndex ? 'Remove noindex meta tag (unless intentional)' : 'Verify no accidental noindex tags',
+    hasNoFollow ? 'Remove nofollow from internal links' : 'Ensure important pages are followable',
+    isJsRendered ? 'Implement server-side rendering or prerendering' : 'Verify content is in HTML source',
+    has404Links ? `Fix ${brokenLinkCount} broken links` : 'Run broken link checker periodically',
+    'Ensure robots.txt allows crawling',
+    'Test with Google Search Console URL Inspection',
+    'Re-scan to confirm Crawl Accessibility score improvement'
+  ];
+
+  const customizedImplementation = `### Crawl Accessibility Fixes for ${domain}
+
+**Current Issues:**
+${hasNoIndex ? '- ⚠️ **noindex meta tag** detected - page won\'t be indexed\n' : ''}${hasNoFollow ? '- ⚠️ **nofollow meta tag** detected - links won\'t be followed\n' : ''}${isJsRendered ? '- ⚠️ **JavaScript-rendered content** - may not be crawlable\n' : ''}${has404Links ? `- ⚠️ **${brokenLinkCount} broken links** found - fix to improve crawlability\n` : ''}${crawlIssues.length === 0 ? '- ✅ No major crawl blockers detected\n' : ''}
+
+**Priority Fixes:**
+
+${hasNoIndex ? '1. **Remove noindex** - This is blocking your page from all search engines and AI indexes\n' : ''}${isJsRendered ? `${hasNoIndex ? '2' : '1'}. **Make content crawlable** - Ensure critical content is in HTML source, not JS-only\n` : ''}${has404Links ? `${hasNoIndex || isJsRendered ? '3' : '1'}. **Fix broken links** - Update or remove ${brokenLinkCount} broken link${brokenLinkCount > 1 ? 's' : ''}\n` : ''}`;
+
+  const readyToUseContent = `**Remove noindex (if present):**
+\`\`\`html
+<!-- REMOVE this if found in <head> -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="noindex">
+
+<!-- OR replace with this to allow indexing -->
+<meta name="robots" content="index, follow">
+\`\`\`
+
+**Canonical Tag (Prevent Duplicate Content):**
+\`\`\`html
+<!-- Add to <head> to specify preferred URL -->
+<link rel="canonical" href="${domain}${scanEvidence.url?.replace(domain, '') || '/'}">
+\`\`\`
+
+**X-Robots-Tag (Server-level):**
+\`\`\`nginx
+# Nginx - Allow indexing (remove any blocking headers)
+# DON'T send this header for public pages:
+# add_header X-Robots-Tag "noindex, nofollow";
+
+# Only use X-Robots-Tag for private/admin pages:
+location /admin/ {
+    add_header X-Robots-Tag "noindex, nofollow";
+}
+\`\`\``;
+
+  const implementationNotes = [
+    '**noindex removal**: Only remove if page should be public/indexed',
+    '**nofollow usage**: Reserve for user-generated content (comments, forums)',
+    '**JS rendering**: Critical content must be in HTML source, not loaded via JS',
+    '**Canonical tags**: Use to prevent duplicate content issues',
+    '**404 fixes**: Update broken internal links or implement 301 redirects',
+    '**Pagination**: Use rel="next" and rel="prev" for paginated content',
+    '**Testing**: Use Google Search Console URL Inspection to verify crawlability',
+    '**Mobile**: Ensure mobile version is equally crawlable (responsive design preferred)'
+  ];
+
+  const quickWins = [
+    hasNoIndex ? '✅ Remove noindex meta tag immediately (2 min)' : '✅ Verify no accidental noindex tags (5 min)',
+    has404Links ? `✅ Fix top ${Math.min(5, brokenLinkCount)} broken links (15-30 min)` : '✅ Run broken link checker (10 min)',
+    isJsRendered ? '✅ Verify critical content in HTML source (10 min)' : '✅ Test with Fetch as Google (5 min)',
+    '✅ Check robots.txt allows crawling (3 min)',
+    '✅ Re-scan to confirm Crawl Accessibility improvement'
+  ];
+
+  const validationChecklist = [
+    {
+      text: hasNoIndex ? 'Removed noindex meta tag' : 'Verified no blocking meta tags present',
+      checked: false
+    },
+    {
+      text: has404Links ? `Fixed ${brokenLinkCount} broken links` : 'No broken links detected',
+      checked: false
+    },
+    {
+      text: isJsRendered ? 'Critical content available in HTML source' : 'Content is server-rendered or prerendered',
+      checked: false
+    },
+    {
+      text: 'Canonical tags implemented correctly',
+      checked: false
+    },
+    {
+      text: 'robots.txt allows crawling of important pages',
+      checked: false
+    },
+    {
+      text: 'Tested with Google Search Console URL Inspection',
+      checked: false
+    },
+    {
+      text: 'No X-Robots-Tag blocking headers',
+      checked: false
+    },
+    {
+      text: 'Re-scanned and confirmed score improvement',
+      checked: false
+    }
+  ];
+
+  const codeSnippet = `## Crawl Accessibility Fixes
+
+### 1. Remove Indexing Blocks
+
+**Check for noindex:**
+\`\`\`bash
+# Search your HTML for noindex tags
+curl ${domain} | grep -i noindex
+
+# Check HTTP headers
+curl -I ${domain} | grep -i x-robots-tag
+\`\`\`
+
+**Remove noindex meta tag:**
+\`\`\`html
+<!-- Remove these from <head>: -->
+<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
+<meta name="googlebot" content="noindex">
+
+<!-- Allow indexing with: -->
+<meta name="robots" content="index, follow">
+<!-- Or simply remove the meta tag entirely (default is index, follow) -->
+\`\`\`
+
+### 2. Server-Side Rendering (SSR) for JS Apps
+
+**Next.js (React SSR):**
+\`\`\`javascript
+// pages/index.js - automatically server-rendered
+export default function HomePage({ data }) {
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      <p>{data.content}</p>
+    </div>
+  );
+}
+
+// Data is fetched server-side (crawlable)
+export async function getServerSideProps() {
+  const data = await fetchData();
+  return { props: { data } };
+}
+\`\`\`
+
+**Prerendering for SPAs:**
+\`\`\`bash
+# Use Prerender.io or similar service
+# Or use Puppeteer to pre-render:
+
+npm install puppeteer
+
+# prerender.js
+const puppeteer = require('puppeteer');
+
+async function prerenderPage(url) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  const html = await page.content();
+  await browser.close();
+  return html;
+}
+\`\`\`
+
+### 3. Fix Broken Links
+
+**Find Broken Links:**
+\`\`\`bash
+# Use broken-link-checker (npm package)
+npm install -g broken-link-checker
+
+# Scan site for 404s
+blc ${domain} -ro
+
+# Or use online tool:
+# https://www.deadlinkchecker.com/
+\`\`\`
+
+**Fix Patterns:**
+\`\`\`javascript
+// Implement 301 redirects for moved pages
+// Express.js example:
+app.get('/old-page', (req, res) => {
+  res.redirect(301, '/new-page');
+});
+
+// Or update links in HTML:
+// Before: <a href="/old-page">Link</a>
+// After:  <a href="/new-page">Link</a>
+\`\`\`
+
+### 4. Canonical Tags (Prevent Duplicates)
+
+**Implementation:**
+\`\`\`html
+<!-- Add to every page in <head> -->
+<link rel="canonical" href="${domain}/current-page-url">
+
+<!-- For paginated content -->
+<link rel="canonical" href="${domain}/products">
+<link rel="prev" href="${domain}/products?page=1">
+<link rel="next" href="${domain}/products?page=3">
+\`\`\`
+
+### 5. Testing Tools
+
+**Google Search Console:**
+1. Go to: https://search.google.com/search-console
+2. Tools → URL Inspection
+3. Enter page URL
+4. Check "Coverage" section for issues
+
+**Manual Crawl Test:**
+\`\`\`bash
+# Test if content is in HTML source
+curl ${domain} | grep "important content phrase"
+
+# Check for JavaScript-only content
+# If phrase doesn't appear, it's JS-rendered (bad for crawlers)
+\`\`\`
+
+**Screaming Frog SEO Spider:**
+- Download free version
+- Crawl your site
+- Check "Response Codes" tab for 404s
+- Check "Directives" tab for noindex pages`;
+
+  return {
+    id: `rec_${issue.category}_crawl_${Date.now()}`,
+    title: 'Technical Setup: Crawl Accessibility',
+    category: issue.category,
+    subfactor: 'crawlAccessibilityScore',
+    priority: hasNoIndex ? 'critical' : has404Links || isJsRendered ? 'high' : 'medium',
+    priorityScore: issue.priority || (hasNoIndex ? 95 : has404Links ? 80 : 70),
+    finding: finding,
+    impact: impact,
+    actionSteps: actionSteps,
+    codeSnippet: codeSnippet,
+    customizedImplementation: customizedImplementation,
+    readyToUseContent: readyToUseContent,
+    implementationNotes: implementationNotes,
+    quickWins: quickWins,
+    validationChecklist: validationChecklist,
+    estimatedTime: hasNoIndex ? "10-20 minutes" : isJsRendered ? "2-4 hours" : "30-60 minutes",
+    difficulty: isJsRendered ? "Hard" : hasNoIndex ? "Easy" : "Medium",
+    estimatedScoreGain: Math.max(8, Math.round(issue.gap * 0.7)),
+    currentScore: issue.currentScore,
+    targetScore: issue.threshold,
+    evidence: {
+      hasNoIndex: hasNoIndex,
+      hasNoFollow: hasNoFollow,
+      hasCanonical: hasCanonical,
+      isJsRendered: isJsRendered,
+      has404Links: has404Links,
+      brokenLinkCount: brokenLinkCount,
+      crawlIssues: crawlIssues
+    },
+    generatedBy: 'programmatic_crawl_accessibility'
   };
 }
 

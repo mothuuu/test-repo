@@ -69,7 +69,8 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
           userId: userId.toString(),
           domain,
           plan
-        }
+        },
+        proration_behavior: 'none'  // No proration - full price on signup
       }
     });
 

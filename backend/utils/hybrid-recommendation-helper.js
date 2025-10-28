@@ -116,22 +116,22 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
     const unlockedAt = i < initialActive ? new Date() : null;
     const skipEnabledAt = i < initialActive ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
 
-    // DEBUG: Log structured fields for FAQ recommendations
-    if (rec.category === 'FAQ Schema' || rec.subfactor === 'faqScore') {
-      console.log('📦 FAQ Recommendation object received:', {
-        title: rec.title?.substring(0, 50),
-        hasCustomizedImplementation: !!rec.customizedImplementation,
-        hasReadyToUseContent: !!rec.readyToUseContent,
-        hasImplementationNotes: !!rec.implementationNotes,
-        hasQuickWins: !!rec.quickWins,
-        hasValidationChecklist: !!rec.validationChecklist,
-        customizedImplLength: rec.customizedImplementation?.length || 0,
-        readyToUseLength: rec.readyToUseContent?.length || 0,
-        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
-        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
-        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
-      });
-    }
+    // DEBUG: Log ALL recommendations to diagnose structured fields
+    console.log('📦 Recommendation being saved:', {
+      title: rec.title?.substring(0, 50),
+      category: rec.category,
+      subfactor: rec.subfactor,
+      hasCustomizedImplementation: !!rec.customizedImplementation,
+      hasReadyToUseContent: !!rec.readyToUseContent,
+      hasImplementationNotes: !!rec.implementationNotes,
+      hasQuickWins: !!rec.quickWins,
+      hasValidationChecklist: !!rec.validationChecklist,
+      customizedImplLength: rec.customizedImplementation?.length || 0,
+      readyToUseLength: rec.readyToUseContent?.length || 0,
+      implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+      quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+      validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+    });
 
     if (unlockState === 'active') siteWideActive++;
     if (unlockState === 'locked') siteWideLocked++;
@@ -174,22 +174,54 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
   
   // Save page-specific recommendations
   let pageSpecificTotal = 0;
-  
+  let pageSpecificActive = 0;
+  let pageSpecificLocked = 0;
+
   for (const page of pagesWithRecs) {
     const pageRecs = pageSpecificRecs.slice(
-      pageSpecificTotal, 
+      pageSpecificTotal,
       pageSpecificTotal + recsPerPage
     );
-    
+
     for (const rec of pageRecs) {
+      // Calculate global index (site-wide + page-specific saved so far)
+      const globalIndex = limitedSiteWide.length + pageSpecificTotal;
+      const batchNumber = Math.floor(globalIndex / 5) + 1;
+      const unlockState = globalIndex < initialActive ? 'active' : 'locked';
+      const unlockedAt = globalIndex < initialActive ? new Date() : null;
+      const skipEnabledAt = globalIndex < initialActive ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) : null; // 5 days
+
+      if (unlockState === 'active') pageSpecificActive++;
+      if (unlockState === 'locked') pageSpecificLocked++;
+
+      // DEBUG: Log ALL page-specific recommendations
+      console.log('📦 PAGE-SPECIFIC Recommendation being saved:', {
+        title: rec.title?.substring(0, 50),
+        category: rec.category,
+        subfactor: rec.subfactor,
+        globalIndex,
+        batchNumber,
+        unlockState,
+        hasCustomizedImplementation: !!rec.customizedImplementation,
+        hasReadyToUseContent: !!rec.readyToUseContent,
+        hasImplementationNotes: !!rec.implementationNotes,
+        hasQuickWins: !!rec.quickWins,
+        hasValidationChecklist: !!rec.validationChecklist,
+        customizedImplLength: rec.customizedImplementation?.length || 0,
+        readyToUseLength: rec.readyToUseContent?.length || 0,
+        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
+        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
+        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+      });
+
       await db.query(
         `INSERT INTO scan_recommendations (
           scan_id, category, recommendation_text, priority,
           estimated_impact, estimated_effort, action_steps, findings, code_snippet,
-          unlock_state, batch_number, unlocked_at,
+          unlock_state, batch_number, unlocked_at, skip_enabled_at,
           recommendation_type, page_url, page_priority, impact_description,
           customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
         [
           scanId,
           rec.category || 'General',
@@ -200,9 +232,10 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           rec.actionSteps ? JSON.stringify(rec.actionSteps) : null,
           rec.finding || null,
           rec.codeSnippet || null,
-          'locked', // All page-specific start locked
-          1,
-          null,
+          unlockState, // Calculate based on global index
+          batchNumber, // Calculate based on global index
+          unlockedAt,
+          skipEnabledAt,
           'page-specific',
           page.url,
           page.priority || 1,
@@ -227,10 +260,28 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       [scanId, page.url, page.priority || 1, pageRecs.length, 0, false]
     );
   }
-  
-  console.log(`   ✅ Saved ${pageSpecificTotal} page-specific recommendations`);
-  
-  // Create user_progress record
+
+  console.log(`   ✅ Saved ${pageSpecificActive} active, ${pageSpecificLocked} locked page-specific`);
+
+  // Calculate batch unlock dates (every 5 days)
+  const now = new Date();
+  const batch1Date = now; // Immediate
+  const batch2Date = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // +5 days
+  const batch3Date = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000); // +10 days
+  const batch4Date = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // +15 days
+
+  const totalRecs = limitedSiteWide.length + pageSpecificTotal;
+  const totalBatches = Math.ceil(totalRecs / 5);
+
+  console.log(`   📅 Batch unlock schedule:`);
+  console.log(`      Batch 1: ${batch1Date.toLocaleDateString()} (now)`);
+  console.log(`      Batch 2: ${batch2Date.toLocaleDateString()} (+5 days)`);
+  if (totalBatches >= 3) console.log(`      Batch 3: ${batch3Date.toLocaleDateString()} (+10 days)`);
+  if (totalBatches >= 4) console.log(`      Batch 4: ${batch4Date.toLocaleDateString()} (+15 days)`);
+
+  // Create user_progress record with batch unlock dates
+  const totalActiveRecs = siteWideActive + pageSpecificActive;
+
   await db.query(
     `INSERT INTO user_progress (
       user_id, scan_id,
@@ -239,13 +290,16 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       current_batch, last_unlock_date, unlocks_today,
       site_wide_total, site_wide_completed, site_wide_active,
       page_specific_total, page_specific_completed,
-      site_wide_complete
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13)`,
+      site_wide_complete,
+      batch_1_unlock_date, batch_2_unlock_date,
+      batch_3_unlock_date, batch_4_unlock_date,
+      total_batches
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
     [
       userId,
       scanId,
-      limitedSiteWide.length + pageSpecificTotal, // Total
-      siteWideActive, // Active (first 5 site-wide)
+      totalRecs, // Total
+      totalActiveRecs, // Active (site-wide + page-specific)
       0, // Completed
       0, // Verified
       1, // Current batch
@@ -254,17 +308,28 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       siteWideActive, // Site-wide active
       pageSpecificTotal, // Page-specific total
       0, // Page-specific completed
-      false // Site-wide not complete yet
+      false, // Site-wide not complete yet
+      batch1Date, // Batch 1 unlock date (now)
+      totalBatches >= 2 ? batch2Date : null, // Batch 2 unlock date
+      totalBatches >= 3 ? batch3Date : null, // Batch 3 unlock date
+      totalBatches >= 4 ? batch4Date : null, // Batch 4 unlock date
+      totalBatches // Total number of batches
     ]
   );
-  
-  console.log(`   ✅ Progress tracking initialized`);
-  
+
+  console.log(`   ✅ Progress tracking initialized with ${totalBatches} batch${totalBatches > 1 ? 'es' : ''}`);
+  console.log(`   📊 Recommendations saved:`);
+  console.log(`      Site-wide: ${limitedSiteWide.length} (${siteWideActive} active)`);
+  console.log(`      Page-specific: ${pageSpecificTotal} (${pageSpecificActive} active)`);
+  console.log(`      Total: ${totalRecs} (${totalActiveRecs} active in batch 1)`);
+
   return {
     siteWideTotal: limitedSiteWide.length,
     siteWideActive,
     pageSpecificTotal,
-    totalRecommendations: limitedSiteWide.length + pageSpecificTotal
+    pageSpecificActive,
+    totalRecommendations: totalRecs,
+    totalActive: totalActiveRecs
   };
 }
 

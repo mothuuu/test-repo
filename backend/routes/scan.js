@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db/database');
 
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
+const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -31,9 +32,9 @@ const authenticateToken = (req, res, next) => {
 
 // Plan limits
 const PLAN_LIMITS = {
-  free: { scansPerMonth: 2, pagesPerScan: 1 },
-  diy: { scansPerMonth: 25, pagesPerScan: 5 },
-  pro: { scansPerMonth: 50, pagesPerScan: 25 }
+  free: { scansPerMonth: 2, pagesPerScan: 1, competitorScans: 0 },
+  diy: { scansPerMonth: 25, pagesPerScan: 5, competitorScans: 2 },
+  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 }
 };
 
 // V5 Rubric Category Weights
@@ -128,9 +129,11 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get user info
+    // Get user info (including industry preference and primary domain)
     const userResult = await db.query(
-      'SELECT plan, scans_used_this_month FROM users WHERE id = $1',
+      `SELECT plan, scans_used_this_month, industry, industry_custom,
+              primary_domain, competitor_scans_used_this_month, primary_domain_changed_at
+       FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -141,11 +144,66 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     const user = userResult.rows[0];
     const planLimits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
 
-    // Check quota
-    if (user.scans_used_this_month >= planLimits.scansPerMonth) {
+    // Log user's industry preference if set
+    if (user.industry) {
+      console.log(`👤 User industry preference: ${user.industry}${user.industry_custom ? ` (${user.industry_custom})` : ''}`);
+    }
+
+    // Extract domain from scan URL
+    const scanDomain = extractRootDomain(url);
+    if (!scanDomain) {
+      return res.status(400).json({ error: 'Unable to extract domain from URL' });
+    }
+
+    // Determine if this is a primary domain or competitor scan
+    let domainType = 'primary';
+    let isCompetitorScan = false;
+
+    if (!user.primary_domain) {
+      // First scan - set as primary domain
+      console.log(`🏠 Setting primary domain for user ${userId}: ${scanDomain}`);
+      await db.query(
+        'UPDATE users SET primary_domain = $1 WHERE id = $2',
+        [scanDomain, userId]
+      );
+      user.primary_domain = scanDomain;
+    } else if (!isPrimaryDomain(url, user.primary_domain)) {
+      // Different domain - this is a competitor scan
+      domainType = 'competitor';
+      isCompetitorScan = true;
+      console.log(`🔍 Competitor scan detected: ${scanDomain} (primary: ${user.primary_domain})`);
+
+      // Check competitor scan quota
+      const competitorScansUsed = user.competitor_scans_used_this_month || 0;
+      if (competitorScansUsed >= planLimits.competitorScans) {
+        return res.status(403).json({
+          error: 'Competitor scan quota exceeded',
+          message: `Your ${user.plan} plan allows ${planLimits.competitorScans} competitor scans per month. You've used ${competitorScansUsed}.`,
+          quota: {
+            type: 'competitor',
+            used: competitorScansUsed,
+            limit: planLimits.competitorScans
+          },
+          primaryDomain: user.primary_domain,
+          upgrade: user.plan === 'free' ? {
+            message: 'Upgrade to DIY to scan 2 competitors per month',
+            cta: 'Upgrade to DIY - $29/month',
+            ctaUrl: '/checkout.html?plan=diy'
+          } : user.plan === 'diy' ? {
+            message: 'Upgrade to Pro for 10 competitor scans per month',
+            cta: 'Upgrade to Pro - $99/month',
+            ctaUrl: '/checkout.html?plan=pro'
+          } : null
+        });
+      }
+    }
+
+    // Check primary scan quota (only for primary domain scans)
+    if (!isCompetitorScan && user.scans_used_this_month >= planLimits.scansPerMonth) {
       return res.status(403).json({
         error: 'Scan quota exceeded',
         quota: {
+          type: 'primary',
           used: user.scans_used_this_month,
           limit: planLimits.scansPerMonth
         }
@@ -155,34 +213,52 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // Validate page count for plan
     const pageCount = pages ? Math.min(pages.length, planLimits.pagesPerScan) : 1;
 
-    console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url}`);
+    console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url} [${domainType}]`);
 
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version
-      ) VALUES ($1, $2, $3, $4, $5) 
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5']
+      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain]
     );
 
     const scan = scanRecord.rows[0];
 
-    // Get existing user progress for this scan (if any)
-    const existingProgressResult = await db.query(
-      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
-      [userId, scan.id]
-    );
-    const userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+    // Get existing user progress for this scan (if any) - only for primary domain scans
+    let userProgress = null;
+    if (!isCompetitorScan) {
+      const existingProgressResult = await db.query(
+        `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+        [userId, scan.id]
+      );
+      userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
+    }
 
-    // Perform V5 rubric scan 🔥 REAL ENGINE!
-    const scanResult = await performV5Scan(url, user.plan, pages, userProgress);
+    // Perform appropriate scan type
+    let scanResult;
+    if (isCompetitorScan) {
+      // Lightweight competitor scan (scores only, no recommendations)
+      console.log(`🔍 Performing lightweight competitor scan (scores only)`);
+      scanResult = await performCompetitorScan(url);
+    } else {
+      // Full V5 rubric scan with recommendations
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
+    }
 
-    // Increment user's scan count AFTER successful scan
-    await db.query(
-      'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-      [userId]
-    );
+    // Increment appropriate scan count AFTER successful scan
+    if (isCompetitorScan) {
+      await db.query(
+        'UPDATE users SET competitor_scans_used_this_month = competitor_scans_used_this_month + 1 WHERE id = $1',
+        [userId]
+      );
+    } else {
+      await db.query(
+        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
+        [userId]
+      );
+    }
 
     // Update scan record with results
     await db.query(
@@ -218,18 +294,19 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       ]
     );
     
-    
+
     // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
+    // Skip saving recommendations for competitor scans
 let progressInfo = null;
-if (scanResult.recommendations && scanResult.recommendations.length > 0) {
+if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0) {
   // Prepare page priorities from request
-  const selectedPages = pages && pages.length > 0 
+  const selectedPages = pages && pages.length > 0
     ? pages.map((pageUrl, index) => ({
         url: pageUrl,
         priority: index + 1 // First page = priority 1, etc.
       }))
     : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
-  
+
   // Save with hybrid system
   progressInfo = await saveHybridRecommendations(
     scan.id,
@@ -239,11 +316,6 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
     scanResult.recommendations,
     user.plan
   );
-  
-  console.log(`   📊 Recommendations saved:`);
-  console.log(`      Site-wide: ${progressInfo.siteWideTotal} (${progressInfo.siteWideActive} active)`);
-  console.log(`      Page-specific: ${progressInfo.pageSpecificTotal} (all locked)`);
-  console.log(`      Total: ${progressInfo.totalRecommendations}`);
 }
 
     // 🔥 Save FAQ schema if available (DIY tier only)
@@ -271,16 +343,29 @@ if (scanResult.recommendations && scanResult.recommendations.length > 0) {
         status: 'completed',
         total_score: scanResult.totalScore,
         rubric_version: 'V5',
+        domain_type: domainType,
+        extracted_domain: scanDomain,
+        primary_domain: user.primary_domain,
         categories: scanResult.categories,
-        recommendations: scanResult.recommendations,
-        faq: scanResult.faq || null,
+        recommendations: scanResult.recommendations || [],
+        faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
-        created_at: scan.created_at
+        created_at: scan.created_at,
+        is_competitor: isCompetitorScan
       },
       quota: {
-        used: user.scans_used_this_month + 1,
-        limit: planLimits.scansPerMonth
-      }
+        primary: {
+          used: user.scans_used_this_month + (isCompetitorScan ? 0 : 1),
+          limit: planLimits.scansPerMonth
+        },
+        competitor: {
+          used: (user.competitor_scans_used_this_month || 0) + (isCompetitorScan ? 1 : 0),
+          limit: planLimits.competitorScans
+        }
+      },
+      message: isCompetitorScan
+        ? `Competitor scan complete. Scores only - recommendations not available for competitor domains.`
+        : null
     });
 
   } catch (error) {
@@ -354,13 +439,119 @@ router.get('/:id', authenticateToken, async (req, res) => {
         current_batch, last_unlock_date, unlocks_today,
         site_wide_total, site_wide_completed, site_wide_active,
         page_specific_total, page_specific_completed,
-        site_wide_complete
+        site_wide_complete,
+        batch_1_unlock_date, batch_2_unlock_date,
+        batch_3_unlock_date, batch_4_unlock_date,
+        total_batches
        FROM user_progress
        WHERE user_id = $1 AND scan_id = $2`,
       [userId, scanId]
     );
 
     const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
+
+    // Check if any batches should be auto-unlocked based on date
+    let batchesUnlocked = 0;
+    if (userProgress && userProgress.total_batches > 0) {
+      const now = new Date();
+      const batchDates = [
+        userProgress.batch_1_unlock_date,
+        userProgress.batch_2_unlock_date,
+        userProgress.batch_3_unlock_date,
+        userProgress.batch_4_unlock_date
+      ];
+
+      // Find which batch should be unlocked based on current date
+      let targetBatch = 1;
+      for (let i = 0; i < 4; i++) {
+        if (batchDates[i] && new Date(batchDates[i]) <= now) {
+          targetBatch = i + 1;
+        }
+      }
+
+      // If we should unlock more batches than currently unlocked
+      if (targetBatch > userProgress.current_batch) {
+        console.log(`🔓 Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
+
+        // Calculate how many recommendations to unlock
+        const recsPerBatch = 5;
+        const currentlyActive = userProgress.active_recommendations || 0;
+        const shouldBeActive = Math.min(targetBatch * recsPerBatch, userProgress.total_recommendations);
+        const toUnlock = shouldBeActive - currentlyActive;
+
+        if (toUnlock > 0) {
+          // Unlock the next batch of recommendations
+          await db.query(
+            `UPDATE scan_recommendations
+             SET unlock_state = 'active',
+                 unlocked_at = NOW(),
+                 skip_enabled_at = NOW() + INTERVAL '5 days'
+             WHERE scan_id = $1
+               AND unlock_state = 'locked'
+               AND batch_number <= $2
+             ORDER BY batch_number, id
+             LIMIT $3`,
+            [scanId, targetBatch, toUnlock]
+          );
+
+          // Update user progress
+          await db.query(
+            `UPDATE user_progress
+             SET current_batch = $1,
+                 active_recommendations = $2
+             WHERE user_id = $3 AND scan_id = $4`,
+            [targetBatch, shouldBeActive, userId, scanId]
+          );
+
+          batchesUnlocked = targetBatch - userProgress.current_batch;
+          console.log(`   ✅ Unlocked ${toUnlock} recommendations (batches ${userProgress.current_batch + 1}-${targetBatch})`);
+
+          // Refresh user progress
+          const updatedProgress = await db.query(
+            `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+            [userId, scanId]
+          );
+          Object.assign(userProgress, updatedProgress.rows[0]);
+        }
+      }
+    }
+
+    // Get updated recommendations after potential unlock
+    const updatedRecResult = await db.query(
+      `SELECT
+        id, category, recommendation_text, priority,
+        estimated_impact, estimated_effort, status,
+        action_steps, findings, code_snippet,
+        impact_description,
+        customized_implementation, ready_to_use_content,
+        implementation_notes, quick_wins, validation_checklist,
+        user_rating, user_feedback, implemented_at,
+        unlock_state, batch_number, unlocked_at, skipped_at,
+        recommendation_type, page_url
+       FROM scan_recommendations
+       WHERE scan_id = $1
+       ORDER BY batch_number, priority DESC, estimated_impact DESC`,
+      [scanId]
+    );
+
+    // Calculate next batch unlock info
+    let nextBatchUnlock = null;
+    if (userProgress && userProgress.current_batch < userProgress.total_batches) {
+      const nextBatchNum = userProgress.current_batch + 1;
+      const nextBatchDate = userProgress[`batch_${nextBatchNum}_unlock_date`];
+      if (nextBatchDate) {
+        const now = new Date();
+        const unlockDate = new Date(nextBatchDate);
+        const daysUntilUnlock = Math.ceil((unlockDate - now) / (1000 * 60 * 60 * 24));
+
+        nextBatchUnlock = {
+          batchNumber: nextBatchNum,
+          unlockDate: nextBatchDate,
+          daysRemaining: Math.max(0, daysUntilUnlock),
+          recommendationsInBatch: 5
+        };
+      }
+    }
 
     res.json({
       success: true,
@@ -376,9 +567,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
           trustAuthority: scan.trust_authority_score,
           voiceOptimization: scan.voice_optimization_score
         },
-        recommendations: recResult.rows,
+        recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
-        userProgress: userProgress // Include progress for DIY tier
+        userProgress: userProgress, // Include progress for DIY tier
+        nextBatchUnlock: nextBatchUnlock, // Next batch unlock info
+        batchesUnlocked: batchesUnlocked // How many batches were just unlocked
       }
     });
 
@@ -591,20 +784,125 @@ router.post('/:id/recommendation/:recId/feedback', authenticateToken, async (req
     updateValues.push(recId, scanId);
 
     await db.query(
-      `UPDATE scan_recommendations 
+      `UPDATE scan_recommendations
        SET ${updateFields.join(', ')}
        WHERE id = $${paramCount++} AND scan_id = $${paramCount}`,
       updateValues
     );
 
+    // If marking as implemented, update user progress
+    if (status === 'implemented') {
+      await db.query(
+        `UPDATE user_progress
+         SET completed_recommendations = completed_recommendations + 1
+         WHERE user_id = $1 AND scan_id = $2`,
+        [userId, scanId]
+      );
+    }
+
     res.json({
       success: true,
-      message: 'Feedback recorded for learning loop'
+      message: status === 'implemented'
+        ? 'Recommendation marked as implemented! Your progress has been updated.'
+        : 'Feedback recorded for learning loop'
     });
 
   } catch (error) {
     console.error('❌ Feedback error:', error);
     res.status(500).json({ error: 'Failed to record feedback' });
+  }
+});
+
+// ============================================
+// POST /api/scan/:id/recommendation/:recId/skip
+// Skip a recommendation (available after 5 days)
+// ============================================
+router.post('/:id/recommendation/:recId/skip', authenticateToken, async (req, res) => {
+  try {
+    const { id: scanId, recId } = req.params;
+    const userId = req.userId;
+
+    // Verify scan belongs to user
+    const scanCheck = await db.query(
+      'SELECT id FROM scans WHERE id = $1 AND user_id = $2',
+      [scanId, userId]
+    );
+
+    if (scanCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    // Get recommendation details
+    const recResult = await db.query(
+      `SELECT id, unlock_state, skip_enabled_at, skipped_at, status
+       FROM scan_recommendations
+       WHERE id = $1 AND scan_id = $2`,
+      [recId, scanId]
+    );
+
+    if (recResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+
+    const recommendation = recResult.rows[0];
+
+    // Check if already skipped
+    if (recommendation.skipped_at) {
+      return res.status(400).json({
+        error: 'Already skipped',
+        message: 'This recommendation has already been skipped.'
+      });
+    }
+
+    // Check if recommendation is locked
+    if (recommendation.unlock_state === 'locked') {
+      return res.status(403).json({
+        error: 'Recommendation not yet unlocked',
+        message: 'You can only skip unlocked recommendations.'
+      });
+    }
+
+    // Check if skip is enabled (5 days after unlock)
+    const now = new Date();
+    const skipEnabledAt = recommendation.skip_enabled_at ? new Date(recommendation.skip_enabled_at) : null;
+
+    if (skipEnabledAt && skipEnabledAt > now) {
+      const daysRemaining = Math.ceil((skipEnabledAt - now) / (1000 * 60 * 60 * 24));
+      return res.status(403).json({
+        error: 'Skip not yet available',
+        message: `You can skip this recommendation in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}.`,
+        skipEnabledAt: skipEnabledAt.toISOString(),
+        daysRemaining
+      });
+    }
+
+    // Mark as skipped
+    await db.query(
+      `UPDATE scan_recommendations
+       SET skipped_at = NOW(),
+           status = 'skipped'
+       WHERE id = $1 AND scan_id = $2`,
+      [recId, scanId]
+    );
+
+    // Update user progress (skipped counts as completed)
+    await db.query(
+      `UPDATE user_progress
+       SET completed_recommendations = completed_recommendations + 1
+       WHERE user_id = $1 AND scan_id = $2`,
+      [userId, scanId]
+    );
+
+    console.log(`⏭️  User ${userId} skipped recommendation ${recId} for scan ${scanId}`);
+
+    res.json({
+      success: true,
+      message: 'Recommendation skipped. It will appear in your "Skipped" tab.'
+    });
+
+  } catch (error) {
+    console.error('❌ Skip recommendation error:', error);
+    res.status(500).json({ error: 'Failed to skip recommendation' });
   }
 });
 
@@ -640,7 +938,60 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // 🔥 CORRECTED - PERFORM V5 RUBRIC SCAN
 // Now properly uses the V5RubricEngine class!
 // ============================================
-async function performV5Scan(url, plan, pages = null, userProgress = null) {
+/**
+ * Lightweight Competitor Scan - Scores Only
+ * Skips recommendation generation to save API tokens
+ */
+async function performCompetitorScan(url) {
+  console.log('🔬 Starting lightweight competitor scan for:', url);
+
+  try {
+    // Run V5 Rubric Engine for scoring only
+    console.log('📊 Running V5 Rubric Engine (scores only)...');
+    const engine = new V5RubricEngine(url, {});
+    const v5Results = await engine.analyze();
+
+    // Extract scores from category results
+    const categories = {
+      aiReadability: v5Results.categories.aiReadability.score || 0,
+      aiSearchReadiness: v5Results.categories.aiSearchReadiness.score || 0,
+      contentFreshness: v5Results.categories.contentFreshness.score || 0,
+      contentStructure: v5Results.categories.contentStructure.score || 0,
+      speedUX: v5Results.categories.speedUX.score || 0,
+      technicalSetup: v5Results.categories.technicalSetup.score || 0,
+      trustAuthority: v5Results.categories.trustAuthority.score || 0,
+      voiceOptimization: v5Results.categories.voiceOptimization.score || 0
+    };
+
+    const totalScore = v5Results.totalScore;
+
+    console.log(`✅ Competitor scan complete. Total score: ${totalScore}/100`);
+    console.log(`💰 Saved token costs by skipping recommendations`);
+
+    return {
+      totalScore,
+      categories,
+      recommendations: [], // No recommendations for competitor scans
+      faq: null, // No FAQ for competitor scans
+      upgrade: null,
+      industry: v5Results.industry || 'General',
+      detailedAnalysis: {
+        url,
+        scannedAt: new Date().toISOString(),
+        rubricVersion: 'V5',
+        categoryBreakdown: categories,
+        summary: 'Competitor scan - scores only',
+        metadata: v5Results.metadata
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Competitor scan error:', error);
+    throw new Error(`Competitor scan failed: ${error.message}`);
+  }
+}
+
+async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
 
   try {
@@ -670,6 +1021,12 @@ async function performV5Scan(url, plan, pages = null, userProgress = null) {
       subfactorScores[category] = data.subfactors;
     }
 
+    // Determine industry: Prioritize user-selected > auto-detected > fallback
+    const finalIndustry = userIndustry || v5Results.industry || 'General';
+    const industrySource = userIndustry ? 'user-selected' : (v5Results.industry ? 'auto-detected' : 'default');
+
+    console.log(`🏢 Industry for recommendations: ${finalIndustry} (${industrySource})`);
+
     // Step 2: Generate recommendations with user progress for DIY tier
     console.log('🤖 Generating recommendations...');
 
@@ -679,11 +1036,11 @@ async function performV5Scan(url, plan, pages = null, userProgress = null) {
         scanEvidence: scanEvidence
       },
       plan,
-      v5Results.industry || 'General',
+      finalIndustry,
       userProgress // Pass userProgress for progressive unlock
     );
 
-    console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${v5Results.industry})`);
+    console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
     console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
     return {

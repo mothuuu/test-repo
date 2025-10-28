@@ -27,38 +27,40 @@ const authenticateToken = (req, res, next) => {
 // POST /api/auth/signup - Create account
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    
+    const { email, password, name, industry, industryCustom } = req.body;
+
     // Validation
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
-    
+
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
-    
+
     // Check if user exists
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Email already registered' });
     }
-    
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
-    
+
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    
-    // Create user
+
+    // Create user with optional industry
     const result = await db.query(
-      `INSERT INTO users (email, password_hash, name, plan, verification_token, email_verified) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, email, name, plan, email_verified`,
-      [email, passwordHash, name || 'User', 'free', verificationToken, false]
+      `INSERT INTO users (email, password_hash, name, plan, verification_token, email_verified, industry, industry_custom)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, name, plan, email_verified, industry, industry_custom`,
+      [email, passwordHash, name || 'User', 'free', verificationToken, false, industry || null, industryCustom || null]
     );
-    
+
     const user = result.rows[0];
+
+    console.log(`✅ New user signup: ${email}${industry ? ` (Industry: ${industry})` : ''}`);
     
     // Generate JWT
     const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -73,7 +75,9 @@ router.post('/signup', async (req, res) => {
         email: user.email,
         name: user.name,
         plan: user.plan,
-        email_verified: user.email_verified
+        email_verified: user.email_verified,
+        industry: user.industry,
+        industry_custom: user.industry_custom
       },
       accessToken
     });
@@ -94,7 +98,11 @@ router.post('/login', async (req, res) => {
     
     // Get user
     const result = await db.query(
-      'SELECT id, email, password_hash, name, plan, email_verified FROM users WHERE email = $1',
+      `SELECT id, email, password_hash, name, plan, email_verified,
+              scans_used_this_month, competitor_scans_used_this_month,
+              primary_domain, primary_domain_changed_at,
+              industry, industry_custom
+       FROM users WHERE email = $1`,
       [email]
     );
     
@@ -123,7 +131,13 @@ router.post('/login', async (req, res) => {
         email: user.email,
         name: user.name,
         plan: user.plan,
-        email_verified: user.email_verified
+        email_verified: user.email_verified,
+        scans_used_this_month: user.scans_used_this_month || 0,
+        competitor_scans_used_this_month: user.competitor_scans_used_this_month || 0,
+        primary_domain: user.primary_domain,
+        primary_domain_changed_at: user.primary_domain_changed_at,
+        industry: user.industry,
+        industry_custom: user.industry_custom
       },
       accessToken
     });
@@ -144,7 +158,9 @@ router.post('/logout', authenticateToken, async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, email, name, plan, email_verified, scans_used_this_month, created_at, last_login 
+      `SELECT id, email, name, plan, email_verified, scans_used_this_month,
+              competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
+              industry, industry_custom, created_at, last_login
        FROM users WHERE id = $1`,
       [req.userId]
     );
