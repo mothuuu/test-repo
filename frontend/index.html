@@ -385,6 +385,47 @@
             const button = event.target.querySelector('button');
             const originalText = button.textContent;
 
+            // Create loading overlay
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'scanLoadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+
+            loadingOverlay.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">🔍</div>
+                    <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 10px;">Analyzing Your Website...</h3>
+                    <p style="color: #666; margin-bottom: 30px; font-size: 1rem;">
+                        Scans usually take between 2-3 minutes
+                    </p>
+                    <div style="width: 100%; height: 8px; background: #E5E5E5; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+                        <div id="scanProgressBar" style="height: 100%; background: linear-gradient(90deg, #00B9DA 0%, #7030A0 100%); width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p style="color: #999; font-size: 0.9rem;">Please wait while we analyze your AI visibility...</p>
+                </div>
+            `;
+
+            document.body.appendChild(loadingOverlay);
+
+            // Animate progress bar
+            const progressBar = document.getElementById('scanProgressBar');
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90; // Stop at 90% until complete
+                progressBar.style.width = progress + '%';
+            }, 500);
+
             try {
                 // Show loading state
                 button.disabled = true;
@@ -401,17 +442,25 @@
 
                 const data = await response.json();
 
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+
                 if (data.success) {
                     // Store guest scan results in sessionStorage
                     sessionStorage.setItem('guestScan', JSON.stringify(data));
-                    // Redirect to results page
-                    window.location.href = `guest-results.html`;
+                    // Brief delay to show 100% before redirect
+                    setTimeout(() => {
+                        window.location.href = `guest-results.html`;
+                    }, 500);
                 } else {
+                    document.body.removeChild(loadingOverlay);
                     alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
                     button.disabled = false;
                     button.textContent = originalText;
                 }
             } catch (error) {
+                clearInterval(progressInterval);
+                document.body.removeChild(loadingOverlay);
                 console.error('Scan error:', error);
                 alert('❌ Failed to analyze website. Please try again.');
                 button.disabled = false;
