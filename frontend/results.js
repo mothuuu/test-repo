@@ -963,7 +963,7 @@ async function markImplemented(recId) {
     console.log('Marking recommendation as implemented:', recId);
 
     if (!authToken) {
-        alert('You must be logged in to mark recommendations as implemented.');
+        showNotification('You must be logged in to mark recommendations as implemented.', 'info');
         return;
     }
 
@@ -991,15 +991,15 @@ async function markImplemented(recId) {
         const data = await response.json();
 
         if (data.success) {
-            alert('✅ Great work! This recommendation has been marked as implemented.\n\nYour progress is being tracked to help improve future recommendations.');
-            // Reload page to update UI
-            window.location.reload();
+            showNotification('Great work! This recommendation has been marked as implemented. Your progress is being tracked to help improve future recommendations.', 'success');
+            // Reload page after 2 seconds to update UI
+            setTimeout(() => window.location.reload(), 2000);
         } else {
-            alert(`❌ ${data.error || 'Failed to mark as implemented'}`);
+            showNotification(data.error || 'Failed to mark as implemented', 'error');
         }
     } catch (error) {
         console.error('Mark implemented error:', error);
-        alert('❌ Failed to mark recommendation as implemented. Please try again.');
+        showNotification('Failed to mark recommendation as implemented. Please try again.', 'error');
     }
 }
 
@@ -1007,7 +1007,7 @@ async function skipRecommendation(recId) {
     console.log('Skipping recommendation:', recId);
 
     if (!authToken) {
-        alert('You must be logged in to skip recommendations.');
+        showNotification('You must be logged in to skip recommendations.', 'info');
         return;
     }
 
@@ -1031,15 +1031,16 @@ async function skipRecommendation(recId) {
         const data = await response.json();
 
         if (data.success) {
-            alert('✅ ' + data.message);
-            // Reload page to update UI
-            window.location.reload();
+            showNotification(data.message, 'success');
+            // Reload page after 2 seconds to update UI
+            setTimeout(() => window.location.reload(), 2000);
         } else {
-            alert(`❌ ${data.error || 'Failed to skip recommendation'}\n${data.message || ''}`);
+            const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
+            showNotification(errorMsg, 'error');
         }
     } catch (error) {
         console.error('Skip error:', error);
-        alert('❌ Failed to skip recommendation. Please try again.');
+        showNotification('Failed to skip recommendation. Please try again.', 'error');
     }
 }
 
@@ -1106,6 +1107,53 @@ function showError(message) {
     `;
     document.body.appendChild(errorDiv);
     setTimeout(() => errorDiv.remove(), 5000);
+}
+
+// Show progress summary
+function showProgressSummary() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentScanId = urlParams.get('scanId');
+
+    if (!currentScanId) {
+        showNotification('No scan data available to show progress.', 'info');
+        return;
+    }
+
+    // Get the current scan data from the page
+    fetch(`${API_BASE_URL}/scan/${currentScanId}`, {
+        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success || !data.scan.userProgress) {
+            showNotification('Unable to load progress data. This feature is available for authenticated users with DIY or Pro plans.', 'info');
+            return;
+        }
+
+        const progress = data.scan.userProgress;
+        const total = progress.total_recommendations || 0;
+        const active = progress.active_recommendations || 0;
+        const completed = progress.completed_recommendations || 0;
+        const percentComplete = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const progressMessage = `
+Progress Summary:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Total Recommendations: ${total}
+🔓 Active Recommendations: ${active}
+✅ Completed: ${completed}
+📈 Progress: ${percentComplete}%
+
+Keep up the great work! Each implementation improves your AI visibility score.
+        `.trim();
+
+        showNotification(progressMessage, 'success');
+    })
+    .catch(error => {
+        console.error('Error loading progress:', error);
+        showNotification('Failed to load progress data. Please try again.', 'error');
+    });
 }
 
 // Initialize on page load
