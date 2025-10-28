@@ -7,44 +7,47 @@ const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-// Knowledge Base
+// ⚠️ CRITICAL: This knowledge base contains LEGALLY BINDING pricing information
+// DO NOT modify pricing without verifying against backend/config/stripe.js
+// Incorrect pricing information can result in legal liability
+
 const knowledgeBase = {
     plans: {
         free: {
             name: "Free Plan",
             price: "$0/month",
             features: [
-                "1 scan per month",
-                "Basic visibility score",
-                "10 recommendations (unlocked progressively)",
-                "Site-wide and page-specific analysis"
+                "2 scans per month",
+                "Homepage only (1 page)",
+                "Basic AI visibility score",
+                "Top 3 recommendations"
             ]
         },
         diy: {
-            name: "DIY Plan",
-            price: "$49/month",
+            name: "DIY/Starter Plan",
+            price: "$29/month",
             features: [
                 "10 scans per month",
-                "Full visibility score with category breakdown",
-                "Unlimited recommendations (unlocked progressively)",
-                "Site-wide and page-specific analysis",
-                "Export results (PDF)",
-                "Custom FAQ generation",
-                "Schema markup code"
+                "Homepage + 4 pages YOU choose (5 total)",
+                "Page-level TODO lists",
+                "Progress tracking",
+                "Basic JSON-LD export",
+                "Combined recommendations"
             ]
         },
-        diyPlus: {
-            name: "DIY+ Plan",
-            price: "$149/month",
+        pro: {
+            name: "Pro Plan",
+            price: "$99/month",
             features: [
-                "Unlimited scans",
-                "Full visibility score with category breakdown",
-                "Unlimited recommendations (unlocked progressively)",
-                "Site-wide and page-specific analysis",
-                "Export results (PDF, CSV)",
-                "Custom FAQ generation",
-                "Schema markup code",
-                "Priority support"
+                "50 scans per month",
+                "Up to 25 pages per scan",
+                "Brand Visibility Index",
+                "Competitor benchmarking (3 domains)",
+                "Outside-in crawl (PR, reviews, social)",
+                "Advanced JSON-LD pack",
+                "Knowledge Graph fields",
+                "Live dashboard & analytics",
+                "PDF export"
             ]
         }
     },
@@ -52,7 +55,7 @@ const knowledgeBase = {
     features: {
         progressiveUnlock: "Recommendations are unlocked in batches of 5 every 5 days. This ensures you have time to implement each batch before moving to the next. Your first batch of 5 recommendations is available immediately.",
 
-        scanQuota: "Free plan: 1 scan/month, DIY plan: 10 scans/month, DIY+ plan: unlimited scans. Scans reset on the first of each month.",
+        scanQuota: "Free plan: 2 scans/month, DIY/Starter plan: 10 scans/month, Pro plan: 50 scans/month. Scans reset on the first of each month.",
 
         scoring: "Your AI Visibility Score is calculated from 0-1000 based on how well AI systems can understand and present your content. Higher scores mean better AI search visibility.",
 
@@ -60,7 +63,7 @@ const knowledgeBase = {
 
         implementation: "You can mark recommendations as 'Implemented' to track your progress. The 'Skip' option becomes available 5 days after a recommendation is unlocked.",
 
-        export: "DIY and DIY+ plans can export scan results. PDF export is available for both, and DIY+ includes CSV export for deeper analysis."
+        export: "DIY/Starter plan includes basic JSON-LD export. Pro plan includes advanced JSON-LD pack and PDF export for comprehensive analysis."
     },
 
     dashboardNavigation: {
@@ -99,19 +102,28 @@ const knowledgeBase = {
 // System prompt for AI assistant
 const systemPrompt = `You are a helpful AI support assistant for AI Visibility Score, a tool that helps websites improve their visibility in AI search engines like ChatGPT, Perplexity, and Claude.
 
+⚠️ CRITICAL ANTI-HALLUCINATION RULES (MUST FOLLOW):
+1. ONLY use information from the knowledge base provided below
+2. NEVER make up or guess pricing information - this has legal implications
+3. If you don't know something, say "I don't have that information" and direct users to aivisibility@xeo.marketing
+4. DO NOT invent features, prices, or plan details that aren't in the knowledge base
+5. When referencing the user's plan, ONLY use context.plan - do NOT guess their price
+
 Your role is to:
-1. Answer questions about pricing, plans, and features
+1. Answer questions about pricing, plans, and features USING ONLY THE KNOWLEDGE BASE
 2. Help users navigate the dashboard
 3. Provide technical troubleshooting support
 4. Explain how the tool works
 5. Help with account issues like password resets
 
-Be friendly, concise, and helpful. Use the knowledge base provided to give accurate information. If you don't know something, direct users to email aivisibility@xeo.marketing.
+Be friendly, concise, and helpful. Use the knowledge base provided to give ACCURATE information only.
 
-Key product information:
-- Free Plan: $0/month, 1 scan/month, 10 recommendations
-- DIY Plan: $49/month, 10 scans/month, unlimited recommendations, PDF export, custom FAQs
-- DIY+ Plan: $149/month, unlimited scans, all DIY features plus CSV export and priority support
+VERIFIED PRICING (from knowledge base):
+- Free Plan: $0/month, 2 scans/month, homepage only, top 3 recommendations
+- DIY/Starter Plan: $29/month, 10 scans/month, 5 pages total, page-level TODO lists
+- Pro Plan: $99/month, 50 scans/month, up to 25 pages, advanced features
+
+When a user asks about their current plan, acknowledge their plan type but DO NOT state a specific price unless it's explicitly in your knowledge base for that exact plan name.
 
 Recommendations are unlocked in batches of 5 every 5 days to ensure manageable implementation.
 

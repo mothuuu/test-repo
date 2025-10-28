@@ -74,6 +74,11 @@
                     </button>
                 </div>
 
+                <!-- Legal Disclaimer -->
+                <div id="chat-disclaimer">
+                    ⚠️ AI assistant in training - responses may contain errors. For critical information, please contact <a href="mailto:aivisibility@xeo.marketing">support</a>.
+                </div>
+
                 <!-- Messages -->
                 <div id="chat-messages">
                     <!-- Messages will appear here -->
