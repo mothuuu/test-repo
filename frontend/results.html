@@ -155,6 +155,28 @@
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl">
+                <h3 id="modalTitle" class="text-xl font-bold">Confirm Action</h3>
+            </div>
+            <div class="p-6">
+                <p id="modalMessage" class="text-gray-700 text-lg leading-relaxed"></p>
+            </div>
+            <div class="px-6 pb-6 flex gap-3 justify-end">
+                <button onclick="closeConfirmModal(false)"
+                        class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button id="modalConfirmBtn" onclick="closeConfirmModal(true)"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-white mt-12 py-6 border-t">
         <div class="container mx-auto px-6 text-center text-gray-600">
@@ -169,6 +191,37 @@
 
     <script src="results.js"></script>
     <script>
+        // Custom confirmation modal
+        let modalResolve = null;
+
+        function showConfirmModal(title, message) {
+            return new Promise((resolve) => {
+                modalResolve = resolve;
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMessage').textContent = message;
+                const modal = document.getElementById('confirmModal');
+                modal.style.display = 'flex';
+                modal.classList.remove('hidden');
+            });
+        }
+
+        function closeConfirmModal(confirmed) {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            if (modalResolve) {
+                modalResolve(confirmed);
+                modalResolve = null;
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeConfirmModal(false);
+            }
+        });
+
         // Utility functions for expand/collapse all
         function expandAll() {
             document.querySelectorAll('[id^="content-"]').forEach(el => {

@@ -967,7 +967,12 @@ async function markImplemented(recId) {
         return;
     }
 
-    if (!confirm('Mark this recommendation as implemented? This will help track your progress and improve future recommendations.')) {
+    const confirmed = await showConfirmModal(
+        'Mark as Implemented',
+        'Mark this recommendation as implemented? This will help track your progress and improve future recommendations.'
+    );
+
+    if (!confirmed) {
         return;
     }
 
@@ -1006,7 +1011,12 @@ async function skipRecommendation(recId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to skip this recommendation? It will be available after 5 days from when it was unlocked.')) {
+    const confirmed = await showConfirmModal(
+        'Skip Recommendation',
+        'Are you sure you want to skip this recommendation? You can view skipped recommendations in the "Skipped" tab.'
+    );
+
+    if (!confirmed) {
         return;
     }
 
