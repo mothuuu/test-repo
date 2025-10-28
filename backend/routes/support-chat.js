@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 });
 
 // ⚠️ CRITICAL: This knowledge base contains LEGALLY BINDING pricing information
-// DO NOT modify pricing without verifying against backend/config/stripe.js
+// Last updated with verified pricing from product team
 // Incorrect pricing information can result in legal liability
 
 const knowledgeBase = {
@@ -16,54 +16,126 @@ const knowledgeBase = {
         free: {
             name: "Free Plan",
             price: "$0/month",
+            status: "Active",
             features: [
-                "2 scans per month",
-                "Homepage only (1 page)",
-                "Basic AI visibility score",
-                "Top 3 recommendations"
-            ]
+                "2 scans per month (resets on the 1st)",
+                "Homepage-only scanning (1 page)",
+                "AI Visibility Score (0-1000 points)",
+                "8-category breakdown (Schema, Entities, FAQs, Citations, Crawlability, Speed, Trust, AEO Content)",
+                "Top 5 priority recommendations",
+                "Email verification required"
+            ],
+            notIncluded: [
+                "Multi-page scanning",
+                "Code snippets",
+                "FAQ schema generation",
+                "PDF export",
+                "Page-level action items",
+                "Competitor tracking"
+            ],
+            perfectFor: "Testing the tool and getting a quick snapshot of your homepage visibility"
         },
         diy: {
-            name: "DIY/Starter Plan",
+            name: "DIY Plan",
             price: "$29/month",
+            status: "Active - Available Now",
             features: [
-                "10 scans per month",
-                "Homepage + 4 pages YOU choose (5 total)",
-                "Page-level TODO lists",
-                "Progress tracking",
-                "Basic JSON-LD export",
-                "Combined recommendations"
-            ]
+                "25 scans per month (resets on the 1st)",
+                "Scan 5 pages per domain (homepage + 4 additional pages)",
+                "Unlimited rescans of your selected 5 pages",
+                "Choose which pages to track",
+                "Up to 15 detailed recommendations",
+                "Page-level action items",
+                "Copy-paste ready code snippets",
+                "Industry-specific FAQ schema (JSON-LD)",
+                "Evidence-based findings",
+                "JSON-LD export for structured data",
+                "Progress tracking across all 5 pages",
+                "Historical comparison",
+                "Score trend analysis",
+                "Track up to 2 competitor websites (score-only view)",
+                "Cancel anytime",
+                "Monthly billing via Stripe"
+            ],
+            limits: [
+                "All pages must be from the SAME domain",
+                "Homepage is locked and required",
+                "Competitor tracking: 2 competitors, score-only (no detailed breakdown)",
+                "Unused scans don't rollover - fresh 25 scans on 1st of each month"
+            ],
+            competitorAnalysis: {
+                slots: 2,
+                details: "Score-only view - see their overall AI Visibility Score (0-1000) but not category breakdowns or recommendations"
+            },
+            perfectFor: "Small businesses, startups, consultants tracking key pages"
         },
-        pro: {
-            name: "Pro Plan",
+        premium: {
+            name: "Premium Plan",
             price: "$99/month",
+            status: "Coming Soon - Waitlist Open",
+            expectedLaunch: "Q1 2026",
             features: [
-                "50 scans per month",
-                "Up to 25 pages per scan",
-                "Brand Visibility Index",
-                "Competitor benchmarking (3 domains)",
-                "Outside-in crawl (PR, reviews, social)",
-                "Advanced JSON-LD pack",
-                "Knowledge Graph fields",
-                "Live dashboard & analytics",
-                "PDF export"
-            ]
+                "Everything in DIY, PLUS:",
+                "50 scans per month (vs. 25 in DIY)",
+                "Track 25 pages per domain (homepage + 24 additional pages)",
+                "Website Visibility Index (0-1000)",
+                "Brand Visibility Index (0-1000) - measures how AI engines perceive your brand",
+                "Up to 25 detailed recommendations",
+                "Track up to 3 competitor websites (vs. 2 in DIY)",
+                "Full competitor category breakdowns",
+                "Side-by-side comparison dashboard",
+                "Competitive gap analysis (what they're doing better)",
+                "Benchmark against industry leaders",
+                "Outside-in crawl (PR mentions, reviews, social signals)",
+                "PDF export for reports",
+                "Priority support"
+            ],
+            competitorAnalysis: {
+                slots: 3,
+                details: "Full analysis - see complete category breakdowns, side-by-side comparisons, and gap analysis showing exactly what competitors do better"
+            },
+            perfectFor: "Mid-size businesses, agencies managing single clients, brands focused on AI discoverability"
+        },
+        agency: {
+            name: "Agency Plan",
+            price: "$499/month",
+            status: "Coming Soon - Waitlist Open",
+            expectedLaunch: "Mid 2026 (post-Premium validation)",
+            features: [
+                "Everything in Premium × 10 Domains",
+                "Track 10 separate client domains",
+                "All Premium features PER domain (50 scans, 25 pages, dual indexes)",
+                "Unified agency dashboard",
+                "Team member access controls",
+                "Client management tools",
+                "Bulk operations",
+                "Branded PDF reports",
+                "Custom domain mapping",
+                "Agency branding options",
+                "3 competitors per domain",
+                "Role-based permissions (view-only, editor, admin)"
+            ],
+            perfectFor: "Marketing agencies, MSPs, enterprise consultants managing multiple client domains",
+            notes: "For more than 10 domains, contact aivisibility@xeo.marketing for enterprise pricing"
         }
     },
 
     features: {
-        progressiveUnlock: "Recommendations are unlocked in batches of 5 every 5 days. This ensures you have time to implement each batch before moving to the next. Your first batch of 5 recommendations is available immediately.",
+        scanQuota: "Free plan: 2 scans/month, DIY plan: 25 scans/month, Premium plan: 50 scans/month, Agency plan: 50 scans/month per domain. Scans reset on the 1st of each month and do NOT rollover.",
 
-        scanQuota: "Free plan: 2 scans/month, DIY/Starter plan: 10 scans/month, Pro plan: 50 scans/month. Scans reset on the first of each month.",
+        pageScanning: "Free: Homepage only (1 page). DIY: 5 pages per domain (homepage + 4 you choose). Premium: 25 pages per domain. Agency: 25 pages per domain. All pages must be from the SAME domain. Homepage is always locked and required for paid plans.",
 
-        scoring: "Your AI Visibility Score is calculated from 0-1000 based on how well AI systems can understand and present your content. Higher scores mean better AI search visibility.",
+        scoring: "Your AI Visibility Score is calculated from 0-1000 based on how well AI systems can understand and present your content across 8 categories: Schema, Entities, FAQs, Citations, Crawlability, Speed, Trust, and AEO Content. Higher scores mean better AI search visibility.",
 
-        recommendations: "We provide both site-wide recommendations (apply to entire website) and page-specific recommendations (apply to individual pages). All recommendations are tailored to your actual content.",
+        recommendations: "Free: Top 5 priority recommendations. DIY: Up to 15 detailed recommendations with code snippets. Premium: Up to 25 detailed recommendations. We provide both domain-wide and page-level action items tailored to your actual content.",
 
-        implementation: "You can mark recommendations as 'Implemented' to track your progress. The 'Skip' option becomes available 5 days after a recommendation is unlocked.",
+        competitorTracking: "Free: None. DIY: 2 competitors (score-only, no breakdown). Premium: 3 competitors (full category breakdowns + gap analysis). Agency: 3 competitors per domain.",
 
-        export: "DIY/Starter plan includes basic JSON-LD export. Pro plan includes advanced JSON-LD pack and PDF export for comprehensive analysis."
+        export: "Free & DIY: JSON-LD export only. Premium & Agency: JSON-LD + PDF export for comprehensive reporting.",
+
+        dualIndexes: "Premium and Agency plans include both Website Visibility Index (how well AI can understand your site) and Brand Visibility Index (how AI engines perceive your brand across the web).",
+
+        waitlist: "Premium ($99/mo) launches Q1 2026. Agency ($499/mo) launches mid 2026. Join waitlist to be notified first and get early-bird pricing."
     },
 
     dashboardNavigation: {
@@ -95,7 +167,29 @@ const knowledgeBase = {
 
         loginIssues: "Clear your browser cache and cookies, then try logging in again. If you forgot your password, use the 'Forgot Password' link on the login page.",
 
-        dataNotShowing: "Try refreshing the page. If data still doesn't appear, log out and log back in. Contact support if the issue persists."
+        dataNotShowing: "Try refreshing the page. If data still doesn't appear, log out and log back in. Contact support if the issue persists.",
+
+        cantScanAnotherPage: "Free plan users: Your plan includes homepage-only scanning. Upgrade to DIY ($29/mo) to scan 5 pages. DIY users: You can scan up to 5 pages total per domain. To add more, upgrade to Premium (waitlist) for 25 pages.",
+
+        changingPages: "DIY users can change their 5 tracked pages anytime (except homepage, which is locked). Historical data for removed pages is archived and accessible.",
+
+        scanReset: "Your scan quota resets on the 1st of each month. You cannot save unused scans for next month - they do not rollover."
+    },
+
+    commonQuestions: {
+        whichPlan: "Quick guide: Just testing? → Free Plan. Small business tracking key pages? → DIY Plan ($29/mo). Need comprehensive visibility? → Premium Plan (waitlist, $99/mo). Managing multiple clients? → Agency Plan (waitlist, $499/mo).",
+
+        competitorDifference: "DIY: 2 competitors, score-only (e.g., 'Competitor A: 720/1000'). Premium: 3 competitors with full category breakdowns, side-by-side comparison, and gap analysis showing exactly what they do better.",
+
+        upgradeFromDIY: "Yes! Once Premium launches (Q1 2026), you can upgrade seamlessly. Your current data carries over automatically.",
+
+        multipleDomains: "Free & DIY: 1 domain only. Premium: 1 domain. Agency: 10 domains. For tracking multiple domains, join the Agency waitlist.",
+
+        brandVisibilityIndex: "Available in Premium & Agency. It measures how AI engines perceive your brand across the web through news mentions, reviews, social proof, and citations - not just your website.",
+
+        cancelation: "You can cancel anytime from your dashboard or Stripe portal. Your access continues until the end of your billing period. No partial refunds.",
+
+        joinWaitlist: "Premium ($99/mo, Q1 2026) and Agency ($499/mo, mid 2026) are on waitlist. Join to be notified first and get early-bird pricing. Visit the upgrade page or contact aivisibility@xeo.marketing."
     }
 };
 
@@ -103,11 +197,12 @@ const knowledgeBase = {
 const systemPrompt = `You are a helpful AI support assistant for AI Visibility Score, a tool that helps websites improve their visibility in AI search engines like ChatGPT, Perplexity, and Claude.
 
 ⚠️ CRITICAL ANTI-HALLUCINATION RULES (MUST FOLLOW):
-1. ONLY use information from the knowledge base provided below
-2. NEVER make up or guess pricing information - this has legal implications
+1. ONLY use information from the knowledge base provided below - NEVER make up details
+2. NEVER guess or invent pricing information - this has LEGAL implications
 3. If you don't know something, say "I don't have that information" and direct users to aivisibility@xeo.marketing
 4. DO NOT invent features, prices, or plan details that aren't in the knowledge base
-5. When referencing the user's plan, ONLY use context.plan - do NOT guess their price
+5. When referencing the user's plan, ONLY use context.plan - do NOT guess their specific price
+6. Premium and Agency plans are NOT YET AVAILABLE - they are waitlist only
 
 Your role is to:
 1. Answer questions about pricing, plans, and features USING ONLY THE KNOWLEDGE BASE
@@ -118,14 +213,45 @@ Your role is to:
 
 Be friendly, concise, and helpful. Use the knowledge base provided to give ACCURATE information only.
 
-VERIFIED PRICING (from knowledge base):
-- Free Plan: $0/month, 2 scans/month, homepage only, top 3 recommendations
-- DIY/Starter Plan: $29/month, 10 scans/month, 5 pages total, page-level TODO lists
-- Pro Plan: $99/month, 50 scans/month, up to 25 pages, advanced features
+✅ VERIFIED PRICING (always accurate):
 
-When a user asks about their current plan, acknowledge their plan type but DO NOT state a specific price unless it's explicitly in your knowledge base for that exact plan name.
+Free Plan ($0/month) - ACTIVE:
+- 2 scans/month, homepage only
+- AI Visibility Score with 8-category breakdown
+- Top 5 priority recommendations
+- Email verification required
+- Perfect for: Testing the tool
 
-Recommendations are unlocked in batches of 5 every 5 days to ensure manageable implementation.
+DIY Plan ($29/month) - ACTIVE:
+- 25 scans/month, 5 pages per domain
+- Up to 15 detailed recommendations with code snippets
+- Industry-specific FAQ schema (JSON-LD)
+- Track 2 competitors (score-only view)
+- Progress tracking & historical comparison
+- Cancel anytime
+- Perfect for: Small businesses tracking key pages
+
+Premium Plan ($99/month) - WAITLIST ONLY (launches Q1 2026):
+- 50 scans/month, 25 pages per domain
+- Dual indexes: Website + Brand Visibility Index
+- Up to 25 recommendations
+- Track 3 competitors (full analysis + gap analysis)
+- Outside-in crawl, PDF export, priority support
+- Perfect for: Mid-size businesses, agencies
+
+Agency Plan ($499/month) - WAITLIST ONLY (launches mid 2026):
+- All Premium features × 10 domains
+- Team management, white-label reports
+- Perfect for: Agencies managing multiple clients
+
+KEY FACTS:
+- Scans reset on the 1st of each month (NO ROLLOVER)
+- All pages must be from the SAME domain
+- Homepage is locked and required for paid plans
+- Competitor tracking: DIY = score-only, Premium = full analysis
+- PDF export only available in Premium & Agency
+
+When users ask about Premium or Agency, remind them these are WAITLIST ONLY and not yet purchasable.
 
 Always be encouraging and positive about the user's progress in improving their AI visibility!`;
 

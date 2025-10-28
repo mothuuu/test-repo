@@ -9,32 +9,59 @@ The AI support chat provides pricing information to users. **Incorrect pricing c
 **Always verify pricing against:**
 - `/backend/config/stripe.js` - The definitive source for all pricing
 
-### Current Pricing (as of last update)
+### Current Pricing (Verified with Product Team)
 
-- **Free Plan**: $0/month
-  - 2 scans per month
+- **Free Plan**: $0/month ✅ ACTIVE
+  - 2 scans per month (resets on 1st)
   - Homepage only (1 page)
-  - Basic AI visibility score
-  - Top 3 recommendations
+  - AI Visibility Score (0-1000 points)
+  - 8-category breakdown
+  - Top 5 priority recommendations
+  - Email verification required
 
-- **DIY/Starter Plan**: $29/month
-  - 10 scans per month
-  - Homepage + 4 pages YOU choose (5 total)
-  - Page-level TODO lists
-  - Progress tracking
-  - Basic JSON-LD export
-  - Combined recommendations
+- **DIY Plan**: $29/month ✅ ACTIVE
+  - 25 scans per month (resets on 1st, NO ROLLOVER)
+  - 5 pages per domain (homepage + 4 you choose)
+  - Up to 15 detailed recommendations
+  - Page-level action items
+  - Copy-paste ready code snippets
+  - Industry-specific FAQ schema (JSON-LD)
+  - Track 2 competitors (score-only view)
+  - Progress tracking & historical comparison
+  - Cancel anytime
 
-- **Pro Plan**: $99/month
+- **Premium Plan**: $99/month ⏳ WAITLIST ONLY (launches Q1 2026)
   - 50 scans per month
-  - Up to 25 pages per scan
-  - Brand Visibility Index
-  - Competitor benchmarking (3 domains)
-  - Outside-in crawl (PR, reviews, social)
-  - Advanced JSON-LD pack
-  - Knowledge Graph fields
-  - Live dashboard & analytics
+  - 25 pages per domain (homepage + 24)
+  - Website Visibility Index + Brand Visibility Index (dual indexes)
+  - Up to 25 detailed recommendations
+  - Track 3 competitors (full analysis + gap analysis)
+  - Outside-in crawl (PR mentions, reviews, social)
   - PDF export
+  - Priority support
+
+- **Agency Plan**: $499/month ⏳ WAITLIST ONLY (launches mid 2026)
+  - All Premium features × 10 domains
+  - Unified agency dashboard
+  - Team member access controls
+  - Branded PDF reports
+  - Custom domain mapping
+  - 3 competitors per domain
+  - Role-based permissions
+
+### Key Facts to Remember
+
+- **Scans**: Reset on the 1st of each month, NO ROLLOVER
+- **Pages**: All pages must be from the SAME domain
+- **Homepage**: Always locked and required for paid plans
+- **Competitor Tracking**:
+  - Free: None
+  - DIY: 2 competitors (score-only view)
+  - Premium: 3 competitors (full analysis with gap analysis)
+  - Agency: 3 competitors per domain
+- **PDF Export**: Only Premium & Agency
+- **Dual Indexes**: Only Premium & Agency (Website + Brand Visibility Index)
+- **Waitlist Status**: Premium and Agency are NOT purchasable yet
 
 ### How to Update Pricing
 
@@ -67,11 +94,29 @@ A legal disclaimer is shown at the top of the chat widget:
 
 ### Testing After Pricing Changes
 
-After updating pricing:
-1. Test the AI chat on dashboard
-2. Ask: "What are the plans?"
-3. Ask: "Tell me about my current plan" (test with different plan types)
-4. Verify prices match `/backend/config/stripe.js` exactly
+After updating pricing, test these questions in the AI chat:
+
+**Basic Pricing Tests:**
+1. "What are the plans?" - Should show $0, $29, $99, $499 with correct details
+2. "Tell me about my current plan" - Test with Free, DIY, Premium (if available)
+3. "What's included in the DIY plan?" - Should list 25 scans, 5 pages, 15 recommendations
+4. "What's the difference between DIY and Premium?" - Should mention waitlist status
+
+**Competitor Tracking Tests:**
+5. "Can I track competitors?" - Should explain DIY = 2 (score-only), Premium = 3 (full)
+6. "What competitor analysis is included in DIY?" - Should clarify score-only view
+7. "How many competitors can I track?" - Should vary by plan
+
+**Edge Cases:**
+8. "Why can't I scan another page?" - Should explain plan limits and upgrade path
+9. "When do my scans reset?" - Should say 1st of month, no rollover
+10. "Can I see my competitor's recommendations?" - Should say No for DIY, Yes for Premium
+
+**Waitlist Tests:**
+11. "Can I buy Premium?" - Should say WAITLIST ONLY, not purchasable yet
+12. "When will Premium launch?" - Should say Q1 2026
+
+Verify all prices match `/backend/config/stripe.js` and product team specifications exactly.
 
 ### Support Contact
 
