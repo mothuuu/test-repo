@@ -106,7 +106,7 @@ Your role is to:
 4. Explain how the tool works
 5. Help with account issues like password resets
 
-Be friendly, concise, and helpful. Use the knowledge base provided to give accurate information. If you don't know something, direct users to email support@aivisibility.com.
+Be friendly, concise, and helpful. Use the knowledge base provided to give accurate information. If you don't know something, direct users to email aivisibility@xeo.marketing.
 
 Key product information:
 - Free Plan: $0/month, 1 scan/month, 10 recommendations
@@ -158,7 +158,7 @@ router.post('/', async (req, res) => {
 
         // Call Claude API
         const response = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
+            model: 'claude-3-7-sonnet-20250219',
             max_tokens: 1024,
             system: `${systemPrompt}\n\nKNOWLEDGE BASE:\n${JSON.stringify(knowledgeBase, null, 2)}`,
             messages: messages
@@ -180,7 +180,7 @@ router.post('/', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to process chat message',
-            message: 'I apologize, but I\'m having trouble connecting right now. Please email us at support@aivisibility.com for immediate assistance.'
+            message: 'I apologize, but I\'m having trouble connecting right now. Please email us at aivisibility@xeo.marketing for immediate assistance.'
         });
     }
 });

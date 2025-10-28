@@ -220,12 +220,12 @@
                     { role: 'assistant', content: data.message }
                 );
             } else {
-                addMessage('Sorry, I encountered an error. Please try again or email support@aivisibility.com', 'bot');
+                addMessage('Sorry, I encountered an error. Please try again or email aivisibility@xeo.marketing', 'bot');
             }
         } catch (error) {
             hideTypingIndicator();
             console.error('Chat error:', error);
-            addMessage('Sorry, I\'m having trouble connecting. Please try again or email support@aivisibility.com', 'bot');
+            addMessage('Sorry, I\'m having trouble connecting. Please try again or email aivisibility@xeo.marketing', 'bot');
         } finally {
             sendBtn.disabled = false;
         }
