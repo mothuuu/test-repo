@@ -23,7 +23,7 @@
         .hero-title {
             font-size: 52px;
             font-weight: 800;
-            color: #F31C7E;
+            color: #00B9DA;
             margin-bottom: 20px;
             line-height: 1.2;
             font-family: 'Inter', 'Poppins', -apple-system, sans-serif;
@@ -68,7 +68,7 @@
 
         .hero-button {
             padding: 18px 40px;
-            background: #F31C7E;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #FFFFFF;
             border: none;
             border-radius: 12px;
@@ -77,11 +77,12 @@
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .hero-button:hover {
             transform: translateY(-2px);
-            background: #D91869;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
 
         .hero-button:disabled {
@@ -238,7 +239,7 @@
             </h1>
             <div style="display: flex; gap: 20px; align-items: center;">
                 <a href="auth.html?mode=login" style="padding: 12px 28px; text-decoration: none; background: #F31C7E; color: #ffffff; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#D91869'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#F31C7E'">Sign In</a>
-                <a href="auth.html?mode=signup" style="padding: 12px 28px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Get Started</a>
+                <a href="auth.html?mode=signup" style="padding: 12px 28px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #FFFFFF; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Get Started</a>
             </div>
         </div>
 
