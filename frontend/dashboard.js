@@ -388,14 +388,30 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
     }
 });
 
-// Logout function
+// Logout functions
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        window.location.href = 'index.html';
-    }
+    // Show the styled logout modal instead of browser confirm
+    document.getElementById('logoutModal').style.display = 'flex';
 }
+
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
+
+function confirmLogout() {
+    // Perform actual logout
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    window.location.href = 'index.html';
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('logoutModal');
+    if (modal && event.target === modal) {
+        closeLogoutModal();
+    }
+});
 
 // Loading helpers
 function showLoading() {
