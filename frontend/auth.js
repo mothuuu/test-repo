@@ -5,21 +5,22 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
 
 // Industry categories for signup dropdown
 const INDUSTRY_CATEGORIES = [
-  { category: 'Marketing & Advertising', industries: ['Marketing Agency', 'MarTech / Marketing Technology', 'Media & Advertising', 'Public Relations', 'Content Marketing'] },
-  { category: 'Sales & Customer', industries: ['Sales Technology / CRM', 'Customer Support', 'Customer Success Platform'] },
-  { category: 'Finance & Banking', industries: ['Finance', 'FinTech / Financial Technology', 'Banking', 'Insurance', 'InsurTech / Insurance Technology', 'Accounting', 'Accounting Software', 'Wealth Management'] },
-  { category: 'Technology & Software', industries: ['SaaS / Cloud Software', 'AI / Machine Learning', 'Cybersecurity', 'Developer Tools / DevOps', 'Data & Analytics', 'IT Services', 'Computer Hardware & Software'] },
-  { category: 'Infrastructure & Cloud', industries: ['Data Infrastructure', 'Digital Infrastructure', 'Cloud Infrastructure', 'Network Infrastructure'] },
-  { category: 'Telecommunications', industries: ['Telecommunications', 'Telecom Software', 'Unified Communications', 'VoIP / Cloud Communications'] },
-  { category: 'Hardware & Equipment', industries: ['ICT Hardware', 'Computer Hardware', 'Networking Equipment', 'Enterprise Hardware'] },
-  { category: 'Healthcare', industries: ['Healthcare / Medical Services', 'HealthTech / Healthcare Technology', 'Telemedicine', 'Medical Devices'] },
-  { category: 'Ecommerce & Retail', industries: ['Ecommerce', 'Retail', 'Marketplace Platform'] },
-  { category: 'Real Estate & Construction', industries: ['Real Estate', 'PropTech / Property Technology', 'Construction', 'Construction Technology'] },
-  { category: 'Education', industries: ['Education / Training', 'EdTech / Education Technology', 'Corporate Training'] },
-  { category: 'Professional Services', industries: ['Legal / Law Firm', 'LegalTech / Legal Technology', 'Consulting', 'Accounting Services', 'HR / Recruiting', 'HR Technology / HCM'] },
-  { category: 'Operations & Logistics', industries: ['Manufacturing', 'Logistics / Supply Chain', 'Transportation', 'Warehouse Management'] },
-  { category: 'Utilities & Energy', industries: ['Utilities', 'Energy', 'Water & Wastewater', 'Power & Electric'] },
-  { category: 'Nonprofit & Government', industries: ['Nonprofit Organization', 'Government / Public Sector'] }
+  { category: 'Ecommerce & Retail', industries: ['Ecommerce', 'Marketplace Platform', 'Retail'] },
+  { category: 'Education', industries: ['Corporate Training', 'EdTech / Education Technology', 'Education / Training'] },
+  { category: 'Finance & Banking', industries: ['Accounting', 'Accounting Software', 'Banking', 'Finance', 'FinTech / Financial Technology', 'Insurance', 'InsurTech / Insurance Technology', 'Wealth Management'] },
+  { category: 'Hardware & Equipment', industries: ['Computer Hardware', 'Enterprise Hardware', 'ICT Hardware', 'Networking Equipment'] },
+  { category: 'Healthcare', industries: ['Healthcare / Medical Services', 'HealthTech / Healthcare Technology', 'Medical Devices', 'Telemedicine'] },
+  { category: 'Hospitality', industries: ['Hospitality'] },
+  { category: 'Infrastructure & Cloud', industries: ['Cloud Infrastructure', 'Data Infrastructure', 'Digital Infrastructure', 'Network Infrastructure'] },
+  { category: 'Marketing & Advertising', industries: ['Content Marketing', 'Marketing Agency', 'MarTech / Marketing Technology', 'Media & Advertising', 'Public Relations'] },
+  { category: 'Nonprofit & Government', industries: ['Government / Public Sector', 'Nonprofit Organization'] },
+  { category: 'Operations & Logistics', industries: ['Logistics / Supply Chain', 'Manufacturing', 'Transportation', 'Warehouse Management'] },
+  { category: 'Professional Services', industries: ['Accounting Services', 'Consulting', 'HR / Recruiting', 'HR Technology / HCM', 'IT Staffing', 'Legal / Law Firm', 'LegalTech / Legal Technology', 'Managed Service Providers (MSP)'] },
+  { category: 'Real Estate & Construction', industries: ['Construction', 'Construction Technology', 'PropTech / Property Technology', 'Real Estate'] },
+  { category: 'Sales & Customer', industries: ['Customer Success Platform', 'Customer Support', 'Sales Technology / CRM'] },
+  { category: 'Technology & Software', industries: ['AI / Machine Learning', 'Computer Hardware & Software', 'Cybersecurity', 'Data & Analytics', 'Developer Tools / DevOps', 'IT Services', 'SaaS / Cloud Software'] },
+  { category: 'Telecommunications', industries: ['Mobile Connectivity/eSIM', 'Telecom Reseller', 'Telecommunications', 'Telecom Software', 'Unified Communications', 'VoIP / Cloud Communications'] },
+  { category: 'Utilities & Energy', industries: ['Energy', 'Power & Electric', 'Utilities', 'Water & Wastewater'] }
 ];
 
 // UI Elements
