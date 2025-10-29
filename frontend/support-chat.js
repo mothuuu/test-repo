@@ -15,6 +15,7 @@
     let chatOpen = false;
     let conversationHistory = [];
     let userContext = {};
+    let firstTimeOpen = true; // Track if this is the first time chat is opened
 
     // Initialize chat widget when DOM is ready
     if (document.readyState === 'loading') {
@@ -142,6 +143,18 @@
             chatWindow.classList.add('show');
             chatBadge.classList.remove('show');
             document.getElementById('chat-input').focus();
+
+            // Show greeting message on first open
+            if (firstTimeOpen) {
+                firstTimeOpen = false;
+                setTimeout(() => {
+                    addMessage('Hello. I am XeoAI. How may I help you today?', 'bot', [
+                        'How do I improve my score?',
+                        'What plan should I choose?',
+                        'How do recommendations work?'
+                    ]);
+                }, 500); // Small delay for better UX
+            }
         } else {
             chatWindow.classList.remove('show');
         }
