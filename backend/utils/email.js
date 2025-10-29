@@ -313,6 +313,256 @@ async function sendPasswordResetEmail(email, token) {
   });
 }
 
+/**
+ * Send waitlist confirmation email to user
+ */
+async function sendWaitlistConfirmationEmail(email, name, plan) {
+  const planNames = {
+    premium: 'Premium Plan ($99/month)',
+    pro: 'Pro Plan ($99/month)',
+    agency: 'Agency Plan ($499/month)'
+  };
+
+  const planFeatures = {
+    premium: [
+      'Track 15 pages with unlimited scans',
+      '30+ detailed recommendations per scan',
+      'Advanced FAQ generation & schema',
+      'Competitive analysis reports',
+      'Priority email support',
+      'PDF & CSV export',
+      'API access for integrations'
+    ],
+    pro: [
+      'Track 15 pages with unlimited scans',
+      '30+ detailed recommendations per scan',
+      'Advanced FAQ generation & schema',
+      'Competitive analysis reports',
+      'Priority email support',
+      'PDF & CSV export',
+      'API access for integrations'
+    ],
+    agency: [
+      'Track 50 pages across multiple domains',
+      'White-label reporting',
+      'Client management dashboard',
+      'Advanced analytics & insights',
+      'Dedicated account manager',
+      'Custom integrations',
+      'Reseller pricing available',
+      'Priority phone & email support'
+    ]
+  };
+
+  const planName = planNames[plan] || 'Premium Plan';
+  const features = planFeatures[plan] || planFeatures.premium;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+        .content { background: #f9f9f9; padding: 40px 30px; }
+        .plan-box { background: white; border: 2px solid #00B9DA; border-radius: 10px; padding: 25px; margin: 25px 0; }
+        .plan-name { font-size: 24px; font-weight: bold; color: #00B9DA; margin-bottom: 15px; }
+        .features { list-style: none; padding: 0; margin: 20px 0; }
+        .features li { padding: 10px 0; padding-left: 30px; position: relative; }
+        .features li:before { content: "✓"; position: absolute; left: 0; color: #00B9DA; font-weight: bold; font-size: 18px; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; padding: 20px; }
+        .cta-box { background: #e7f3ff; border-left: 4px solid #00B9DA; padding: 20px; margin: 25px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="badge">COMING SOON</div>
+          <h1 style="margin: 0; font-size: 32px;">You're on the Waitlist! 🎉</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${name},</p>
+          <p>Thank you for your interest in the <strong>${planName}</strong>! We're excited to have you on our waitlist.</p>
+
+          <div class="plan-box">
+            <div class="plan-name">${planName}</div>
+            <ul class="features">
+              ${features.map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+          </div>
+
+          <div class="cta-box">
+            <h3 style="margin-top: 0; color: #00B9DA;">What happens next?</h3>
+            <p style="margin-bottom: 8px;">✓ We'll email you as soon as the ${plan} plan launches</p>
+            <p style="margin-bottom: 8px;">✓ You'll get exclusive early-bird pricing</p>
+            <p style="margin-bottom: 0;">✓ Priority onboarding and dedicated support</p>
+          </div>
+
+          <p>In the meantime, if you have any questions or would like to learn more, feel free to reply to this email.</p>
+
+          <p>Best regards,<br>
+          The AI Visibility Score Team<br>
+          <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA;">aivisibility@xeo.marketing</a></p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} AI Visibility Score by Xeo Marketing. All rights reserved.</p>
+          <p><a href="https://xeo.marketing" style="color: #00B9DA; text-decoration: none;">xeo.marketing</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+    You're on the Waitlist!
+
+    Hi ${name},
+
+    Thank you for your interest in the ${planName}! We're excited to have you on our waitlist.
+
+    What's included in ${planName}:
+    ${features.map(f => `• ${f}`).join('\n')}
+
+    What happens next?
+    ✓ We'll email you as soon as the ${plan} plan launches
+    ✓ You'll get exclusive early-bird pricing
+    ✓ Priority onboarding and dedicated support
+
+    In the meantime, if you have any questions or would like to learn more, feel free to reply to this email.
+
+    Best regards,
+    The AI Visibility Score Team
+    aivisibility@xeo.marketing
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject: `You're on the ${planName} Waitlist! 🎉`,
+    html,
+    text
+  });
+}
+
+/**
+ * Send admin notification email about new waitlist signup
+ */
+async function sendWaitlistAdminNotification(waitlistData) {
+  const { name, email, plan, company, website, currentPlan, message } = waitlistData;
+
+  const planNames = {
+    premium: 'Premium Plan ($99/month)',
+    pro: 'Pro Plan ($99/month)',
+    agency: 'Agency Plan ($499/month)'
+  };
+
+  const planName = planNames[plan] || plan;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #F31C7E 0%, #7030A0 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .info-box { background: white; border-left: 4px solid #F31C7E; padding: 20px; margin: 20px 0; }
+        .info-row { display: flex; margin-bottom: 12px; }
+        .info-label { font-weight: bold; min-width: 150px; color: #7030A0; }
+        .info-value { color: #333; }
+        .message-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">🚀 New Waitlist Signup!</h1>
+        </div>
+        <div class="content">
+          <p><strong>Someone just joined the ${planName} waitlist!</strong></p>
+
+          <div class="info-box">
+            <div class="info-row">
+              <div class="info-label">Name:</div>
+              <div class="info-value">${name}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Email:</div>
+              <div class="info-value"><a href="mailto:${email}">${email}</a></div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Plan:</div>
+              <div class="info-value">${planName}</div>
+            </div>
+            ${company ? `
+              <div class="info-row">
+                <div class="info-label">Company:</div>
+                <div class="info-value">${company}</div>
+              </div>
+            ` : ''}
+            ${website ? `
+              <div class="info-row">
+                <div class="info-label">Website:</div>
+                <div class="info-value"><a href="${website}" target="_blank">${website}</a></div>
+              </div>
+            ` : ''}
+            ${currentPlan ? `
+              <div class="info-row">
+                <div class="info-label">Current Plan:</div>
+                <div class="info-value">${currentPlan}</div>
+              </div>
+            ` : ''}
+            <div class="info-row">
+              <div class="info-label">Joined:</div>
+              <div class="info-value">${new Date().toLocaleString()}</div>
+            </div>
+          </div>
+
+          ${message ? `
+            <div class="message-box">
+              <strong>Their message:</strong>
+              <p style="margin: 10px 0 0 0;">${message}</p>
+            </div>
+          ` : ''}
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            <strong>Action:</strong> Consider reaching out to high-value prospects or those with specific questions.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+    New Waitlist Signup!
+
+    Someone just joined the ${planName} waitlist!
+
+    Details:
+    Name: ${name}
+    Email: ${email}
+    Plan: ${planName}
+    ${company ? `Company: ${company}` : ''}
+    ${website ? `Website: ${website}` : ''}
+    ${currentPlan ? `Current Plan: ${currentPlan}` : ''}
+    Joined: ${new Date().toLocaleString()}
+
+    ${message ? `Their message:\n${message}` : ''}
+
+    Action: Consider reaching out to high-value prospects or those with specific questions.
+  `;
+
+  return await sendEmail({
+    to: 'aivisibility@xeo.marketing',
+    subject: `🚀 New ${planName} Waitlist Signup - ${name}`,
+    html,
+    text
+  });
+}
+
 // Export all functions
 module.exports = {
   sendEmail,
@@ -320,5 +570,7 @@ module.exports = {
   sendWithMailgun,
   sendWithSES,
   sendVerificationEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendWaitlistConfirmationEmail,
+  sendWaitlistAdminNotification
 };

@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db/database');
+const { sendWaitlistConfirmationEmail, sendWaitlistAdminNotification } = require('../utils/email');
 const router = express.Router();
 
 // Middleware to verify JWT token (optional for waitlist)
@@ -86,8 +87,31 @@ router.post('/join', authenticateTokenOptional, async (req, res) => {
 
     console.log(`✅ New waitlist signup: ${email} for ${plan} plan`);
 
-    // TODO: Send confirmation email
-    // await sendWaitlistConfirmationEmail(email, name, plan);
+    // Send confirmation email to user
+    try {
+      await sendWaitlistConfirmationEmail(email, name, plan);
+      console.log(`📧 Confirmation email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    // Send admin notification email
+    try {
+      await sendWaitlistAdminNotification({
+        name,
+        email,
+        plan,
+        company,
+        website,
+        currentPlan,
+        message
+      });
+      console.log(`📧 Admin notification sent to aivisibility@xeo.marketing`);
+    } catch (emailError) {
+      console.error('Failed to send admin notification:', emailError);
+      // Don't fail the request if email fails
+    }
 
     res.status(201).json({
       success: true,
