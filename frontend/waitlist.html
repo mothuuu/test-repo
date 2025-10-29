@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Waitlist - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .waitlist-container {
+            max-width: 700px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        .waitlist-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .waitlist-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .waitlist-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .plan-details {
+            background: linear-gradient(135deg, rgba(0,185,218,0.1), rgba(112,48,160,0.1));
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #00B9DA;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #00B9DA;
+            margin: 10px 0;
+        }
+
+        .plan-price span {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .plan-features li {
+            padding: 12px 0;
+            font-size: 1.05rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-features li::before {
+            content: "✓";
+            color: #00B9DA;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #E5E5E5;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message,
+        .error-message {
+            display: none;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #00B9DA;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .waitlist-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+
+            .plan-price {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header" style="padding: 30px 0; text-align: center;">
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">
+                AI Visibility Score
+            </h1>
+        </div>
+
+        <div class="waitlist-container">
+            <div class="waitlist-header">
+                <div class="waitlist-icon">🚀</div>
+                <span class="waitlist-badge" id="planBadge">COMING SOON</span>
+                <h2 id="planTitle" style="font-size: 2.5rem; font-weight: bold; color: #333; margin-bottom: 10px;">
+                    Join the Waitlist
+                </h2>
+                <p style="color: #666; font-size: 1.1rem;">
+                    Be the first to know when we launch advanced features
+                </p>
+            </div>
+
+            <div id="successMessage" class="success-message"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <div class="plan-details" id="planDetails">
+                <!-- Plan details will be inserted here -->
+            </div>
+
+            <form id="waitlistForm">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required placeholder="john@company.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="company">Company Name</label>
+                    <input type="text" id="company" name="company" placeholder="Your Company">
+                </div>
+
+                <div class="form-group">
+                    <label for="website">Website URL</label>
+                    <input type="url" id="website" name="website" placeholder="https://yoursite.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="currentPlan">Current Plan</label>
+                    <select id="currentPlan" name="currentPlan">
+                        <option value="">Select your current plan</option>
+                        <option value="free">Free Plan</option>
+                        <option value="diy">DIY Starter ($29/month)</option>
+                        <option value="not-customer">Not a customer yet</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">What features are you most excited about? (Optional)</label>
+                    <textarea id="message" name="message" placeholder="Tell us what you're looking for..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Join Waitlist - Get Early Access
+                </button>
+            </form>
+
+            <div class="info-box">
+                <p><strong>What happens next?</strong></p>
+                <p>✓ We'll email you when the plan launches</p>
+                <p>✓ You'll get exclusive early-bird pricing</p>
+                <p>✓ Priority onboarding and support</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="dashboard.html" style="color: #00B9DA; text-decoration: none; font-weight: 600;">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+
+        // Get plan from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'premium';
+
+        // Plan configurations
+        const planConfigs = {
+            premium: {
+                title: 'Premium Plan Waitlist',
+                badge: 'COMING SOON - PREMIUM',
+                price: '$99',
+                period: '/month',
+                features: [
+                    'Track 15 pages with unlimited scans',
+                    '30+ detailed recommendations per scan',
+                    'Advanced FAQ generation & schema',
+                    'Competitive analysis reports',
+                    'Priority email support',
+                    'PDF & CSV export',
+                    'API access for integrations'
+                ]
+            },
+            pro: {
+                title: 'Pro Plan Waitlist',
+                badge: 'COMING SOON - PRO',
+                price: '$99',
+                period: '/month',
+                features: [
+                    'Track 15 pages with unlimited scans',
+                    '30+ detailed recommendations per scan',
+                    'Advanced FAQ generation & schema',
+                    'Competitive analysis reports',
+                    'Priority email support',
+                    'PDF & CSV export',
+                    'API access for integrations'
+                ]
+            },
+            agency: {
+                title: 'Agency Plan Waitlist',
+                badge: 'COMING SOON - AGENCY',
+                price: '$299',
+                period: '/month',
+                features: [
+                    'Track 50 pages across multiple domains',
+                    'White-label reporting',
+                    'Client management dashboard',
+                    'Advanced analytics & insights',
+                    'Dedicated account manager',
+                    'Custom integrations',
+                    'Reseller pricing available',
+                    'Priority phone & email support'
+                ]
+            }
+        };
+
+        // Set plan details
+        const config = planConfigs[plan] || planConfigs.premium;
+        document.getElementById('planTitle').textContent = config.title;
+        document.getElementById('planBadge').textContent = config.badge;
+
+        document.getElementById('planDetails').innerHTML = `
+            <div style="text-align: center;">
+                <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 10px;">
+                    ${plan === 'agency' ? 'Agency Plan' : plan === 'pro' ? 'Pro Plan' : 'Premium Plan'}
+                </h3>
+                <div class="plan-price">${config.price}<span>${config.period}</span></div>
+            </div>
+            <ul class="plan-features">
+                ${config.features.map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+        `;
+
+        // Auto-fill email from localStorage if user is logged in
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        if (userData.email) {
+            document.getElementById('email').value = userData.email;
+            document.getElementById('currentPlan').value = userData.plan || 'free';
+        }
+
+        // Handle form submission
+        document.getElementById('waitlistForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                plan: plan,
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                company: document.getElementById('company').value.trim(),
+                website: document.getElementById('website').value.trim(),
+                currentPlan: document.getElementById('currentPlan').value,
+                message: document.getElementById('message').value.trim()
+            };
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Joining waitlist...';
+
+            try {
+                const authToken = localStorage.getItem('authToken');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/waitlist/join`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccess('🎉 Success! You\'re on the waitlist. We\'ll email you when we launch!');
+                    e.target.reset();
+
+                    // Redirect to dashboard after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to join waitlist');
+                }
+            } catch (error) {
+                console.error('Waitlist error:', error);
+                showError(error.message || 'Failed to join waitlist. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+
+    <!-- AI Support Chat Widget -->
+    <script src="support-chat.js"></script>
+</body>
+</html>
