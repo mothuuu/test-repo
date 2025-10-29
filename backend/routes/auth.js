@@ -38,6 +38,18 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
+    // Strong password validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      return res.status(400).json({
+        error: 'Password must include uppercase, lowercase, number, and special character'
+      });
+    }
+
     // Check if user exists
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {

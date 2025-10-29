@@ -151,8 +151,20 @@ signupForm.addEventListener('submit', async (e) => {
     return;
   }
 
+  // Strong password validation
   if (password.length < 8) {
     showError('Password must be at least 8 characters');
+    return;
+  }
+
+  // Check for strong password requirements
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+
+  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+    showError('Password must include uppercase, lowercase, number, and special character');
     return;
   }
 
