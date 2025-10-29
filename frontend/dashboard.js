@@ -94,6 +94,11 @@ function updateUserInfo() {
     if (user.plan === 'free') {
         document.getElementById('upgradeBanner').style.display = 'block';
     }
+
+    // Show waitlist banner for DIY users
+    if (user.plan === 'diy') {
+        document.getElementById('waitlistBanner').style.display = 'block';
+    }
 }
 
 // Update quota display
