@@ -287,13 +287,38 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
 
         // Check competitor quota
         if (competitorLimit === 0) {
-            const proceed = confirm(
-                `⚠️ COMPETITOR SCAN DETECTED\n\n` +
-                `You're trying to scan: ${scanDomain}\n` +
-                `Your primary domain: ${user.primary_domain}\n\n` +
-                `Free plan doesn't include competitor scans.\n\n` +
-                `Upgrade to DIY ($29/month) for 2 competitor scans per month, or Pro ($99/month) for 10 competitor scans.\n\n` +
-                `Click OK to view upgrade options.`
+            const content = `
+                <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <p style="margin-bottom: 12px; color: #333; font-size: 1rem; line-height: 1.6;">
+                        <strong style="color: #00B9DA;">Scanning:</strong> ${scanDomain}
+                    </p>
+                    <p style="margin-bottom: 0; color: #333; font-size: 1rem; line-height: 1.6;">
+                        <strong style="color: #7030A0;">Your Primary:</strong> ${user.primary_domain}
+                    </p>
+                </div>
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404; font-weight: 600;">
+                        ❌ Free plan doesn't include competitor scans
+                    </p>
+                </div>
+                <div style="text-align: left; color: #4a5568; font-size: 0.95rem; line-height: 1.6;">
+                    <p style="margin-bottom: 15px;"><strong>Upgrade Options:</strong></p>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 10px;">
+                        <p style="margin: 0;"><strong style="color: #00B9DA;">DIY Plan - $29/month</strong></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">✓ 2 competitor scans per month</p>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                        <p style="margin: 0;"><strong style="color: #7030A0;">Pro Plan - $99/month</strong></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">✓ 10 competitor scans per month</p>
+                    </div>
+                </div>
+            `;
+
+            const proceed = await showCompetitorModal(
+                'Competitor Scan Detected',
+                content,
+                'View Upgrade Options',
+                'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
             );
 
             if (proceed) {
@@ -303,32 +328,88 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
         }
 
         if (competitorUsed >= competitorLimit) {
-            const proceed = confirm(
-                `⚠️ COMPETITOR SCAN QUOTA EXCEEDED\n\n` +
-                `You've used all ${competitorLimit} competitor scans this month (${competitorUsed}/${competitorLimit}).\n\n` +
-                user.plan === 'diy'
-                    ? `Upgrade to Pro ($99/month) for 10 competitor scans per month.\n\nClick OK to upgrade.`
-                    : `Your quota will reset next month.\n\nClick OK to return to dashboard.`
+            const isDiy = user.plan === 'diy';
+            const content = `
+                <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
+                    <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
+                        📊 Quota Exceeded
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #7f1d1d; font-size: 1rem;">
+                        You've used all <strong>${competitorLimit}</strong> competitor scans this month
+                    </p>
+                    <p style="margin: 5px 0 0 0; color: #7f1d1d; font-size: 0.95rem;">
+                        (${competitorUsed}/${competitorLimit} used)
+                    </p>
+                </div>
+                ${isDiy ? `
+                    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; text-align: left;">
+                        <p style="margin: 0 0 15px 0; color: #0c4a6e; font-weight: 600; font-size: 1.05rem;">
+                            🚀 Upgrade to Pro Plan
+                        </p>
+                        <div style="color: #075985; font-size: 0.95rem; line-height: 1.6;">
+                            <p style="margin: 0 0 10px 0;">✓ 10 competitor scans per month</p>
+                            <p style="margin: 0 0 10px 0;">✓ 100 primary scans per month</p>
+                            <p style="margin: 0 0 10px 0;">✓ 10 pages per scan</p>
+                            <p style="margin: 0; font-weight: 600; color: #0c4a6e;">Only $99/month</p>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: center;">
+                        <p style="margin: 0; color: #4a5568; font-size: 1rem;">
+                            Your quota will reset next month
+                        </p>
+                    </div>
+                `}
+            `;
+
+            const proceed = await showCompetitorModal(
+                'Competitor Scan Quota Exceeded',
+                content,
+                isDiy ? 'Upgrade to Pro' : 'OK',
+                isDiy ? 'linear-gradient(135deg, #7030A0 0%, #00B9DA 100%)' : '#6b7280'
             );
 
-            if (proceed && user.plan === 'diy') {
+            if (proceed && isDiy) {
                 window.location.href = 'checkout.html?plan=pro';
             }
             return;
         }
 
         // Warn user about competitor scan limitations
-        const proceed = confirm(
-            `⚠️ COMPETITOR SCAN\n\n` +
-            `You're scanning: ${scanDomain} (competitor)\n` +
-            `Your primary domain: ${user.primary_domain}\n\n` +
-            `Competitor scans provide:\n` +
-            `✅ AI Visibility Scores\n` +
-            `✅ Category breakdown\n` +
-            `❌ NO recommendations\n` +
-            `❌ NO implementation guidance\n\n` +
-            `Quota: ${competitorUsed + 1} / ${competitorLimit} competitor scans used\n\n` +
-            `Continue with competitor scan?`
+        const content = `
+            <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <p style="margin-bottom: 12px; color: #333; font-size: 1rem; line-height: 1.6;">
+                    <strong style="color: #00B9DA;">Scanning:</strong> ${scanDomain} <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">COMPETITOR</span>
+                </p>
+                <p style="margin-bottom: 0; color: #333; font-size: 1rem; line-height: 1.6;">
+                    <strong style="color: #7030A0;">Your Primary:</strong> ${user.primary_domain}
+                </p>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 2px solid #e5e7eb; margin-bottom: 15px;">
+                <p style="margin: 0 0 15px 0; font-weight: 600; color: #1a202c; font-size: 1.05rem;">
+                    What You'll Get:
+                </p>
+                <div style="color: #4a5568; font-size: 0.95rem; line-height: 1.8;">
+                    <p style="margin: 0 0 8px 0;">✅ AI Visibility Scores</p>
+                    <p style="margin: 0 0 8px 0;">✅ Category breakdown</p>
+                    <p style="margin: 0 0 8px 0; color: #dc2626; font-weight: 600;">❌ NO recommendations</p>
+                    <p style="margin: 0; color: #dc2626; font-weight: 600;">❌ NO implementation guidance</p>
+                </div>
+            </div>
+
+            <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 8px;">
+                <p style="margin: 0; color: #1e40af; font-weight: 600;">
+                    📊 Quota: ${competitorUsed + 1} / ${competitorLimit} competitor scans will be used
+                </p>
+            </div>
+        `;
+
+        const proceed = await showCompetitorModal(
+            'Competitor Scan',
+            content,
+            'Continue Scan',
+            'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)'
         );
 
         if (!proceed) {
@@ -338,7 +419,38 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
 
     // Check primary scan quota (only for primary domain scans)
     if (!isCompetitorScan && quota.used >= quota.limit) {
-        alert(`You've reached your primary scan limit (${quota.limit}/month). Please upgrade to continue.`);
+        const content = `
+            <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
+                <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
+                    📊 Scan Limit Reached
+                </p>
+                <p style="margin: 10px 0 0 0; color: #7f1d1d; font-size: 1rem;">
+                    You've used all <strong>${quota.limit}</strong> scans this month
+                </p>
+            </div>
+            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; text-align: left;">
+                <p style="margin: 0 0 15px 0; color: #0c4a6e; font-weight: 600; font-size: 1.1rem;">
+                    🚀 Upgrade to Continue Scanning
+                </p>
+                <div style="color: #075985; font-size: 0.95rem; line-height: 1.7;">
+                    <p style="margin: 0 0 10px 0;">✓ <strong>25 scans per month</strong></p>
+                    <p style="margin: 0 0 10px 0;">✓ <strong>5 pages per scan</strong></p>
+                    <p style="margin: 0 0 10px 0;">✓ Page-level recommendations</p>
+                    <p style="margin: 0 0 10px 0;">✓ 2 competitor scans</p>
+                    <p style="margin: 15px 0 0 0; font-weight: 700; color: #0c4a6e; font-size: 1.1rem;">
+                        Only $29/month
+                    </p>
+                </div>
+            </div>
+        `;
+
+        await showCompetitorModal(
+            'Upgrade Required',
+            content,
+            'Upgrade Now',
+            'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)'
+        );
+
         window.location.href = 'checkout.html?plan=diy';
         return;
     }
@@ -387,7 +499,33 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
         
     } catch (error) {
         console.error('Scan error:', error);
-        alert('Failed to start scan: ' + error.message);
+
+        const content = `
+            <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
+                <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
+                    ❌ Scan Failed
+                </p>
+                <p style="margin: 15px 0 0 0; color: #7f1d1d; font-size: 0.95rem; font-family: monospace; background: white; padding: 10px; border-radius: 6px;">
+                    ${error.message}
+                </p>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: left;">
+                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
+                    Please try again or contact support if the issue persists.
+                </p>
+                <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
+                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none;">aivisibility@xeo.marketing</a>
+                </p>
+            </div>
+        `;
+
+        await showCompetitorModal(
+            'Error',
+            content,
+            'OK',
+            '#6b7280'
+        );
+
         scanBtn.disabled = false;
         scanBtn.textContent = 'Analyze Website';
     }
@@ -410,11 +548,59 @@ function confirmLogout() {
     window.location.href = 'index.html';
 }
 
+// Competitor Modal functions
+let competitorModalResolve = null;
+
+function showCompetitorModal(title, content, confirmText = 'Continue', confirmStyle = null) {
+    return new Promise((resolve) => {
+        competitorModalResolve = resolve;
+
+        document.getElementById('competitorModalTitle').textContent = title;
+        document.getElementById('competitorModalContent').innerHTML = content;
+
+        const confirmBtn = document.getElementById('competitorConfirmBtn');
+        confirmBtn.textContent = confirmText;
+
+        if (confirmStyle) {
+            confirmBtn.style.background = confirmStyle;
+        } else {
+            confirmBtn.style.background = 'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)';
+        }
+
+        document.getElementById('competitorModal').style.display = 'flex';
+    });
+}
+
+function closeCompetitorModal(result = false) {
+    document.getElementById('competitorModal').style.display = 'none';
+    if (competitorModalResolve) {
+        competitorModalResolve(result);
+        competitorModalResolve = null;
+    }
+}
+
+function confirmCompetitorAction() {
+    closeCompetitorModal(true);
+}
+
+// Attach confirm handler to button
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('competitorConfirmBtn');
+    if (confirmBtn) {
+        confirmBtn.onclick = confirmCompetitorAction;
+    }
+});
+
 // Close modal when clicking outside of it
 document.addEventListener('click', function(event) {
-    const modal = document.getElementById('logoutModal');
-    if (modal && event.target === modal) {
+    const logoutModal = document.getElementById('logoutModal');
+    if (logoutModal && event.target === logoutModal) {
         closeLogoutModal();
+    }
+
+    const competitorModal = document.getElementById('competitorModal');
+    if (competitorModal && event.target === competitorModal) {
+        closeCompetitorModal(false);
     }
 });
 
