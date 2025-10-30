@@ -192,7 +192,9 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.get('/verify', authenticateToken, async (req, res) => {
   res.json({
     authenticated: true,
-    userId: req.userId
+    userId: req.user.id,
+    email: req.user.email,
+    plan: req.user.plan
   });
 });
 
