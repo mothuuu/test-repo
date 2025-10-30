@@ -152,19 +152,9 @@ router.post('/logout', authenticateToken, async (req, res) => {
 // GET /api/auth/me - Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT id, email, name, plan, email_verified, scans_used_this_month,
-              competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
-              industry, industry_custom, created_at, last_login
-       FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json({ success: true, user: result.rows[0] });
+    // authenticateToken middleware already fetches user data and sets req.user
+    // No need for another database query - just return the user data
+    res.json({ success: true, user: req.user });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
@@ -221,17 +211,8 @@ router.post('/verify-email', async (req, res) => {
 // POST /api/auth/resend-verification - Resend verification email
 router.post('/resend-verification', authenticateToken, async (req, res) => {
   try {
-    // Get user
-    const result = await db.query(
-      'SELECT id, email, email_verified FROM users WHERE id = $1',
-      [req.userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const user = result.rows[0];
+    // authenticateToken middleware already provides req.user
+    const user = req.user;
     
     if (user.email_verified) {
       return res.status(400).json({ error: 'Email already verified' });
