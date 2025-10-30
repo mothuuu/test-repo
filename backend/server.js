@@ -17,6 +17,10 @@ const waitlistRoutes = require('./routes/waitlist');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CRITICAL: Trust proxy for Render deployment
+// This must be set BEFORE any middleware that uses IP addresses
+app.set('trust proxy', true);
+
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '10mb' }));
