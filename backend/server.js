@@ -18,8 +18,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CRITICAL: Trust proxy for Render deployment
-// This must be set BEFORE any middleware that uses IP addresses
-app.set('trust proxy', true);
+// Set to 1 to trust the first proxy (Render's reverse proxy)
+// This is required for rate limiting and IP-based features to work correctly
+app.set('trust proxy', 1);
 
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
@@ -43,6 +44,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Rate limiting - Fixed for Render
+// Trust proxy is set at app level, don't override it here
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 50,
@@ -52,7 +54,6 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  trustProxy: true,
   skip: (req) => {
     return req.path === '/health';
   }
