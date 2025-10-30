@@ -10,7 +10,7 @@ const { URL } = require('url');
 class ContentExtractor {
   constructor(url, options = {}) {
     this.url = url;
-    this.timeout = options.timeout || 10000;
+    this.timeout = options.timeout || 30000; // Increased to 30s for slower sites
     // Use Googlebot user-agent to ensure WordPress serves full HTML with schema markup
     this.userAgent = options.userAgent || 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
     this.maxContentLength = options.maxContentLength || 5000000; // 5MB
@@ -51,17 +51,25 @@ const $ = cheerio.load(html);
       const response = await axios.get(this.url, {
         timeout: this.timeout,
         maxContentLength: this.maxContentLength,
+        maxRedirects: 5, // Follow up to 5 redirects
         headers: {
           'User-Agent': this.userAgent,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate',
+          'Accept-Encoding': 'gzip, deflate, br',
           'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Cache-Control': 'no-cache'
         },
-        validateStatus: (status) => status === 200
+        validateStatus: (status) => status >= 200 && status < 400 // Accept 2xx and 3xx
       });
 
       const responseTime = Date.now() - startTime;
+
+      // Check if we got HTML content
+      if (!response.data || typeof response.data !== 'string') {
+        throw new Error('Invalid response: expected HTML content');
+      }
 
       // Debug: Log first 3000 chars of HTML to see what we're getting
       const htmlPreview = response.data.substring(0, 3000);
@@ -105,13 +113,33 @@ const $ = cheerio.load(html);
         status: response.status
       };
     } catch (error) {
+      // Provide more specific error messages
       if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timeout - site took too long to respond');
+        throw new Error(`Request timeout - ${this.url} took longer than ${this.timeout/1000}s to respond`);
+      }
+      if (error.code === 'ENOTFOUND') {
+        throw new Error(`Domain not found - ${this.url} does not exist`);
+      }
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error(`Connection refused - ${this.url} is not accepting connections`);
+      }
+      if (error.code === 'ERR_TLS_CERT_ALTNAME_INVALID') {
+        throw new Error(`SSL certificate error - ${this.url} has an invalid certificate`);
       }
       if (error.response) {
-        throw new Error(`HTTP ${error.response.status}: ${error.response.statusText}`);
+        const status = error.response.status;
+        if (status === 403) {
+          throw new Error(`Access forbidden - ${this.url} is blocking our scanner`);
+        }
+        if (status === 429) {
+          throw new Error(`Rate limited - ${this.url} has too many requests`);
+        }
+        if (status === 503) {
+          throw new Error(`Service unavailable - ${this.url} is temporarily down`);
+        }
+        throw new Error(`HTTP ${status}: ${error.response.statusText || 'Request failed'}`);
       }
-      throw new Error(`Failed to fetch URL: ${error.message}`);
+      throw new Error(`Failed to fetch ${this.url}: ${error.message}`);
     }
   }
 
