@@ -11,9 +11,21 @@ const PRICE_IDS = {
   pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly'
 };
 
+// Test endpoint to verify routes are loaded
+router.get('/test', (req, res) => {
+  res.json({
+    message: 'Subscription routes are working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Create Checkout Session - NOW REQUIRES AUTHENTICATION
 router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
+    console.log('📥 Received create-checkout-session request');
+    console.log('Request body:', req.body);
+    console.log('User from auth:', req.user);
+
     const { domain, plan = 'diy' } = req.body;
     const userId = req.user.id;
     const email = req.user.email;
