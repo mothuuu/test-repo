@@ -43,104 +43,125 @@ const $ = cheerio.load(html);
   }
 
   /**
-   * Fetch HTML content from URL
+   * Fetch HTML content from URL with multiple fallback strategies
    */
   async fetchHTML() {
-    try {
-      const startTime = Date.now();
-      const response = await axios.get(this.url, {
-        timeout: this.timeout,
-        maxContentLength: this.maxContentLength,
-        maxRedirects: 5, // Follow up to 5 redirects
-        headers: {
-          'User-Agent': this.userAgent,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
-          'Cache-Control': 'no-cache'
-        },
-        validateStatus: (status) => status >= 200 && status < 400 // Accept 2xx and 3xx
-      });
+    // Try multiple user agents if blocked
+    const userAgents = [
+      // Real browser user agent (most likely to work)
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      // Googlebot (good for SEO-friendly sites)
+      'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      // Another popular browser
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ];
 
-      const responseTime = Date.now() - startTime;
+    let lastError = null;
 
-      // Check if we got HTML content
-      if (!response.data || typeof response.data !== 'string') {
-        throw new Error('Invalid response: expected HTML content');
-      }
+    // Try each user agent
+    for (let i = 0; i < userAgents.length; i++) {
+      try {
+        const startTime = Date.now();
+        const response = await axios.get(this.url, {
+          timeout: this.timeout,
+          maxContentLength: this.maxContentLength,
+          maxRedirects: 5, // Follow up to 5 redirects
+          headers: {
+            'User-Agent': userAgents[i],
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+          validateStatus: (status) => status >= 200 && status < 400 // Accept 2xx and 3xx
+        });
 
-      // Debug: Log first 3000 chars of HTML to see what we're getting
-      const htmlPreview = response.data.substring(0, 3000);
-      console.log('[ContentExtractor] HTML preview (first 3000 chars):');
-      console.log(htmlPreview);
-      console.log('[ContentExtractor] ... (HTML continues)');
+        const responseTime = Date.now() - startTime;
 
-      // Debug: Check if schema exists ANYWHERE in the full HTML
-      const fullHtmlLength = response.data.length;
-      const hasJsonLd = response.data.includes('application/ld+json');
-      const jsonLdMatches = response.data.match(/application\/ld\+json/g);
-      const jsonLdCount = jsonLdMatches ? jsonLdMatches.length : 0;
-      console.log(`[ContentExtractor] Full HTML analysis:`);
-      console.log(`  - Total HTML length: ${fullHtmlLength} characters`);
-      console.log(`  - Contains 'application/ld+json': ${hasJsonLd}`);
-      console.log(`  - Count of 'application/ld+json' occurrences: ${jsonLdCount}`);
+        // Check if we got HTML content
+        if (!response.data || typeof response.data !== 'string') {
+          throw new Error('Invalid response: expected HTML content');
+        }
 
-      // Debug: Show actual HTML context around each schema occurrence
-      if (jsonLdCount > 0) {
-        console.log(`\n[ContentExtractor] Extracting HTML context for each schema tag:`);
-        let searchPos = 0;
-        for (let i = 0; i < jsonLdCount; i++) {
-          const foundPos = response.data.indexOf('application/ld+json', searchPos);
-          if (foundPos !== -1) {
-            // Extract 500 chars before and after to see the actual HTML structure
-            const contextStart = Math.max(0, foundPos - 500);
-            const contextEnd = Math.min(response.data.length, foundPos + 1000);
-            const context = response.data.substring(contextStart, contextEnd);
-            console.log(`\n--- Schema #${i + 1} Context (position ${foundPos}) ---`);
-            console.log(context);
-            console.log(`--- End Schema #${i + 1} ---\n`);
-            searchPos = foundPos + 1;
-          }
+        // Success! Log and return
+        console.log(`[ContentExtractor] Successfully fetched with User-Agent #${i + 1}`);
+        console.log(`[ContentExtractor] Response time: ${responseTime}ms`);
+        console.log(`[ContentExtractor] HTML length: ${response.data.length} characters`);
+
+        // Debug: Log first 1000 chars of HTML
+        const htmlPreview = response.data.substring(0, 1000);
+        console.log('[ContentExtractor] HTML preview (first 1000 chars):');
+        console.log(htmlPreview);
+        console.log('[ContentExtractor] ... (HTML continues)');
+
+        return {
+          html: response.data,
+          responseTime,
+          headers: response.headers,
+          status: response.status
+        };
+
+      } catch (error) {
+        lastError = error;
+        console.log(`[ContentExtractor] Attempt ${i + 1}/${userAgents.length} failed:`, error.message);
+
+        // If it's a 403 and we have more user agents to try, continue
+        if (error.response && error.response.status === 403 && i < userAgents.length - 1) {
+          console.log(`[ContentExtractor] Trying next user agent...`);
+          continue;
+        }
+
+        // If it's not a 403, or we're on the last attempt, break and throw
+        if (i === userAgents.length - 1) {
+          // This was our last attempt
+          break;
+        }
+
+        // For non-403 errors, stop trying and throw immediately
+        if (!error.response || error.response.status !== 403) {
+          break;
         }
       }
+    }
 
-      return {
-        html: response.data,
-        responseTime,
-        headers: response.headers,
-        status: response.status
-      };
-    } catch (error) {
-      // Provide more specific error messages
-      if (error.code === 'ECONNABORTED') {
+    // All attempts failed, throw the last error with improved message
+    if (lastError) {
+      if (lastError.code === 'ECONNABORTED') {
         throw new Error(`Request timeout - ${this.url} took longer than ${this.timeout/1000}s to respond`);
       }
-      if (error.code === 'ENOTFOUND') {
+      if (lastError.code === 'ENOTFOUND') {
         throw new Error(`Domain not found - ${this.url} does not exist`);
       }
-      if (error.code === 'ECONNREFUSED') {
+      if (lastError.code === 'ECONNREFUSED') {
         throw new Error(`Connection refused - ${this.url} is not accepting connections`);
       }
-      if (error.code === 'ERR_TLS_CERT_ALTNAME_INVALID') {
+      if (lastError.code === 'ERR_TLS_CERT_ALTNAME_INVALID') {
         throw new Error(`SSL certificate error - ${this.url} has an invalid certificate`);
       }
-      if (error.response) {
-        const status = error.response.status;
+      if (lastError.response) {
+        const status = lastError.response.status;
         if (status === 403) {
-          throw new Error(`Access forbidden - ${this.url} is blocking our scanner`);
+          throw new Error(`Access denied - This website is blocking automated scanners. Try scanning a different page on this domain, or contact the site owner to whitelist our scanner.`);
         }
         if (status === 429) {
-          throw new Error(`Rate limited - ${this.url} has too many requests`);
+          throw new Error(`Rate limited - Too many requests. Please wait a few minutes and try again.`);
         }
         if (status === 503) {
-          throw new Error(`Service unavailable - ${this.url} is temporarily down`);
+          throw new Error(`Service unavailable - The website is temporarily down. Please try again later.`);
         }
-        throw new Error(`HTTP ${status}: ${error.response.statusText || 'Request failed'}`);
+        throw new Error(`HTTP ${status}: ${lastError.response.statusText || 'Request failed'}`);
       }
-      throw new Error(`Failed to fetch ${this.url}: ${error.message}`);
+      throw new Error(`Failed to fetch ${this.url}: ${lastError.message}`);
     }
+
+    throw new Error(`Failed to fetch ${this.url}: Unknown error`);
   }
 
   /**
