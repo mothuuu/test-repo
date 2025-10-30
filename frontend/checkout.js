@@ -45,20 +45,28 @@ const PLANS = {
 
 // Check authentication on page load
 window.addEventListener('DOMContentLoaded', async () => {
+    console.log('🔍 Checking authentication on checkout page load...');
+
     const isAuthenticated = await checkAuth();
-    
+
     if (!isAuthenticated) {
-        alert('Please log in to continue');
-        window.location.href = 'auth.html?redirect=checkout.html' + window.location.search;
+        console.log('❌ Not authenticated, redirecting to login');
+        alert('Your session has expired. Please log in again to continue.');
+
+        // Store the redirect URL with plan parameter
+        const currentUrl = 'checkout.html' + window.location.search;
+        window.location.href = 'auth.html?redirect=' + encodeURIComponent(currentUrl);
         return;
     }
-    
+
+    console.log('✅ Authentication confirmed, loading checkout page');
+
     // Load plan details
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get('plan') || 'diy';
-    
+
     loadPlanDetails(plan);
-    
+
     // Handle form submission
     document.getElementById('checkoutForm').addEventListener('submit', handleCheckoutSubmit);
 });
