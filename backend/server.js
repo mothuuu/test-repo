@@ -7,8 +7,8 @@ const rateLimit = require('express-rate-limit');
 
 const aiTestingRoutes = require('./routes/ai-testing');
 const authRoutes = require('./routes/auth');
-// const subscriptionRoutes = require('./routes/subscription');
-const scanRoutes = require('./routes/scan'); // ✅ ADD THIS LINE
+const subscriptionRoutes = require('./routes/subscription');
+const scanRoutes = require('./routes/scan');
 const recommendationRoutes = require('./routes/recommendations');
 const feedbackRoutes = require('./routes/feedback');
 const supportChatRoutes = require('./routes/support-chat');
@@ -61,13 +61,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', aiTestingRoutes);
-// app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/scan', scanRoutes); // ✅ ADD THIS LINE
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/scan', scanRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support-chat', supportChatRoutes);
 app.use('/api/waitlist', waitlistRoutes);
-app.use('/api/test', require('./routes/test-routes'));  // ⬅️ ADD THIS LINE
+app.use('/api/test', require('./routes/test-routes'));
 
 // Health check
 app.get('/health', (req, res) => {
