@@ -11,7 +11,11 @@ const pool = new Pool({
   // Local databases don't need SSL, cloud databases (Render, etc) do
   ssl: isLocalDB ? false : {
     rejectUnauthorized: false
-  }
+  },
+  // Connection pool settings for production
+  max: 20, // Maximum connections in pool
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 10000, // Timeout if can't connect in 10s
 });
 
 module.exports = {
