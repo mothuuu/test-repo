@@ -370,6 +370,65 @@ router.post('/cancel', async (req, res) => {
 
 // Add this endpoint to backend/routes/subscription.js if it doesn't exist
 
+// Verify session - used by success page to check if webhook has processed
+router.post('/verify-session', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID required' });
+    }
+
+    // Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Check if payment is complete
+    if (session.payment_status !== 'paid') {
+      return res.json({ verified: false, status: session.payment_status });
+    }
+
+    // Get user ID from session metadata
+    const userId = session.metadata.userId;
+
+    if (!userId) {
+      return res.json({ verified: false, error: 'No user ID in session' });
+    }
+
+    // Check if user's plan was upgraded in database
+    const result = await db.query(
+      'SELECT plan, stripe_subscription_id FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ verified: false, error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    const plan = session.metadata.plan;
+
+    // Verify that user's plan matches what they paid for
+    if (user.plan === plan && user.stripe_subscription_id === session.subscription) {
+      return res.json({
+        verified: true,
+        plan: user.plan,
+        domain: session.metadata.domain
+      });
+    }
+
+    // Not yet processed by webhook
+    return res.json({ verified: false, status: 'processing' });
+
+  } catch (error) {
+    console.error('Session verification error:', error);
+    res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
 // Get Stripe Customer Portal URL
 router.get('/portal', authenticateToken, async (req, res) => {
   try {

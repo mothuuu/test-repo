@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:3001'
-    : 'https://your-production-domain.com';
+    : 'https://ai-visibility-tool.onrender.com';
 
 // Plan configurations
 const PLANS = {
@@ -70,8 +70,11 @@ async function checkAuth() {
         const authToken = localStorage.getItem('authToken');
 
         if (!authToken) {
+            console.log('No auth token found in localStorage');
             return false;
         }
+
+        console.log('Checking auth with token:', authToken.substring(0, 20) + '...');
 
         const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
             method: 'GET',
@@ -81,20 +84,28 @@ async function checkAuth() {
             }
         });
 
+        console.log('Auth verify response status:', response.status);
+
         if (!response.ok) {
+            console.error('Auth verify failed with status:', response.status);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
             return false;
         }
 
         const data = await response.json();
+        console.log('Auth verify response:', data);
 
         // Check if user data is available
         if (!data.authenticated) {
+            console.error('User not authenticated according to response');
             return false;
         }
 
+        console.log('Auth check passed!');
         return true;
     } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('Auth check failed with exception:', error);
         return false;
     }
 }

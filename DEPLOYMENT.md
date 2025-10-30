@@ -32,11 +32,21 @@ Make sure these are also configured (if not already):
 - `JWT_SECRET` - Secret key for JWT tokens
 - `ANTHROPIC_API_KEY` - API key for Anthropic Claude
 - `OPENAI_API_KEY` - API key for OpenAI (if used)
-- `STRIPE_SECRET_KEY` - Stripe secret key for payments
-- `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
 - `EMAIL_USER` - Email service username
 - `EMAIL_PASS` - Email service password
 - `NODE_ENV` - Set to `production`
+- `FRONTEND_URL` - Frontend URL (e.g., `https://aome.xeo.marketing`)
+
+#### Stripe Payment Variables (Required for Payments)
+
+For detailed Stripe setup instructions, see **[STRIPE_SETUP.md](./STRIPE_SETUP.md)**
+
+- `STRIPE_SECRET_KEY` - Stripe secret key (starts with `sk_test_` or `sk_live_`)
+- `STRIPE_PRICE_DIY` - Stripe Price ID for DIY plan (e.g., `price_abc123`)
+- `STRIPE_PRICE_PRO` - Stripe Price ID for Pro plan (e.g., `price_def456`)
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret (starts with `whsec_`)
+
+**Note**: Follow the step-by-step guide in STRIPE_SETUP.md to create products, get price IDs, and configure webhooks.
 
 ### After Setting Variables
 
