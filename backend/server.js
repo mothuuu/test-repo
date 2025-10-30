@@ -28,7 +28,11 @@ app.use(compression());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8000'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'https://aome.xeo.marketing',
+    'http://localhost:3000',
+    'http://localhost:8000'
+  ],
   credentials: true,
   optionsSuccessStatus: 200
 };
