@@ -115,6 +115,13 @@ function displayResults(scan, quota) {
     const displayScore = Math.round(scan.total_score * 10);
     document.getElementById('overallScore').textContent = displayScore;
 
+    // Display grade
+    const grade = calculateGrade(displayScore);
+    const gradeEl = document.getElementById('scoreGrade');
+    if (gradeEl) {
+        gradeEl.textContent = grade;
+    }
+
     // Animate SVG progress ring
     animateScoreRing(scan.total_score);
 
@@ -177,6 +184,16 @@ function displayCategoryScores(categories, recommendations) {
         return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore };
     });
 
+    // Calculate and display metrics
+    const metrics = calculateMetrics(categories);
+    const strongEl = document.getElementById('strongCount');
+    const warningEl = document.getElementById('warningCount');
+    const criticalEl = document.getElementById('criticalCount');
+
+    if (strongEl) strongEl.textContent = metrics.strong;
+    if (warningEl) warningEl.textContent = metrics.warning;
+    if (criticalEl) criticalEl.textContent = metrics.critical;
+
     // Create list items for each category
     categoryData.forEach(cat => {
         const displayScore = cat.displayScore;
@@ -211,8 +228,8 @@ function displayCategoryScores(categories, recommendations) {
         container.appendChild(item);
     });
 
-    // Initialize radar chart with category data
-    initializeRadarChart(categoryData);
+    // Initialize bar chart with category data
+    initializeBarChart(categoryData);
 }
 
 // Initialize Chart.js radar chart
@@ -671,14 +688,8 @@ function displayUpgradeCTA(userTier, totalRecs) {
 
 function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     const card = document.createElement('div');
-    const cardClass = isSkipped
-        ? 'bg-gray-50 rounded-lg shadow-md border-l-4 border-gray-400 overflow-hidden opacity-75'
-        : `recommendation-card bg-white rounded-lg shadow-md border-l-4 ${priorityColors[rec.priority]?.border || 'border-gray-300'} overflow-hidden`;
-    card.className = cardClass;
+    card.className = 'recommendation-card';
     card.id = `rec-${index}`;
-
-    const priorityClass = priorityColors[rec.priority] || priorityColors.medium;
-    const showCodeSnippet = userPlan !== 'free' && rec.code_snippet;
 
     // Check if implemented or skipped
     const isImplemented = rec.status === 'implemented';
@@ -693,6 +704,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
 
     // Use the correct field names from API
     const title = rec.recommendation_text || rec.title || 'Recommendation';
+    const subcategory = rec.subcategory || '';
     const finding = rec.findings || rec.finding || '';
     const impact = rec.impact_description || rec.impact || '';
     const actionSteps = rec.action_steps || rec.actionSteps || [];
@@ -707,188 +719,169 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     const quickWins = rec.quick_wins || rec.quickWins || [];
     const validationChecklist = rec.validation_checklist || rec.validationChecklist || [];
 
+    // Determine priority badge class
+    const priority = rec.priority || 'medium';
+    let priorityBadgeClass = 'rec-priority-badge ';
+    if (priority === 'critical' || priority === 'high') priorityBadgeClass += 'high';
+    else if (priority === 'medium') priorityBadgeClass += 'medium';
+    else priorityBadgeClass += 'low';
+
+    const showCodeSnippet = userPlan !== 'free' && codeSnippet;
+
     card.innerHTML = `
-        <div class="p-6">
-            <!-- Header -->
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2 flex-wrap">
-                        ${isImplemented ? `
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border-2 border-green-500">
-                                ✓ IMPLEMENTED
-                            </span>
-                        ` : ''}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${priorityClass.bg} ${priorityClass.text}">
-                            ${(rec.priority || 'medium').toUpperCase()}
-                        </span>
-                        <span class="text-sm text-gray-600">${formatCategoryName(rec.category)}</span>
-                        ${effort ? `<span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">${effort} Effort</span>` : ''}
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">${title}</h3>
-                    ${estimatedImpact ? `
-                        <div class="flex items-center gap-2 text-green-600 font-semibold">
-                            <span>📈</span>
-                            <span>Potential Gain: +${Math.round(estimatedImpact * 10)} points</span>
-                        </div>
-                    ` : ''}
-                </div>
-                <button onclick="toggleRecommendation(${index})"
-                        class="text-blue-600 hover:text-blue-800 font-semibold">
-                    <span id="toggle-${index}">Expand ▼</span>
-                </button>
+        <div class="rec-header" onclick="toggleAccordion(${index})">
+            <div class="${priorityBadgeClass}">
+                ${priority.toUpperCase()}
             </div>
-
-            <!-- Collapsible Content -->
-            <div id="content-${index}" class="hidden mt-4 space-y-4 border-t pt-4">
-                <!-- Finding -->
-                ${finding ? `
-                    <div>
-                        <h4 class="font-bold text-gray-800 mb-2">🔍 Finding:</h4>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">${finding}</p>
+            <div class="rec-title-section">
+                <div class="rec-title">${title}</div>
+                <div class="rec-category">${formatCategoryName(rec.category)}${subcategory ? ` → ${subcategory}` : ''}</div>
+            </div>
+            <div class="rec-metrics-section">
+                ${estimatedImpact ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value score-gain">+${Math.round(estimatedImpact * 10)}</div>
+                        <div class="rec-metric-label">Score Gain</div>
                     </div>
                 ` : ''}
-
-                <!-- Impact -->
-                ${impact ? `
-                    <div>
-                        <h4 class="font-bold text-gray-800 mb-2">💡 Why It Matters:</h4>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">${impact}</p>
+                ${effort ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value effort">${effort}</div>
+                        <div class="rec-metric-label">Effort</div>
                     </div>
                 ` : ''}
+            </div>
+            <div class="expand-icon">▼</div>
+        </div>
 
-                <!-- Action Steps -->
-                ${actionSteps && actionSteps.length > 0 ? `
-                    <div>
-                        <h4 class="font-bold text-gray-800 mb-3">✅ What to Do (Apply Steps):</h4>
-                        <ol class="space-y-2">
-                            ${actionSteps.map(step => `
-                                <li class="text-gray-700 leading-relaxed ml-2">${step}</li>
-                            `).join('')}
-                        </ol>
-                    </div>
-                ` : ''}
+        <div class="rec-body">
+            ${(finding || impact) ? `
+                <div class="rec-description">
+                    ${finding ? `<p><strong>🔍 Finding:</strong> ${finding}</p>` : ''}
+                    ${impact ? `<p style="margin-top: ${finding ? '15px' : '0'};"><strong>💡 Why It Matters:</strong> ${impact}</p>` : ''}
+                </div>
+            ` : ''}
 
-                <!-- Customized Implementation -->
-                ${customizedImplementation && userPlan !== 'free' ? `
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <h4 class="font-bold text-gray-800 mb-3">🎯 Customized Implementation for Your Page:</h4>
-                        <div class="prose prose-sm max-w-none text-gray-700">
-                            ${renderMarkdown(customizedImplementation)}
+            ${actionSteps && actionSteps.length > 0 ? `
+                <div class="action-steps">
+                    <div class="action-steps-title">How to Implement</div>
+                    ${actionSteps.map((step, idx) => `
+                        <div class="action-step">
+                            <div class="step-number">${idx + 1}</div>
+                            <div class="step-content">
+                                <div class="step-text">${step}</div>
+                            </div>
                         </div>
-                    </div>
-                ` : ''}
+                    `).join('')}
+                </div>
+            ` : ''}
 
-                <!-- Ready to Use Content -->
-                ${readyToUseContent && userPlan !== 'free' ? `
-                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                        <h4 class="font-bold text-gray-800 mb-3">📝 Ready-to-Use Content:</h4>
-                        <div class="relative">
-                            <pre class="bg-white border border-green-200 p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap font-sans text-gray-800"><code id="ready-content-${index}">${escapeHtml(readyToUseContent)}</code></pre>
-                            <button onclick="copyCode('ready-content-${index}')"
-                                    class="absolute top-2 right-2 px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">
-                                Copy Content
-                            </button>
-                        </div>
+            ${customizedImplementation && userPlan !== 'free' ? `
+                <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">🎯 Customized Implementation</h4>
+                    <div style="font-size: 14px; line-height: 1.7; color: #4a5568;">
+                        ${renderMarkdown(customizedImplementation)}
                     </div>
-                ` : ''}
+                </div>
+            ` : ''}
 
-                <!-- Code Snippet (DIY+ only) -->
-                ${showCodeSnippet ? `
-                    <div>
-                        <h4 class="font-bold text-gray-800 mb-2">💻 Implementation Code:</h4>
-                        <div class="relative">
-                            <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code id="code-${index}">${escapeHtml(codeSnippet)}</code></pre>
-                            <button onclick="copyCode('code-${index}')"
-                                    class="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
-                                Copy Code
-                            </button>
-                        </div>
-                    </div>
-                ` : ''}
-
-                <!-- Implementation Notes -->
-                ${implementationNotes && implementationNotes.length > 0 && userPlan !== 'free' ? `
-                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                        <h4 class="font-bold text-gray-800 mb-3">📌 Implementation Notes:</h4>
-                        <ul class="space-y-2">
-                            ${implementationNotes.map(note => `
-                                <li class="text-gray-700 leading-relaxed flex items-start">
-                                    <span class="text-yellow-600 mr-2">•</span>
-                                    <span>${note}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                <!-- Quick Wins -->
-                ${quickWins && quickWins.length > 0 && userPlan !== 'free' ? `
-                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
-                        <h4 class="font-bold text-gray-800 mb-3">⚡ Quick Wins:</h4>
-                        <ol class="space-y-2">
-                            ${quickWins.map((win, idx) => `
-                                <li class="text-gray-700 leading-relaxed flex items-start">
-                                    <span class="text-purple-600 font-semibold mr-2">${idx + 1}.</span>
-                                    <span>${win}</span>
-                                </li>
-                            `).join('')}
-                        </ol>
-                    </div>
-                ` : ''}
-
-                <!-- Validation Checklist -->
-                ${validationChecklist && validationChecklist.length > 0 && userPlan !== 'free' ? `
-                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
-                        <h4 class="font-bold text-gray-800 mb-3">✓ Validation Checklist:</h4>
-                        <ul class="space-y-2">
-                            ${validationChecklist.map(item => `
-                                <li class="text-gray-700 leading-relaxed flex items-start">
-                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 text-indigo-600 rounded">
-                                    <span>${item}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                <!-- Action Buttons -->
-                <div class="pt-4 border-t flex gap-3 flex-wrap">
-                    ${isImplemented ? `
-                        <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold flex items-center gap-2">
-                            <span>✓</span>
-                            <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
-                        </div>
-                    ` : !isSkipped ? `
-                        <button onclick="markImplemented(${rec.id || index})"
-                                class="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold">
-                            ✓ Mark as Implemented
+            ${readyToUseContent && userPlan !== 'free' ? `
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">📝 Ready-to-Use Content</h4>
+                    <div style="position: relative;">
+                        <pre style="background: white; border: 1px solid #a7f3d0; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px; white-space: pre-wrap; font-family: -apple-system, system-ui; color: #2d3748;"><code id="ready-content-${index}">${escapeHtml(readyToUseContent)}</code></pre>
+                        <button onclick="copyCode('ready-content-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #10b981; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                            Copy
                         </button>
-                        ${canSkip ? `
-                            <button onclick="skipRecommendation(${rec.id || index})"
-                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold">
-                                ⊘ Skip this recommendation
-                            </button>
-                        ` : daysUntilSkip > 0 ? `
-                            <button disabled
-                                    class="px-4 py-2 bg-gray-50 text-gray-400 rounded-lg cursor-not-allowed font-semibold"
-                                    title="Skip will be available in ${daysUntilSkip} day${daysUntilSkip > 1 ? 's' : ''}">
-                                ⊘ Skip (Available in ${daysUntilSkip}d)
-                            </button>
-                        ` : ''}
-                    ` : `
-                        <div class="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-semibold">
-                            ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
-                        </div>
-                    `}
+                    </div>
                 </div>
+            ` : ''}
 
-                <!-- Feedback Widget -->
-                ${createFeedbackWidget(
-                    `${rec.category || 'general'}_${rec.id || index}`,
-                    rec.category || 'general',
-                    scanId
-                )}
+            ${showCodeSnippet ? `
+                <div style="background: #1f2937; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: white; margin-bottom: 12px;">💻 Implementation Code</h4>
+                    <div style="position: relative;">
+                        <pre style="background: #111827; color: #e5e7eb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px;"><code id="code-${index}">${escapeHtml(codeSnippet)}</code></pre>
+                        <button onclick="copyCode('code-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3b82f6; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${implementationNotes && implementationNotes.length > 0 && userPlan !== 'free' ? `
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">📌 Implementation Notes</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        ${implementationNotes.map(note => `
+                            <li style="margin-bottom: 10px; padding-left: 20px; position: relative; color: #4a5568; line-height: 1.6;">
+                                <span style="position: absolute; left: 0; color: #f59e0b;">•</span>
+                                ${note}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+
+            ${quickWins && quickWins.length > 0 && userPlan !== 'free' ? `
+                <div style="background: #e9d5ff; border-left: 4px solid #a855f7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">⚡ Quick Wins</h4>
+                    <ol style="list-style: none; padding: 0;">
+                        ${quickWins.map((win, idx) => `
+                            <li style="margin-bottom: 10px; padding-left: 25px; position: relative; color: #4a5568; line-height: 1.6;">
+                                <span style="position: absolute; left: 0; color: #a855f7; font-weight: 600;">${idx + 1}.</span>
+                                ${win}
+                            </li>
+                        `).join('')}
+                    </ol>
+                </div>
+            ` : ''}
+
+            ${validationChecklist && validationChecklist.length > 0 && userPlan !== 'free' ? `
+                <div style="background: #e0e7ff; border-left: 4px solid #6366f1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">✓ Validation Checklist</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        ${validationChecklist.map(item => `
+                            <li style="margin-bottom: 10px; display: flex; align-items: start; color: #4a5568; line-height: 1.6;">
+                                <input type="checkbox" style="margin-top: 4px; margin-right: 12px; width: 16px; height: 16px;">
+                                <span>${item}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+
+            <div style="padding-top: 20px; border-top: 2px solid #f0f4f8; display: flex; gap: 12px; flex-wrap: wrap;">
+                ${isImplemented ? `
+                    <div style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <span>✓</span>
+                        <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
+                    </div>
+                ` : !isSkipped ? `
+                    <button onclick="markImplemented(${rec.id || index})" style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                        ✓ Mark as Implemented
+                    </button>
+                    ${canSkip ? `
+                        <button onclick="skipRecommendation(${rec.id || index})" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                            ⊘ Skip
+                        </button>
+                    ` : daysUntilSkip > 0 ? `
+                        <button disabled style="padding: 10px 16px; background: #fafbfc; color: #9ca3af; border-radius: 8px; border: none; cursor: not-allowed; font-weight: 600;" title="Skip will be available in ${daysUntilSkip} day${daysUntilSkip > 1 ? 's' : ''}">
+                            ⊘ Skip (${daysUntilSkip}d)
+                        </button>
+                    ` : ''}
+                ` : `
+                    <div style="padding: 10px 16px; background: #e5e7eb; color: #4b5563; border-radius: 8px; font-weight: 600;">
+                        ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
+                    </div>
+                `}
             </div>
+
+            ${createFeedbackWidget(
+                `${rec.category || 'general'}_${rec.id || index}`,
+                rec.category || 'general',
+                scanId
+            )}
         </div>
     `;
 
@@ -1286,6 +1279,138 @@ Keep up the great work! Each implementation improves your AI visibility score.
         console.error('Error loading progress:', error);
         showNotification('Failed to load progress data. Please try again.', 'error');
     });
+}
+
+// Calculate grade from score
+function calculateGrade(score) {
+    if (score >= 900) return 'A+';
+    if (score >= 850) return 'A';
+    if (score >= 800) return 'A-';
+    if (score >= 750) return 'B+';
+    if (score >= 700) return 'B';
+    if (score >= 650) return 'B-';
+    if (score >= 600) return 'C+';
+    if (score >= 550) return 'C';
+    if (score >= 500) return 'C-';
+    if (score >= 450) return 'D+';
+    if (score >= 400) return 'D';
+    if (score >= 350) return 'D-';
+    return 'F';
+}
+
+// Calculate metrics (strong/warning/critical counts)
+function calculateMetrics(categories) {
+    let strong = 0;
+    let warning = 0;
+    let critical = 0;
+
+    Object.values(categories).forEach(score => {
+        const displayScore = Math.round(score * 10);
+        if (displayScore >= 700) {
+            strong++;
+        } else if (displayScore >= 400) {
+            warning++;
+        } else {
+            critical++;
+        }
+    });
+
+    return { strong, warning, critical };
+}
+
+// Global bar chart variable
+let categoryBarChart = null;
+
+// Initialize bar chart
+function initializeBarChart(categoryData) {
+    const ctx = document.getElementById('categoryBarChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (categoryBarChart) {
+        categoryBarChart.destroy();
+    }
+
+    const chartLabels = categoryData.map(cat => cat.name);
+    const chartScores = categoryData.map(cat => cat.displayScore);
+    const maxScores = categoryData.map(() => 1000); // Maximum score for each category
+
+    categoryBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                {
+                    label: 'Your Score',
+                    data: chartScores,
+                    backgroundColor: 'rgba(0, 185, 218, 0.8)',
+                    borderColor: 'rgb(0, 185, 218)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Maximum Score',
+                    data: maxScores,
+                    backgroundColor: 'rgba(243, 28, 126, 0.2)',
+                    borderColor: 'rgb(243, 28, 126)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1000,
+                    ticks: {
+                        stepSize: 200
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} / 1000`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Switch category view (list/chart)
+function switchCategoryView(view) {
+    const listView = document.getElementById('categoryListView');
+    const chartView = document.getElementById('categoryChartView');
+    const listBtn = document.querySelector('.toggle-btn:first-child');
+    const chartBtn = document.querySelector('.toggle-btn:last-child');
+
+    if (view === 'list') {
+        listView.classList.add('active');
+        chartView.classList.remove('active');
+        listBtn.classList.add('active');
+        chartBtn.classList.remove('active');
+    } else {
+        listView.classList.remove('active');
+        chartView.classList.add('active');
+        listBtn.classList.remove('active');
+        chartBtn.classList.add('active');
+    }
+}
+
+// Toggle individual accordion
+function toggleAccordion(index) {
+    const card = document.getElementById(`rec-${index}`);
+    if (card) {
+        card.classList.toggle('expanded');
+    }
 }
 
 // Expand/Collapse all recommendations
