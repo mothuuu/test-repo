@@ -50,6 +50,7 @@ async function initDashboard() {
         updateUserInfo();
         updateQuota();
         await loadRecentScans();
+        await loadLatestScores();
 
         // Check if user came with a scan URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -235,6 +236,138 @@ async function loadRecentScans() {
                 <div class="empty-text" style="color: #dc3545;">Failed to load scans</div>
             </div>
         `;
+    }
+}
+
+// Load latest scan scores and initialize chart
+let categoryChart = null;  // Store chart instance globally
+
+async function loadLatestScores() {
+    const authToken = localStorage.getItem('authToken');
+
+    try {
+        // Fetch the most recent scan
+        const response = await fetch(`${API_BASE_URL}/scan/list/recent?limit=1`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to load latest scan');
+            return;
+        }
+
+        const data = await response.json();
+        const scans = data.scans || [];
+
+        if (scans.length === 0) {
+            // No scans yet - show placeholder
+            document.getElementById('totalScore').textContent = '--';
+            document.getElementById('categoriesList').innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #6c757d;">
+                    <p>No scans yet. Start your first scan to see your scores!</p>
+                </div>
+            `;
+            return;
+        }
+
+        const latestScan = scans[0];
+
+        // Update total score
+        const displayScore = getDisplayScore(latestScan.total_score || 0);
+        document.getElementById('totalScore').textContent = displayScore;
+
+        // Define category labels and colors
+        const categories = [
+            { key: 'ai_readability_score', label: 'AI Readability', color: '#00B9DA' },
+            { key: 'ai_search_readiness_score', label: 'AI Search Readiness', color: '#f31c7e' },
+            { key: 'content_freshness_score', label: 'Content Freshness', color: '#7030A0' },
+            { key: 'content_structure_score', label: 'Content Structure', color: '#FFA500' },
+            { key: 'speed_ux_score', label: 'Speed & UX', color: '#28a745' },
+            { key: 'technical_setup_score', label: 'Technical Setup', color: '#dc3545' },
+            { key: 'trust_authority_score', label: 'Trust & Authority', color: '#17a2b8' },
+            { key: 'voice_optimization_score', label: 'Voice Optimization', color: '#6f42c1' }
+        ];
+
+        // Display category scores list
+        const categoriesList = document.getElementById('categoriesList');
+        categoriesList.innerHTML = categories.map(cat => {
+            const score = latestScan[cat.key] || 0;
+            const displayScore = getDisplayScore(score);
+            return `
+                <div class="category-item">
+                    <div class="category-label">${cat.label}</div>
+                    <div class="category-score" style="color: ${cat.color};">${displayScore}</div>
+                </div>
+            `;
+        }).join('');
+
+        // Initialize Chart.js radar chart
+        const ctx = document.getElementById('categoryChart');
+        if (ctx) {
+            // Destroy existing chart if it exists
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+
+            const chartData = categories.map(cat => latestScan[cat.key] || 0);
+            const chartLabels = categories.map(cat => cat.label);
+
+            categoryChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Category Scores',
+                        data: chartData,
+                        backgroundColor: 'rgba(0, 185, 218, 0.2)',
+                        borderColor: 'rgba(0, 185, 218, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(0, 185, 218, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(0, 185, 218, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value;
+                                }
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const score = context.parsed.r;
+                                    const displayScore = Math.round(score * 10);
+                                    return `Score: ${displayScore} / 1000`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading latest scores:', error);
     }
 }
 
