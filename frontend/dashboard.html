@@ -4,204 +4,521 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - AI Visibility Score</title>
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-header {
-            background: white;
-            border-bottom: 2px solid #e0e0e0;
-            padding: 20px 0;
-            margin-bottom: 40px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .dashboard-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .plan-badge {
-            padding: 6px 15px;
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .quota-badge {
-            padding: 8px 15px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        .quota-warning {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            color: #856404;
-        }
-        
-        .quota-error {
-            background: #f8d7da;
-            border: 2px solid #dc3545;
-            color: #721c24;
-        }
-        
-        .new-scan-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
-        }
-        
-        .scan-input-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .scan-input-group input {
-            flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1rem;
-        }
-        
-        .scan-input-group input:focus {
-            outline: none;
-            border-color: #00B9DA;
-        }
-        
-        .recent-scans-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .scan-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
             padding: 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            margin-bottom: 15px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00B9DA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .center-url {
+            font-size: 16px;
+            color: #00B9DA;
+            font-weight: 600;
+            padding: 8px 20px;
+            background: #e6f7fb;
+            border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
         }
-        
-        .scan-card:hover {
-            border-color: #00B9DA;
-            background: #f0f9ff;
-            transform: translateX(5px);
+
+        .center-url:hover {
+            background: #d0f0f9;
+            transform: scale(1.05);
         }
-        
-        .scan-info h4 {
-            margin: 0 0 5px 0;
-            font-size: 1.1rem;
-            color: #333;
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
-        
-        .scan-info p {
-            margin: 0;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .scan-score {
+
+        .user-info {
             text-align: right;
         }
-        
-        .scan-score .score-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #00B9DA;
-            line-height: 1;
+
+        .user-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
         }
-        
-        .scan-score .score-label {
-            font-size: 0.8rem;
-            color: #999;
+
+        .user-email {
+            font-size: 12px;
+            color: #718096;
         }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-        
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-        
-        .upgrade-banner {
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 15px;
-            text-align: center;
-            margin-top: 40px;
-        }
-        
-        .upgrade-banner h3 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        
-        .upgrade-banner p {
-            margin-bottom: 25px;
-            opacity: 0.9;
-        }
-        
+
         .logout-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: 2px solid #dc3545;
-            color: #dc3545;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 24px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
+            font-size: 14px;
             transition: all 0.3s;
         }
-        
+
         .logout-btn:hover {
-            background: #dc3545;
-            color: white;
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
-        /* Logout Modal Styles */
+        /* Welcome Box */
+        .welcome-box {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+
+        .plan-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00B9DA;
+        }
+
+        .manage-btn {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .manage-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        /* Scores Section */
+        .scores-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .scores-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .score-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .score-card.locked {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            position: relative;
+            overflow: hidden;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .locked-content {
+            text-align: center;
+            z-index: 1;
+        }
+
+        .locked-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .locked-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .locked-text {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .score-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .score-badge {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-max {
+            font-size: 18px;
+            color: #cbd5e0;
+            font-weight: 600;
+        }
+
+        .categories-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #00B9DA;
+        }
+
+        .category-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .category-score {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f31c7e;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* New Scan Section */
+        .new-scan-section {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+
+        .scan-input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .scan-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .scan-input:focus {
+            outline: none;
+            border-color: #00B9DA;
+            box-shadow: 0 0 0 3px rgba(0, 185, 218, 0.1);
+        }
+
+        .scan-btn {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .scan-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .scan-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .scan-note {
+            font-size: 13px;
+            color: #718096;
+            font-style: italic;
+        }
+
+        /* Recent Scans Section */
+        .recent-scans-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .recent-scans-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .scans-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid #00B9DA;
+        }
+
+        .scans-box.competitor {
+            border-top-color: #4DACA6;
+        }
+
+        .scans-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scan-item {
+            background: #f7fafc;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .scan-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        .scan-info {
+            flex: 1;
+        }
+
+        .scan-url {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .scan-date {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .scan-score {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #cbd5e0;
+            text-align: right;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
         .logout-modal-actions {
             display: flex;
             gap: 15px;
-            justify-content: center;
-            margin-top: 25px;
+            margin-top: 20px;
         }
 
         .logout-cancel-btn,
         .logout-confirm-btn {
             flex: 1;
-            max-width: 180px;
-            padding: 14px 28px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 14px 20px;
             border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
         .logout-cancel-btn {
@@ -211,126 +528,151 @@
 
         .logout-cancel-btn:hover {
             background: #d1d5db;
-            transform: translateY(-2px);
         }
 
         .logout-confirm-btn {
-            background: #dc3545;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
             color: white;
         }
 
         .logout-confirm-btn:hover {
-            background: #c82333;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .plan-info {
+                flex-direction: column;
+            }
+
+            .scan-input-group {
+                flex-direction: column;
+            }
+
+            .categories-list {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
-<body style="background: #f5f5f5;">
+<body>
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-        <div style="text-align: center;">
-            <div class="loading-spinner"></div>
-            <p style="margin-top: 20px; font-weight: 600; color: #333;">Loading...</p>
-        </div>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
     </div>
 
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <div class="dashboard-nav">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <h1 style="font-size: 1.8rem; font-weight: bold; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    AI Visibility Score
-                </h1>
-                <span id="planBadge" class="plan-badge">Free Plan</span>
-                <button id="manageSubscriptionBtn" class="manage-subscription-btn" onclick="manageSubscription()" style="display: none; margin-left: 10px; padding: 6px 12px; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                    ⚙️ Manage Subscription
-                </button>
-            </div>
-
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo">AI Visibility Score</div>
+        </div>
+        <div class="center-url" id="primaryDomainBadge" onclick="openDomainModal()" title="Click to change primary domain">
+            🏠 Not set
+        </div>
+        <div class="user-section">
             <div class="user-info">
-                <span id="primaryDomainBadge" class="quota-badge" style="background: #e3f2fd; color: #1976d2; font-weight: 600; cursor: pointer;" title="Click to change primary domain" onclick="openDomainModal()">
-                    🏠 Not set
-                </span>
-                <span id="quotaBadge" class="quota-badge">0 / 2 scans used</span>
-                <span id="competitorQuotaBadge" class="quota-badge" style="display: none;">0 / 0 competitors</span>
-                <span id="userEmail" style="color: #666; font-weight: 500;"></span>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+                <div class="user-name" id="userName">User</div>
+                <div class="user-email" id="userEmail">user@example.com</div>
             </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </div>
 
-    <div class="container" style="max-width: 1200px;">
-        <!-- Welcome Section -->
-        <div style="margin-bottom: 40px;">
-            <h2 style="font-size: 2.5rem; font-weight: bold; color: #333; margin-bottom: 10px;">
-                Welcome back, <span id="userName">User</span>!
-            </h2>
-            <p style="color: #666; font-size: 1.1rem;">
-                Start a new scan or view your recent results below
-            </p>
-        </div>
-
-        <!-- Quota Warning Banner -->
-        <div id="quotaWarning" style="display: none; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
-            <p id="quotaWarningText" style="margin: 0; font-weight: 600;"></p>
-        </div>
-
-        <!-- New Scan Section -->
-        <div class="new-scan-section">
-            <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 20px;">
-                ➕ Start New Scan
-            </h3>
-            <form id="scanForm" class="scan-input-group">
-                <input 
-                    type="url" 
-                    id="scanUrl" 
-                    placeholder="https://yourwebsite.com" 
-                    required
-                >
-                <button type="submit" class="analyze-btn" id="scanBtn">
-                    Analyze Website
-                </button>
-            </form>
-            <p id="planInfo" style="margin-top: 10px; color: #666; font-size: 0.9rem;">
-                ✓ Free plan: Homepage scan only
-            </p>
-        </div>
-
-        <!-- Recent Scans Section -->
-        <div class="recent-scans-section">
-            <h3 style="font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 20px;">
-                🕒 Recent Scans
-            </h3>
-            
-            <div id="scansList">
-                <!-- Scans will be loaded here -->
+    <!-- Welcome Box -->
+    <div class="welcome-box">
+        <div class="welcome-title" id="welcomeTitle">Welcome back!</div>
+        <div class="plan-info">
+            <div class="info-item">
+                <div class="info-label">Plan Type</div>
+                <div class="info-value" id="planType">Free Plan</div>
             </div>
-        </div>
-
-        <!-- Upgrade Banner (for free users) -->
-        <div id="upgradeBanner" style="display: none;" class="upgrade-banner">
-            <h3>🚀 Unlock More Features</h3>
-            <p>Upgrade to DIY for 25 scans/month, 5 pages per scan, and page-level recommendations</p>
-            <button class="analyze-btn" onclick="window.location.href='checkout.html?plan=diy'">
-                Upgrade to DIY - $29/month
+            <div class="info-item">
+                <div class="info-label">Primary Scans</div>
+                <div class="info-value" id="primaryScansQuota">0 / 2</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Competitor Scans</div>
+                <div class="info-value" id="competitorScansQuota">0 / 0</div>
+            </div>
+            <button class="manage-btn" id="manageSubscriptionBtn" onclick="manageSubscription()" style="display: none;">
+                💳 Manage Subscription
             </button>
         </div>
+    </div>
 
-        <!-- Waitlist Banner (for DIY users) -->
-        <div id="waitlistBanner" style="display: none;" class="upgrade-banner">
-            <div style="display: inline-block; padding: 8px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; font-weight: 700; font-size: 0.9rem; margin-bottom: 15px;">
-                COMING SOON
+    <!-- Scores Section -->
+    <div class="scores-section">
+        <!-- AI Visibility Index -->
+        <div class="score-card" id="visibilityScoreCard">
+            <div class="score-header">
+                <div class="score-title">AI Visibility Index</div>
+                <div>
+                    <span class="score-badge" id="totalScore">--</span>
+                    <span class="score-max">/ 1000</span>
+                </div>
             </div>
-            <h3>⭐ Premium & Agency Plans</h3>
-            <p>Advanced features including 15-50 pages per scan, competitive analysis, white-label reporting, and dedicated support</p>
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
-                <button class="analyze-btn" style="background: white; color: #7030A0;" onclick="window.location.href='waitlist.html?plan=premium'">
-                    Join Premium Waitlist ($99/mo)
-                </button>
-                <button class="analyze-btn" style="background: white; color: #7030A0;" onclick="window.location.href='waitlist.html?plan=agency'">
-                    Join Agency Waitlist ($499/mo)
-                </button>
+
+            <div class="categories-list" id="categoriesList">
+                <!-- Categories will be populated by JavaScript -->
+            </div>
+
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Brand Visibility Index (Locked) -->
+        <div class="score-card locked">
+            <div class="locked-content">
+                <div class="locked-icon">🔒</div>
+                <div class="locked-title">Brand Visibility Index</div>
+                <div class="locked-text">Upgrade to Pro Plan to unlock</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Scan Section -->
+    <div class="new-scan-section">
+        <div class="section-title">Start a new scan or view your recent results below</div>
+        <form id="scanForm" class="scan-input-group">
+            <input type="url" class="scan-input" id="scanUrl" placeholder="https://yourwebsite.com" required>
+            <button type="submit" class="scan-btn" id="scanBtn">🔍 Analyze Website</button>
+        </form>
+        <div class="scan-note" id="planInfo">✓ Free plan: Homepage scan only</div>
+    </div>
+
+    <!-- Recent Scans Section -->
+    <div class="recent-scans-section">
+        <!-- Primary Scans -->
+        <div class="scans-box">
+            <div class="scans-header">
+                🎯 Primary Scans
+            </div>
+            <div id="primaryScansList">
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-text">No primary scans yet. Start your first scan above!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitor Scans -->
+        <div class="scans-box competitor">
+            <div class="scans-header">
+                🏆 Competitor Scans
+            </div>
+            <div id="competitorScansList">
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-text">No competitor scans yet</div>
+                </div>
             </div>
         </div>
     </div>
@@ -373,7 +715,7 @@
                 <button class="logout-cancel-btn" onclick="closeCompetitorModal()">
                     Cancel
                 </button>
-                <button id="competitorConfirmBtn" class="logout-confirm-btn" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);">
+                <button id="competitorConfirmBtn" class="logout-confirm-btn">
                     Continue
                 </button>
             </div>
@@ -394,7 +736,7 @@
                 </p>
             </div>
 
-            <div id="currentDomainInfo" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                 <p style="margin: 0; color: #666; font-size: 0.9rem;">Current primary domain:</p>
                 <p id="currentDomainText" style="margin: 5px 0 0 0; font-weight: 600; color: #333; font-size: 1.1rem;"></p>
             </div>
@@ -421,7 +763,7 @@
                 <button class="logout-cancel-btn" onclick="closeDomainModal()">
                     Cancel
                 </button>
-                <button id="changeDomainBtn" class="logout-confirm-btn" onclick="confirmDomainChange()" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);">
+                <button id="changeDomainBtn" class="logout-confirm-btn" onclick="confirmDomainChange()">
                     Change Domain
                 </button>
             </div>
@@ -429,8 +771,6 @@
     </div>
 
     <script src="dashboard.js" defer></script>
-
-    <!-- AI Support Chat Widget -->
     <script src="support-chat.js"></script>
 </body>
 </html>

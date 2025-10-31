@@ -71,17 +71,20 @@ async function initDashboard() {
 // Update user info in header
 function updateUserInfo() {
     document.getElementById('userEmail').textContent = user.email;
-    document.getElementById('userName').textContent = user.email.split('@')[0];
-    
-    // Update plan badge
-    const planBadge = document.getElementById('planBadge');
+    document.getElementById('userName').textContent = user.name || user.email.split('@')[0];
+
+    // Update welcome title
+    document.getElementById('welcomeTitle').textContent = `Welcome back, ${user.name || user.email.split('@')[0]}!`;
+
+    // Update plan type
+    const planType = document.getElementById('planType');
     const planNames = {
-        free: '🆓 Free Plan',
-        diy: '🎯 DIY Plan',
-        pro: '⭐ Pro Plan'
+        free: 'Free Plan',
+        diy: 'DIY Plan',
+        pro: 'Pro Plan'
     };
-    planBadge.textContent = planNames[user.plan] || 'Free Plan';
-    
+    planType.textContent = planNames[user.plan] || 'Free Plan';
+
     // Update plan info text
     const planInfo = {
         free: '✓ Free plan: Homepage scan only',
@@ -89,30 +92,10 @@ function updateUserInfo() {
         pro: '✓ Pro plan: Analyze up to 25 pages'
     };
     document.getElementById('planInfo').textContent = planInfo[user.plan];
-    
-    // Show upgrade banner for free users
-    if (user.plan === 'free') {
-        document.getElementById('upgradeBanner').style.display = 'block';
-    }
-
-    // Show waitlist banner for DIY users
-    if (user.plan === 'diy') {
-        document.getElementById('waitlistBanner').style.display = 'block';
-    }
 
     // Show manage subscription button for paid users
-    console.log('Checking if should show manage subscription button. User plan:', user.plan);
     if (user.plan === 'diy' || user.plan === 'pro') {
-        console.log('User is on paid plan, showing manage subscription button');
-        const manageBtn = document.getElementById('manageSubscriptionBtn');
-        if (manageBtn) {
-            manageBtn.style.display = 'inline-block';
-            console.log('Manage subscription button displayed');
-        } else {
-            console.error('Manage subscription button not found in DOM!');
-        }
-    } else {
-        console.log('User is on free plan, button will stay hidden');
+        document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
     }
 }
 
@@ -132,62 +115,23 @@ function updateQuota() {
         limit: limits.primary
     };
 
-    const quotaBadge = document.getElementById('quotaBadge');
-    quotaBadge.textContent = `${quota.used} / ${quota.limit} primary scans`;
-    quotaBadge.title = 'Scans of your primary domain';
+    // Update primary scans quota display
+    const primaryScansQuota = document.getElementById('primaryScansQuota');
+    primaryScansQuota.textContent = `${quota.used} / ${quota.limit}`;
 
-    // Update badge color based on usage
-    quotaBadge.className = 'quota-badge';
-    if (quota.used >= quota.limit) {
-        quotaBadge.classList.add('quota-error');
-    } else if (quota.used >= quota.limit * 0.8) {
-        quotaBadge.classList.add('quota-warning');
-    }
-
-    // Competitor scan quota (show only for DIY and Pro)
-    const competitorQuotaBadge = document.getElementById('competitorQuotaBadge');
-    if (limits.competitor > 0) {
-        const competitorUsed = user.competitor_scans_used_this_month || 0;
-        competitorQuotaBadge.textContent = `${competitorUsed} / ${limits.competitor} competitors`;
-        competitorQuotaBadge.title = 'Competitor scans (scores only)';
-        competitorQuotaBadge.style.display = 'inline-block';
-
-        // Color code competitor quota
-        competitorQuotaBadge.className = 'quota-badge';
-        if (competitorUsed >= limits.competitor) {
-            competitorQuotaBadge.classList.add('quota-error');
-        } else if (competitorUsed >= limits.competitor * 0.8) {
-            competitorQuotaBadge.classList.add('quota-warning');
-        }
-    } else {
-        competitorQuotaBadge.style.display = 'none';
-    }
+    // Competitor scan quota
+    const competitorScansQuota = document.getElementById('competitorScansQuota');
+    const competitorUsed = user.competitor_scans_used_this_month || 0;
+    competitorScansQuota.textContent = `${competitorUsed} / ${limits.competitor}`;
 
     // Primary domain badge
     const primaryDomainBadge = document.getElementById('primaryDomainBadge');
     if (user.primary_domain) {
-        primaryDomainBadge.textContent = `🏠 ${user.primary_domain}`;
+        primaryDomainBadge.textContent = user.primary_domain;
         primaryDomainBadge.title = `Primary domain: ${user.primary_domain}\nClick to change (once per month)`;
     } else {
         primaryDomainBadge.textContent = '🏠 Not set';
         primaryDomainBadge.title = 'Primary domain will be set on first scan';
-    }
-
-    // Show quota warning
-    const quotaWarning = document.getElementById('quotaWarning');
-    const quotaWarningText = document.getElementById('quotaWarningText');
-
-    if (quota.used >= quota.limit) {
-        quotaWarning.style.display = 'block';
-        quotaWarning.className = 'quota-error';
-        quotaWarningText.innerHTML = `
-            ⚠️ You've used all ${quota.limit} primary domain scans this month.
-            <a href="checkout.html?plan=diy" style="color: inherit; text-decoration: underline; font-weight: bold;">Upgrade to continue scanning</a>
-        `;
-    } else if (quota.used >= quota.limit * 0.8) {
-        quotaWarning.style.display = 'block';
-        quotaWarning.className = 'quota-warning';
-        quotaWarningText.textContent = `⚠️ You've used ${quota.used} of ${quota.limit} primary scans. ${quota.limit - quota.used} remaining this month.`;
     }
 }
 
