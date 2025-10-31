@@ -167,7 +167,7 @@ function updateQuota() {
     const primaryDomainBadge = document.getElementById('primaryDomainBadge');
     if (user.primary_domain) {
         primaryDomainBadge.textContent = `🏠 ${user.primary_domain}`;
-        primaryDomainBadge.title = `Your primary domain: ${user.primary_domain}`;
+        primaryDomainBadge.title = `Primary domain: ${user.primary_domain}\nClick to change (once per month)`;
     } else {
         primaryDomainBadge.textContent = '🏠 Not set';
         primaryDomainBadge.title = 'Primary domain will be set on first scan';
@@ -592,6 +592,82 @@ async function manageSubscription() {
         const btn = document.getElementById('manageSubscriptionBtn');
         btn.disabled = false;
         btn.innerHTML = '⚙️ Manage Subscription';
+    }
+}
+
+// Change Primary Domain Modal Functions
+function openDomainModal() {
+    if (!user || !user.primary_domain) {
+        alert('No primary domain set yet. Your primary domain will be set automatically on your first scan.');
+        return;
+    }
+
+    // Set current domain in modal
+    document.getElementById('currentDomainText').textContent = user.primary_domain;
+
+    // Clear previous input and errors
+    document.getElementById('newDomainInput').value = '';
+    document.getElementById('domainChangeError').style.display = 'none';
+
+    // Show modal
+    document.getElementById('changeDomainModal').style.display = 'flex';
+}
+
+function closeDomainModal() {
+    document.getElementById('changeDomainModal').style.display = 'none';
+}
+
+async function confirmDomainChange() {
+    const newDomain = document.getElementById('newDomainInput').value.trim();
+    const errorDiv = document.getElementById('domainChangeError');
+    const btn = document.getElementById('changeDomainBtn');
+    const originalText = btn.innerHTML;
+
+    // Validate input
+    if (!newDomain) {
+        errorDiv.textContent = 'Please enter a new domain';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    try {
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Changing...';
+        errorDiv.style.display = 'none';
+
+        const authToken = localStorage.getItem('authToken');
+
+        const response = await fetch(`${API_BASE_URL}/auth/change-primary-domain`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ newDomain })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to change primary domain');
+        }
+
+        // Success!
+        alert(`✅ Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`);
+
+        // Close modal and reload page to reflect changes
+        closeDomainModal();
+        window.location.reload();
+
+    } catch (error) {
+        console.error('Domain change error:', error);
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+
+        // Restore button
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
 
