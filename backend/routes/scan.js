@@ -347,6 +347,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         extracted_domain: scanDomain,
         primary_domain: user.primary_domain,
         categories: scanResult.categories,
+        categoryBreakdown: scanResult.categories, // Frontend expects this field name
         recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
@@ -553,20 +554,23 @@ router.get('/:id', authenticateToken, async (req, res) => {
       }
     }
 
+    const categoryScores = {
+      aiReadability: scan.ai_readability_score,
+      aiSearchReadiness: scan.ai_search_readiness_score,
+      contentFreshness: scan.content_freshness_score,
+      contentStructure: scan.content_structure_score,
+      speedUX: scan.speed_ux_score,
+      technicalSetup: scan.technical_setup_score,
+      trustAuthority: scan.trust_authority_score,
+      voiceOptimization: scan.voice_optimization_score
+    };
+
     res.json({
       success: true,
       scan: {
         ...scan,
-        categories: {
-          aiReadability: scan.ai_readability_score,
-          aiSearchReadiness: scan.ai_search_readiness_score,
-          contentFreshness: scan.content_freshness_score,
-          contentStructure: scan.content_structure_score,
-          speedUX: scan.speed_ux_score,
-          technicalSetup: scan.technical_setup_score,
-          trustAuthority: scan.trust_authority_score,
-          voiceOptimization: scan.voice_optimization_score
-        },
+        categories: categoryScores,
+        categoryBreakdown: categoryScores, // Frontend expects this field name
         recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
