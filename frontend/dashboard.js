@@ -276,27 +276,45 @@ async function loadLatestScores() {
         const displayScore = getDisplayScore(latestScan.total_score || 0);
         document.getElementById('totalScore').textContent = displayScore;
 
-        // Define category labels and colors
+        // Define category labels
         const categories = [
-            { key: 'ai_readability_score', label: 'AI Readability', color: '#00B9DA' },
-            { key: 'ai_search_readiness_score', label: 'AI Search Readiness', color: '#f31c7e' },
-            { key: 'content_freshness_score', label: 'Content Freshness', color: '#7030A0' },
-            { key: 'content_structure_score', label: 'Content Structure', color: '#FFA500' },
-            { key: 'speed_ux_score', label: 'Speed & UX', color: '#28a745' },
-            { key: 'technical_setup_score', label: 'Technical Setup', color: '#dc3545' },
-            { key: 'trust_authority_score', label: 'Trust & Authority', color: '#17a2b8' },
-            { key: 'voice_optimization_score', label: 'Voice Optimization', color: '#6f42c1' }
+            { key: 'ai_readability_score', label: 'AI Readability' },
+            { key: 'ai_search_readiness_score', label: 'AI Search Readiness' },
+            { key: 'content_freshness_score', label: 'Content Freshness' },
+            { key: 'content_structure_score', label: 'Content Structure' },
+            { key: 'speed_ux_score', label: 'Speed & UX' },
+            { key: 'technical_setup_score', label: 'Technical Setup' },
+            { key: 'trust_authority_score', label: 'Trust & Authority' },
+            { key: 'voice_optimization_score', label: 'Voice Optimization' }
         ];
+
+        // Function to get color based on score
+        function getScoreColor(displayScore) {
+            if (displayScore < 400) return '#dc3545'; // Red
+            if (displayScore < 700) return '#ffc107'; // Yellow
+            return '#28a745'; // Green
+        }
+
+        // Find highest and lowest scores
+        const categoryScores = categories.map(cat => ({
+            ...cat,
+            score: latestScan[cat.key] || 0,
+            displayScore: getDisplayScore(latestScan[cat.key] || 0)
+        }));
+
+        const maxScore = Math.max(...categoryScores.map(c => c.displayScore));
+        const minScore = Math.min(...categoryScores.map(c => c.displayScore));
 
         // Display category scores list
         const categoriesList = document.getElementById('categoriesList');
-        categoriesList.innerHTML = categories.map(cat => {
-            const score = latestScan[cat.key] || 0;
-            const displayScore = getDisplayScore(score);
+        categoriesList.innerHTML = categoryScores.map(cat => {
+            const color = getScoreColor(cat.displayScore);
+            const isBold = cat.displayScore === maxScore || cat.displayScore === minScore;
+            const fontWeight = isBold ? 'font-weight: 700;' : '';
             return `
                 <div class="category-item">
                     <div class="category-label">${cat.label}</div>
-                    <div class="category-score" style="color: ${cat.color};">${displayScore}</div>
+                    <div class="category-score" style="color: ${color}; ${fontWeight}">${cat.displayScore}</div>
                 </div>
             `;
         }).join('');
@@ -309,8 +327,8 @@ async function loadLatestScores() {
                 categoryChart.destroy();
             }
 
-            const chartData = categories.map(cat => latestScan[cat.key] || 0);
-            const chartLabels = categories.map(cat => cat.label);
+            const chartData = categoryScores.map(cat => cat.score);
+            const chartLabels = categoryScores.map(cat => cat.label);
 
             categoryChart = new Chart(ctx, {
                 type: 'radar',
@@ -319,13 +337,13 @@ async function loadLatestScores() {
                     datasets: [{
                         label: 'Category Scores',
                         data: chartData,
-                        backgroundColor: 'rgba(0, 185, 218, 0.2)',
-                        borderColor: 'rgba(0, 185, 218, 1)',
+                        backgroundColor: 'rgba(243, 28, 126, 0.2)',
+                        borderColor: 'rgba(243, 28, 126, 1)',
                         borderWidth: 2,
-                        pointBackgroundColor: 'rgba(0, 185, 218, 1)',
+                        pointBackgroundColor: 'rgba(243, 28, 126, 1)',
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(0, 185, 218, 1)'
+                        pointHoverBorderColor: 'rgba(243, 28, 126, 1)'
                     }]
                 },
                 options: {
