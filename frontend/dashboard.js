@@ -98,6 +98,14 @@ function updateUserInfo() {
     if (user.plan === 'diy' || user.plan === 'pro') {
         document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
     }
+
+    // Show waitlist banner for DIY users
+    if (user.plan === 'diy') {
+        const waitlistBanner = document.getElementById('waitlistBanner');
+        if (waitlistBanner) {
+            waitlistBanner.style.display = 'block';
+        }
+    }
 }
 
 // Update quota display
@@ -337,7 +345,7 @@ async function loadLatestScores() {
                     datasets: [{
                         label: 'Category Scores',
                         data: chartData,
-                        backgroundColor: 'rgba(243, 28, 126, 0.2)',
+                        backgroundColor: 'rgba(0, 185, 218, 0.2)',
                         borderColor: 'rgba(243, 28, 126, 1)',
                         borderWidth: 2,
                         pointBackgroundColor: 'rgba(243, 28, 126, 1)',
