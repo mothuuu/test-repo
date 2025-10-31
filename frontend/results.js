@@ -86,34 +86,53 @@ function displayResults(scan, quota) {
     const userTier = authToken ? (userData.plan || 'free') : 'guest';
 
     // Update header info
-    document.getElementById('scanUrl').textContent = scan.url;
-    document.getElementById('scanDate').textContent = new Date(scan.created_at).toLocaleDateString();
+    document.getElementById('scanUrl').innerHTML = `<strong>${scan.url}</strong>`;
+    document.getElementById('scanDate').textContent = new Date(scan.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // Display page count if available
+    if (scan.page_count && scan.page_count > 1) {
+        const pageCountEl = document.getElementById('pageCountMeta');
+        if (pageCountEl) {
+            pageCountEl.style.display = 'flex';
+            document.getElementById('pageCount').textContent = `${scan.page_count} pages scanned`;
+        }
+    }
+
+    // Display industry if available
+    if (scan.industry) {
+        const industryEl = document.getElementById('industryMeta');
+        if (industryEl) {
+            industryEl.style.display = 'flex';
+            document.getElementById('scanIndustry').textContent = scan.industry;
+        }
+    }
 
     // Display overall score (convert 0-100 to 0-1000)
     const displayScore = Math.round(scan.total_score * 10);
     document.getElementById('overallScore').textContent = displayScore;
 
-    // Update score circle color
-    const scoreCircle = document.getElementById('scoreCircle');
-    if (displayScore >= 750) {
-        scoreCircle.classList.add('text-green-600');
-    } else if (displayScore >= 500) {
-        scoreCircle.classList.add('text-yellow-600');
-    } else {
-        scoreCircle.classList.add('text-red-600');
-    }
+    // Animate SVG progress ring
+    animateScoreRing(scan.total_score);
 
-    // Display user plan and quota
+    // Display user plan
     if (userData.plan) {
         document.getElementById('userPlan').textContent = userData.plan.toUpperCase();
-        if (quota) {
-            document.getElementById('scanQuota').textContent = `${quota.used}/${quota.limit} scans used`;
-        }
     }
 
     // Display category scores
     if (scan.categoryBreakdown) {
         displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
+    }
+
+    // Update recommendations count
+    const recCount = scan.recommendations ? scan.recommendations.length : 0;
+    const recCountEl = document.getElementById('recCount');
+    if (recCountEl) {
+        recCountEl.textContent = `${recCount} actionable improvement${recCount !== 1 ? 's' : ''} to boost your AI visibility`;
     }
 
     // Display recommendations based on tier and scan type
@@ -127,7 +146,7 @@ function displayResults(scan, quota) {
         // Authenticated: Show recommendations based on plan
         displayRecommendations(scan.recommendations, userTier, scan.userProgress, scan.nextBatchUnlock, scan.batchesUnlocked);
     } else {
-        document.getElementById('recommendationsList').innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
+        document.getElementById('recommendationsList').innerHTML = '<p style="text-align: center; padding: 32px 0; color: #718096;">No recommendations available for this scan.</p>';
     }
 
     // Display FAQ section (DIY+ only)
@@ -140,7 +159,10 @@ function displayResults(scan, quota) {
 
     // Show export options for DIY+
     if (userTier !== 'free' && userTier !== 'guest') {
-        document.getElementById('exportSection')?.classList.remove('hidden');
+        const exportSection = document.getElementById('exportSection');
+        if (exportSection) {
+            exportSection.style.display = 'flex';
+        }
     }
 }
 
@@ -148,42 +170,149 @@ function displayCategoryScores(categories, recommendations) {
     const container = document.getElementById('categoryScores');
     container.innerHTML = '';
 
-    Object.entries(categories).forEach(([categoryKey, score]) => {
+    // Prepare category data with scores
+    const categoryData = Object.entries(categories).map(([categoryKey, score]) => {
         const displayScore = Math.round(score * 10); // Convert to 0-1000
         const categoryName = categoryNames[categoryKey] || formatCategoryName(categoryKey);
-        const icon = categoryIcons[categoryKey] || '📊';
-        
-        // Get top 3 recommendations for this category
-        const categoryRecs = recommendations
-            .filter(rec => rec.category === categoryKey)
-            .slice(0, 3);
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
-        card.innerHTML = `
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <span class="text-3xl">${icon}</span>
-                    <h3 class="font-bold text-lg">${categoryName}</h3>
-                </div>
-                <span class="text-2xl font-bold ${getScoreColor(displayScore)}">${displayScore}/1000</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-                <div class="h-2 rounded-full ${getScoreBarColor(displayScore)}" style="width: ${score}%"></div>
-            </div>
-            ${categoryRecs.length > 0 ? `
-                <div class="mt-3 space-y-2">
-                    <p class="text-sm font-semibold text-gray-700">Top Priorities:</p>
-                    ${categoryRecs.map(rec => `
-                        <div class="text-sm text-gray-600 pl-2 border-l-2 ${priorityColors[rec.priority]?.border || 'border-gray-300'}">
-                            • ${rec.recommendation_text || rec.title || 'Recommendation'}
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
-        `;
-        container.appendChild(card);
+        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore };
     });
+
+    // Create list items for each category
+    categoryData.forEach(cat => {
+        const displayScore = cat.displayScore;
+
+        // Determine color class based on score
+        let colorClass = 'category-item';
+        if (displayScore < 400) {
+            colorClass += ' critical';
+        } else if (displayScore < 700) {
+            colorClass += ' warning';
+        }
+
+        // Determine score color
+        let scoreColor = 'category-score';
+        if (displayScore < 400) {
+            scoreColor += ' critical';
+        } else if (displayScore < 700) {
+            scoreColor += ' warning';
+        }
+
+        const item = document.createElement('div');
+        item.className = colorClass;
+        item.innerHTML = `
+            <div class="category-info">
+                <div class="category-name">${cat.name}</div>
+            </div>
+            <div class="category-score-section">
+                <div class="${scoreColor}">${displayScore}</div>
+                <div class="category-max">/ 1000</div>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+
+    // Initialize radar chart with category data
+    initializeRadarChart(categoryData);
+}
+
+// Initialize Chart.js radar chart
+function initializeRadarChart(categoryData) {
+    const ctx = document.getElementById('categoryRadarChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (categoryRadarChart) {
+        categoryRadarChart.destroy();
+    }
+
+    const chartLabels = categoryData.map(cat => cat.name);
+    const chartScores = categoryData.map(cat => cat.score);
+
+    categoryRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Your Score (%)',
+                data: chartScores,
+                fill: true,
+                backgroundColor: 'rgba(0, 185, 218, 0.2)',
+                borderColor: 'rgb(0, 185, 218)',
+                pointBackgroundColor: 'rgb(243, 28, 126)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(243, 28, 126)',
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            layout: {
+                padding: {
+                    top: 20,
+                    right: 40,
+                    bottom: 20,
+                    left: 40
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 13,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const score = context.parsed.r;
+                            const displayScore = Math.round(score * 10);
+                            return `Score: ${displayScore} / 1000`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Animate SVG progress ring
+function animateScoreRing(score) {
+    const circle = document.getElementById('scoreProgress');
+    if (!circle) return;
+
+    const radius = 78;
+    const circumference = 2 * Math.PI * radius;
+    const percentage = score / 100; // Score is 0-100
+    const offset = circumference - (percentage * circumference);
+
+    // Set initial state
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = circumference;
+
+    // Animate to final state
+    setTimeout(() => {
+        circle.style.transition = 'stroke-dashoffset 1s ease-out';
+        circle.style.strokeDashoffset = offset;
+    }, 100);
 }
 
 // Guest recommendations - show signup CTA instead of recommendations
@@ -1157,6 +1286,17 @@ Keep up the great work! Each implementation improves your AI visibility score.
         console.error('Error loading progress:', error);
         showNotification('Failed to load progress data. Please try again.', 'error');
     });
+}
+
+// Expand/Collapse all recommendations
+function expandAll() {
+    const cards = document.querySelectorAll('.recommendation-card');
+    cards.forEach(card => card.classList.add('expanded'));
+}
+
+function collapseAll() {
+    const cards = document.querySelectorAll('.recommendation-card');
+    cards.forEach(card => card.classList.remove('expanded'));
 }
 
 // Initialize on page load
