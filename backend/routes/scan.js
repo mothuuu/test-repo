@@ -591,12 +591,17 @@ router.get('/list/recent', authenticateToken, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         id, url, status, total_score, rubric_version,
-        page_count, industry, created_at, completed_at
-       FROM scans 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC 
+        page_count, industry, domain_type, extracted_domain,
+        ai_readability_score, ai_search_readiness_score,
+        content_freshness_score, content_structure_score,
+        speed_ux_score, technical_setup_score,
+        trust_authority_score, voice_optimization_score,
+        created_at, completed_at
+       FROM scans
+       WHERE user_id = $1
+       ORDER BY created_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
     );
