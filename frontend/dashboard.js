@@ -137,61 +137,102 @@ function updateQuota() {
 
 // Load recent scans
 async function loadRecentScans() {
-    const scansList = document.getElementById('scansList');
+    const primaryScansList = document.getElementById('primaryScansList');
+    const competitorScansList = document.getElementById('competitorScansList');
     const authToken = localStorage.getItem('authToken');
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/scan/list/recent`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to load scans');
         }
-        
+
         const data = await response.json();
         const scans = data.scans || [];
-        
-        if (scans.length === 0) {
-            scansList.innerHTML = `
+
+        // Separate primary and competitor scans
+        const primaryScans = scans.filter(scan => scan.domain_type === 'primary');
+        const competitorScans = scans.filter(scan => scan.domain_type === 'competitor');
+
+        // Display primary scans
+        if (primaryScans.length === 0) {
+            primaryScansList.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📊</div>
-                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 10px;">No scans yet</p>
-                    <p>Start your first scan above to see your AI visibility score!</p>
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-text">No primary scans yet. Start your first scan above!</div>
                 </div>
             `;
-            return;
+        } else {
+            primaryScansList.innerHTML = primaryScans.map(scan => {
+                const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                const displayScore = getDisplayScore(scan.total_score || 0);
+
+                return `
+                    <div class="scan-item" onclick="window.location.href='results.html?scanId=${scan.id}'">
+                        <div class="scan-info">
+                            <div class="scan-url">${scan.url}</div>
+                            <div class="scan-date">Scanned on ${date}</div>
+                        </div>
+                        <div>
+                            <div class="scan-score">${displayScore}</div>
+                            <div class="score-label">/ 1000</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        
-        scansList.innerHTML = scans.map(scan => {
-            const date = new Date(scan.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            // Convert backend score (0-100) to display score (0-1000)
-            const displayScore = getDisplayScore(scan.total_score || 0);
-            
-            return `
-                <div class="scan-card" onclick="window.location.href='results.html?scanId=${scan.id}'">
-                    <div class="scan-info">
-                        <h4>${scan.url}</h4>
-                        <p>Scanned on ${date}</p>
-                    </div>
-                    <div class="scan-score">
-                        <div class="score-number">${displayScore}</div>
-                        <div class="score-label">/ 1000</div>
-                    </div>
+
+        // Display competitor scans
+        if (competitorScans.length === 0) {
+            competitorScansList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-text">No competitor scans yet</div>
                 </div>
             `;
-        }).join('');
-        
+        } else {
+            competitorScansList.innerHTML = competitorScans.map(scan => {
+                const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                const displayScore = getDisplayScore(scan.total_score || 0);
+
+                return `
+                    <div class="scan-item" onclick="window.location.href='results.html?scanId=${scan.id}'">
+                        <div class="scan-info">
+                            <div class="scan-url">${scan.url}</div>
+                            <div class="scan-date">Scanned on ${date}</div>
+                        </div>
+                        <div>
+                            <div class="scan-score">${displayScore}</div>
+                            <div class="score-label">/ 1000</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
     } catch (error) {
         console.error('Error loading scans:', error);
-        scansList.innerHTML = `
+        primaryScansList.innerHTML = `
             <div class="empty-state">
-                <p style="color: #dc3545;">Failed to load recent scans. Please try again.</p>
+                <div class="empty-text" style="color: #dc3545;">Failed to load scans</div>
+            </div>
+        `;
+        competitorScansList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-text" style="color: #dc3545;">Failed to load scans</div>
             </div>
         `;
     }
