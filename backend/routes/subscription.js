@@ -444,32 +444,47 @@ router.post('/verify-session', async (req, res) => {
 router.get('/portal', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
+    console.log('📋 Portal request for user:', userId);
+
     // Get user's Stripe customer ID
     const result = await db.query(
       'SELECT stripe_customer_id FROM users WHERE id = $1',
       [userId]
     );
-    
+
     if (result.rows.length === 0 || !result.rows[0].stripe_customer_id) {
-      return res.status(404).json({ 
-        error: 'No subscription found' 
+      console.error('❌ No Stripe customer ID found for user:', userId);
+      return res.status(404).json({
+        error: 'No subscription found'
       });
     }
-    
+
     const customerId = result.rows[0].stripe_customer_id;
-    
+    console.log('✅ Found Stripe customer ID:', customerId);
+
     // Create Stripe Customer Portal session
+    console.log('🔄 Creating portal session...');
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${process.env.FRONTEND_URL}/index.html`,
     });
-    
+
+    console.log('✅ Portal session created:', session.id);
     res.json({ url: session.url });
-    
+
   } catch (error) {
-    console.error('Portal creation failed:', error);
-    res.status(500).json({ error: 'Failed to create portal session' });
+    console.error('❌ Portal creation failed:', error.message);
+    console.error('Full error:', error);
+
+    // Provide more helpful error messages
+    if (error.message && error.message.includes('billing portal')) {
+      return res.status(500).json({
+        error: 'Stripe Customer Portal is not activated. Please activate it in your Stripe Dashboard under Settings > Billing > Customer Portal.'
+      });
+    }
+
+    res.status(500).json({ error: 'Failed to create portal session: ' + error.message });
   }
 });
 

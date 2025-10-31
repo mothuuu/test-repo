@@ -249,7 +249,7 @@
             </div>
 
             <div class="user-info">
-                <span id="primaryDomainBadge" class="quota-badge" style="background: #e3f2fd; color: #1976d2; font-weight: 600;" title="Your primary domain">
+                <span id="primaryDomainBadge" class="quota-badge" style="background: #e3f2fd; color: #1976d2; font-weight: 600; cursor: pointer;" title="Click to change primary domain" onclick="openDomainModal()">
                     🏠 Not set
                 </span>
                 <span id="quotaBadge" class="quota-badge">0 / 2 scans used</span>
@@ -375,6 +375,54 @@
                 </button>
                 <button id="competitorConfirmBtn" class="logout-confirm-btn" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);">
                     Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Primary Domain Modal -->
+    <div id="changeDomainModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="font-size: 1.75rem; margin-bottom: 20px; color: #1a202c;">
+                🏠 Change Primary Domain
+            </h2>
+
+            <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; color: #856404; font-size: 0.95rem;">
+                    ⚠️ <strong>Note:</strong> You can only change your primary domain <strong>once per month</strong>.
+                    All scan quotas will reset when you change domains.
+                </p>
+            </div>
+
+            <div id="currentDomainInfo" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">Current primary domain:</p>
+                <p id="currentDomainText" style="margin: 5px 0 0 0; font-weight: 600; color: #333; font-size: 1.1rem;"></p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    New Primary Domain
+                </label>
+                <input
+                    type="text"
+                    id="newDomainInput"
+                    placeholder="example.com or https://example.com"
+                    style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem;"
+                >
+                <small style="display: block; margin-top: 5px; color: #666;">
+                    Enter your new primary domain (without www)
+                </small>
+            </div>
+
+            <div id="domainChangeError" style="display: none; padding: 12px; background: #fee; color: #c33; border: 2px solid #fcc; border-radius: 8px; margin-bottom: 20px; font-size: 0.95rem;">
+            </div>
+
+            <div class="logout-modal-actions">
+                <button class="logout-cancel-btn" onclick="closeDomainModal()">
+                    Cancel
+                </button>
+                <button id="changeDomainBtn" class="logout-confirm-btn" onclick="confirmDomainChange()" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);">
+                    Change Domain
                 </button>
             </div>
         </div>

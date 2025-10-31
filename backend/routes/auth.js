@@ -329,4 +329,69 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// POST /api/auth/change-primary-domain - Change primary domain (once per month)
+router.post('/change-primary-domain', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { newDomain } = req.body;
+
+    if (!newDomain) {
+      return res.status(400).json({ error: 'New domain is required' });
+    }
+
+    // Validate domain format
+    let domain = newDomain.trim();
+    if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+      domain = 'https://' + domain;
+    }
+
+    try {
+      const url = new URL(domain);
+      domain = url.hostname.replace(/^www\./, '');
+    } catch (err) {
+      return res.status(400).json({ error: 'Invalid domain format' });
+    }
+
+    // Check if user has already changed primary domain this month
+    const user = req.user;
+
+    if (user.primary_domain_changed_at) {
+      const lastChanged = new Date(user.primary_domain_changed_at);
+      const now = new Date();
+      const daysSinceChange = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
+
+      if (daysSinceChange < 30) {
+        const daysRemaining = 30 - daysSinceChange;
+        return res.status(403).json({
+          error: `You can only change your primary domain once per month. Please wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'}.`,
+          daysRemaining: daysRemaining
+        });
+      }
+    }
+
+    // Update primary domain
+    await db.query(
+      `UPDATE users
+       SET primary_domain = $1,
+           primary_domain_changed_at = CURRENT_TIMESTAMP,
+           scans_used_this_month = 0,
+           competitor_scans_used_this_month = 0
+       WHERE id = $2`,
+      [domain, userId]
+    );
+
+    console.log(`✅ Primary domain changed for user ${userId}: ${user.primary_domain} → ${domain}`);
+
+    res.json({
+      success: true,
+      message: 'Primary domain updated successfully',
+      newDomain: domain
+    });
+
+  } catch (error) {
+    console.error('Change primary domain error:', error);
+    res.status(500).json({ error: 'Failed to change primary domain' });
+  }
+});
+
 module.exports = router;
