@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Results - AI Visibility Score</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .recommendation-card {
+            transition: all 0.3s ease;
+        }
+        .recommendation-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Score circle animation */
+        @keyframes scoreReveal {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        #scoreCircle {
+            animation: scoreReveal 0.6s ease-out;
+        }
+
+        /* Smooth expand/collapse */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="dashboard.html" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    AI Visibility Score
+                </a>
+                <div class="flex items-center gap-4">
+                    <span id="userPlan" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold"></span>
+                    <span id="scanQuota" class="text-sm text-gray-600"></span>
+                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+        <!-- Header Section -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Scan Results</h1>
+                    <p class="text-gray-600">
+                        <span id="scanUrl" class="font-semibold"></span> • 
+                        <span id="scanDate"></span>
+                    </p>
+                </div>
+                <div id="scoreCircle" class="text-center">
+                    <div class="text-6xl font-bold mb-2">
+                        <span id="overallScore">0</span>
+                        <span class="text-3xl text-gray-500">/1000</span>
+                    </div>
+                    <p class="text-gray-600 font-semibold">Overall Score</p>
+                </div>
+            </div>
+
+            <!-- Export Section (DIY+ only) -->
+            <div id="exportSection" class="hidden flex gap-4 pt-6 border-t">
+                <button onclick="window.print()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    📄 Export PDF
+                </button>
+                <button onclick="alert('CSV export coming soon!')" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold">
+                    📊 Export CSV
+                </button>
+                <a href="dashboard.html" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                    ✓ Save & Continue
+                </a>
+            </div>
+        </div>
+
+        <!-- Category Scores Grid -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Performance by Category</h2>
+            <div id="categoryScores" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Category cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Detailed Recommendations</h2>
+                <div class="flex gap-2">
+                    <button onclick="expandAll()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-semibold">
+                        Expand All
+                    </button>
+                    <button onclick="collapseAll()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold">
+                        Collapse All
+                    </button>
+                </div>
+            </div>
+            <div id="recommendationsList" class="space-y-4">
+                <!-- Recommendation cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- FAQ Section (DIY+ only) -->
+        <div id="faqSection" class="hidden mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">❓ Custom FAQ for Your Website</h2>
+            <p class="text-gray-600 mb-6">
+                These AI-generated FAQs are tailored to your content and optimized for AI search visibility. 
+                Implement them on your website to improve how AI understands your business.
+            </p>
+            
+            <div id="faqList" class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- FAQ cards will be inserted here -->
+            </div>
+
+            <div id="schemaCode">
+                <!-- Schema code will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Upgrade CTA Section -->
+        <div id="upgradeSection" class="hidden mb-8">
+            <!-- Upgrade content will be inserted here -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row gap-4 justify-center items-center">
+            <button onclick="window.location.href='dashboard.html'" 
+                    class="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md">
+                Scan Another Website
+            </button>
+            <button onclick="window.location.href='dashboard.html#history'" 
+                    class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                View Scan History
+            </button>
+            <button onclick="showProgressSummary()"
+                    class="px-8 py-3 bg-green-100 text-green-800 rounded-lg font-semibold hover:bg-green-200 transition-colors">
+                Track Progress
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl">
+                <h3 id="modalTitle" class="text-xl font-bold">Confirm Action</h3>
+            </div>
+            <div class="p-6">
+                <p id="modalMessage" class="text-gray-700 text-lg leading-relaxed"></p>
+            </div>
+            <div class="px-6 pb-6 flex gap-3 justify-end">
+                <button onclick="closeConfirmModal(false)"
+                        class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button id="modalConfirmBtn" onclick="closeConfirmModal(true)"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Modal -->
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div id="notificationHeader" class="px-6 py-4 rounded-t-2xl">
+                <h3 id="notificationTitle" class="text-xl font-bold flex items-center gap-2"></h3>
+            </div>
+            <div class="p-6">
+                <p id="notificationMessage" class="text-gray-700 text-lg leading-relaxed"></p>
+            </div>
+            <div class="px-6 pb-6 flex justify-center">
+                <button onclick="closeNotification()"
+                        class="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            <p>&copy; 2025 AI Visibility Score. Track and optimize your AI search presence.</p>
+            <div class="mt-2 flex justify-center gap-4 text-sm">
+                <a href="#" class="hover:text-blue-600">Help Center</a>
+                <a href="#" class="hover:text-blue-600">Privacy Policy</a>
+                <a href="#" class="hover:text-blue-600">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="results.js"></script>
+    <script>
+        // Custom confirmation modal
+        let modalResolve = null;
+
+        function showConfirmModal(title, message) {
+            return new Promise((resolve) => {
+                modalResolve = resolve;
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMessage').textContent = message;
+                const modal = document.getElementById('confirmModal');
+                modal.style.display = 'flex';
+                modal.classList.remove('hidden');
+            });
+        }
+
+        function closeConfirmModal(confirmed) {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            if (modalResolve) {
+                modalResolve(confirmed);
+                modalResolve = null;
+            }
+        }
+
+        // Custom notification modal
+        function showNotification(message, type = 'success') {
+            const modal = document.getElementById('notificationModal');
+            const header = document.getElementById('notificationHeader');
+            const title = document.getElementById('notificationTitle');
+            const messageEl = document.getElementById('notificationMessage');
+
+            // Set colors and icon based on type
+            if (type === 'success') {
+                header.className = 'bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-t-2xl';
+                title.innerHTML = '<span class="text-2xl">✓</span> <span>Success!</span>';
+            } else if (type === 'error') {
+                header.className = 'bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-t-2xl';
+                title.innerHTML = '<span class="text-2xl">✕</span> <span>Error</span>';
+            } else if (type === 'info') {
+                header.className = 'bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl';
+                title.innerHTML = '<span class="text-2xl">ℹ</span> <span>Information</span>';
+            }
+
+            messageEl.textContent = message;
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function closeNotification() {
+            const modal = document.getElementById('notificationModal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeConfirmModal(false);
+                closeNotification();
+            }
+        });
+
+        // Utility functions for expand/collapse all
+        function expandAll() {
+            document.querySelectorAll('[id^="content-"]').forEach(el => {
+                el.classList.remove('hidden');
+            });
+            document.querySelectorAll('[id^="toggle-"]').forEach(el => {
+                el.textContent = 'Collapse ▲';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('[id^="content-"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.querySelectorAll('[id^="toggle-"]').forEach(el => {
+                el.textContent = 'Expand ▼';
+            });
+        }
+    </script>
+
+    <!-- Feedback Widget -->
+    <script src="feedback-widget.js"></script>
+
+    <!-- AI Support Chat Widget -->
+    <script src="support-chat.js"></script>
+</body>
+</html>

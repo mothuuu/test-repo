@@ -24,6 +24,9 @@ const priorityColors = {
     low: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' }
 };
 
+// Global chart variable
+let categoryRadarChart = null;
+
 // Category icons mapping
 const categoryIcons = {
     aiReadability: '📖',
