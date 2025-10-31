@@ -101,8 +101,18 @@ function updateUserInfo() {
     }
 
     // Show manage subscription button for paid users
+    console.log('Checking if should show manage subscription button. User plan:', user.plan);
     if (user.plan === 'diy' || user.plan === 'pro') {
-        document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
+        console.log('User is on paid plan, showing manage subscription button');
+        const manageBtn = document.getElementById('manageSubscriptionBtn');
+        if (manageBtn) {
+            manageBtn.style.display = 'inline-block';
+            console.log('Manage subscription button displayed');
+        } else {
+            console.error('Manage subscription button not found in DOM!');
+        }
+    } else {
+        console.log('User is on free plan, button will stay hidden');
     }
 }
 
