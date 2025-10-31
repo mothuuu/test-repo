@@ -351,12 +351,22 @@ async function loadLatestScores() {
                         pointBackgroundColor: 'rgba(243, 28, 126, 1)',
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(243, 28, 126, 1)'
+                        pointHoverBorderColor: 'rgba(243, 28, 126, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
+                    layout: {
+                        padding: {
+                            top: 20,
+                            right: 40,
+                            bottom: 20,
+                            left: 40
+                        }
+                    },
                     scales: {
                         r: {
                             beginAtZero: true,
