@@ -314,6 +314,29 @@
             max-width: 500px;
         }
 
+        /* Upgrade/Waitlist Banner */
+        .upgrade-banner {
+            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 40px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .upgrade-banner h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .upgrade-banner p {
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
         /* New Scan Section */
         .new-scan-section {
             background: white;
@@ -678,6 +701,23 @@
                     <div class="empty-text">No competitor scans yet</div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Waitlist Banner (for DIY users) -->
+    <div id="waitlistBanner" style="display: none;" class="upgrade-banner">
+        <div style="display: inline-block; padding: 8px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; font-weight: 700; font-size: 0.9rem; margin-bottom: 15px;">
+            COMING SOON
+        </div>
+        <h3>⭐ Premium & Agency Plans</h3>
+        <p>Advanced features including 15-50 pages per scan, competitive analysis, white-label reporting, and dedicated support</p>
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+            <button class="analyze-btn" style="background: white; color: #7030A0;" onclick="window.location.href='waitlist.html?plan=premium'">
+                Join Premium Waitlist ($99/mo)
+            </button>
+            <button class="analyze-btn" style="background: white; color: #7030A0;" onclick="window.location.href='waitlist.html?plan=agency'">
+                Join Agency Waitlist ($499/mo)
+            </button>
         </div>
     </div>
 
