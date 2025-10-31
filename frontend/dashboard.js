@@ -346,7 +346,7 @@ async function loadLatestScores() {
                         label: 'Category Scores',
                         data: chartData,
                         backgroundColor: 'rgba(0, 185, 218, 0.2)',
-                        borderColor: 'rgba(243, 28, 126, 1)',
+                        borderColor: 'rgba(0, 185, 218, 1)',
                         borderWidth: 2,
                         pointBackgroundColor: 'rgba(243, 28, 126, 1)',
                         pointBorderColor: '#fff',
@@ -369,7 +369,8 @@ async function loadLatestScores() {
                             },
                             pointLabels: {
                                 font: {
-                                    size: 11
+                                    size: 13,
+                                    weight: 'bold'
                                 }
                             }
                         }
