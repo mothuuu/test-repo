@@ -146,6 +146,92 @@
             font-weight: 600;
         }
 
+        .score-grade {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Key Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid #00B9DA;
+        }
+
+        .metric-card.warning {
+            border-top-color: #f59e0b;
+        }
+
+        .metric-card.critical {
+            border-top-color: #ef4444;
+        }
+
+        .metric-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            color: #718096;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .metric-desc {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            background: #f7fafc;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: #718096;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: #00B9DA;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         /* Action Buttons */
         .action-buttons {
             display: flex;
@@ -224,21 +310,29 @@
         }
 
         .category-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 40px;
+            display: none;
         }
 
-        @media (min-width: 768px) {
-            .category-content {
-                grid-template-columns: 1fr 1fr;
-            }
+        .category-content.active {
+            display: block;
         }
 
         .categories-list {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .categories-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .categories-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         .category-item {
@@ -348,6 +442,184 @@
             color: white;
         }
 
+        /* Recommendation Cards */
+        .recommendation-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .recommendation-card:hover {
+            border-color: #00B9DA;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .rec-header {
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: #fafbfc;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .rec-priority-badge {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .rec-priority-badge.high {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .rec-priority-badge.medium {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .rec-priority-badge.low {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .rec-title-section {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .rec-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .rec-category {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .rec-metrics-section {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .rec-metric {
+            text-align: center;
+        }
+
+        .rec-metric-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .rec-metric-value.score-gain {
+            color: #00B9DA;
+        }
+
+        .rec-metric-value.effort {
+            color: #f31c7e;
+        }
+
+        .rec-metric-label {
+            font-size: 11px;
+            color: #718096;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .expand-icon {
+            font-size: 18px;
+            color: #00B9DA;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .recommendation-card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .rec-body {
+            display: none;
+            padding: 25px;
+            border-top: 2px solid #f0f4f8;
+        }
+
+        .recommendation-card.expanded .rec-body {
+            display: block;
+        }
+
+        .rec-description {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4a5568;
+            margin-bottom: 25px;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #00B9DA;
+        }
+
+        .action-steps {
+            margin-bottom: 25px;
+        }
+
+        .action-steps-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .action-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #fef3c7;
+            border-radius: 8px;
+        }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-text {
+            font-size: 14px;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
         /* Utility Classes */
         .hidden {
             display: none !important;
@@ -441,14 +713,37 @@
                     </svg>
                     <div class="score-number" id="overallScore">0</div>
                 </div>
+                <div class="score-grade" id="scoreGrade">--</div>
                 <div class="score-label">Overall AI Visibility</div>
             </div>
         </div>
 
-        <div class="action-buttons" id="exportSection" style="display: none;">
+        <div class="action-buttons" id="exportSection">
             <button class="btn btn-primary" onclick="window.print()">📄 Export PDF</button>
             <button class="btn btn-secondary" onclick="alert('CSV export coming soon!')">📊 Export CSV</button>
             <button class="btn btn-success" onclick="window.location.href='dashboard.html'">✓ Save & Continue</button>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card">
+            <div class="metric-icon">✅</div>
+            <div class="metric-title">Strong Areas</div>
+            <div class="metric-value" id="strongCount">0</div>
+            <div class="metric-desc">Categories performing well</div>
+        </div>
+        <div class="metric-card warning">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-title">Needs Improvement</div>
+            <div class="metric-value" id="warningCount">0</div>
+            <div class="metric-desc">Categories need attention</div>
+        </div>
+        <div class="metric-card critical">
+            <div class="metric-icon">🚨</div>
+            <div class="metric-title">Priority Fixes</div>
+            <div class="metric-value" id="criticalCount">0</div>
+            <div class="metric-desc">Critical issues to address</div>
         </div>
     </div>
 
@@ -456,15 +751,23 @@
     <div class="category-section">
         <div class="section-header">
             <h2 class="section-title">Performance by Category</h2>
+            <div class="view-toggle">
+                <button class="toggle-btn active" onclick="switchCategoryView('list')">📋 List View</button>
+                <button class="toggle-btn" onclick="switchCategoryView('chart')">📊 Chart View</button>
+            </div>
         </div>
 
-        <div class="category-content">
+        <!-- List View -->
+        <div class="category-content active" id="categoryListView">
             <div class="categories-list" id="categoryScores">
                 <!-- Category items will be inserted here by JavaScript -->
             </div>
+        </div>
 
+        <!-- Chart View -->
+        <div class="category-content" id="categoryChartView">
             <div class="chart-container">
-                <canvas id="categoryRadarChart"></canvas>
+                <canvas id="categoryBarChart"></canvas>
             </div>
         </div>
     </div>
