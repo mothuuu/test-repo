@@ -99,6 +99,21 @@ function updateUserInfo() {
     if (user.plan === 'diy') {
         document.getElementById('waitlistBanner').style.display = 'block';
     }
+
+    // Show manage subscription button for paid users
+    console.log('Checking if should show manage subscription button. User plan:', user.plan);
+    if (user.plan === 'diy' || user.plan === 'pro') {
+        console.log('User is on paid plan, showing manage subscription button');
+        const manageBtn = document.getElementById('manageSubscriptionBtn');
+        if (manageBtn) {
+            manageBtn.style.display = 'inline-block';
+            console.log('Manage subscription button displayed');
+        } else {
+            console.error('Manage subscription button not found in DOM!');
+        }
+    } else {
+        console.log('User is on free plan, button will stay hidden');
+    }
 }
 
 // Update quota display
@@ -530,6 +545,55 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
         scanBtn.textContent = 'Analyze Website';
     }
 });
+
+// Manage Subscription - Opens Stripe Customer Portal
+async function manageSubscription() {
+    const authToken = localStorage.getItem('authToken');
+
+    if (!authToken) {
+        alert('Please log in to manage your subscription');
+        return;
+    }
+
+    try {
+        // Show loading state
+        const btn = document.getElementById('manageSubscriptionBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Loading...';
+
+        // Get Stripe Customer Portal URL
+        const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to open subscription portal');
+        }
+
+        // Redirect to Stripe Customer Portal
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            throw new Error('No portal URL received');
+        }
+
+    } catch (error) {
+        console.error('Subscription management error:', error);
+        alert(error.message || 'Failed to open subscription portal. Please try again or contact support.');
+
+        // Restore button
+        const btn = document.getElementById('manageSubscriptionBtn');
+        btn.disabled = false;
+        btn.innerHTML = '⚙️ Manage Subscription';
+    }
+}
 
 // Logout functions
 function logout() {
