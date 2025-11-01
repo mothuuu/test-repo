@@ -1385,8 +1385,8 @@ function initializeBarChart(categoryData) {
     });
 }
 
-// Switch category view (list/chart)
-function switchCategoryView(view) {
+// Switch category view (list/chart) - ensure global scope
+window.switchCategoryView = function(view) {
     const listView = document.getElementById('categoryListView');
     const chartView = document.getElementById('categoryChartView');
     const listBtn = document.querySelector('.toggle-btn:first-child');
@@ -1405,23 +1405,32 @@ function switchCategoryView(view) {
     }
 }
 
-// Toggle individual accordion
-function toggleAccordion(index) {
+// Toggle individual accordion (ensure global scope)
+window.toggleAccordion = function(index) {
     const card = document.getElementById(`rec-${index}`);
     if (card) {
         card.classList.toggle('expanded');
+        console.log(`Toggled accordion ${index}, expanded:`, card.classList.contains('expanded'));
+    } else {
+        console.warn(`Card rec-${index} not found`);
     }
 }
 
-// Expand/Collapse all recommendations
-function expandAll() {
+// Expand/Collapse all recommendations (ensure global scope)
+window.expandAll = function() {
     const cards = document.querySelectorAll('.recommendation-card');
-    cards.forEach(card => card.classList.add('expanded'));
+    console.log(`Expanding ${cards.length} recommendation cards`);
+    cards.forEach(card => {
+        card.classList.add('expanded');
+    });
 }
 
-function collapseAll() {
+window.collapseAll = function() {
     const cards = document.querySelectorAll('.recommendation-card');
-    cards.forEach(card => card.classList.remove('expanded'));
+    console.log(`Collapsing ${cards.length} recommendation cards`);
+    cards.forEach(card => {
+        card.classList.remove('expanded');
+    });
 }
 
 // Initialize on page load
