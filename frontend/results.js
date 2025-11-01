@@ -56,26 +56,41 @@ const categoryNames = {
 // Load and display scan results
 async function loadScanResults() {
     try {
-        const headers = authToken 
+        const headers = authToken
             ? { 'Authorization': `Bearer ${authToken}` }
             : {};
 
+        console.log('Loading scan results for scanId:', scanId);
+        console.log('API URL:', `${API_BASE_URL}/scan/${scanId}`);
+
         const response = await fetch(`${API_BASE_URL}/scan/${scanId}`, { headers });
-        
+
+        console.log('Response status:', response.status);
+
         if (!response.ok) {
-            throw new Error('Failed to load scan results');
+            const errorText = await response.text();
+            console.error('Response not OK:', response.status, errorText);
+            throw new Error(`Failed to load scan results: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        
+        console.log('Response data:', data);
+
         if (data.success) {
-            displayResults(data.scan, data.quota);
+            try {
+                displayResults(data.scan, data.quota);
+            } catch (displayError) {
+                console.error('Error in displayResults:', displayError);
+                console.error('Display error stack:', displayError.stack);
+                throw displayError;
+            }
         } else {
             throw new Error(data.error || 'Unknown error');
         }
     } catch (error) {
         console.error('Error loading results:', error);
-        showError('Failed to load scan results. Please try again.');
+        console.error('Error stack:', error.stack);
+        showError(`Failed to load scan results. ${error.message || 'Please try again.'}`);
     }
 }
 
