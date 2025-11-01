@@ -1099,7 +1099,72 @@ function copySchemaCode() {
     }
 }
 
-async function markImplemented(recId) {
+// Show notification helper
+function showNotification(message, type = 'info') {
+    const notificationDiv = document.createElement('div');
+    const colors = {
+        success: 'bg-green-100 border-green-500 text-green-700',
+        error: 'bg-red-100 border-red-500 text-red-700',
+        info: 'bg-blue-100 border-blue-500 text-blue-700',
+        warning: 'bg-yellow-100 border-yellow-500 text-yellow-700'
+    };
+
+    notificationDiv.className = `fixed top-4 right-4 ${colors[type]} border-l-4 p-4 rounded shadow-lg z-50`;
+    notificationDiv.style.maxWidth = '400px';
+    notificationDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: bold;">${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notificationDiv);
+    setTimeout(() => notificationDiv.remove(), 5000);
+}
+
+// Show confirm modal helper
+function showConfirmModal(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 15px; color: #2d3748;">${title}</h3>
+                <p style="color: #4a5568; margin-bottom: 25px; line-height: 1.6;">${message}</p>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="cancelBtn" style="padding: 10px 20px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button id="confirmBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('#confirmBtn').onclick = () => {
+            modal.remove();
+            resolve(true);
+        };
+
+        modal.querySelector('#cancelBtn').onclick = () => {
+            modal.remove();
+            resolve(false);
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(false);
+            }
+        };
+    });
+}
+
+// Make functions globally accessible
+window.markImplemented = async function(recId) {
     console.log('Marking recommendation as implemented:', recId);
 
     if (!authToken) {
@@ -1143,7 +1208,7 @@ async function markImplemented(recId) {
     }
 }
 
-async function skipRecommendation(recId) {
+window.skipRecommendation = async function(recId) {
     console.log('Skipping recommendation:', recId);
 
     if (!authToken) {
@@ -1296,10 +1361,174 @@ Keep up the great work! Each implementation improves your AI visibility score.
     });
 }
 
-// Create feedback widget (placeholder for future implementation)
+// Create feedback widget with thumbs up/down → 5-star → comment flow
 function createFeedbackWidget(widgetId, category, scanId) {
-    // Return empty string for now - feedback widget can be added later
-    return '';
+    const uniqueId = `feedback-${widgetId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+    return `
+        <div id="${uniqueId}" style="margin-top: 20px; padding: 20px; background: #f7fafc; border-radius: 8px; border-top: 2px solid #e2e8f0;">
+            <div id="${uniqueId}-initial" style="text-align: center;">
+                <p style="font-size: 14px; font-weight: 600; color: #4a5568; margin-bottom: 12px;">Was this recommendation helpful?</p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button onclick="handleFeedbackThumb('${uniqueId}', '${category}', '${scanId}', true)"
+                            style="padding: 10px 20px; border-radius: 8px; border: 2px solid #10b981; background: white; color: #10b981; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
+                            onmouseover="this.style.background='#10b981'; this.style.color='white';"
+                            onmouseout="this.style.background='white'; this.style.color='#10b981';">
+                        <span style="font-size: 18px;">👍</span> Helpful
+                    </button>
+                    <button onclick="handleFeedbackThumb('${uniqueId}', '${category}', '${scanId}', false)"
+                            style="padding: 10px 20px; border-radius: 8px; border: 2px solid #ef4444; background: white; color: #ef4444; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
+                            onmouseover="this.style.background='#ef4444'; this.style.color='white';"
+                            onmouseout="this.style.background='white'; this.style.color='#ef4444';">
+                        <span style="font-size: 18px;">👎</span> Not Helpful
+                    </button>
+                </div>
+            </div>
+
+            <div id="${uniqueId}-rating" style="display: none; text-align: center;">
+                <p style="font-size: 14px; font-weight: 600; color: #4a5568; margin-bottom: 12px;">How would you rate this recommendation?</p>
+                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px;">
+                    ${[1, 2, 3, 4, 5].map(star => `
+                        <button onclick="handleFeedbackRating('${uniqueId}', '${category}', '${scanId}', ${star})"
+                                style="background: none; border: none; cursor: pointer; font-size: 32px; transition: transform 0.2s;"
+                                onmouseover="this.style.transform='scale(1.2)';"
+                                onmouseout="this.style.transform='scale(1)';">
+                            ⭐
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div id="${uniqueId}-comment" style="display: none;">
+                <p style="font-size: 14px; font-weight: 600; color: #4a5568; margin-bottom: 12px;">How can we improve this recommendation?</p>
+                <textarea id="${uniqueId}-comment-text"
+                          placeholder="Share your thoughts on how we can make this recommendation more helpful..."
+                          style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end;">
+                    <button onclick="skipFeedbackComment('${uniqueId}', '${category}', '${scanId}')"
+                            style="padding: 8px 16px; border-radius: 6px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">
+                        Skip
+                    </button>
+                    <button onclick="submitFeedbackComment('${uniqueId}', '${category}', '${scanId}')"
+                            style="padding: 8px 16px; border-radius: 6px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                        Submit Feedback
+                    </button>
+                </div>
+            </div>
+
+            <div id="${uniqueId}-thanks" style="display: none; text-align: center; color: #10b981; font-weight: 600;">
+                ✓ Thank you for your feedback!
+            </div>
+        </div>
+    `;
+}
+
+// Handle thumbs up/down feedback
+window.handleFeedbackThumb = function(widgetId, category, scanId, isHelpful) {
+    console.log('Feedback thumb:', { widgetId, category, scanId, isHelpful });
+
+    const widget = document.getElementById(widgetId);
+    if (!widget) return;
+
+    // Hide initial thumbs
+    const initial = document.getElementById(`${widgetId}-initial`);
+    if (initial) initial.style.display = 'none';
+
+    if (isHelpful) {
+        // Show thanks message for positive feedback
+        const thanks = document.getElementById(`${widgetId}-thanks`);
+        if (thanks) thanks.style.display = 'block';
+
+        // Submit positive feedback to backend
+        submitFeedbackToBackend(category, scanId, { helpful: true, rating: 5 });
+    } else {
+        // Show rating for negative feedback
+        const rating = document.getElementById(`${widgetId}-rating`);
+        if (rating) rating.style.display = 'block';
+    }
+}
+
+// Handle star rating feedback
+window.handleFeedbackRating = function(widgetId, category, scanId, rating) {
+    console.log('Feedback rating:', { widgetId, category, scanId, rating });
+
+    // Hide rating section
+    const ratingDiv = document.getElementById(`${widgetId}-rating`);
+    if (ratingDiv) ratingDiv.style.display = 'none';
+
+    // Show comment section
+    const comment = document.getElementById(`${widgetId}-comment`);
+    if (comment) comment.style.display = 'block';
+
+    // Store rating temporarily
+    const widget = document.getElementById(widgetId);
+    if (widget) widget.dataset.rating = rating;
+}
+
+// Skip comment and submit feedback with just rating
+window.skipFeedbackComment = function(widgetId, category, scanId) {
+    const widget = document.getElementById(widgetId);
+    const rating = widget?.dataset?.rating || 3;
+
+    // Hide comment section
+    const comment = document.getElementById(`${widgetId}-comment`);
+    if (comment) comment.style.display = 'none';
+
+    // Show thanks message
+    const thanks = document.getElementById(`${widgetId}-thanks`);
+    if (thanks) thanks.style.display = 'block';
+
+    // Submit feedback with rating only
+    submitFeedbackToBackend(category, scanId, { helpful: false, rating: parseInt(rating) });
+}
+
+// Submit comment with feedback
+window.submitFeedbackComment = function(widgetId, category, scanId) {
+    const widget = document.getElementById(widgetId);
+    const rating = widget?.dataset?.rating || 3;
+    const commentText = document.getElementById(`${widgetId}-comment-text`)?.value || '';
+
+    // Hide comment section
+    const comment = document.getElementById(`${widgetId}-comment`);
+    if (comment) comment.style.display = 'none';
+
+    // Show thanks message
+    const thanks = document.getElementById(`${widgetId}-thanks`);
+    if (thanks) thanks.style.display = 'block';
+
+    // Submit feedback with rating and comment
+    submitFeedbackToBackend(category, scanId, {
+        helpful: false,
+        rating: parseInt(rating),
+        comment: commentText
+    });
+}
+
+// Submit feedback to backend
+async function submitFeedbackToBackend(category, scanId, feedbackData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+            },
+            body: JSON.stringify({
+                category: category,
+                ...feedbackData
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('Feedback submitted successfully');
+        } else {
+            console.error('Feedback submission failed:', data.error);
+        }
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+    }
 }
 
 // Calculate grade from score
