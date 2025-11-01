@@ -3,26 +3,472 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your AI Visibility Score</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Your AI Visibility Score - Free Analysis Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-signin {
+            background: white;
+            color: #00B9DA;
+            border: 2px solid #00B9DA;
+        }
+
+        .btn-signin:hover {
+            background: #00B9DA;
+            color: white;
+        }
+
+        .btn-signup {
+            background: linear-gradient(135deg, #7D41A5 0%, #f31c7e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(125, 65, 165, 0.3);
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(125, 65, 165, 0.4);
+        }
+
+        /* Score Card */
+        .score-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .score-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 30px;
+        }
+
+        .score-display {
+            position: relative;
+            margin: 30px auto;
+            width: 200px;
+            height: 200px;
+        }
+
+        .score-circle {
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s;
+            transform-origin: 50% 50%;
+        }
+
+        .score-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-max {
+            font-size: 20px;
+            color: #cbd5e0;
+            margin-top: 10px;
+        }
+
+        .score-url {
+            font-size: 16px;
+            color: #718096;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .score-grade {
+            display: inline-block;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 20px;
+        }
+
+        /* Category Breakdown */
+        .category-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .category-card {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid #00B9DA;
+            transition: all 0.3s;
+        }
+
+        .category-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-icon-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-icon {
+            font-size: 28px;
+        }
+
+        .category-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .category-score {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .category-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .category-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00B9DA 0%, #4DACA6 100%);
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        /* Unlock CTA Section */
+        .unlock-section {
+            background: linear-gradient(135deg, #7D41A5 0%, #f31c7e 100%);
+            border-radius: 20px;
+            padding: 60px 50px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 40px rgba(125, 65, 165, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .unlock-section::before {
+            content: '🔒';
+            position: absolute;
+            top: 30px;
+            font-size: 80px;
+            opacity: 0.1;
+        }
+
+        .unlock-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .unlock-subtitle {
+            font-size: 20px;
+            margin-bottom: 40px;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .benefit-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 30px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .benefit-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .benefit-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .benefit-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .cta-button {
+            padding: 20px 50px;
+            background: white;
+            color: #7D41A5;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .signin-link {
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .signin-link a {
+            color: white;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .footer-text {
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .footer-text a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .footer-copyright {
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-title {
+                font-size: 24px;
+            }
+
+            .unlock-title {
+                font-size: 28px;
+            }
+
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-cyan-500 to-purple-600 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-white">AI Visibility Score</h1>
-            <div class="flex gap-4">
-                <a href="auth.html?mode=login" class="text-white hover:opacity-80">Sign In</a>
-                <a href="auth.html?mode=signup" class="px-6 py-2 bg-white text-purple-600 rounded-full font-semibold hover:bg-gray-100">
-                    Sign Up Free
-                </a>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">AI Visibility Score</div>
+        <div class="nav-buttons">
+            <a href="auth.html?mode=login" class="btn btn-signin">Sign In</a>
+            <a href="auth.html?mode=signup" class="btn btn-signup">Sign Up Free</a>
+        </div>
+    </nav>
+
+    <!-- Score Card -->
+    <div class="score-card" id="scoreCard">
+        <h1 class="score-title">Your AI Visibility Score</h1>
+
+        <div class="score-display">
+            <svg class="score-circle" width="200" height="200">
+                <circle class="progress-ring-circle" stroke="#e2e8f0" stroke-width="16" fill="transparent" r="84" cx="100" cy="100"/>
+                <circle id="progressCircle" class="progress-ring-circle" stroke="url(#gradient)" stroke-width="16" fill="transparent" r="84" cx="100" cy="100"
+                    style="stroke-dasharray: 528; stroke-dashoffset: 528; stroke-linecap: round;"/>
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00B9DA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#f31c7e;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="score-number" id="scoreNumber">0</div>
+        </div>
+
+        <div class="score-max">out of 1000</div>
+        <div class="score-grade" id="scoreGrade">Grade: -</div>
+        <div class="score-url" id="scoreUrl">-</div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="category-section">
+        <h2 class="section-title">Category Breakdown</h2>
+        <div class="category-grid" id="categoryGrid"></div>
+    </div>
+
+    <!-- Unlock CTA Section -->
+    <div class="unlock-section">
+        <h2 class="unlock-title">Sign Up to Unlock Your Top 3 Recommendations</h2>
+        <p class="unlock-subtitle">Discover exactly what to fix and how to improve your ranking in AI search engines.</p>
+
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon">✓</div>
+                <div class="benefit-title">Top 3 Priorities</div>
+                <div class="benefit-desc">Get your highest-impact recommendations first</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon">✓</div>
+                <div class="benefit-title">Action Steps</div>
+                <div class="benefit-desc">Detailed guides on how to implement each fix</div>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon">✓</div>
+                <div class="benefit-title">Track Progress</div>
+                <div class="benefit-desc">Save your scans and monitor improvements</div>
             </div>
         </div>
 
-        <!-- Results Container -->
-        <div id="resultsContainer" class="space-y-6"></div>
+        <a href="auth.html?mode=signup" class="cta-button">Sign Up Free - No Credit Card Required →</a>
+
+        <div class="signin-link">
+            Already have an account? <a href="auth.html?mode=login">Sign In</a>
+        </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-text">Powered by Xeo AI Hub & <a href="https://xeo.marketing/" target="_blank" rel="noopener noreferrer">Xeo Marketing</a></div>
+        <div class="footer-copyright">© 2025 AI Visibility Score. All rights reserved.</div>
+    </footer>
 
     <script>
         // Load guest scan results from sessionStorage
@@ -34,62 +480,38 @@
             displayGuestResults(guestScanData);
         }
 
+        function getGrade(score) {
+            if (score >= 900) return 'A+';
+            if (score >= 850) return 'A';
+            if (score >= 800) return 'A-';
+            if (score >= 750) return 'B+';
+            if (score >= 700) return 'B';
+            if (score >= 650) return 'B-';
+            if (score >= 600) return 'C+';
+            if (score >= 550) return 'C';
+            if (score >= 500) return 'C-';
+            if (score >= 450) return 'D+';
+            if (score >= 400) return 'D';
+            return 'F';
+        }
+
         function displayGuestResults(data) {
-            const container = document.getElementById('resultsContainer');
             const totalScore = data.total_score || 0;
             const displayScore = Math.round(totalScore * 10); // Convert to 0-1000
 
-            container.innerHTML = `
-                <!-- Score Card -->
-                <div class="bg-white rounded-2xl shadow-2xl p-8 text-center">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Your AI Visibility Score</h2>
-                    <div class="text-8xl font-bold bg-gradient-to-r from-cyan-500 to-purple-600 bg-clip-text text-transparent mb-4">
-                        ${displayScore}
-                    </div>
-                    <div class="text-2xl text-gray-600 mb-2">out of 1000</div>
-                    <div class="text-lg text-gray-500">${data.url}</div>
-                </div>
+            // Update score display
+            document.getElementById('scoreNumber').textContent = displayScore;
+            document.getElementById('scoreGrade').textContent = 'Grade: ' + getGrade(displayScore);
+            document.getElementById('scoreUrl').textContent = data.url || '';
 
-                <!-- Category Breakdown -->
-                <div class="bg-white rounded-2xl shadow-2xl p-8">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Category Breakdown</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="categoryGrid"></div>
-                </div>
+            // Animate circular progress
+            const circle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 84; // 2πr
+            const offset = circumference - (displayScore / 1000) * circumference;
 
-                <!-- Signup CTA -->
-                <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-2xl p-12 text-center text-white">
-                    <div class="text-6xl mb-6">🔒</div>
-                    <h3 class="text-4xl font-bold mb-4">Sign Up to Unlock Your Top 3 Recommendations</h3>
-                    <p class="text-xl mb-8 opacity-90">
-                        Discover exactly what to fix and how to improve your ranking in AI search engines.
-                    </p>
-                    <div class="grid md:grid-cols-3 gap-6 mb-8 text-left max-w-3xl mx-auto">
-                        <div class="bg-white bg-opacity-20 p-6 rounded-lg backdrop-blur">
-                            <div class="text-3xl mb-2">✓</div>
-                            <h4 class="font-bold text-lg mb-2">Top 3 Priorities</h4>
-                            <p class="text-sm opacity-90">Get your highest-impact recommendations first</p>
-                        </div>
-                        <div class="bg-white bg-opacity-20 p-6 rounded-lg backdrop-blur">
-                            <div class="text-3xl mb-2">✓</div>
-                            <h4 class="font-bold text-lg mb-2">Action Steps</h4>
-                            <p class="text-sm opacity-90">Detailed guides on how to implement each fix</p>
-                        </div>
-                        <div class="bg-white bg-opacity-20 p-6 rounded-lg backdrop-blur">
-                            <div class="text-3xl mb-2">✓</div>
-                            <h4 class="font-bold text-lg mb-2">Track Progress</h4>
-                            <p class="text-sm opacity-90">Save your scans and monitor improvements</p>
-                        </div>
-                    </div>
-                    <a href="auth.html?mode=signup"
-                       class="inline-block px-12 py-5 bg-white text-purple-600 font-bold rounded-full text-xl hover:bg-gray-100 transition-all shadow-2xl transform hover:scale-105">
-                        Sign Up Free - No Credit Card Required →
-                    </a>
-                    <p class="mt-6 text-sm opacity-75">
-                        Already have an account?
-                        <a href="auth.html?mode=login" class="underline font-semibold">Sign In</a>
-                    </p>
-                </div>
-            `;
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+            }, 100);
 
             // Display categories
             if (data.categories) {
@@ -115,7 +537,7 @@
                 aiReadability: '📖',
                 aiSearchReadiness: '🔍',
                 contentFreshness: '🎯',
-                contentStructure: '📋',
+                contentStructure: '📄',
                 speedUX: '⚡',
                 technicalSetup: '⚙️',
                 trustAuthority: '⭐',
@@ -126,26 +548,33 @@
                 const displayScore = Math.round(score * 10);
                 const name = categoryNames[key] || key;
                 const icon = categoryIcons[key] || '📊';
-
-                const colorClass = displayScore >= 75 ? 'text-green-600' :
-                                  displayScore >= 50 ? 'text-yellow-600' : 'text-red-600';
+                const percentage = score; // score is already 0-100
 
                 const card = document.createElement('div');
-                card.className = 'border-2 border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow';
+                card.className = 'category-card';
                 card.innerHTML = `
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <span class="text-4xl">${icon}</span>
-                            <h4 class="font-bold text-lg text-gray-800">${name}</h4>
+                    <div class="category-header">
+                        <div class="category-icon-name">
+                            <span class="category-icon">${icon}</span>
+                            <span class="category-name">${name}</span>
                         </div>
-                        <span class="text-3xl font-bold ${colorClass}">${displayScore}</span>
+                        <span class="category-score">${displayScore}</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div class="h-3 rounded-full ${colorClass} bg-current" style="width: ${score}%"></div>
+                    <div class="category-bar">
+                        <div class="category-bar-fill" style="width: 0%;" data-width="${percentage}%"></div>
                     </div>
                 `;
                 grid.appendChild(card);
             });
+
+            // Animate progress bars on load
+            setTimeout(() => {
+                const bars = document.querySelectorAll('.category-bar-fill');
+                bars.forEach(bar => {
+                    const width = bar.getAttribute('data-width');
+                    bar.style.width = width;
+                });
+            }, 100);
         }
     </script>
 
