@@ -3,385 +3,1204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Visibility Score - Optimize Your Site for AI Search</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>AI Visibility Score - Is Your Website Invisible to AI?</title>
     <style>
-        /* White Content Box Wrapper */
-        .white-content-box {
-            background: #FFFFFF;
-            border-radius: 24px;
-            padding: 60px 80px;
-            max-width: 1100px;
-            margin: 0 auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .hero-section {
-            text-align: center;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            overflow-x: hidden;
         }
 
-        .hero-title {
-            font-size: 52px;
+        /* Navigation */
+        .navbar {
+            background: white;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 28px;
             font-weight: 800;
-            color: #00B9DA;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-signin {
+            background: white;
+            color: #f31c7e;
+            border: 2px solid #f31c7e;
+        }
+
+        .btn-signin:hover {
+            background: #f31c7e;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 185, 218, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .btn-large {
+            padding: 18px 48px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            padding: 80px 5% 100px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>') repeat;
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .alert-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 25px;
             line-height: 1.2;
-            font-family: 'Inter', 'Poppins', -apple-system, sans-serif;
         }
 
         .hero-subtitle {
-            font-size: 20px;
-            color: #333333;
-            max-width: 900px;
-            margin: 0 auto 40px;
-            font-weight: 400;
+            font-size: 22px;
+            margin-bottom: 40px;
             line-height: 1.6;
+            opacity: 0.95;
         }
 
         .hero-form {
-            max-width: 900px;
+            background: white;
+            padding: 12px;
+            border-radius: 60px;
+            max-width: 700px;
             margin: 0 auto 30px;
             display: flex;
-            gap: 15px;
-            align-items: stretch;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
         }
 
         .hero-input {
             flex: 1;
-            padding: 18px 24px;
-            border: 2px solid #E5E5E5;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            background: #FFFFFF;
-            color: #333333;
-        }
-
-        .hero-input::placeholder {
-            color: #999999;
-        }
-
-        .hero-input:focus {
-            outline: none;
-            border-color: #F31C7E;
-            box-shadow: 0 4px 20px rgba(243,28,126,0.15);
-        }
-
-        .hero-button {
-            padding: 18px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #FFFFFF;
+            padding: 18px 30px;
             border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .hero-btn {
+            padding: 18px 42px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
             font-weight: 700;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .hero-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        .hero-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(243, 28, 126, 0.4);
         }
 
-        .hero-button:disabled {
+        .hero-btn:disabled {
             opacity: 0.7;
             cursor: not-allowed;
-        }
-
-        .trust-indicator {
-            margin-top: 20px;
-            color: #7030A0;
-            font-size: 16px;
-            font-weight: 600;
         }
 
         .trust-badges {
             display: flex;
             justify-content: center;
-            gap: 50px;
-            margin-top: 30px;
+            gap: 30px;
             flex-wrap: wrap;
+            margin-top: 30px;
         }
 
         .trust-badge {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: #4DACA6;
-            font-weight: 600;
+            gap: 8px;
             font-size: 15px;
+            opacity: 0.95;
         }
 
         .trust-badge-icon {
-            font-size: 1.5rem;
-            color: #4DACA6;
+            font-size: 20px;
         }
 
-        .white-box-footer {
-            text-align: center;
-            color: #888888;
-            font-size: 14px;
-            border-top: 1px solid #F0F0F0;
-            padding-top: 30px;
-            margin-top: 40px;
+        /* Stats Bar */
+        .stats-bar {
+            background: white;
+            padding: 40px 5%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
         }
 
-        .features-grid {
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 30px;
-            margin: 60px 0;
+            text-align: center;
         }
 
-        .feature-card {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .stat-item {
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 600;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            padding: 80px 5%;
+            background: #f7fafc;
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-badge {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 42px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: #718096;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             transition: all 0.3s;
-            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            background: rgba(255,255,255,0.15);
+        .problem-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
         }
 
-        .feature-icon {
-            font-size: 3rem;
+        .problem-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .problem-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2d3748;
             margin-bottom: 15px;
         }
 
-        .feature-card h4 {
-            color: #ffffff;
+        .problem-old {
+            font-size: 15px;
+            color: #ef4444;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .problem-new {
+            font-size: 15px;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* 8 Pillars Section */
+        .pillars-section {
+            padding: 80px 5%;
+            background: white;
+        }
+
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin-top: 50px;
+        }
+
+        .pillar-card {
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            padding: 35px 25px;
+            border-radius: 16px;
+            text-align: center;
+            color: white;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pillar-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .pillar-card:hover::before {
+            opacity: 1;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 185, 218, 0.3);
+        }
+
+        .pillar-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pillar-title {
+            font-size: 18px;
             font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pillar-boost {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 50px;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pillar-desc {
+            font-size: 14px;
+            opacity: 0.95;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            padding: 80px 5%;
+            background: #f7fafc;
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 50px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .step-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 4px 15px rgba(0, 185, 218, 0.3);
+        }
+
+        .step-icon {
+            font-size: 56px;
+            margin: 30px 0 20px;
+        }
+
+        .step-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .step-desc {
+            font-size: 16px;
+            color: #718096;
+            line-height: 1.6;
+        }
+
+        /* Social Proof Section */
+        .social-proof {
+            padding: 80px 5%;
+            background: white;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .testimonial-card {
+            background: #f7fafc;
+            padding: 35px;
+            border-radius: 16px;
+            border-left: 4px solid #00B9DA;
+        }
+
+        .testimonial-stars {
+            color: #fbbf24;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .testimonial-text {
+            font-size: 16px;
+            color: #4a5568;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .author-info {
+            flex: 1;
+        }
+
+        .author-name {
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 3px;
+        }
+
+        .author-title {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .results-showcase {
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            padding: 50px;
+            border-radius: 20px;
+            margin-top: 50px;
+            color: white;
+            text-align: center;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .result-number {
+            font-size: 48px;
+            font-weight: 800;
             margin-bottom: 10px;
         }
 
-        .feature-card p {
-            color: rgba(255,255,255,0.9);
+        .result-label {
+            font-size: 16px;
+            opacity: 0.95;
         }
 
-        /* Responsive Breakpoints */
-        @media (max-width: 768px) {
-            .white-content-box {
-                padding: 40px 30px;
-                border-radius: 20px;
-            }
-
-            .hero-title {
-                font-size: 36px;
-            }
-
-            .hero-subtitle {
-                font-size: 18px;
-            }
-
-            .hero-form {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .hero-button {
-                width: 100%;
-                padding: 16px 32px;
-            }
-
-            .trust-badges {
-                gap: 30px;
-            }
-
-            .feature-card h4 {
-                font-size: 1.1rem;
-            }
+        /* Pricing Section */
+        .pricing-section {
+            padding: 80px 5%;
+            background: #f7fafc;
         }
 
-        @media (max-width: 480px) {
-            .white-content-box {
-                padding: 30px 20px;
-                border-radius: 16px;
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-card {
+            background: white;
+            padding: 40px 35px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .pricing-card.featured {
+            border-color: #00B9DA;
+            box-shadow: 0 12px 40px rgba(0, 185, 218, 0.2);
+            transform: scale(1.05);
+        }
+
+        .pricing-card:hover {
+            border-color: #00B9DA;
+            box-shadow: 0 12px 40px rgba(0, 185, 218, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.08);
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .badge-free {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-popular {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+        }
+
+        .badge-pro {
+            background: #7D41A5;
+            color: white;
+        }
+
+        .plan-name {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .plan-price {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .plan-price-small {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 25px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 25px 0;
+        }
+
+        .plan-features li {
+            padding: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: #4a5568;
+        }
+
+        .check-icon {
+            color: #10b981;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .plan-cta {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            border: 2px solid #00B9DA;
+            background: white;
+            color: #00B9DA;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .plan-cta:hover {
+            background: #00B9DA;
+            color: white;
+        }
+
+        .pricing-card.featured .plan-cta {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            border: none;
+        }
+
+        .pricing-card.featured .plan-cta:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.3);
+        }
+
+        /* Final CTA Section */
+        .final-cta {
+            padding: 100px 5%;
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            text-align: center;
+            color: white;
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .final-cta h2 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            line-height: 1.2;
+        }
+
+        .final-cta p {
+            font-size: 22px;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .cta-checklist {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 40px 0;
+            text-align: left;
+        }
+
+        .cta-check-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            padding: 40px 5%;
+            text-align: center;
+            color: white;
+        }
+
+        .footer-text {
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .footer-copyright {
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .hero h1 {
+                font-size: 42px;
             }
 
-            .hero-title {
-                font-size: 30px;
-            }
-
-            .hero-subtitle {
-                font-size: 16px;
-            }
-
-            .hero-input,
-            .hero-button {
-                font-size: 1rem;
-            }
-
-            .trust-badges {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .features-grid {
+            .stats-container,
+            .problem-grid,
+            .pillars-grid,
+            .steps-container,
+            .testimonial-grid,
+            .pricing-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-checklist {
+                grid-template-columns: 1fr;
+            }
+
+            .pillars-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
-    <div class="container" style="max-width: 1200px;">
-        <!-- Header Nav Bar -->
-        <div class="header" style="padding: 30px 0; display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="font-size: 1.8rem; font-weight: 800; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                AI Visibility Score
-            </h1>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="auth.html?mode=login" style="padding: 12px 28px; text-decoration: none; background: #F31C7E; color: #ffffff; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#D91869'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#F31C7E'">Sign In</a>
-                <a href="auth.html?mode=signup" style="padding: 12px 28px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #FFFFFF; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Get Started</a>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">AI Visibility Score</div>
+        <div class="nav-buttons">
+            <a href="login.html" class="btn btn-signin">Sign In</a>
+            <a href="#get-started" class="btn btn-primary" onclick="scrollToScan(event)">Get Started Free</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="alert-badge">⚠️ 94% of websites are invisible to AI search engines</div>
+            <h1>Is Your Website Invisible to AI?</h1>
+            <p class="hero-subtitle">ChatGPT, Perplexity, and Claude answer millions of searches daily—but they're NOT recommending your business. Get your free AI Visibility Score in 30 seconds and discover exactly what's blocking you.</p>
+
+            <form class="hero-form" onsubmit="handleHeroScan(event)" id="heroScanForm">
+                <input type="text" id="heroUrl" class="hero-input" placeholder="Enter your website URL (e.g., example.com)" required>
+                <button type="submit" class="hero-btn">🔍 Analyze Now</button>
+            </form>
+
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">✓</span>
+                    <span>Free scan • No signup required</span>
+                </div>
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">⚡</span>
+                    <span>Results in 30 seconds</span>
+                </div>
+                <div class="trust-badge">
+                    <span class="trust-badge-icon">💳</span>
+                    <span>No credit card needed</span>
+                </div>
             </div>
         </div>
+    </section>
 
-        <!-- White Content Box -->
-        <div class="white-content-box">
-            <!-- Hero Section -->
-            <section class="hero-section">
-                <h2 class="hero-title">
-                    Optimize Your Site for AI Answer Engines
-                </h2>
-                <p class="hero-subtitle">
-                    Get your AI Visibility Score and discover how to rank higher in ChatGPT, Perplexity, and other AI-powered search tools.
-                </p>
-
-                <form class="hero-form" onsubmit="handleHeroScan(event)">
-                    <input
-                        type="url"
-                        class="hero-input"
-                        id="heroUrl"
-                        placeholder="Enter your website URL (e.g., example.com)"
-                        required
-                    >
-                    <button type="submit" class="hero-button">
-                        Analyze Now
-                    </button>
-                </form>
-
-                <p class="trust-indicator">
-                    🚀 Free scan • No credit card required • Results in 30 seconds
-                </p>
-
-                <div class="trust-badges">
-                    <div class="trust-badge">
-                        <span class="trust-badge-icon">✓</span>
-                        <span>1000+ Sites Analyzed</span>
-                    </div>
-                    <div class="trust-badge">
-                        <span class="trust-badge-icon">✓</span>
-                        <span>No Signup Required</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Footer text inside white box -->
-            <div class="white-box-footer">
-                Powered by Xeo AI Hub | AI Readiness Assessment Tool
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number">1,247</div>
+                <div class="stat-label">Sites Analyzed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">+340</div>
+                <div class="stat-label">Avg Score Improvement</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">94%</div>
+                <div class="stat-label">Need Critical Fixes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">4.9★</div>
+                <div class="stat-label">Customer Rating</div>
             </div>
         </div>
+    </section>
 
-        <!-- Features Section -->
-        <section style="padding: 60px 0;">
-            <h3 style="text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 50px; color: #ffffff;">
-                8-Pillar AI Visibility Analysis
-            </h3>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">📋</div>
-                    <h4>Schema Markup</h4>
-                    <p>Structured data optimization for AI understanding</p>
+    <!-- Problem Section -->
+    <section class="problem-section">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge">The Problem</div>
+                <h2 class="section-title">Traditional SEO Doesn't Work for AI</h2>
+                <p class="section-subtitle">The game has changed. AI search engines need different signals than Google. Here's what shifted:</p>
+            </div>
+
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">🔍</div>
+                    <div class="problem-title">Discovery Method</div>
+                    <div class="problem-old">❌ Old: Google ranks pages</div>
+                    <div class="problem-new">✓ New: AI recommends answers</div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">🏢</div>
-                    <h4>Entity Recognition</h4>
-                    <p>Help AI identify your brand and offerings</p>
+                <div class="problem-card">
+                    <div class="problem-icon">📊</div>
+                    <div class="problem-title">What Matters</div>
+                    <div class="problem-old">❌ Old: Keywords & backlinks</div>
+                    <div class="problem-new">✓ New: Context & structure</div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">❓</div>
-                    <h4>FAQ Optimization</h4>
-                    <p>Q&A format for better AI responses</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">📚</div>
-                    <h4>Citations & Authority</h4>
-                    <p>Build credibility with AI systems</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h4>Crawlability</h4>
-                    <p>Ensure AI bots can access your content</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h4>Speed & Performance</h4>
-                    <p>Fast sites rank better everywhere</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🛡️</div>
-                    <h4>Trust Signals</h4>
-                    <p>Security and reliability indicators</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h4>AEO Content</h4>
-                    <p>Answer Engine Optimization tactics</p>
+                <div class="problem-card">
+                    <div class="problem-icon">⚡</div>
+                    <div class="problem-title">Update Speed</div>
+                    <div class="problem-old">❌ Old: Monthly changes</div>
+                    <div class="problem-new">✓ New: Real-time AI decisions</div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- CTA Section -->
-        <section style="padding: 80px 40px; text-align: center; background: #00B9DA; border-radius: 20px; color: white; margin: 60px 0; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
-            <h3 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; color: #FFFFFF; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                Ready to Dominate AI Search?
-            </h3>
-            <p style="font-size: 1.2rem; margin-bottom: 30px; color: rgba(255,255,255,0.95);">
-                Start optimizing your website for AI-powered search engines today.
-            </p>
-            <button onclick="window.location.href='auth.html'" style="padding: 18px 40px; background: #F31C7E; color: #FFFFFF; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#D91869'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#F31C7E'">
-                Get Started Free →
-            </button>
-        </section>
-
-        <!-- Footer -->
-        <footer style="background: #1A2B44; text-align: center; padding: 50px 20px; margin-top: 80px; border-radius: 0;">
-            <div style="max-width: 1200px; margin: 0 auto;">
-                <p style="color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 15px;">
-                    Powered by Xeo AI Hub &
-                    <a href="https://xeo.marketing/" target="_blank" rel="noopener noreferrer" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#F31C7E'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">Xeo Marketing</a>
-                </p>
-                <p style="color: rgba(255,255,255,0.5); font-size: 14px;">
-                    © 2025 AI Visibility Score. All rights reserved.
-                </p>
+    <!-- 8 Pillars Section -->
+    <section class="pillars-section">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge" style="background: #dbeafe; color: #1e40af;">8-Pillar Framework</div>
+                <h2 class="section-title">What We Analyze (And Fix)</h2>
+                <p class="section-subtitle">Our V5 scoring engine evaluates 47 factors across 8 critical categories. Each fix directly impacts your AI visibility.</p>
             </div>
-        </footer>
-    </div>
+
+            <div class="pillars-grid">
+                <div class="pillar-card">
+                    <div class="pillar-icon">🤖</div>
+                    <div class="pillar-title">AI Readability</div>
+                    <div class="pillar-boost">+125 pts</div>
+                    <div class="pillar-desc">Make your content instantly parseable by AI engines through alt text, transcripts, and multimodal optimization</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">🎯</div>
+                    <div class="pillar-title">Search Readiness</div>
+                    <div class="pillar-boost">+200 pts</div>
+                    <div class="pillar-desc">Optimize for how AI answers questions with FAQ format, scannability, and snippet-ready content</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">📅</div>
+                    <div class="pillar-title">Content Freshness</div>
+                    <div class="pillar-boost">+80 pts</div>
+                    <div class="pillar-desc">Signal recency with timestamps, update indicators, and IndexNow protocol for instant AI updates</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">📝</div>
+                    <div class="pillar-title">Content Structure</div>
+                    <div class="pillar-boost">+150 pts</div>
+                    <div class="pillar-desc">Build hierarchy with semantic HTML, proper headings, and clear information architecture</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">⚡</div>
+                    <div class="pillar-title">Speed & UX</div>
+                    <div class="pillar-boost">+50 pts</div>
+                    <div class="pillar-desc">AI crawlers prioritize fast sites—optimize load times and mobile experience</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">⚙️</div>
+                    <div class="pillar-title">Technical Setup</div>
+                    <div class="pillar-boost">+180 pts</div>
+                    <div class="pillar-desc">Implement schema markup, structured data, and proper meta tags for AI comprehension</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">🛡️</div>
+                    <div class="pillar-title">Trust & Authority</div>
+                    <div class="pillar-boost">+120 pts</div>
+                    <div class="pillar-desc">Build credibility signals through author bios, certifications, and third-party validation</div>
+                </div>
+
+                <div class="pillar-card">
+                    <div class="pillar-icon">🎤</div>
+                    <div class="pillar-title">Voice Optimization</div>
+                    <div class="pillar-boost">+120 pts</div>
+                    <div class="pillar-desc">Capture conversational queries with natural language and question-based content</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge" style="background: #e0e7ff; color: #4338ca;">How It Works</div>
+                <h2 class="section-title">Get Your Score in 3 Simple Steps</h2>
+                <p class="section-subtitle">No technical knowledge required. We handle the complexity—you get actionable insights.</p>
+            </div>
+
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">🔗</div>
+                    <div class="step-title">Enter Your URL</div>
+                    <div class="step-desc">Simply paste your website URL. No signup required for your first scan.</div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">🔬</div>
+                    <div class="step-title">We Analyze 47 Factors</div>
+                    <div class="step-desc">Our V5 engine scans your site across 8 categories, evaluating AI readiness in 30 seconds.</div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">📊</div>
+                    <div class="step-title">Get Actionable Fixes</div>
+                    <div class="step-desc">Receive prioritized recommendations with step-by-step instructions and expected score gains.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge" style="background: #fef3c7; color: #92400e;">Trusted By Leaders</div>
+                <h2 class="section-title">Real Results from Real Businesses</h2>
+            </div>
+
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <div class="testimonial-text">"Increased our AI visibility score from 420 to 780 in 3 weeks. Now ChatGPT recommends us in 6 out of 10 relevant queries. Game changer."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SM</div>
+                        <div class="author-info">
+                            <div class="author-name">Sarah Mitchell</div>
+                            <div class="author-title">CMO, TechVision MSP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <div class="testimonial-text">"The recommendations were so specific and actionable. We implemented the top 5 fixes and saw immediate improvements in how AI tools surfaced our content."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JC</div>
+                        <div class="author-info">
+                            <div class="author-name">James Chen</div>
+                            <div class="author-title">Founder, CloudSecure</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <div class="testimonial-text">"Finally, a tool that bridges the gap between traditional SEO and AI optimization. The category breakdown made it crystal clear where to focus."</div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">LP</div>
+                        <div class="author-info">
+                            <div class="author-name">Lisa Park</div>
+                            <div class="author-title">Marketing Director, FinFlow</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-showcase">
+                <h3 style="font-size: 32px; font-weight: 800; margin-bottom: 15px;">Average Results After Implementation</h3>
+                <p style="font-size: 18px; margin-bottom: 30px; opacity: 0.95;">Based on 847 businesses that implemented our recommendations</p>
+
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-number">+340</div>
+                        <div class="result-label">Average Score Increase</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-number">3.2x</div>
+                        <div class="result-label">More AI Recommendations</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-number">67%</div>
+                        <div class="result-label">See Results in 2 Weeks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing-section" id="get-started">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge" style="background: #dbeafe; color: #1e40af;">Simple Pricing</div>
+                <h2 class="section-title">Choose Your Plan</h2>
+                <p class="section-subtitle">Start free. Upgrade when you're ready to dominate AI search.</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-badge badge-free">Free Forever</div>
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">$0</div>
+                    <div class="plan-price-small">Perfect to get started</div>
+
+                    <ul class="plan-features">
+                        <li><span class="check-icon">✓</span> 2 scans per month</li>
+                        <li><span class="check-icon">✓</span> Homepage analysis only</li>
+                        <li><span class="check-icon">✓</span> Basic recommendations</li>
+                        <li><span class="check-icon">✓</span> Overall AI score</li>
+                        <li><span class="check-icon">✓</span> Category breakdown</li>
+                    </ul>
+
+                    <button class="plan-cta" onclick="scrollToScan(event)">Start Free Scan</button>
+                </div>
+
+                <!-- DIY Plan -->
+                <div class="pricing-card featured">
+                    <div class="plan-badge badge-popular">Most Popular</div>
+                    <div class="plan-name">DIY</div>
+                    <div class="plan-price">$29</div>
+                    <div class="plan-price-small">per month</div>
+
+                    <ul class="plan-features">
+                        <li><span class="check-icon">✓</span> 10 scans per month</li>
+                        <li><span class="check-icon">✓</span> Up to 5 pages per scan</li>
+                        <li><span class="check-icon">✓</span> Detailed recommendations</li>
+                        <li><span class="check-icon">✓</span> Step-by-step action plans</li>
+                        <li><span class="check-icon">✓</span> Industry-specific insights</li>
+                        <li><span class="check-icon">✓</span> Export reports (PDF/CSV)</li>
+                        <li><span class="check-icon">✓</span> 2 competitor scans</li>
+                    </ul>
+
+                    <button class="plan-cta" onclick="window.location.href='signup.html'">Get Started Now</button>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="pricing-card">
+                    <div class="plan-badge badge-pro">For Agencies</div>
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">$99</div>
+                    <div class="plan-price-small">per month</div>
+
+                    <ul class="plan-features">
+                        <li><span class="check-icon">✓</span> 50 scans per month</li>
+                        <li><span class="check-icon">✓</span> Up to 25 pages per scan</li>
+                        <li><span class="check-icon">✓</span> Everything in DIY, plus:</li>
+                        <li><span class="check-icon">✓</span> White-label reports</li>
+                        <li><span class="check-icon">✓</span> 5 competitor scans</li>
+                        <li><span class="check-icon">✓</span> API access</li>
+                        <li><span class="check-icon">✓</span> Priority support</li>
+                        <li><span class="check-icon">✓</span> Custom branding</li>
+                    </ul>
+
+                    <button class="plan-cta" onclick="window.location.href='signup.html'">Upgrade to Pro</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="cta-content">
+            <h2>See Your AI Visibility Score Now</h2>
+            <p>Join 1,200+ businesses already optimizing for AI search engines. Free scan in 30 seconds.</p>
+
+            <form class="hero-form" style="margin: 40px auto;" onsubmit="handleHeroScan(event)">
+                <input type="text" id="ctaUrl" class="hero-input" placeholder="Enter your website URL" required>
+                <button type="submit" class="hero-btn">Get My Score →</button>
+            </form>
+
+            <div class="cta-checklist">
+                <div class="cta-check-item">
+                    <span style="font-size: 24px;">✓</span>
+                    <span>No signup required for first scan</span>
+                </div>
+                <div class="cta-check-item">
+                    <span style="font-size: 24px;">✓</span>
+                    <span>See exactly what AI engines see</span>
+                </div>
+                <div class="cta-check-item">
+                    <span style="font-size: 24px;">✓</span>
+                    <span>Get 5 priority fixes instantly</span>
+                </div>
+                <div class="cta-check-item">
+                    <span style="font-size: 24px;">✓</span>
+                    <span>Compare against competitors</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-text">Powered by Xeo AI Hub & Xeo Marketing</div>
+        <div class="footer-copyright">© 2025 AI Visibility Score. All rights reserved.</div>
+    </footer>
 
     <script>
         const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
+        // Scroll to scan form
+        function scrollToScan(event) {
+            event.preventDefault();
+            document.querySelector('.hero-form').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('heroUrl').focus();
+        }
+
         // Handle hero scan form - GUEST SCAN (no auth required)
         async function handleHeroScan(event) {
             event.preventDefault();
-            const url = document.getElementById('heroUrl').value;
+
+            // Get URL from whichever form was submitted
+            const url = event.target.querySelector('input').value;
             const button = event.target.querySelector('button');
             const originalText = button.textContent;
 
