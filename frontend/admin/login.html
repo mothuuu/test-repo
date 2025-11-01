@@ -335,8 +335,8 @@
                     throw new Error(loginData.error || 'Login failed');
                 }
 
-                // Save token
-                const token = loginData.token;
+                // Save token (backend returns 'accessToken' not 'token')
+                const token = loginData.accessToken || loginData.token;
                 localStorage.setItem('authToken', token);
 
                 // Step 2: Verify admin access
