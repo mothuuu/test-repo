@@ -1296,6 +1296,12 @@ Keep up the great work! Each implementation improves your AI visibility score.
     });
 }
 
+// Create feedback widget (placeholder for future implementation)
+function createFeedbackWidget(widgetId, category, scanId) {
+    // Return empty string for now - feedback widget can be added later
+    return '';
+}
+
 // Calculate grade from score
 function calculateGrade(score) {
     if (score >= 900) return 'A+';
