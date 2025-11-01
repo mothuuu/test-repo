@@ -1430,45 +1430,56 @@ window.handleFeedbackThumb = function(widgetId, category, scanId, isHelpful) {
     const widget = document.getElementById(widgetId);
     if (!widget) return;
 
+    // Store whether it was helpful or not
+    widget.dataset.helpful = isHelpful;
+
     // Hide initial thumbs
     const initial = document.getElementById(`${widgetId}-initial`);
     if (initial) initial.style.display = 'none';
 
-    if (isHelpful) {
-        // Show thanks message for positive feedback
-        const thanks = document.getElementById(`${widgetId}-thanks`);
-        if (thanks) thanks.style.display = 'block';
-
-        // Submit positive feedback to backend
-        submitFeedbackToBackend(category, scanId, { helpful: true, rating: 5 });
-    } else {
-        // Show rating for negative feedback
-        const rating = document.getElementById(`${widgetId}-rating`);
-        if (rating) rating.style.display = 'block';
-    }
+    // Always show rating section for both helpful and not helpful
+    const rating = document.getElementById(`${widgetId}-rating`);
+    if (rating) rating.style.display = 'block';
 }
 
 // Handle star rating feedback
 window.handleFeedbackRating = function(widgetId, category, scanId, rating) {
     console.log('Feedback rating:', { widgetId, category, scanId, rating });
 
+    const widget = document.getElementById(widgetId);
+    if (!widget) return;
+
+    // Store rating temporarily
+    widget.dataset.rating = rating;
+
+    const wasHelpful = widget.dataset.helpful === 'true';
+
     // Hide rating section
     const ratingDiv = document.getElementById(`${widgetId}-rating`);
     if (ratingDiv) ratingDiv.style.display = 'none';
 
-    // Show comment section
-    const comment = document.getElementById(`${widgetId}-comment`);
-    if (comment) comment.style.display = 'block';
+    // If rating is low (1-3) or was marked as not helpful, show comment section
+    // Otherwise, just submit and show thank you
+    if (!wasHelpful || rating <= 3) {
+        const comment = document.getElementById(`${widgetId}-comment`);
+        if (comment) comment.style.display = 'block';
+    } else {
+        // High rating and helpful - just submit and thank
+        const thanks = document.getElementById(`${widgetId}-thanks`);
+        if (thanks) thanks.style.display = 'block';
 
-    // Store rating temporarily
-    const widget = document.getElementById(widgetId);
-    if (widget) widget.dataset.rating = rating;
+        submitFeedbackToBackend(category, scanId, {
+            helpful: wasHelpful,
+            rating: parseInt(rating)
+        });
+    }
 }
 
 // Skip comment and submit feedback with just rating
 window.skipFeedbackComment = function(widgetId, category, scanId) {
     const widget = document.getElementById(widgetId);
     const rating = widget?.dataset?.rating || 3;
+    const wasHelpful = widget?.dataset?.helpful === 'true';
 
     // Hide comment section
     const comment = document.getElementById(`${widgetId}-comment`);
@@ -1479,13 +1490,17 @@ window.skipFeedbackComment = function(widgetId, category, scanId) {
     if (thanks) thanks.style.display = 'block';
 
     // Submit feedback with rating only
-    submitFeedbackToBackend(category, scanId, { helpful: false, rating: parseInt(rating) });
+    submitFeedbackToBackend(category, scanId, {
+        helpful: wasHelpful,
+        rating: parseInt(rating)
+    });
 }
 
 // Submit comment with feedback
 window.submitFeedbackComment = function(widgetId, category, scanId) {
     const widget = document.getElementById(widgetId);
     const rating = widget?.dataset?.rating || 3;
+    const wasHelpful = widget?.dataset?.helpful === 'true';
     const commentText = document.getElementById(`${widgetId}-comment-text`)?.value || '';
 
     // Hide comment section
@@ -1498,7 +1513,7 @@ window.submitFeedbackComment = function(widgetId, category, scanId) {
 
     // Submit feedback with rating and comment
     submitFeedbackToBackend(category, scanId, {
-        helpful: false,
+        helpful: wasHelpful,
         rating: parseInt(rating),
         comment: commentText
     });
