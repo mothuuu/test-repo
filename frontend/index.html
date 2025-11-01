@@ -850,7 +850,7 @@
             <p class="hero-subtitle">ChatGPT, Perplexity, and Claude answer millions of searches daily—but they're NOT recommending your business. Get your free AI Visibility Score in 30 seconds and discover exactly what's blocking you.</p>
 
             <form class="hero-form" onsubmit="handleHeroScan(event)" id="heroScanForm">
-                <input type="text" id="heroUrl" class="hero-input" placeholder="Enter your website URL (e.g., example.com)" required>
+                <input type="text" id="heroUrl" class="hero-input" placeholder="Enter your website URL (e.g., example.com or xeo.marketing)" required>
                 <button type="submit" class="hero-btn">🔍 Analyze Now</button>
             </form>
 
@@ -1213,7 +1213,7 @@
             <p>Join 1,200+ businesses already optimizing for AI search engines. Free scan in 30 seconds.</p>
 
             <form class="hero-form" style="margin: 40px auto;" onsubmit="handleHeroScan(event)">
-                <input type="text" id="ctaUrl" class="hero-input" placeholder="Enter your website URL" required>
+                <input type="text" id="ctaUrl" class="hero-input" placeholder="Enter your website URL (e.g., example.com)" required>
                 <button type="submit" class="hero-btn">Get My Score →</button>
             </form>
 
@@ -1249,6 +1249,28 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
+        // Normalize URL to ensure it has proper protocol
+        function normalizeUrl(url) {
+            // Trim whitespace
+            url = url.trim();
+
+            // If empty, return as is
+            if (!url) return url;
+
+            // Check if URL already has a protocol
+            if (url.match(/^https?:\/\//i)) {
+                // Already has protocol, just return it
+                return url;
+            }
+
+            // Remove any leading slashes or protocol fragments
+            url = url.replace(/^\/+/, '');
+            url = url.replace(/^:\/\//, '');
+
+            // Add https:// prefix
+            return 'https://' + url;
+        }
+
         // Scroll to scan form
         function scrollToScan(event) {
             event.preventDefault();
@@ -1261,9 +1283,12 @@
             event.preventDefault();
 
             // Get URL from whichever form was submitted
-            const url = event.target.querySelector('input').value;
+            let url = event.target.querySelector('input').value;
             const button = event.target.querySelector('button');
             const originalText = button.textContent;
+
+            // Normalize the URL to add https:// if needed
+            url = normalizeUrl(url);
 
             // Create loading overlay
             const loadingOverlay = document.createElement('div');
