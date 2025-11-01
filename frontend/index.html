@@ -299,11 +299,14 @@
             text-align: center;
             box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             transition: all 0.3s;
+            border-top: 3px solid transparent;
         }
 
         .problem-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+            border-top: 3px solid;
+            border-image: linear-gradient(90deg, #00B9DA 0%, #f31c7e 100%) 1;
         }
 
         .problem-icon {
@@ -323,12 +326,25 @@
             color: #ef4444;
             margin-bottom: 10px;
             font-weight: 600;
+            text-decoration: line-through;
+            opacity: 0.7;
         }
 
         .problem-new {
             font-size: 15px;
             color: #10b981;
             font-weight: 600;
+        }
+
+        .vs-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin: 8px 0;
         }
 
         /* 8 Pillars Section */
@@ -881,31 +897,34 @@
     <section class="problem-section">
         <div class="section-container">
             <div class="section-header">
-                <div class="section-badge">The Problem</div>
+                <div class="section-badge">Critical Shift</div>
                 <h2 class="section-title">Traditional SEO Doesn't Work for AI</h2>
-                <p class="section-subtitle">The game has changed. AI search engines need different signals than Google. Here's what shifted:</p>
+                <p class="section-subtitle">Traditional SEO is dead. AI search engines like ChatGPT, Perplexity, and Claude use completely different ranking signals. If you're not optimized for AI, you're invisible.</p>
             </div>
 
             <div class="problem-grid">
                 <div class="problem-card">
                     <div class="problem-icon">🔍</div>
-                    <div class="problem-title">Discovery Method</div>
-                    <div class="problem-old">❌ Old: Google ranks pages</div>
-                    <div class="problem-new">✓ New: AI recommends answers</div>
+                    <div class="problem-title">How Users Find You</div>
+                    <div class="problem-old">❌ Google ranks 10 blue links based on backlinks and keywords</div>
+                    <div class="vs-badge">VS</div>
+                    <div class="problem-new">✓ AI recommends 1 answer based on content quality and structure</div>
                 </div>
 
                 <div class="problem-card">
                     <div class="problem-icon">📊</div>
-                    <div class="problem-title">What Matters</div>
-                    <div class="problem-old">❌ Old: Keywords & backlinks</div>
-                    <div class="problem-new">✓ New: Context & structure</div>
+                    <div class="problem-title">What Gets You Ranked</div>
+                    <div class="problem-old">❌ Keywords, meta tags, and backlinks matter most</div>
+                    <div class="vs-badge">VS</div>
+                    <div class="problem-new">✓ Context, readability, domain authority and semantic understanding drive visibility</div>
                 </div>
 
                 <div class="problem-card">
                     <div class="problem-icon">⚡</div>
-                    <div class="problem-title">Update Speed</div>
-                    <div class="problem-old">❌ Old: Monthly changes</div>
-                    <div class="problem-new">✓ New: Real-time AI decisions</div>
+                    <div class="problem-title">Speed of Change</div>
+                    <div class="problem-old">❌ Rankings update weekly or monthly based on crawl cycles</div>
+                    <div class="vs-badge">VS</div>
+                    <div class="problem-new">✓ AI makes real-time decisions on every single query</div>
                 </div>
             </div>
         </div>
@@ -1120,11 +1139,16 @@
                     <ul class="plan-features">
                         <li><span class="check-icon">✓</span> 25 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 5 pages per scan</li>
-                        <li><span class="check-icon">✓</span> Detailed recommendations</li>
-                        <li><span class="check-icon">✓</span> Step-by-step action plans</li>
+                        <li><span class="check-icon">✓</span> Page-level action items</li>
+                        <li><span class="check-icon">✓</span> Copy-paste code snippets</li>
+                        <li><span class="check-icon">✓</span> Industry-specific FAQ schema (JSON-LD)</li>
+                        <li><span class="check-icon">✓</span> Evidence-based findings</li>
+                        <li><span class="check-icon">✓</span> JSON-LD export</li>
+                        <li><span class="check-icon">✓</span> Historical comparison</li>
                         <li><span class="check-icon">✓</span> Industry-specific insights</li>
                         <li><span class="check-icon">✓</span> Export reports (PDF/CSV)</li>
-                        <li><span class="check-icon">✓</span> 2 competitor scans</li>
+                        <li><span class="check-icon">✓</span> Score trend analysis</li>
+                        <li><span class="check-icon">✓</span> 2 competitor scan comparisons (view only, not claim)</li>
                     </ul>
 
                     <button class="plan-cta" onclick="window.location.href='auth.html'">Get Started Now</button>
@@ -1132,7 +1156,7 @@
 
                 <!-- Pro Plan -->
                 <div class="pricing-card">
-                    <div class="plan-badge badge-pro">For Agencies</div>
+                    <div class="plan-badge badge-pro">For Power Users</div>
                     <div class="plan-name">Pro</div>
                     <div class="plan-price">$99</div>
                     <div class="plan-price-small">per month</div>
@@ -1140,9 +1164,16 @@
                     <ul class="plan-features">
                         <li><span class="check-icon">✓</span> 50 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 25 pages per scan</li>
-                        <li><span class="check-icon">✓</span> Everything in DIY, plus:</li>
+                        <li><span class="check-icon">✓</span> Everything in DIY, PLUS:</li>
+                        <li><span class="check-icon">✓</span> Up to 25 detailed recommendations</li>
+                        <li><span class="check-icon">✓</span> Dual Index Scores:</li>
+                        <li style="margin-left: 20px;"><span class="check-icon">✓</span> Website Visibility Index (0-1000)</li>
+                        <li style="margin-left: 20px;"><span class="check-icon">✓</span> Brand Visibility Index (0-1000)</li>
+                        <li><span class="check-icon">✓</span> Advanced competitor analysis</li>
+                        <li><span class="check-icon">✓</span> 5 competitor scan comparisons (view only)</li>
+                        <li><span class="check-icon">✓</span> Outside-in crawl (PR mentions, reviews, social signals)</li>
+                        <li><span class="check-icon">✓</span> PDF/CSV export for reports</li>
                         <li><span class="check-icon">✓</span> White-label reports</li>
-                        <li><span class="check-icon">✓</span> 10 competitor scans</li>
                         <li><span class="check-icon">✓</span> API access</li>
                         <li><span class="check-icon">✓</span> Priority support</li>
                         <li><span class="check-icon">✓</span> Custom branding</li>
@@ -1155,7 +1186,7 @@
                 <div class="pricing-card">
                     <div class="plan-badge" style="background: linear-gradient(135deg, #f31c7e 0%, #7D41A5 100%); color: white;">For Agencies</div>
                     <div class="plan-name">Agency</div>
-                    <div class="plan-price">$299</div>
+                    <div class="plan-price">$499</div>
                     <div class="plan-price-small">per month</div>
 
                     <ul class="plan-features">
