@@ -775,6 +775,12 @@
         }
 
         /* Responsive */
+        @media (max-width: 1200px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
         @media (max-width: 968px) {
             .hero h1 {
                 font-size: 42px;
@@ -784,9 +790,12 @@
             .problem-grid,
             .pillars-grid,
             .steps-container,
-            .testimonial-grid,
-            .pricing-grid {
+            .testimonial-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr !important;
             }
 
             .pricing-card.featured {
@@ -812,7 +821,7 @@
     <nav class="navbar">
         <div class="logo">AI Visibility Score</div>
         <div class="nav-buttons">
-            <a href="signup.html" class="btn btn-signin">Sign In</a>
+            <a href="auth.html" class="btn btn-signin">Sign In</a>
             <a href="#get-started" class="btn btn-primary" onclick="scrollToScan(event)">Get Started Free</a>
         </div>
     </nav>
@@ -1082,7 +1091,7 @@
                 <p class="section-subtitle">Start free. Upgrade when you're ready to dominate AI search.</p>
             </div>
 
-            <div class="pricing-grid">
+            <div class="pricing-grid" style="grid-template-columns: repeat(4, 1fr);">
                 <!-- Free Plan -->
                 <div class="pricing-card">
                     <div class="plan-badge badge-free">Free Forever</div>
@@ -1118,7 +1127,7 @@
                         <li><span class="check-icon">✓</span> 2 competitor scans</li>
                     </ul>
 
-                    <button class="plan-cta" onclick="window.location.href='signup.html'">Get Started Now</button>
+                    <button class="plan-cta" onclick="window.location.href='auth.html'">Get Started Now</button>
                 </div>
 
                 <!-- Pro Plan -->
@@ -1139,7 +1148,28 @@
                         <li><span class="check-icon">✓</span> Custom branding</li>
                     </ul>
 
-                    <button class="plan-cta" onclick="window.location.href='signup.html'">Upgrade to Pro</button>
+                    <button class="plan-cta" style="opacity: 0.6; cursor: not-allowed;" disabled>Coming Soon</button>
+                </div>
+
+                <!-- Agency Plan -->
+                <div class="pricing-card">
+                    <div class="plan-badge" style="background: linear-gradient(135deg, #f31c7e 0%, #7D41A5 100%); color: white;">For Agencies</div>
+                    <div class="plan-name">Agency</div>
+                    <div class="plan-price">$299</div>
+                    <div class="plan-price-small">per month</div>
+
+                    <ul class="plan-features">
+                        <li><span class="check-icon">✓</span> Unlimited scans</li>
+                        <li><span class="check-icon">✓</span> Unlimited pages per scan</li>
+                        <li><span class="check-icon">✓</span> Everything in Pro, plus:</li>
+                        <li><span class="check-icon">✓</span> Multi-client dashboard</li>
+                        <li><span class="check-icon">✓</span> Unlimited competitor scans</li>
+                        <li><span class="check-icon">✓</span> White-label everything</li>
+                        <li><span class="check-icon">✓</span> Dedicated account manager</li>
+                        <li><span class="check-icon">✓</span> Custom integrations</li>
+                    </ul>
+
+                    <button class="plan-cta" style="opacity: 0.6; cursor: not-allowed;" disabled>Coming Soon</button>
                 </div>
             </div>
         </div>
