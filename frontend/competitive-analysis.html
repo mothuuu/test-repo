@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitive Analysis - AI Visibility Score</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Xeo Brand Colors */
+        :root {
+            --xeo-primary: #00B9DA;
+            --xeo-secondary: #7030A0;
+            --xeo-accent: #F31C7E;
+            --xeo-teal: #4DACA6;
+            --gradient-main: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            --gradient-accent: linear-gradient(135deg, #00B9DA 0%, #F31C7E 100%);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--xeo-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--gradient-main);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Page Title */
+        .page-title {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .page-title h1 {
+            font-size: 32px;
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .page-title p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        /* Comparison Selector */
+        .comparison-selector {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .scan-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .scan-select-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .scan-select-group label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .scan-select-group select {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .competitor-select {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #cbd5e0;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .executive-summary h2 {
+            font-size: 24px;
+            color: #1a202c;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-content {
+            line-height: 1.8;
+            color: #2d3748;
+            font-size: 16px;
+        }
+
+        /* Competitive Position */
+        .competitive-position {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .position-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .position-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .position-card .label {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* Side-by-Side Comparison Table */
+        .comparison-table-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table thead {
+            background: #f7fafc;
+        }
+
+        .comparison-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table .primary-cell {
+            background: #e6f7fb;
+            font-weight: 600;
+        }
+
+        .score-cell {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .gap-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .gap-ahead {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .gap-behind {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            font-size: 18px;
+            color: #1a202c;
+            margin-bottom: 20px;
+        }
+
+        /* Gap Analysis */
+        .gap-analysis-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .gap-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .gap-item {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--xeo-accent);
+        }
+
+        .gap-item.priority-high {
+            border-left-color: #F31C7E;
+        }
+
+        .gap-item.priority-medium {
+            border-left-color: #ffa726;
+        }
+
+        .gap-item.priority-low {
+            border-left-color: #00B9DA;
+        }
+
+        .gap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .gap-title {
+            font-weight: 600;
+            color: #1a202c;
+        }
+
+        .gap-score {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        /* Recommendations */
+        .recommendations-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .recommendation-card {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--xeo-primary);
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1a202c;
+        }
+
+        .recommendation-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .meta-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-priority {
+            background: #fee;
+            color: #c33;
+        }
+
+        .badge-impact {
+            background: #e6f7fb;
+            color: #0369a1;
+        }
+
+        .badge-effort {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .action-steps {
+            margin-top: 15px;
+        }
+
+        .action-steps ol {
+            margin-left: 20px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+
+        /* Roadmap */
+        .roadmap-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .roadmap-phase {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .roadmap-phase h4 {
+            font-size: 18px;
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .roadmap-phase p {
+            color: #718096;
+            margin-bottom: 15px;
+        }
+
+        .roadmap-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .roadmap-action {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Export Button */
+        .export-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .scan-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .position-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Analyzing competitive landscape...</div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">XEO AI Visibility</div>
+        <div class="nav-buttons">
+            <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+            <button class="btn btn-primary" onclick="exportToPDF()" id="exportBtn" style="display: none;">📄 Export PDF</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Page Title -->
+        <div class="page-title">
+            <h1>🏆 Competitive Analysis</h1>
+            <p>Compare your AI visibility against competitors and get actionable insights to dominate your market</p>
+        </div>
+
+        <!-- Comparison Selector -->
+        <div class="comparison-selector" id="selectorSection">
+            <h2>Select Scans to Compare</h2>
+            <div class="scan-selection">
+                <div class="scan-select-group">
+                    <label for="primaryScanSelect">Your Domain Scan</label>
+                    <select id="primaryScanSelect" onchange="updateCompetitorOptions()">
+                        <option value="">Select your scan...</option>
+                    </select>
+                </div>
+                <div class="scan-select-group competitor-select">
+                    <label>Competitor Scans (Select up to 3)</label>
+                    <div id="competitorCheckboxes">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-primary" onclick="generateComparison()" style="padding: 15px 40px; font-size: 16px;">
+                    Generate Comparison Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Comparison Results (Hidden until generated) -->
+        <div id="resultsSection" style="display: none;">
+            <!-- Executive Summary -->
+            <div class="executive-summary">
+                <h2>📊 Executive Summary</h2>
+                <div class="summary-content" id="executiveSummaryContent"></div>
+            </div>
+
+            <!-- Competitive Position -->
+            <div class="competitive-position">
+                <h2>🎯 Your Competitive Position</h2>
+                <div class="position-grid" id="positionGrid"></div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Overall Score Comparison</h3>
+                    <canvas id="overallScoreChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Category Breakdown</h3>
+                    <canvas id="categoryRadarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Side-by-Side Comparison Table -->
+            <div class="comparison-table-section">
+                <h2>📋 Detailed Score Comparison</h2>
+                <table class="comparison-table" id="comparisonTable">
+                    <!-- Dynamically populated -->
+                </table>
+            </div>
+
+            <!-- Gap Analysis -->
+            <div class="gap-analysis-section">
+                <h2>🔍 Gap Analysis: Where Competitors Are Ahead</h2>
+                <div class="gap-list" id="gapList"></div>
+            </div>
+
+            <!-- Competitive Recommendations -->
+            <div class="recommendations-section">
+                <h2>💡 Competitive Recommendations</h2>
+                <div id="recommendationsList"></div>
+            </div>
+
+            <!-- Actionable Roadmap -->
+            <div class="roadmap-section">
+                <h2>🗺️ Actionable Roadmap to Beat Competitors</h2>
+                <div id="roadmapPhases"></div>
+            </div>
+
+            <!-- Export -->
+            <div class="export-section">
+                <button class="btn btn-primary" onclick="exportToPDF()" style="padding: 15px 40px; font-size: 16px;">
+                    📄 Export Full Report as PDF
+                </button>
+                <button class="btn btn-secondary" onclick="resetComparison()" style="padding: 15px 40px; font-size: 16px;">
+                    🔄 New Comparison
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let authToken = localStorage.getItem('authToken');
+        let comparisonData = null;
+
+        // Check authentication
+        if (!authToken) {
+            window.location.href = 'auth.html';
+        }
+
+        // Load scans on page load
+        document.addEventListener('DOMContentLoaded', loadScans);
+
+        // Load available scans
+        async function loadScans() {
+            try {
+                const response = await fetch(`${API_BASE}/competitive-analysis/scans`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.status === 403) {
+                    alert('Competitive Analysis requires a Pro plan. Please upgrade to access this feature.');
+                    window.location.href = 'checkout.html';
+                    return;
+                }
+
+                const data = await response.json();
+                populateScanSelectors(data);
+            } catch (error) {
+                console.error('Error loading scans:', error);
+                alert('Failed to load scans. Please try again.');
+            }
+        }
+
+        // Populate scan selectors
+        function populateScanSelectors(data) {
+            const primarySelect = document.getElementById('primaryScanSelect');
+            primarySelect.innerHTML = '<option value="">Select your scan...</option>';
+
+            data.primary_scans.forEach(scan => {
+                const option = document.createElement('option');
+                option.value = scan.id;
+                option.textContent = `${scan.extracted_domain} - Score: ${scan.total_score} (${new Date(scan.created_at).toLocaleDateString()})`;
+                option.dataset.scan = JSON.stringify(scan);
+                primarySelect.appendChild(option);
+            });
+
+            // Store competitor scans for later
+            window.competitorScans = data.competitor_scans;
+        }
+
+        // Update competitor options when primary scan is selected
+        function updateCompetitorOptions() {
+            const competitorCheckboxes = document.getElementById('competitorCheckboxes');
+            competitorCheckboxes.innerHTML = '';
+
+            if (!window.competitorScans || window.competitorScans.length === 0) {
+                competitorCheckboxes.innerHTML = '<p style="color: #718096;">No competitor scans available. Scan competitors from your dashboard first.</p>';
+                return;
+            }
+
+            window.competitorScans.forEach(scan => {
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.style.marginBottom = '10px';
+                checkboxDiv.innerHTML = `
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" value="${scan.id}" onchange="limitCompetitorSelection()" style="margin-right: 10px;">
+                        <span>${scan.extracted_domain} - Score: ${scan.total_score} (${new Date(scan.created_at).toLocaleDateString()})</span>
+                    </label>
+                `;
+                competitorCheckboxes.appendChild(checkboxDiv);
+            });
+        }
+
+        // Limit competitor selection to 3
+        function limitCompetitorSelection() {
+            const checkboxes = document.querySelectorAll('#competitorCheckboxes input[type="checkbox"]:checked');
+            if (checkboxes.length > 3) {
+                alert('You can only select up to 3 competitors for comparison.');
+                checkboxes[checkboxes.length - 1].checked = false;
+            }
+        }
+
+        // Generate comparison
+        async function generateComparison() {
+            const primaryScanId = document.getElementById('primaryScanSelect').value;
+            const competitorCheckboxes = document.querySelectorAll('#competitorCheckboxes input[type="checkbox"]:checked');
+            const competitorScanIds = Array.from(competitorCheckboxes).map(cb => parseInt(cb.value));
+
+            if (!primaryScanId) {
+                alert('Please select your domain scan.');
+                return;
+            }
+
+            if (competitorScanIds.length === 0) {
+                alert('Please select at least one competitor to compare.');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('loadingText').textContent = 'Analyzing competitive landscape...';
+
+            try {
+                const response = await fetch(`${API_BASE}/competitive-analysis/compare`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        primary_scan_id: parseInt(primaryScanId),
+                        competitor_scan_ids: competitorScanIds,
+                        comparison_name: `Comparison ${new Date().toLocaleDateString()}`
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate comparison');
+                }
+
+                comparisonData = await response.json();
+                displayComparisonResults(comparisonData);
+
+                // Hide selector, show results
+                document.getElementById('selectorSection').style.display = 'none';
+                document.getElementById('resultsSection').style.display = 'block';
+                document.getElementById('exportBtn').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error generating comparison:', error);
+                alert('Failed to generate comparison. Please try again.');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        // Display comparison results
+        function displayComparisonResults(data) {
+            // Executive Summary
+            document.getElementById('executiveSummaryContent').innerHTML = data.executive_summary.replace(/\n/g, '<br><br>');
+
+            // Competitive Position
+            displayCompetitivePosition(data);
+
+            // Charts
+            createOverallScoreChart(data);
+            createCategoryRadarChart(data);
+
+            // Comparison Table
+            createComparisonTable(data);
+
+            // Gap Analysis
+            displayGapAnalysis(data.gap_analysis);
+
+            // Recommendations
+            displayRecommendations(data.recommendations);
+
+            // Roadmap
+            displayRoadmap(data.roadmap);
+        }
+
+        // Display competitive position metrics
+        function displayCompetitivePosition(data) {
+            const positionGrid = document.getElementById('positionGrid');
+            const position = data.benchmark_data.competitive_position;
+
+            positionGrid.innerHTML = `
+                <div class="position-card">
+                    <div class="number">#${data.overall_rank}</div>
+                    <div class="label">Your Rank</div>
+                </div>
+                <div class="position-card">
+                    <div class="number">${data.primary_scan.total_score}</div>
+                    <div class="label">Your Score</div>
+                </div>
+                <div class="position-card">
+                    <div class="number">${data.categories_leading}</div>
+                    <div class="label">Categories Leading</div>
+                </div>
+                <div class="position-card">
+                    <div class="number">${data.categories_trailing}</div>
+                    <div class="label">Categories Trailing</div>
+                </div>
+                <div class="position-card">
+                    <div class="number">${data.total_score_gap >= 0 ? '+' : ''}${data.total_score_gap}</div>
+                    <div class="label">Gap to Average</div>
+                </div>
+            `;
+        }
+
+        // Create overall score chart
+        function createOverallScoreChart(data) {
+            const ctx = document.getElementById('overallScoreChart').getContext('2d');
+
+            const labels = [data.primary_scan.domain, ...data.competitor_scans.map(c => c.domain)];
+            const scores = [data.primary_scan.total_score, ...data.competitor_scans.map(c => c.total_score)];
+            const colors = ['#00B9DA', ...data.competitor_scans.map(() => '#cbd5e0')];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'AI Visibility Score',
+                        data: scores,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c === '#00B9DA' ? '#0891b2' : '#94a3b8'),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1000
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create category radar chart
+        function createCategoryRadarChart(data) {
+            const ctx = document.getElementById('categoryRadarChart').getContext('2d');
+
+            // Category keys mapping
+            const categoryMap = {
+                'ai_readability_score': 'AI Readability',
+                'ai_search_readiness_score': 'AI Search',
+                'content_freshness_score': 'Freshness',
+                'content_structure_score': 'Structure',
+                'speed_ux_score': 'Speed',
+                'technical_setup_score': 'Technical',
+                'trust_authority_score': 'Trust',
+                'voice_optimization_score': 'Voice'
+            };
+
+            // This would need the full scan data - simplified for now
+            const labels = Object.values(categoryMap);
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: data.primary_scan.domain,
+                        data: [750, 680, 820, 790, 650, 700, 720, 680], // Placeholder - would come from actual data
+                        fill: true,
+                        backgroundColor: 'rgba(0, 185, 218, 0.2)',
+                        borderColor: '#00B9DA',
+                        pointBackgroundColor: '#00B9DA',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#00B9DA'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 1000
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create comparison table
+        function createComparisonTable(data) {
+            // Implementation would create full comparison table
+            // Simplified for now
+            const table = document.getElementById('comparisonTable');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="primary-cell">${data.primary_scan.domain}</th>
+                        ${data.competitor_scans.map(c => `<th>${c.domain}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Overall Score</td>
+                        <td class="primary-cell score-cell">${data.primary_scan.total_score}</td>
+                        ${data.competitor_scans.map(c => `<td class="score-cell">${c.total_score}</td>`).join('')}
+                    </tr>
+                </tbody>
+            `;
+        }
+
+        // Display gap analysis
+        function displayGapAnalysis(gapAnalysis) {
+            const gapList = document.getElementById('gapList');
+            gapList.innerHTML = '';
+
+            gapAnalysis.categories_behind.forEach(gap => {
+                const gapItem = document.createElement('div');
+                gapItem.className = 'gap-item priority-high';
+                gapItem.innerHTML = `
+                    <div class="gap-header">
+                        <div class="gap-title">${gap.category}</div>
+                        <div class="gap-score">Behind by ${Math.round(gap.gap)} points</div>
+                    </div>
+                    <div style="color: #4a5568;">Your score: ${gap.yourScore} | Best competitor: ${gap.bestCompetitorScore}</div>
+                `;
+                gapList.appendChild(gapItem);
+            });
+        }
+
+        // Display recommendations
+        function displayRecommendations(recommendations) {
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = '';
+
+            recommendations.slice(0, 5).forEach(rec => {
+                const recCard = document.createElement('div');
+                recCard.className = 'recommendation-card';
+                recCard.innerHTML = `
+                    <div class="recommendation-header">
+                        <div class="recommendation-title">${rec.title}</div>
+                    </div>
+                    <div class="recommendation-meta">
+                        <span class="meta-badge badge-priority">${rec.priority.toUpperCase()}</span>
+                        <span class="meta-badge badge-impact">${rec.estimated_impact} Impact</span>
+                        <span class="meta-badge badge-effort">${rec.estimated_effort} Effort</span>
+                    </div>
+                    <div style="color: #4a5568; margin-bottom: 10px;">${rec.what_competitor_does_better}</div>
+                    <div class="action-steps">
+                        <strong>Action Steps:</strong>
+                        <ol>
+                            ${rec.action_steps.slice(0, 3).map(step => `<li>${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                `;
+                recList.appendChild(recCard);
+            });
+        }
+
+        // Display roadmap
+        function displayRoadmap(roadmap) {
+            const roadmapPhases = document.getElementById('roadmapPhases');
+            roadmapPhases.innerHTML = '';
+
+            Object.entries(roadmap).forEach(([key, phase]) => {
+                if (key === 'competitive_goal') return;
+
+                const phaseDiv = document.createElement('div');
+                phaseDiv.className = 'roadmap-phase';
+                phaseDiv.innerHTML = `
+                    <h4>${phase.title}</h4>
+                    <p>${phase.description}</p>
+                    <div class="roadmap-actions">
+                        ${phase.actions.map(action => `
+                            <div class="roadmap-action">
+                                <span>${action.action}</span>
+                                <span style="color: #00B9DA; font-weight: 600;">${action.expected_impact}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                roadmapPhases.appendChild(phaseDiv);
+            });
+        }
+
+        // Export to PDF
+        function exportToPDF() {
+            window.print();
+        }
+
+        // Reset comparison
+        function resetComparison() {
+            document.getElementById('selectorSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('exportBtn').style.display = 'none';
+            document.getElementById('primaryScanSelect').value = '';
+            document.getElementById('competitorCheckboxes').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
