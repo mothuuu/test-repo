@@ -13,6 +13,7 @@ const recommendationRoutes = require('./routes/recommendations');
 const feedbackRoutes = require('./routes/feedback');
 const supportChatRoutes = require('./routes/support-chat');
 const waitlistRoutes = require('./routes/waitlist');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -72,6 +73,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support-chat', supportChatRoutes);
 app.use('/api/waitlist', waitlistRoutes);
+app.use('/api/admin', adminRoutes); // Admin routes
 app.use('/api/test', require('./routes/test-routes'));
 
 // Health check
