@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db/database');
-const { authenticateToken, requireAdmin } = require('../../middleware/auth');
+const { authenticateAdmin, requirePermission } = require('../../middleware/adminAuth');
 
 // GET all landing page content or specific section
 // /api/admin/cms/content?section=hero (optional)
-router.get('/content', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/content', authenticateAdmin, requirePermission('manage_content'), async (req, res) => {
   try {
     const { section } = req.query;
 
@@ -51,7 +51,7 @@ router.get('/content', authenticateToken, requireAdmin, async (req, res) => {
 
 // PUT update specific section
 // /api/admin/cms/content/:section
-router.put('/content/:section', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/content/:section', authenticateAdmin, requirePermission('manage_content'), async (req, res) => {
   try {
     const { section } = req.params;
     const { content } = req.body;
@@ -75,7 +75,7 @@ router.put('/content/:section', authenticateToken, requireAdmin, async (req, res
       `UPDATE landing_page_content
        SET content = $1, updated_at = CURRENT_TIMESTAMP, updated_by = $2
        WHERE section_key = $3`,
-      [JSON.stringify(content), req.user.userId, section]
+      [JSON.stringify(content), req.user.id, section]
     );
 
     res.json({
