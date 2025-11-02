@@ -101,6 +101,7 @@ router.get('/', authenticateAdmin, requirePermission('view_all_users'), async (r
         u.created_at,
         u.last_login,
         u.role,
+        COALESCE(u.paused, false) as paused,
         CASE
           WHEN u.last_login >= NOW() - INTERVAL '7 days' THEN 'active'
           WHEN u.last_login >= NOW() - INTERVAL '30 days' THEN 'inactive'
@@ -363,6 +364,65 @@ router.post('/:id/reset-password', authenticateAdmin, requirePermission('edit_us
     res.status(500).json({
       success: false,
       error: 'Failed to reset password',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/users/:id/pause
+ * Pause or unpause a user account
+ */
+router.put('/:id/pause', authenticateAdmin, requirePermission('edit_users'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paused } = req.body; // true to pause, false to unpause
+
+    // Get current user data
+    const userResult = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    // Update paused status
+    await db.query(`
+      UPDATE users
+      SET paused = $1, updated_at = NOW()
+      WHERE id = $2
+    `, [paused, id]);
+
+    // Create audit log
+    await createAuditLog(
+      req.user,
+      paused ? 'PAUSE_USER' : 'UNPAUSE_USER',
+      'users',
+      parseInt(id),
+      `${paused ? 'Paused' : 'Unpaused'} user ${user.email}`,
+      {
+        userId: parseInt(id),
+        userEmail: user.email,
+        previousStatus: user.paused || false,
+        newStatus: paused
+      }
+    );
+
+    res.json({
+      success: true,
+      message: `User ${paused ? 'paused' : 'unpaused'} successfully`,
+      data: {
+        paused
+      }
+    });
+  } catch (error) {
+    console.error('[Admin Pause User] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to pause/unpause user',
       message: error.message
     });
   }
