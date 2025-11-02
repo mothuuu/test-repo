@@ -1376,5 +1376,172 @@
 
     <!-- AI Support Chat Widget -->
     <script src="support-chat.js"></script>
+
+    <!-- CMS Content Loader -->
+    <script>
+        // Load CMS content dynamically
+        (async function loadCMSContent() {
+            try {
+                const cmsApiUrl = API_BASE_URL.replace('/api', '') + '/api/admin/cms/public/content';
+                const response = await fetch(cmsApiUrl);
+                const data = await response.json();
+
+                if (!data.success) return; // Fallback to HTML content
+
+                const sections = data.sections;
+
+                // Update Hero Section
+                if (sections.hero) {
+                    const hero = sections.hero;
+                    document.querySelector('.alert-badge').textContent = hero.alertBadge;
+                    document.querySelector('.hero h1').textContent = hero.heading;
+                    document.querySelector('.hero-subtitle').textContent = hero.subtitle;
+
+                    // Update trust badges
+                    const trustBadgesContainer = document.querySelector('.trust-badges');
+                    trustBadgesContainer.innerHTML = hero.trustBadges.map(badge => `
+                        <div class="trust-badge">
+                            <span class="trust-badge-icon">${badge.icon}</span>
+                            <span>${badge.text}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Update Stats
+                if (sections.stats) {
+                    const statItems = document.querySelectorAll('.stat-item');
+                    sections.stats.stats.forEach((stat, i) => {
+                        if (statItems[i]) {
+                            statItems[i].querySelector('.stat-number').textContent = stat.number;
+                            statItems[i].querySelector('.stat-label').textContent = stat.label;
+                        }
+                    });
+                }
+
+                // Update Problem Section
+                if (sections.problem) {
+                    const problem = sections.problem;
+                    const problemSection = document.querySelector('.problem-section');
+                    problemSection.querySelector('.section-badge').textContent = problem.badge;
+                    problemSection.querySelector('.section-title').textContent = problem.title;
+                    problemSection.querySelector('.section-subtitle').textContent = problem.subtitle;
+
+                    const problemCards = problemSection.querySelectorAll('.problem-card');
+                    problem.problems.forEach((prob, i) => {
+                        if (problemCards[i]) {
+                            problemCards[i].querySelector('.problem-icon').textContent = prob.icon;
+                            problemCards[i].querySelector('.problem-title').textContent = prob.title;
+                            problemCards[i].querySelector('.problem-old').textContent = prob.oldWay;
+                            problemCards[i].querySelector('.problem-new').textContent = prob.newWay;
+                        }
+                    });
+                }
+
+                // Update Pillars Section
+                if (sections.pillars) {
+                    const pillars = sections.pillars;
+                    const pillarsSection = document.querySelector('.pillars-section');
+                    const badges = pillarsSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = pillars.badge;
+                    pillarsSection.querySelector('.section-title').textContent = pillars.title;
+                    pillarsSection.querySelector('.section-subtitle').textContent = pillars.subtitle;
+
+                    const pillarCards = pillarsSection.querySelectorAll('.pillar-card');
+                    pillars.pillars.forEach((pillar, i) => {
+                        if (pillarCards[i]) {
+                            pillarCards[i].querySelector('.pillar-icon').textContent = pillar.icon;
+                            pillarCards[i].querySelector('.pillar-title').textContent = pillar.title;
+                            pillarCards[i].querySelector('.pillar-boost').textContent = pillar.boost;
+                            pillarCards[i].querySelector('.pillar-desc').textContent = pillar.description;
+                        }
+                    });
+                }
+
+                // Update How It Works
+                if (sections.how_it_works) {
+                    const how = sections.how_it_works;
+                    const howSection = document.querySelector('.how-it-works');
+                    const badges = howSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = how.badge;
+                    howSection.querySelector('.section-title').textContent = how.title;
+                    howSection.querySelector('.section-subtitle').textContent = how.subtitle;
+
+                    const stepCards = howSection.querySelectorAll('.step-card');
+                    how.steps.forEach((step, i) => {
+                        if (stepCards[i]) {
+                            stepCards[i].querySelector('.step-icon').textContent = step.icon;
+                            stepCards[i].querySelector('.step-title').textContent = step.title;
+                            stepCards[i].querySelector('.step-desc').textContent = step.description;
+                        }
+                    });
+                }
+
+                // Update Testimonials
+                if (sections.testimonials) {
+                    const testimonials = sections.testimonials;
+                    const socialSection = document.querySelector('.social-proof');
+                    const badges = socialSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = testimonials.badge;
+                    socialSection.querySelector('.section-title').textContent = testimonials.title;
+
+                    const testimonialCards = socialSection.querySelectorAll('.testimonial-card');
+                    testimonials.testimonials.forEach((testimonial, i) => {
+                        if (testimonialCards[i]) {
+                            const stars = '★'.repeat(testimonial.stars);
+                            testimonialCards[i].querySelector('.testimonial-stars').textContent = stars;
+                            testimonialCards[i].querySelector('.testimonial-text').textContent = testimonial.text;
+                            testimonialCards[i].querySelector('.author-avatar').textContent = testimonial.authorInitials;
+                            testimonialCards[i].querySelector('.author-name').textContent = testimonial.authorName;
+                            testimonialCards[i].querySelector('.author-title').textContent = testimonial.authorTitle;
+                        }
+                    });
+
+                    // Update results showcase
+                    if (testimonials.resultsShowcase) {
+                        const showcase = testimonials.resultsShowcase;
+                        const showcaseEl = document.querySelector('.results-showcase');
+                        showcaseEl.querySelector('h3').textContent = showcase.heading;
+                        showcaseEl.querySelector('p').textContent = showcase.subtitle;
+
+                        const resultItems = showcaseEl.querySelectorAll('.result-item');
+                        showcase.results.forEach((result, i) => {
+                            if (resultItems[i]) {
+                                resultItems[i].querySelector('.result-number').textContent = result.number;
+                                resultItems[i].querySelector('.result-label').textContent = result.label;
+                            }
+                        });
+                    }
+                }
+
+                // Update Final CTA
+                if (sections.final_cta) {
+                    const cta = sections.final_cta;
+                    const ctaSection = document.querySelector('.final-cta');
+                    ctaSection.querySelector('h2').textContent = cta.heading;
+                    ctaSection.querySelector('p').textContent = cta.subtitle;
+
+                    const checkItems = ctaSection.querySelectorAll('.cta-check-item span:last-child');
+                    cta.checklist.forEach((item, i) => {
+                        if (checkItems[i]) {
+                            checkItems[i].textContent = item;
+                        }
+                    });
+                }
+
+                // Update Footer
+                if (sections.footer) {
+                    const footer = sections.footer;
+                    const footerTextEl = document.querySelector('.footer-text');
+                    footerTextEl.innerHTML = `${footer.text.split('&')[0]} & <a href="${footer.xeoMarketingUrl}" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: underline;">${footer.text.split('&')[1] || 'Xeo Marketing'}</a>`;
+                    document.querySelector('.footer-copyright').textContent = footer.copyright;
+                }
+
+                console.log('✅ CMS content loaded successfully');
+            } catch (error) {
+                console.error('Failed to load CMS content, using default HTML:', error);
+                // Page falls back to default HTML content
+            }
+        })();
+    </script>
 </body>
 </html>
