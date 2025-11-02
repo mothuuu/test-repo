@@ -14,6 +14,7 @@ const feedbackRoutes = require('./routes/feedback');
 const supportChatRoutes = require('./routes/support-chat');
 const waitlistRoutes = require('./routes/waitlist');
 const adminRoutes = require('./routes/admin');
+const stripeWebhookRoutes = require('./routes/stripe-webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,6 +24,8 @@ const PORT = process.env.PORT || 3001;
 // This is required for rate limiting and IP-based features to work correctly
 app.set('trust proxy', 1);
 
+// Stripe webhook needs raw body - must be before express.json()
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -65,6 +68,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
+app.use('/api/webhooks', stripeWebhookRoutes); // Stripe webhooks (must be before other routes)
 app.use('/api/auth', authRoutes);
 app.use('/api', aiTestingRoutes);
 app.use('/api/subscription', subscriptionRoutes);
