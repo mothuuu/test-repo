@@ -14,6 +14,7 @@ const feedbackRoutes = require('./routes/feedback');
 const supportChatRoutes = require('./routes/support-chat');
 const waitlistRoutes = require('./routes/waitlist');
 const adminRoutes = require('./routes/admin');
+const competitiveAnalysisRoutes = require('./routes/competitive-analysis');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,6 +75,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/support-chat', supportChatRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/admin', adminRoutes); // Admin routes
+app.use('/api/competitive-analysis', competitiveAnalysisRoutes); // Competitive analysis (Pro plan)
 app.use('/api/test', require('./routes/test-routes'));
 
 // Health check
