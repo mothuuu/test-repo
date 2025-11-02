@@ -75,11 +75,45 @@ router.post('/guest', async (req, res) => {
 
     console.log('🔍 Guest scan requested for:', url);
 
-    // Perform V5 rubric scan (results NOT saved)
+    // Perform V5 rubric scan
     // Use 'guest' tier - NO recommendations shown to anonymous users
     const scanResult = await performV5Scan(url, 'guest');
 
-    // Return results immediately without saving
+    // Save guest scan to database for analytics (with user_id = NULL)
+    try {
+      await db.query(
+        `INSERT INTO scans (
+          user_id, url, status, page_count, rubric_version,
+          total_score, ai_readability_score, ai_search_readiness_score,
+          content_freshness_score, content_structure_score, speed_ux_score,
+          technical_setup_score, trust_authority_score, voice_optimization_score,
+          industry, completed_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)`,
+        [
+          null, // user_id is NULL for guest scans
+          url,
+          'completed',
+          1, // page_count
+          'V5',
+          scanResult.totalScore,
+          scanResult.categories.aiReadability,
+          scanResult.categories.aiSearchReadiness,
+          scanResult.categories.contentFreshness,
+          scanResult.categories.contentStructure,
+          scanResult.categories.speedUX,
+          scanResult.categories.technicalSetup,
+          scanResult.categories.trustAuthority,
+          scanResult.categories.voiceOptimization,
+          scanResult.industry
+        ]
+      );
+      console.log('✅ Guest scan saved to database for analytics');
+    } catch (dbError) {
+      console.error('⚠️  Failed to save guest scan to database:', dbError.message);
+      // Continue anyway - don't fail the response if DB save fails
+    }
+
+    // Return results
     res.json({
       success: true,
       total_score: scanResult.totalScore,

@@ -183,7 +183,8 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
 
     if (search) {
       queryParams.push(`%${search}%`);
-      whereConditions.push(`(s.url ILIKE $${paramCount} OR u.email ILIKE $${paramCount})`);
+      // Include guest scans (where u.email IS NULL) in search results
+      whereConditions.push(`(s.url ILIKE $${paramCount} OR (u.email IS NOT NULL AND u.email ILIKE $${paramCount}))`);
       paramCount++;
     }
 
