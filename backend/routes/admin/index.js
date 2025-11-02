@@ -6,11 +6,13 @@ const overviewRoutes = require('./overview');
 const usersRoutes = require('./users');
 const curationRoutes = require('./curation');
 const analyticsRoutes = require('./analytics');
+const cmsRoutes = require('./cms');
 
 // Mount routes
 router.use('/overview', overviewRoutes);
 router.use('/users', usersRoutes);
 router.use('/curation', curationRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/cms', cmsRoutes);
 
 module.exports = router;
