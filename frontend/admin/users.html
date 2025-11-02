@@ -192,6 +192,165 @@
             color: #4a5568;
         }
 
+        .btn-pause {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background: #d97706;
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-message {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .modal-input-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .modal-input, .modal-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        .modal-input:focus, .modal-select:focus {
+            outline: none;
+            border-color: #00B9DA;
+            box-shadow: 0 0 0 3px rgba(0, 185, 218, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 185, 218, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .modal-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background: #dc2626;
+        }
+
         @media (max-width: 968px) {
             .stats-bar {
                 grid-template-columns: repeat(2, 1fr);
@@ -204,6 +363,21 @@
     </style>
 </head>
 <body>
+    <!-- Branded Modal -->
+    <div class="modal-overlay" id="brandedModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon">⚡</div>
+                <h2 class="modal-title" id="modalTitle">Action Required</h2>
+            </div>
+            <div class="modal-body">
+                <div class="modal-message" id="modalMessage"></div>
+                <div id="modalInputContainer"></div>
+                <div class="modal-actions" id="modalActions"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
         <div class="logo-section">
@@ -497,6 +671,7 @@
                         <div class="user-info">
                             <span class="user-name">${user.name || 'Unknown'}</span>
                             <span class="user-email">${user.email}</span>
+                            ${user.paused ? '<span style="color: #f59e0b; font-size: 11px; font-weight: 600;">⏸ PAUSED</span>' : ''}
                         </div>
                     </td>
                     <td>${AdminUtils.getPlanBadge(user.plan)}</td>
@@ -506,7 +681,9 @@
                     <td>
                         <div class="action-buttons">
                             <button class="btn-action btn-view" onclick="event.stopPropagation(); viewUser(${user.id})">View</button>
-                            ${user.plan !== 'pro' ? `<button class="btn-action btn-upgrade" onclick="event.stopPropagation(); upgradeUser(${user.id})">⬆ Upgrade</button>` : ''}
+                            ${user.plan !== 'pro' ? `<button class="btn-action btn-upgrade" onclick="event.stopPropagation(); upgradeUser(${user.id}, '${user.email}')">⬆ Upgrade</button>` : ''}
+                            <button class="btn-action btn-pause" onclick="event.stopPropagation(); togglePauseUser(${user.id}, ${user.paused}, '${user.email}')">${user.paused ? '▶ Resume' : '⏸ Pause'}</button>
+                            <button class="btn-action btn-remove" onclick="event.stopPropagation(); removeUser(${user.id}, '${user.email}')">🗑 Remove</button>
                         </div>
                     </td>
                 </tr>
@@ -562,13 +739,74 @@
             // TODO: Show user detail modal or redirect to detail page
         }
 
-        // Upgrade user
-        async function upgradeUser(userId) {
-            const newPlan = prompt('Enter new plan (diy or pro):');
-            if (!newPlan || !['diy', 'pro'].includes(newPlan)) {
-                AdminUtils.showToast('Invalid plan', 'error');
-                return;
+        // Modal utility functions
+        function showModal(config) {
+            const modal = document.getElementById('brandedModal');
+            document.getElementById('modalIcon').textContent = config.icon || '⚡';
+            document.getElementById('modalTitle').textContent = config.title;
+            document.getElementById('modalMessage').textContent = config.message;
+
+            // Clear and setup input container
+            const inputContainer = document.getElementById('modalInputContainer');
+            inputContainer.innerHTML = '';
+            if (config.input) {
+                inputContainer.innerHTML = `
+                    <div class="modal-input-group">
+                        <label class="modal-label">${config.input.label}</label>
+                        ${config.input.type === 'select' ? `
+                            <select class="modal-select" id="modalInput">
+                                ${config.input.options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                            </select>
+                        ` : `
+                            <input type="${config.input.type || 'text'}" class="modal-input" id="modalInput" placeholder="${config.input.placeholder || ''}">
+                        `}
+                    </div>
+                `;
             }
+
+            // Setup actions
+            const actionsContainer = document.getElementById('modalActions');
+            actionsContainer.innerHTML = `
+                <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn ${config.danger ? 'modal-btn-danger' : 'modal-btn-primary'}" onclick="${config.onConfirm}">${config.confirmText || 'Confirm'}</button>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('brandedModal').classList.remove('active');
+        }
+
+        // Click outside modal to close
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'brandedModal') {
+                closeModal();
+            }
+        });
+
+        // Upgrade user
+        function upgradeUser(userId, userEmail) {
+            showModal({
+                icon: '⬆️',
+                title: 'Upgrade User Plan',
+                message: `Select the new plan for ${userEmail}:`,
+                input: {
+                    type: 'select',
+                    label: 'New Plan',
+                    options: [
+                        { value: 'diy', label: 'DIY Plan' },
+                        { value: 'pro', label: 'Pro Plan' }
+                    ]
+                },
+                confirmText: 'Upgrade User',
+                onConfirm: `confirmUpgradeUser(${userId})`
+            });
+        }
+
+        async function confirmUpgradeUser(userId) {
+            const newPlan = document.getElementById('modalInput').value;
+            closeModal();
 
             try {
                 await AdminUtils.apiRequest(`/admin/users/${userId}/plan`, {
@@ -580,6 +818,63 @@
                 loadUsers(currentPage);
             } catch (error) {
                 AdminUtils.showToast(`Failed to upgrade user: ${error.message}`, 'error');
+            }
+        }
+
+        // Toggle pause user
+        function togglePauseUser(userId, currentlyPaused, userEmail) {
+            const action = currentlyPaused ? 'resume' : 'pause';
+            showModal({
+                icon: currentlyPaused ? '▶️' : '⏸️',
+                title: `${currentlyPaused ? 'Resume' : 'Pause'} User Account`,
+                message: `Are you sure you want to ${action} ${userEmail}? ${currentlyPaused ? 'They will regain access to their account.' : 'They will be temporarily locked out of their account.'}`,
+                confirmText: currentlyPaused ? 'Resume User' : 'Pause User',
+                danger: !currentlyPaused,
+                onConfirm: `confirmTogglePause(${userId}, ${!currentlyPaused})`
+            });
+        }
+
+        async function confirmTogglePause(userId, paused) {
+            closeModal();
+
+            try {
+                await AdminUtils.apiRequest(`/admin/users/${userId}/pause`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ paused })
+                });
+
+                AdminUtils.showToast(`User ${paused ? 'paused' : 'resumed'} successfully!`, 'success');
+                loadUsers(currentPage);
+            } catch (error) {
+                AdminUtils.showToast(`Failed to ${paused ? 'pause' : 'resume'} user: ${error.message}`, 'error');
+            }
+        }
+
+        // Remove user
+        function removeUser(userId, userEmail) {
+            showModal({
+                icon: '🗑️',
+                title: 'Remove User',
+                message: `Are you sure you want to permanently delete ${userEmail}? This action cannot be undone and will delete all their scans and data.`,
+                confirmText: 'Delete User',
+                danger: true,
+                onConfirm: `confirmRemoveUser(${userId})`
+            });
+        }
+
+        async function confirmRemoveUser(userId) {
+            closeModal();
+
+            try {
+                await AdminUtils.apiRequest(`/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                AdminUtils.showToast('User deleted successfully!', 'success');
+                loadUsers(currentPage);
+                loadStats(); // Refresh stats
+            } catch (error) {
+                AdminUtils.showToast(`Failed to delete user: ${error.message}`, 'error');
             }
         }
 
