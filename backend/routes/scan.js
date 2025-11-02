@@ -96,14 +96,14 @@ router.post('/guest', async (req, res) => {
           1, // page_count
           'V5',
           scanResult.totalScore,
-          scanResult.categories.aiReadability,
-          scanResult.categories.aiSearchReadiness,
-          scanResult.categories.contentFreshness,
-          scanResult.categories.contentStructure,
-          scanResult.categories.speedUX,
-          scanResult.categories.technicalSetup,
-          scanResult.categories.trustAuthority,
-          scanResult.categories.voiceOptimization,
+          scanResult.categories.aiReadability.score,
+          scanResult.categories.aiSearchReadiness.score,
+          scanResult.categories.contentFreshness.score,
+          scanResult.categories.contentStructure.score,
+          scanResult.categories.speedUX.score,
+          scanResult.categories.technicalSetup.score,
+          scanResult.categories.trustAuthority.score,
+          scanResult.categories.voiceOptimization.score,
           scanResult.industry
         ]
       );
