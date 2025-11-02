@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../config/database');
+const db = require('../../db/database');
 const { authenticateToken, requireAdmin } = require('../../middleware/auth');
 
 // GET all landing page content or specific section
