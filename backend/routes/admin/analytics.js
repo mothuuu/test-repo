@@ -195,13 +195,13 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
     let orderByClause = '';
     switch (sort_by) {
       case 'score_high':
-        orderByClause = 'ORDER BY s.score DESC NULLS LAST, s.created_at DESC';
+        orderByClause = 'ORDER BY s.total_score DESC NULLS LAST, s.created_at DESC';
         break;
       case 'score_low':
-        orderByClause = 'ORDER BY s.score ASC NULLS LAST, s.created_at DESC';
+        orderByClause = 'ORDER BY s.total_score ASC NULLS LAST, s.created_at DESC';
         break;
       case 'user':
-        orderByClause = 'ORDER BY u.email ASC, s.created_at DESC';
+        orderByClause = 'ORDER BY u.email ASC NULLS LAST, s.created_at DESC';
         break;
       case 'recent':
       default:
@@ -219,13 +219,13 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
 
     const totalScans = countResult.rows[0].total;
 
-    // Get scans
+    // Get scans - include guest scans (user_id IS NULL)
     queryParams.push(parseInt(limit), offset);
     const scansResult = await db.query(`
       SELECT
         s.id,
         s.url,
-        s.score,
+        s.total_score as score,
         s.created_at,
         s.completed_at,
         s.status,
@@ -234,8 +234,12 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
         u.email as user_email,
         u.name as user_name,
         u.plan as user_plan,
-        u.signup_source,
-        u.affiliate_id,
+        CASE WHEN u.id IS NOT NULL THEN
+          (SELECT signup_source FROM users WHERE id = u.id)
+        ELSE NULL END as signup_source,
+        CASE WHEN u.id IS NOT NULL THEN
+          (SELECT affiliate_id FROM users WHERE id = u.id)
+        ELSE NULL END as affiliate_id,
         (SELECT COUNT(*) FROM scans WHERE user_id = s.user_id)::int as user_total_scans
       FROM scans s
       LEFT JOIN users u ON s.user_id = u.id
@@ -251,8 +255,9 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int as scans_last_30_days,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int as scans_last_7_days,
         COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)::int as scans_today,
-        ROUND(AVG(score), 1) as avg_score,
+        ROUND(AVG(total_score), 1) as avg_score,
         COUNT(DISTINCT user_id)::int as unique_users,
+        COUNT(*) FILTER (WHERE user_id IS NULL)::int as guest_scans,
         COUNT(*) FILTER (WHERE is_competitor_scan = true)::int as competitor_scans
       FROM scans
     `);
