@@ -207,6 +207,12 @@ signupForm.addEventListener('submit', async (e) => {
     }
   }
 
+  // Add tracking data
+  const trackingData = getTrackingData();
+  Object.assign(signupData, trackingData);
+
+  console.log('📝 Signup data with tracking:', signupData);
+
   try {
     const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
@@ -291,8 +297,42 @@ function handleIndustryChange() {
   });
 }
 
+// Capture UTM parameters and tracking data
+function captureTrackingData() {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  const trackingData = {
+    utm_source: urlParams.get('utm_source') || urlParams.get('source'),
+    utm_medium: urlParams.get('utm_medium') || urlParams.get('medium'),
+    utm_campaign: urlParams.get('utm_campaign') || urlParams.get('campaign'),
+    utm_content: urlParams.get('utm_content'),
+    utm_term: urlParams.get('utm_term'),
+    affiliate_id: urlParams.get('ref') || urlParams.get('affiliate') || urlParams.get('aff'),
+    referrer: document.referrer || null,
+    landing_page: window.location.pathname
+  };
+
+  // Store in sessionStorage (persists across page navigation in same session)
+  sessionStorage.setItem('trackingData', JSON.stringify(trackingData));
+
+  console.log('📊 Tracking data captured:', trackingData);
+  return trackingData;
+}
+
+// Get stored tracking data
+function getTrackingData() {
+  const stored = sessionStorage.getItem('trackingData');
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return captureTrackingData();
+}
+
 // Check if user is already logged in
 window.addEventListener('DOMContentLoaded', () => {
+  // Capture tracking data on page load
+  captureTrackingData();
+
   // Populate industry dropdown
   populateIndustryDropdown();
   handleIndustryChange();

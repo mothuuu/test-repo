@@ -10,7 +10,12 @@ const router = express.Router();
 // POST /api/auth/signup - Create account
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, name, industry, industryCustom } = req.body;
+    const {
+      email, password, name, industry, industryCustom,
+      // UTM and tracking parameters
+      utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+      referrer, landing_page, affiliate_id
+    } = req.body;
 
     // Validation
     if (!email || !password) {
@@ -45,24 +50,42 @@ router.post('/signup', async (req, res) => {
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Create user with optional industry
+    // Create user with tracking data
     const result = await db.query(
-      `INSERT INTO users (email, password_hash, name, plan, verification_token, email_verified, industry, industry_custom)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, email, name, plan, email_verified, industry, industry_custom`,
-      [email, passwordHash, name || 'User', 'free', verificationToken, false, industry || null, industryCustom || null]
+      `INSERT INTO users (
+        email, password_hash, name, plan, verification_token, email_verified,
+        industry, industry_custom,
+        signup_source, signup_medium, signup_campaign, signup_content, signup_term,
+        referrer_url, landing_page, affiliate_id
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       RETURNING id, email, name, plan, email_verified, industry, industry_custom,
+                 signup_source, signup_medium, affiliate_id`,
+      [
+        email, passwordHash, name || 'User', 'free', verificationToken, false,
+        industry || null, industryCustom || null,
+        utm_source || null, utm_medium || null, utm_campaign || null,
+        utm_content || null, utm_term || null,
+        referrer || null, landing_page || null, affiliate_id || null
+      ]
     );
 
     const user = result.rows[0];
 
-    console.log(`✅ New user signup: ${email}${industry ? ` (Industry: ${industry})` : ''}`);
-    
+    const trackingInfo = [
+      user.signup_source && `Source: ${user.signup_source}`,
+      user.signup_medium && `Medium: ${user.signup_medium}`,
+      user.affiliate_id && `Affiliate: ${user.affiliate_id}`
+    ].filter(Boolean).join(', ');
+
+    console.log(`✅ New user signup: ${email}${industry ? ` (Industry: ${industry})` : ''}${trackingInfo ? ` | ${trackingInfo}` : ''}`);
+
     // Generate JWT
     const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    
+
     // Send verification email
     await sendVerificationEmail(email, verificationToken);
-    
+
     res.status(201).json({
       success: true,
       user: {
