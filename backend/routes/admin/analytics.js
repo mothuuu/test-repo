@@ -221,6 +221,15 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
 
     // Get scans - include guest scans (user_id IS NULL)
     queryParams.push(parseInt(limit), offset);
+
+    // Check if is_competitor_scan column exists
+    const columnCheck = await db.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'scans' AND column_name = 'is_competitor_scan'
+    `);
+    const hasCompetitorColumn = columnCheck.rows.length > 0;
+
     const scansResult = await db.query(`
       SELECT
         s.id,
@@ -229,7 +238,7 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
         s.created_at,
         s.completed_at,
         s.status,
-        s.is_competitor_scan,
+        ${hasCompetitorColumn ? 's.is_competitor_scan' : 'FALSE as is_competitor_scan'},
         u.id as user_id,
         u.email as user_email,
         u.name as user_name,
@@ -258,7 +267,7 @@ router.get('/scans', authenticateAdmin, requirePermission('view_analytics'), asy
         ROUND(AVG(total_score), 1) as avg_score,
         COUNT(DISTINCT user_id)::int as unique_users,
         COUNT(*) FILTER (WHERE user_id IS NULL)::int as guest_scans,
-        COUNT(*) FILTER (WHERE is_competitor_scan = true)::int as competitor_scans
+        ${hasCompetitorColumn ? "COUNT(*) FILTER (WHERE is_competitor_scan = true)::int" : "0::int"} as competitor_scans
       FROM scans
     `);
 
