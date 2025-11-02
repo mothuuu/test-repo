@@ -365,7 +365,7 @@
                 document.getElementById('avgScore').textContent = `Avg score: ${stats.avg_score}`;
 
                 document.getElementById('scansLast30').textContent = AdminUtils.formatNumber(stats.scans_last_30_days);
-                document.getElementById('uniqueUsers').textContent = `${stats.unique_users} unique users`;
+                document.getElementById('uniqueUsers').textContent = `${stats.unique_users} users / ${stats.guest_scans || 0} guests`;
 
                 document.getElementById('scansLast7').textContent = AdminUtils.formatNumber(stats.scans_last_7_days);
                 document.getElementById('competitorScans').textContent = `${stats.competitor_scans} competitor scans`;
