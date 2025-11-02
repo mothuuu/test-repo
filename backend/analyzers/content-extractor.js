@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { URL } = require('url');
+const EntityAnalyzer = require('./entity-analyzer');
 
 /**
  * Content Extractor for V5 Rubric Analysis
@@ -24,8 +25,8 @@ class ContentExtractor {
       const fetchResult = await this.fetchHTML();
 const html = fetchResult.html; // Extract the HTML string from the object
 const $ = cheerio.load(html);
-      
-      return {
+
+      const evidence = {
         url: this.url,
         html: html, // Store HTML for analysis
         metadata: this.extractMetadata($),
@@ -37,6 +38,12 @@ const $ = cheerio.load(html);
         accessibility: this.extractAccessibility($),
         timestamp: new Date().toISOString()
       };
+
+      // Run entity analysis
+      const entityAnalyzer = new EntityAnalyzer(evidence);
+      evidence.entities = entityAnalyzer.analyze();
+
+      return evidence;
     } catch (error) {
       throw new Error(`Content extraction failed: ${error.message}`);
     }
