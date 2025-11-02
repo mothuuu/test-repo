@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const db = require('./database');
 
 async function migrateLandingPageCMS() {
   console.log('🚀 Starting landing page CMS migration...');
