@@ -145,7 +145,8 @@ function getPermissionsForRole(role) {
       'system_config',
       'api_management',
       'email_campaigns',
-      'impersonate_user'
+      'impersonate_user',
+      'manage_content'
     ],
     content_manager: [
       // Content and recommendation management
@@ -157,7 +158,8 @@ function getPermissionsForRole(role) {
       'train_ai',
       'view_analytics', // limited
       'email_campaigns',
-      'export_data' // limited
+      'export_data', // limited
+      'manage_content'
     ],
     system_admin: [
       // Technical operations
