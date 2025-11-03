@@ -80,6 +80,7 @@ router.post('/guest', async (req, res) => {
     const scanResult = await performV5Scan(url, 'guest');
 
     // Save guest scan to database for analytics (with user_id = NULL)
+    // NOTE: scanResult.categories values are already numbers (0-100), not objects with .score property
     try {
       await db.query(
         `INSERT INTO scans (
@@ -96,20 +97,21 @@ router.post('/guest', async (req, res) => {
           1, // page_count
           'V5',
           scanResult.totalScore,
-          scanResult.categories.aiReadability.score,
-          scanResult.categories.aiSearchReadiness.score,
-          scanResult.categories.contentFreshness.score,
-          scanResult.categories.contentStructure.score,
-          scanResult.categories.speedUX.score,
-          scanResult.categories.technicalSetup.score,
-          scanResult.categories.trustAuthority.score,
-          scanResult.categories.voiceOptimization.score,
+          scanResult.categories.aiReadability,  // Fixed: removed .score
+          scanResult.categories.aiSearchReadiness,  // Fixed: removed .score
+          scanResult.categories.contentFreshness,  // Fixed: removed .score
+          scanResult.categories.contentStructure,  // Fixed: removed .score
+          scanResult.categories.speedUX,  // Fixed: removed .score
+          scanResult.categories.technicalSetup,  // Fixed: removed .score
+          scanResult.categories.trustAuthority,  // Fixed: removed .score
+          scanResult.categories.voiceOptimization,  // Fixed: removed .score
           scanResult.industry
         ]
       );
       console.log('✅ Guest scan saved to database for analytics');
     } catch (dbError) {
       console.error('⚠️  Failed to save guest scan to database:', dbError.message);
+      console.error('⚠️  DB Error details:', dbError);
       // Continue anyway - don't fail the response if DB save fails
     }
 
@@ -288,16 +290,17 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       throw new Error('Scan analyzer returned incomplete data');
     }
 
-    // Validate category structure
+    // Validate category structure (categories should be numbers 0-100, not objects)
     const requiredCategories = ['aiReadability', 'aiSearchReadiness', 'contentFreshness',
                                  'contentStructure', 'speedUX', 'technicalSetup',
                                  'trustAuthority', 'voiceOptimization'];
 
     for (const cat of requiredCategories) {
-      if (!scanResult.categories[cat] || typeof scanResult.categories[cat].score !== 'number') {
+      const value = scanResult.categories[cat];
+      if (typeof value !== 'number' || isNaN(value)) {
         console.error(`❌ CRITICAL: Missing or invalid category: ${cat}`);
-        console.error(`   Value:`, scanResult.categories[cat]);
-        throw new Error(`Invalid category data: ${cat}`);
+        console.error(`   Expected number, got:`, typeof value, value);
+        throw new Error(`Invalid category data: ${cat} - expected number, got ${typeof value}`);
       }
     }
 
@@ -317,8 +320,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     }
 
     // Update scan record with results
+    // NOTE: scanResult.categories values are already numbers (0-100), not objects with .score property
     await db.query(
-      `UPDATE scans SET 
+      `UPDATE scans SET
         status = $1,
         total_score = $2,
         ai_readability_score = $3,
@@ -336,14 +340,14 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       [
         'completed',
         scanResult.totalScore,
-        scanResult.categories.aiReadability.score,
-        scanResult.categories.aiSearchReadiness.score,
-        scanResult.categories.contentFreshness.score,
-        scanResult.categories.contentStructure.score,
-        scanResult.categories.speedUX.score,
-        scanResult.categories.technicalSetup.score,
-        scanResult.categories.trustAuthority.score,
-        scanResult.categories.voiceOptimization.score,
+        scanResult.categories.aiReadability,  // Fixed: removed .score
+        scanResult.categories.aiSearchReadiness,  // Fixed: removed .score
+        scanResult.categories.contentFreshness,  // Fixed: removed .score
+        scanResult.categories.contentStructure,  // Fixed: removed .score
+        scanResult.categories.speedUX,  // Fixed: removed .score
+        scanResult.categories.technicalSetup,  // Fixed: removed .score
+        scanResult.categories.trustAuthority,  // Fixed: removed .score
+        scanResult.categories.voiceOptimization,  // Fixed: removed .score
         scanResult.industry,
         JSON.stringify(scanResult.detailedAnalysis),
         scan.id
