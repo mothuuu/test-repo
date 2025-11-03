@@ -8,7 +8,8 @@ const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extracto
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
 // ============================================
-const V5RubricEngine = require('../analyzers/v5-rubric-engine'); // Import the class
+const V5EnhancedRubricEngine = require('../analyzers/v5-enhanced-rubric-engine'); // Import the ENHANCED class
+const V5RubricEngine = V5EnhancedRubricEngine; // Alias for compatibility
 const { generateCompleteRecommendations } = require('../analyzers/recommendation-generator');
 
 // Middleware to verify JWT token
