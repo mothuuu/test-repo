@@ -81,7 +81,7 @@ router.post('/guest', async (req, res) => {
     const scanResult = await performV5Scan(url, 'guest');
 
     // Save guest scan to database for analytics (with user_id = NULL)
-    // NOTE: scanResult.categories values are already numbers (0-100), not objects with .score property
+    // NOTE: Round scores to integers since DB columns are INTEGER type
     try {
       await db.query(
         `INSERT INTO scans (
@@ -97,15 +97,15 @@ router.post('/guest', async (req, res) => {
           'completed',
           1, // page_count
           'V5',
-          scanResult.totalScore,
-          scanResult.categories.aiReadability,  // Fixed: removed .score
-          scanResult.categories.aiSearchReadiness,  // Fixed: removed .score
-          scanResult.categories.contentFreshness,  // Fixed: removed .score
-          scanResult.categories.contentStructure,  // Fixed: removed .score
-          scanResult.categories.speedUX,  // Fixed: removed .score
-          scanResult.categories.technicalSetup,  // Fixed: removed .score
-          scanResult.categories.trustAuthority,  // Fixed: removed .score
-          scanResult.categories.voiceOptimization,  // Fixed: removed .score
+          Math.round(scanResult.totalScore),  // Round to integer
+          Math.round(scanResult.categories.aiReadability),
+          Math.round(scanResult.categories.aiSearchReadiness),
+          Math.round(scanResult.categories.contentFreshness),
+          Math.round(scanResult.categories.contentStructure),
+          Math.round(scanResult.categories.speedUX),
+          Math.round(scanResult.categories.technicalSetup),
+          Math.round(scanResult.categories.trustAuthority),
+          Math.round(scanResult.categories.voiceOptimization),
           scanResult.industry
         ]
       );
@@ -321,7 +321,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     }
 
     // Update scan record with results
-    // NOTE: scanResult.categories values are already numbers (0-100), not objects with .score property
+    // NOTE: Round scores to integers since DB columns are INTEGER type
     await db.query(
       `UPDATE scans SET
         status = $1,
@@ -340,15 +340,15 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       WHERE id = $13`,
       [
         'completed',
-        scanResult.totalScore,
-        scanResult.categories.aiReadability,  // Fixed: removed .score
-        scanResult.categories.aiSearchReadiness,  // Fixed: removed .score
-        scanResult.categories.contentFreshness,  // Fixed: removed .score
-        scanResult.categories.contentStructure,  // Fixed: removed .score
-        scanResult.categories.speedUX,  // Fixed: removed .score
-        scanResult.categories.technicalSetup,  // Fixed: removed .score
-        scanResult.categories.trustAuthority,  // Fixed: removed .score
-        scanResult.categories.voiceOptimization,  // Fixed: removed .score
+        Math.round(scanResult.totalScore),  // Round to integer
+        Math.round(scanResult.categories.aiReadability),
+        Math.round(scanResult.categories.aiSearchReadiness),
+        Math.round(scanResult.categories.contentFreshness),
+        Math.round(scanResult.categories.contentStructure),
+        Math.round(scanResult.categories.speedUX),
+        Math.round(scanResult.categories.technicalSetup),
+        Math.round(scanResult.categories.trustAuthority),
+        Math.round(scanResult.categories.voiceOptimization),
         scanResult.industry,
         JSON.stringify(scanResult.detailedAnalysis),
         scan.id
