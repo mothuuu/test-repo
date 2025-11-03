@@ -1,5 +1,5 @@
 require('dotenv').config();
-const db = require('./database');
+const db = require('./db/database');
 
 /**
  * Diagnostic: Check scan data for specific scan ID
