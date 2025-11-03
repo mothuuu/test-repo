@@ -106,20 +106,20 @@ async function testEnhancedRubric() {
     // Show AI Search Readiness details
     const aiSearch = results.categories.aiSearchReadiness;
     console.log('\nAI Search Readiness (20%):');
-    console.log(`  Direct Answer Structure: ${Math.round(aiSearch.parameters.directAnswerStructure.score)}/100`);
-    console.log(`    - Question Density: ${aiSearch.parameters.directAnswerStructure.factors.questionDensity.toFixed(1)}/2.0 points`);
-    console.log(`    - Scannability: ${aiSearch.parameters.directAnswerStructure.factors.scannability.toFixed(1)}/2.0 points`);
-    console.log(`    - Readability: ${aiSearch.parameters.directAnswerStructure.factors.readability.toFixed(1)}/2.0 points`);
-    console.log(`    - ICP Q&A: ${aiSearch.parameters.directAnswerStructure.factors.icpQA.toFixed(1)}/2.0 points`);
-    console.log(`  Topical Authority: ${Math.round(aiSearch.parameters.topicalAuthority.score)}/100`);
-    console.log(`    - Pillar Pages: ${aiSearch.parameters.topicalAuthority.factors.pillarPages.toFixed(1)}/2.0 points`);
-    console.log(`    - Topic Clusters: ${aiSearch.parameters.topicalAuthority.factors.topicClusters.toFixed(1)}/2.0 points`);
+    console.log(`  Direct Answer Structure: ${Math.round(aiSearch.subfactors.directAnswerStructure.score)}/100`);
+    console.log(`    - Question Density: ${aiSearch.subfactors.directAnswerStructure.factors.questionDensity.toFixed(1)}/2.0 points`);
+    console.log(`    - Scannability: ${aiSearch.subfactors.directAnswerStructure.factors.scannability.toFixed(1)}/2.0 points`);
+    console.log(`    - Readability: ${aiSearch.subfactors.directAnswerStructure.factors.readability.toFixed(1)}/2.0 points`);
+    console.log(`    - ICP Q&A: ${aiSearch.subfactors.directAnswerStructure.factors.icpQA.toFixed(1)}/2.0 points`);
+    console.log(`  Topical Authority: ${Math.round(aiSearch.subfactors.topicalAuthority.score)}/100`);
+    console.log(`    - Pillar Pages: ${aiSearch.subfactors.topicalAuthority.factors.pillarPages.toFixed(1)}/2.0 points`);
+    console.log(`    - Topic Clusters: ${aiSearch.subfactors.topicalAuthority.factors.topicClusters.toFixed(1)}/2.0 points`);
 
     // Show Content Structure details
     const contentStruct = results.categories.contentStructure;
     console.log('\nContent Structure & Entity Recognition (15%):');
-    console.log(`  Semantic HTML: ${Math.round(contentStruct.parameters.semanticHTML.score)}/100`);
-    console.log(`  Entity Recognition: ${Math.round(contentStruct.parameters.entityRecognition.score)}/100`);
+    console.log(`  Semantic HTML: ${Math.round(contentStruct.subfactors.semanticHTML.score)}/100`);
+    console.log(`  Entity Recognition: ${Math.round(contentStruct.subfactors.entityRecognition.score)}/100`);
 
     // Grade assessment
     console.log('');
