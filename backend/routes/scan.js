@@ -281,6 +281,28 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
     }
 
+    // Validate scan result structure
+    if (!scanResult || !scanResult.categories) {
+      console.error('❌ CRITICAL: performV5Scan returned invalid structure');
+      console.error('   scanResult:', JSON.stringify(scanResult, null, 2));
+      throw new Error('Scan analyzer returned incomplete data');
+    }
+
+    // Validate category structure
+    const requiredCategories = ['aiReadability', 'aiSearchReadiness', 'contentFreshness',
+                                 'contentStructure', 'speedUX', 'technicalSetup',
+                                 'trustAuthority', 'voiceOptimization'];
+
+    for (const cat of requiredCategories) {
+      if (!scanResult.categories[cat] || typeof scanResult.categories[cat].score !== 'number') {
+        console.error(`❌ CRITICAL: Missing or invalid category: ${cat}`);
+        console.error(`   Value:`, scanResult.categories[cat]);
+        throw new Error(`Invalid category data: ${cat}`);
+      }
+    }
+
+    console.log('✅ Scan result validation passed');
+
     // Increment appropriate scan count AFTER successful scan
     if (isCompetitorScan) {
       await db.query(
