@@ -52,6 +52,11 @@ class V5EnhancedRubricEngine {
 
       this.siteData = await crawler.crawl();
 
+      // Expose first page evidence for compatibility with scan route
+      this.evidence = this.siteData.pages && this.siteData.pages[0]
+        ? this.siteData.pages[0].evidence
+        : null;
+
       console.log(`[V5-Enhanced] Crawled ${this.siteData.pageCount} pages`);
 
       // Step 2: Analyze each category using site-wide data
@@ -110,7 +115,7 @@ class V5EnhancedRubricEngine {
     return {
       score: Math.round(rawScore),
       weight: this.weights.aiSearchReadiness,
-      parameters: {
+      subfactors: {
         directAnswerStructure: param1a,
         topicalAuthority: param1b
       }
@@ -272,7 +277,7 @@ class V5EnhancedRubricEngine {
     return {
       score: Math.round(rawScore),
       weight: this.weights.contentStructure,
-      parameters: {
+      subfactors: {
         semanticHTML: param2a,
         entityRecognition: param2b
       }
@@ -389,7 +394,7 @@ class V5EnhancedRubricEngine {
     return {
       score: Math.round(rawScore),
       weight: this.weights.voiceOptimization,
-      parameters: {
+      subfactors: {
         conversationalKeywords: param3a,
         voiceSearch: param3b
       }
@@ -509,7 +514,7 @@ class V5EnhancedRubricEngine {
     return {
       score: Math.round(rawScore),
       weight: this.weights.technicalSetup,
-      parameters: {
+      subfactors: {
         crawlerAccess: param4a,
         structuredData: param4b
       }
@@ -612,7 +617,7 @@ class V5EnhancedRubricEngine {
     return {
       score: Math.round(rawScore),
       weight: this.weights.trustAuthority,
-      parameters: {
+      subfactors: {
         eeat: param5a,
         authorityNetwork: param5b
       }
@@ -735,7 +740,7 @@ class V5EnhancedRubricEngine {
     return {
       score: (totalScore / 10.0) * 100,
       weight: this.weights.aiReadability,
-      factors
+      subfactors: factors
     };
   }
 
@@ -774,7 +779,7 @@ class V5EnhancedRubricEngine {
     return {
       score: (totalScore / 8.0) * 100,
       weight: this.weights.contentFreshness,
-      factors
+      subfactors: factors
     };
   }
 
@@ -815,7 +820,7 @@ class V5EnhancedRubricEngine {
     return {
       score: (totalScore / 5.0) * 100,
       weight: this.weights.speedUX,
-      factors,
+      subfactors: factors,
       note: 'Performance metrics are estimated. Use PageSpeed Insights for accurate measurements.'
     };
   }
