@@ -81,7 +81,14 @@ class SiteCrawler {
       internalLinks.forEach(url => urls.add(url));
     }
 
-    return Array.from(urls);
+    // Filter out XML files (belt and suspenders - should already be filtered above)
+    const filteredUrls = Array.from(urls).filter(url => !url.endsWith('.xml'));
+
+    if (filteredUrls.length < urls.size) {
+      console.log(`[Crawler] Filtered out ${urls.size - filteredUrls.length} XML files from crawl list`);
+    }
+
+    return filteredUrls;
   }
 
   /**
@@ -101,23 +108,85 @@ class SiteCrawler {
 
       const xml = response.data;
 
-      // Parse XML sitemap (simple regex approach)
-      const urlMatches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
-      for (const match of urlMatches) {
-        const url = match[1].trim();
-        // Only include URLs from the same domain
-        if (url.startsWith(urlObj.origin)) {
-          sitemapUrls.push(url);
+      // Check if this is a sitemap index (WordPress style with nested sitemaps)
+      if (xml.includes('<sitemapindex')) {
+        console.log(`[Crawler] Detected sitemap index, fetching nested sitemaps...`);
+
+        // Extract nested sitemap URLs
+        const sitemapMatches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
+        const nestedSitemaps = [];
+
+        for (const match of sitemapMatches) {
+          const url = match[1].trim();
+          // Only include XML sitemaps, not regular pages
+          if (url.endsWith('.xml') && url.startsWith(urlObj.origin)) {
+            nestedSitemaps.push(url);
+          }
+        }
+
+        console.log(`[Crawler] Found ${nestedSitemaps.length} nested sitemaps`);
+
+        // Fetch URLs from each nested sitemap
+        for (const nestedSitemapUrl of nestedSitemaps) {
+          try {
+            const nestedUrls = await this.fetchNestedSitemap(nestedSitemapUrl);
+            sitemapUrls.push(...nestedUrls);
+          } catch (error) {
+            console.warn(`[Crawler] Failed to fetch nested sitemap ${nestedSitemapUrl}:`, error.message);
+          }
+        }
+      } else {
+        // Regular sitemap - extract URLs directly
+        const urlMatches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
+        for (const match of urlMatches) {
+          const url = match[1].trim();
+          // Only include URLs from the same domain, exclude XML files
+          if (url.startsWith(urlObj.origin) && !url.endsWith('.xml')) {
+            sitemapUrls.push(url);
+          }
         }
       }
 
-      console.log(`[Crawler] Found ${sitemapUrls.length} URLs in sitemap`);
+      console.log(`[Crawler] Found ${sitemapUrls.length} page URLs in sitemap`);
 
       // Prioritize diverse content types
       return this.prioritizeUrls(sitemapUrls);
 
     } catch (error) {
       console.warn(`[Crawler] Could not fetch sitemap:`, error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch URLs from a nested sitemap (e.g., WordPress wp-sitemap-posts-page-1.xml)
+   */
+  async fetchNestedSitemap(sitemapUrl) {
+    const urls = [];
+
+    try {
+      const response = await axios.get(sitemapUrl, {
+        timeout: this.options.timeout,
+        headers: { 'User-Agent': this.options.userAgent }
+      });
+
+      const xml = response.data;
+      const urlMatches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
+
+      const urlObj = new URL(this.baseUrl);
+      for (const match of urlMatches) {
+        const url = match[1].trim();
+        // Only include actual page URLs, not more XML files
+        if (url.startsWith(urlObj.origin) && !url.endsWith('.xml')) {
+          urls.push(url);
+        }
+      }
+
+      console.log(`[Crawler] Extracted ${urls.length} URLs from ${sitemapUrl}`);
+      return urls;
+
+    } catch (error) {
+      console.warn(`[Crawler] Failed to parse nested sitemap:`, error.message);
       return [];
     }
   }
