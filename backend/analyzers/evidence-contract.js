@@ -45,6 +45,16 @@ const EvidenceContract = {
     formsWithLabels: 0, imagesWithAlt: 0, imagesTotal: 0, hasLangAttribute: false,
     hasSkipLink: false, tabindex: 0, hasInlineStyles: 0, semanticButtons: 0, divClickHandlers: 0
   },
+  entities: {
+    entities: {
+      people: [], organizations: [], places: [], products: [], events: [], professionalCredentials: [], relationships: []
+    },
+    metrics: {
+      totalEntities: 0, entitiesByType: {}, relationships: 0, verifiedEntities: 0,
+      knowledgeGraphConnections: 0, geoPrecision: 0, professionalVerification: false
+    },
+    knowledgeGraph: { nodes: [], edges: [] }
+  },
   url: '', html: '', timestamp: ''
 };
 
