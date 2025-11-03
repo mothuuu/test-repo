@@ -693,7 +693,7 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
       return res.status(403).json({
         error: 'Progressive unlock is only available for DIY and Pro tiers',
         upgrade: {
-          message: 'Upgrade to DIY Starter to unlock 5 recommendations per day',
+          message: 'Upgrade to DIY Starter to unlock 5 recommendations every 5 days',
           cta: 'Upgrade to DIY - $29/month',
           ctaUrl: '/checkout.html?plan=diy'
         }
@@ -721,21 +721,26 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
     }
 
     const progress = progressResult.rows[0];
-    const today = new Date().toDateString();
-    const lastUnlock = progress.last_unlock_date ? new Date(progress.last_unlock_date).toDateString() : null;
+    const now = new Date();
+    const lastUnlock = progress.last_unlock_date ? new Date(progress.last_unlock_date) : null;
 
-    // Check if we need to reset daily counter
-    let unlocksToday = progress.unlocks_today || 0;
-    if (lastUnlock !== today) {
-      unlocksToday = 0; // Reset counter for new day
+    // Calculate days since last unlock
+    let daysSinceLastUnlock = 0;
+    if (lastUnlock) {
+      daysSinceLastUnlock = Math.floor((now - lastUnlock) / (1000 * 60 * 60 * 24));
     }
 
-    // Check daily limit (5 unlocks per day)
-    if (unlocksToday >= 5) {
+    // Check 5-day interval requirement (DIY tier only)
+    if (user.plan === 'diy' && lastUnlock && daysSinceLastUnlock < 5) {
+      const daysRemaining = 5 - daysSinceLastUnlock;
+      const nextUnlockDate = new Date(lastUnlock);
+      nextUnlockDate.setDate(nextUnlockDate.getDate() + 5);
+
       return res.status(429).json({
-        error: 'Daily unlock limit reached',
-        message: 'You can unlock 5 new recommendations per day. Come back tomorrow for more!',
-        canUnlockAgainAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString()
+        error: 'Unlock interval not met',
+        message: `You can unlock 5 new recommendations every 5 days. Come back in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}!`,
+        canUnlockAgainAt: nextUnlockDate.toISOString(),
+        daysRemaining: daysRemaining
       });
     }
 
@@ -751,25 +756,30 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
     const remaining = progress.total_recommendations - progress.active_recommendations;
     const toUnlock = Math.min(5, remaining);
 
-    // Update user progress
+    // Update user progress (remove unlocks_today since we're using 5-day intervals)
     const updated = await db.query(
       `UPDATE user_progress
        SET active_recommendations = active_recommendations + $1,
-           unlocks_today = $2,
            last_unlock_date = CURRENT_DATE
-       WHERE user_id = $3 AND scan_id = $4
+       WHERE user_id = $2 AND scan_id = $3
        RETURNING *`,
-      [toUnlock, unlocksToday + 1, userId, scanId]
+      [toUnlock, userId, scanId]
     );
 
     console.log(`🔓 User ${userId} unlocked ${toUnlock} recommendations for scan ${scanId}`);
+
+    // Calculate next unlock date (5 days from now for DIY)
+    const nextUnlockDate = new Date();
+    nextUnlockDate.setDate(nextUnlockDate.getDate() + 5);
 
     res.json({
       success: true,
       message: `Unlocked ${toUnlock} new recommendation${toUnlock > 1 ? 's' : ''}!`,
       progress: updated.rows[0],
       unlocked: toUnlock,
-      canUnlockMore: (unlocksToday + 1) < 5 && (progress.active_recommendations + toUnlock) < progress.total_recommendations
+      canUnlockMore: user.plan === 'pro' && (progress.active_recommendations + toUnlock) < progress.total_recommendations,
+      nextUnlockDate: user.plan === 'diy' ? nextUnlockDate.toISOString() : null,
+      daysUntilNextUnlock: user.plan === 'diy' ? 5 : 0
     });
 
   } catch (error) {

@@ -30,7 +30,8 @@ const TIER_LIMITS = {
     upgradeMessage: 'Upgrade to DIY for deep scans, personalized code, and daily recommendations'
   },
   diy: {
-    maxRecommendationsPerDay: 5,  // Progressive unlock - 5 per day
+    maxRecommendationsPerUnlock: 5,  // Progressive unlock - 5 every 5 days
+    unlockIntervalDays: 5,           // Unlock interval: 5 days
     progressiveUnlock: true,
     showCodeSnippets: true,
     showEvidence: true,
@@ -93,7 +94,8 @@ function filterByTier(recommendations, customizedFAQ, tier = 'free', metadata = 
       recommendationsAvailable: recs.length,
       hasMoreRecommendations: tier === 'guest' ? true : (recs.length > filteredRecs.length),
       activeRecommendations: activeCount,
-      canUnlockMore: tier === 'diy' && userProgress ? canUnlockMoreToday(userProgress) : false
+      canUnlockMore: tier === 'diy' && userProgress ? canUnlockMore(userProgress) : false,
+      daysUntilNextUnlock: tier === 'diy' && userProgress ? getDaysUntilNextUnlock(userProgress) : null
     },
     recommendations: filteredRecs,
     faq: filterFAQ(customizedFAQ, limits),
@@ -103,20 +105,40 @@ function filterByTier(recommendations, customizedFAQ, tier = 'free', metadata = 
   };
 }
 
-// Helper function to check if user can unlock more recommendations today
-function canUnlockMoreToday(userProgress) {
+// Helper function to check if user can unlock more recommendations (5-day interval)
+function canUnlockMore(userProgress) {
   if (!userProgress) return false;
 
-  const today = new Date().toDateString();
-  const lastUnlock = userProgress.last_unlock_date ? new Date(userProgress.last_unlock_date).toDateString() : null;
+  const now = new Date();
+  const lastUnlock = userProgress.last_unlock_date ? new Date(userProgress.last_unlock_date) : null;
 
-  // If last unlock was not today, reset to 0 unlocks
-  if (lastUnlock !== today) {
+  // If never unlocked before, can unlock
+  if (!lastUnlock) {
     return true;
   }
 
-  // Check if under daily limit (5 unlocks per day)
-  return (userProgress.unlocks_today || 0) < 5;
+  // Calculate days since last unlock
+  const daysSinceLastUnlock = Math.floor((now - lastUnlock) / (1000 * 60 * 60 * 24));
+
+  // Can unlock if 5 or more days have passed
+  return daysSinceLastUnlock >= 5;
+}
+
+// Helper function to calculate days until next unlock
+function getDaysUntilNextUnlock(userProgress) {
+  if (!userProgress || !userProgress.last_unlock_date) {
+    return 0; // Can unlock now
+  }
+
+  const now = new Date();
+  const lastUnlock = new Date(userProgress.last_unlock_date);
+  const daysSinceLastUnlock = Math.floor((now - lastUnlock) / (1000 * 60 * 60 * 24));
+
+  if (daysSinceLastUnlock >= 5) {
+    return 0; // Can unlock now
+  }
+
+  return 5 - daysSinceLastUnlock; // Days remaining
 }
 
 function filterRecommendation(rec, limits) {
@@ -258,13 +280,14 @@ function getTierFeatures(tier) {
     diy: {
       scansPerMonth: 'Unlimited',
       pagesPerScan: 5,
-      recommendationsPerDay: 5,
+      recommendationsPerUnlock: 5,
+      unlockIntervalDays: 5,
       progressiveUnlock: true,
       codeSnippets: true,
       faqSchema: true,
       pdfExport: true,
       tracking: true,
-      description: 'DIY - 5 recommendations/day + code'
+      description: 'DIY - 5 recommendations every 5 days + code'
     },
     pro: {
       scansPerMonth: 'Unlimited',
