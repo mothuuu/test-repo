@@ -739,15 +739,41 @@ const FAQ_LIBRARIES = {
  * Falls back to hardcoded FAQs if rich library doesn't exist
  */
 function loadFAQLibrary(industry) {
-  // Map common industry names to library-specific names
+  // Map detected industry names to library filenames
   const industryMappings = {
-    'Agency': 'marketing agency',
-    'SaaS': 'saas b2b',
-    'General': null  // Use fallback for General
+    // Exact matches from content-extractor.js to library filenames
+    'UCaaS': 'ucaas',
+    'Cybersecurity': 'cybersecurity',
+    'Fintech': 'fintech',
+    'AI Infrastructure': 'ai-infrastructure',
+    'AI Startups': 'ai-startups',
+    'Data Center': 'data-center',
+    'Digital Infrastructure': 'digital-infrastructure',
+    'ICT Hardware': 'ict-hardware',
+    'Managed Service Provider': 'managed-service-providers',
+    'Telecom Service Provider': 'telecom-service-providers',
+    'Telecom Software': 'telecom-software',
+    'Mobile Connectivity': 'mobile-connectivity-esim',
+    'SaaS': 'saas-b2b',
+    'Agency': 'marketing-agencies',
+
+    // Fallback mapping for Financial → Fintech
+    'Financial': 'fintech',
+
+    // No library for these, will use hardcoded
+    'General': null,
+    'Healthcare': null,
+    'Legal': null,
+    'Real Estate': null,
+    'E-commerce': null,
+    'Education': null,
+    'Restaurant': null
   };
 
-  // Get the mapped industry name or use as-is
-  const mappedIndustry = industryMappings[industry] || industry;
+  // Get the mapped library filename
+  const mappedIndustry = industryMappings[industry] !== undefined
+    ? industryMappings[industry]
+    : industry;
 
   // Try to load rich library first
   if (mappedIndustry && hasLibrary(mappedIndustry)) {

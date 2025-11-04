@@ -606,15 +606,30 @@ const $ = cheerio.load(html);
    */
   static detectIndustry(content, metadata) {
     const keywords = {
+      // Specialized Tech Industries (matched to FAQ libraries)
+      'UCaaS': ['ucaas', 'unified communications', 'voip', 'cloud communications', 'cloud phone', 'business phone'],
+      'Cybersecurity': ['cybersecurity', 'cyber security', 'infosec', 'security solutions', 'threat detection', 'penetration testing', 'vulnerability'],
+      'Fintech': ['fintech', 'financial technology', 'payment processing', 'digital payments', 'blockchain', 'cryptocurrency', 'neobank'],
+      'AI Infrastructure': ['ai infrastructure', 'machine learning infrastructure', 'ml ops', 'gpu cloud', 'ai platform'],
+      'AI Startups': ['ai startup', 'artificial intelligence', 'machine learning', 'deep learning', 'neural network'],
+      'Data Center': ['data center', 'datacenter', 'colocation', 'colo', 'server hosting', 'infrastructure hosting'],
+      'Digital Infrastructure': ['digital infrastructure', 'cloud infrastructure', 'edge computing', 'content delivery'],
+      'ICT Hardware': ['ict hardware', 'networking equipment', 'routers', 'switches', 'hardware infrastructure', 'it hardware'],
+      'Managed Service Provider': ['msp', 'managed services', 'managed service provider', 'it services', 'outsourced it'],
+      'Telecom Service Provider': ['telecom', 'telecommunications', 'carrier', 'network operator', 'mobile network'],
+      'Telecom Software': ['telecom software', 'telecommunications software', 'oss', 'bss', 'network management'],
+      'Mobile Connectivity': ['esim', 'mobile connectivity', 'iot connectivity', 'cellular', 'mobile network'],
+
+      // General Industries (existing)
+      'SaaS': ['saas', 'software as a service', 'cloud software', 'subscription', 'platform', 'dashboard'],
+      'Agency': ['marketing agency', 'digital agency', 'creative agency', 'advertising', 'seo agency'],
       'Healthcare': ['health', 'medical', 'doctor', 'patient', 'hospital', 'clinic', 'treatment'],
       'Legal': ['law', 'legal', 'attorney', 'lawyer', 'court', 'litigation', 'contract'],
       'Real Estate': ['real estate', 'property', 'homes', 'listing', 'realtor', 'mls', 'mortgage'],
-      'E-commerce': ['shop', 'buy', 'cart', 'product', 'price', 'checkout', 'shipping'],
-      'SaaS': ['software', 'platform', 'subscription', 'api', 'integration', 'dashboard'],
+      'E-commerce': ['shop', 'buy', 'cart', 'product', 'price', 'checkout', 'shipping', 'ecommerce'],
       'Financial': ['finance', 'investment', 'banking', 'insurance', 'loan', 'credit'],
       'Education': ['education', 'learning', 'course', 'student', 'training', 'university'],
-      'Restaurant': ['restaurant', 'menu', 'food', 'dining', 'reservation', 'cuisine'],
-      'Agency': ['agency', 'services', 'marketing', 'design', 'consulting', 'solutions']
+      'Restaurant': ['restaurant', 'menu', 'food', 'dining', 'reservation', 'cuisine']
     };
 
     const text = `${metadata.title} ${metadata.description} ${content.bodyText}`.toLowerCase();
