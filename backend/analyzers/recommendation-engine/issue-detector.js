@@ -129,11 +129,28 @@ const CATEGORY_WEIGHTS = {
 function detectPageIssues(pageScores, pageEvidence) {
   const issues = [];
 
+  // Debug logging to see what's being passed
+  console.log('[IssueDetector] pageScores structure:');
+  for (const [category, data] of Object.entries(pageScores)) {
+    console.log(`   ${category}:`, typeof data, data);
+  }
+
   // Loop through each category in the V5 scores
   for (const [category, subfactors] of Object.entries(pageScores)) {
-    
+
     // Skip if this category doesn't have thresholds defined
-    if (!ISSUE_THRESHOLDS[category]) continue;
+    if (!ISSUE_THRESHOLDS[category]) {
+      console.log(`   [IssueDetector] Skipping ${category} - no thresholds defined`);
+      continue;
+    }
+
+    // Check if subfactors is an object
+    if (typeof subfactors !== 'object' || subfactors === null) {
+      console.warn(`   [IssueDetector] WARNING: ${category} is not an object! Type: ${typeof subfactors}, Value:`, subfactors);
+      continue;
+    }
+
+    console.log(`   [IssueDetector] Checking ${category} with ${Object.keys(subfactors).length} subfactors`);
 
     // Loop through each subfactor in the category
     for (const [subfactor, score] of Object.entries(subfactors)) {
