@@ -1070,6 +1070,135 @@ async function performCompetitorScan(url) {
   }
 }
 
+/**
+ * Transform V5 categories structure to flat subfactor scores
+ * The new V5 engine returns nested objects and different key names
+ * This function flattens and renames to match what the issue detector expects
+ */
+function transformV5ToSubfactors(v5Categories) {
+  const subfactors = {};
+
+  // AI Readability - Scale from 0-2/0-10 to 0-100 and rename keys
+  if (v5Categories.aiReadability) {
+    const ar = v5Categories.aiReadability;
+    subfactors.aiReadability = {
+      altTextScore: (ar.altText || 0) * 50,  // 0-2 scale → 0-100
+      captionsTranscriptsScore: (ar.transcription || 0) * 10,  // 0-10 scale → 0-100
+      interactiveAccessScore: (ar.interactive || 0) * 50,  // 0-2 scale → 0-100
+      crossMediaScore: (ar.crossMedia || 0) * 50  // 0-2 scale → 0-100
+    };
+  }
+
+  // AI Search Readiness - Extract from nested structure and scale
+  if (v5Categories.aiSearchReadiness) {
+    const asr = v5Categories.aiSearchReadiness;
+    const directAnswer = asr.directAnswerStructure || {};
+    const topical = asr.topicalAuthority || {};
+
+    subfactors.aiSearchReadiness = {
+      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 33,  // 0-3 → 0-100
+      scannabilityScore: (directAnswer.factors?.scannability || 0) * 50,  // 0-2 → 0-100
+      readabilityScore: (directAnswer.factors?.readability || 0) * 33,  // 0-3 → 0-100
+      faqScore: (directAnswer.factors?.icpQA || 0) * 33,  // 0-3 → 0-100
+      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 33,  // 0-3 → 0-100
+      pillarPagesScore: (topical.factors?.pillarPages || 0) * 33,  // 0-3 → 0-100
+      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 33,  // 0-3 → 0-100
+      painPointsScore: (topical.factors?.contentDepth || 0) * 33,  // 0-3 → 0-100
+      geoContentScore: 50  // Default middle value if not available
+    };
+  }
+
+  // Content Freshness - Scale from 0-2 to 0-100
+  if (v5Categories.contentFreshness) {
+    const cf = v5Categories.contentFreshness;
+    subfactors.contentFreshness = {
+      lastUpdatedScore: (cf.lastModified || 0) * 50,  // 0-2 → 0-100
+      versioningScore: (cf.versioning || 0) * 50,  // 0-2 → 0-100
+      timeSensitiveScore: (cf.timeSensitive || 0) * 50,  // 0-2 → 0-100
+      auditProcessScore: (cf.auditProcess || 0) * 50,  // 0-2 → 0-100
+      liveDataScore: (cf.realTimeInfo || 0) * 50,  // 0-2 → 0-100
+      httpFreshnessScore: 50,  // Not in new structure, use default
+      editorialCalendarScore: 50  // Not in new structure, use default
+    };
+  }
+
+  // Content Structure - Extract from nested structure and scale
+  if (v5Categories.contentStructure) {
+    const cs = v5Categories.contentStructure;
+    const semantic = cs.semanticHTML || {};
+    const entity = cs.entityRecognition || {};
+
+    subfactors.contentStructure = {
+      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 33,  // 0-3 → 0-100
+      navigationScore: (semantic.factors?.contentSectioning || 0) * 33,  // 0-3 → 0-100
+      entityCuesScore: (entity.factors?.namedEntities || 0) * 33,  // 0-3 → 0-100
+      accessibilityScore: (semantic.factors?.accessibility || 0) * 33,  // 0-3 → 0-100
+      geoMetaScore: (entity.factors?.geoEntities || 0) * 33  // 0-3 → 0-100
+    };
+  }
+
+  // Speed & UX - Scale from 0-1 to 0-100
+  if (v5Categories.speedUX) {
+    const su = v5Categories.speedUX;
+    subfactors.speedUX = {
+      lcpScore: (su.lcp || 0) * 100,  // 0-1 → 0-100
+      clsScore: (su.cls || 0) * 100,  // 0-1 → 0-100
+      inpScore: (su.inp || 0) * 100,  // 0-1 → 0-100
+      mobileScore: (su.mobile || 0) * 100,  // 0-1 → 0-100
+      crawlerResponseScore: (su.crawlerResponse || 0) * 100  // 0-1 → 0-100
+    };
+  }
+
+  // Technical Setup - Extract from nested structure and scale
+  if (v5Categories.technicalSetup) {
+    const ts = v5Categories.technicalSetup;
+    const crawler = ts.crawlerAccess || {};
+    const structured = ts.structuredData || {};
+
+    subfactors.technicalSetup = {
+      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 33,  // 0-3 → 0-100
+      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 33,  // 0-3 → 0-100
+      canonicalHreflangScore: 50,  // Not in new structure, use default
+      openGraphScore: 50,  // Not in new structure, use default
+      sitemapScore: (crawler.factors?.serverResponse || 0) * 33,  // 0-3 → 0-100
+      indexNowScore: 50,  // Not in new structure, use default
+      rssFeedScore: 50  // Not in new structure, use default
+    };
+  }
+
+  // Trust & Authority - Extract from nested structure and scale
+  if (v5Categories.trustAuthority) {
+    const ta = v5Categories.trustAuthority;
+    const eeat = ta.eeat || {};
+    const authority = ta.authorityNetwork || {};
+
+    subfactors.trustAuthority = {
+      authorBiosScore: (eeat.factors?.authorProfiles || 0) * 50,  // 0-2 → 0-100
+      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100
+      domainAuthorityScore: (authority.factors?.domainAuthority || 0) * 33,  // 0-3 → 0-100
+      thoughtLeadershipScore: (authority.factors?.thoughtLeadership || 0) * 33,  // 0-3 → 0-100
+      thirdPartyProfilesScore: (authority.factors?.socialAuthority || 0) * 50  // 0-2 → 0-100
+    };
+  }
+
+  // Voice Optimization - Extract from nested structure and scale
+  if (v5Categories.voiceOptimization) {
+    const vo = v5Categories.voiceOptimization;
+    const conversational = vo.conversationalKeywords || {};
+    const voice = vo.voiceSearch || {};
+
+    subfactors.voiceOptimization = {
+      longTailScore: (conversational.factors?.longTail || 0) * 33,  // 0-3 → 0-100
+      localIntentScore: (conversational.factors?.localIntent || 0) * 33,  // 0-3 → 0-100
+      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 33,  // 0-3 → 0-100
+      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 33,  // 0-3 → 0-100
+      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 33  // 0-3 → 0-100
+    };
+  }
+
+  return subfactors;
+}
+
 async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
 
@@ -1094,11 +1223,10 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     const totalScore = v5Results.totalScore;
     const scanEvidence = engine.evidence;
 
-    // Extract subfactors from each category for issue detection
-    const subfactorScores = {};
-    for (const [category, data] of Object.entries(v5Results.categories)) {
-      subfactorScores[category] = data.subfactors;
-    }
+    // Transform V5 categories structure to flat subfactor scores for issue detection
+    // The V5 engine returns nested structures, but issue detector expects flat key-value pairs
+    const subfactorScores = transformV5ToSubfactors(v5Results.categories);
+    console.log('[V5Transform] Transformed subfactor scores for issue detection');
 
     // Determine industry: Prioritize user-selected > auto-detected > fallback
     const finalIndustry = userIndustry || v5Results.industry || 'General';
