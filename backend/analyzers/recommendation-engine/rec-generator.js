@@ -14,10 +14,9 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
-// ✅ FAQ library + customizer (present but optional right now)
-// (You can wire these into faqScore later to make it fully programmatic)
-const { loadFaqsByIndustry, loadGenericFaqs } = require('./faq-library-loader');
-const { customizeFaqItem } = require('./faq-customizer');
+// ✅ FAQ library + customizer - NOW FULLY INTEGRATED
+const { loadLibrary, hasLibrary } = require('./faq-library-loader');
+const { generateCustomizedFAQ } = require('./faq-customizer');
 
 // -----------------------------------------
 // Inline helpers (no external file imports)
@@ -735,6 +734,53 @@ const FAQ_LIBRARIES = {
   }
 };
 
+/**
+ * Load and transform rich FAQ library to match expected structure
+ * Falls back to hardcoded FAQs if rich library doesn't exist
+ */
+function loadFAQLibrary(industry) {
+  // Map common industry names to library-specific names
+  const industryMappings = {
+    'Agency': 'marketing agency',
+    'SaaS': 'saas b2b',
+    'General': null  // Use fallback for General
+  };
+
+  // Get the mapped industry name or use as-is
+  const mappedIndustry = industryMappings[industry] || industry;
+
+  // Try to load rich library first
+  if (mappedIndustry && hasLibrary(mappedIndustry)) {
+    console.log(`✅ Found rich FAQ library for ${industry} (mapped to ${mappedIndustry})`);
+    const richLib = loadLibrary(mappedIndustry);
+
+    if (richLib && richLib.faqs && richLib.faqs.length > 0) {
+      // Transform rich library structure to match hardcoded structure
+      const transformedLib = {
+        title: `AI Search Readiness: FAQ Section`,
+        questions: richLib.faqs.map(faq => ({
+          q: faq.question,
+          pageAnswer: faq.answer_human_friendly?.text || faq.answer_factual_backend?.text || '',
+          schemaAnswer: faq.answer_factual_backend?.text || faq.answer_human_friendly?.text || ''
+        })),
+        impact: richLib.faqs.map(f => f.expected_impact).filter(Boolean).join(', ') ||
+                "FAQs help AI assistants extract clear answers about your offerings, improving discoverability.",
+        quickWins: [
+          "Link FAQs from your main navigation and footer for easy access",
+          "Include FAQ schema in your homepage and key landing pages",
+          "Update FAQs quarterly based on actual customer questions from support tickets"
+        ]
+      };
+
+      console.log(`✅ Transformed rich library: ${transformedLib.questions.length} FAQs`);
+      return transformedLib;
+    }
+  }
+
+  console.log(`⚠️  No rich library for ${industry}, checking hardcoded fallback`);
+  return null;
+}
+
 function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   console.log('🎯 Starting FAQ recommendation generation...');
   const domain = extractDomain(scanEvidence.url);
@@ -743,8 +789,15 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   // Use provided industry or default to General
   // Industry is passed from V5 analysis (detected from content/metadata)
   const detectedIndustry = industry || 'General';
-  const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
-  console.log(`📚 Using FAQ library for industry: ${detectedIndustry}`);
+
+  // Try rich library first, then hardcoded fallback
+  let faqLib = loadFAQLibrary(detectedIndustry);
+  if (!faqLib) {
+    faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+    console.log(`📚 Using hardcoded FAQ library for: ${detectedIndustry}`);
+  } else {
+    console.log(`📚 Using rich FAQ library for: ${detectedIndustry}`);
+  }
 
   // Check if FAQ schema exists (but content might be missing)
   const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
