@@ -572,28 +572,45 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
 
 // Set up event listeners for all copy buttons
 function setupCopyButtonListeners() {
+    console.log('📋 Setting up copy button listeners');
+
     // Remove existing listeners to avoid duplicates
     document.removeEventListener('click', handleCopyButtonClick);
 
     // Add single delegated event listener for all copy buttons
     document.addEventListener('click', handleCopyButtonClick);
+
+    console.log('✅ Event listener attached');
 }
 
 // Handle copy button clicks via event delegation
 function handleCopyButtonClick(e) {
-    // Check if clicked element is a copy button
-    if (e.target.classList.contains('copy-btn')) {
-        e.preventDefault();
-        const targetId = e.target.getAttribute('data-target');
-        if (targetId) {
-            copyCode(targetId);
-        }
-    }
+    // Find the actual button element (could be clicked on text inside button)
+    let target = e.target;
 
-    // Check if clicked element is a schema copy button
-    if (e.target.classList.contains('copy-schema-btn')) {
-        e.preventDefault();
-        copySchemaCode();
+    // Traverse up to find button with copy-btn class (max 3 levels)
+    for (let i = 0; i < 3 && target; i++) {
+        if (target.classList && target.classList.contains('copy-btn')) {
+            console.log('📋 Copy button clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            const targetId = target.getAttribute('data-target');
+            console.log('   Target ID:', targetId);
+            if (targetId) {
+                copyCode(targetId);
+            }
+            return;
+        }
+
+        if (target.classList && target.classList.contains('copy-schema-btn')) {
+            console.log('📋 Schema copy button clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            copySchemaCode();
+            return;
+        }
+
+        target = target.parentElement;
     }
 }
 
@@ -1113,12 +1130,16 @@ function toggleRecommendation(index) {
 }
 
 async function copyCode(elementId) {
+    console.log('🔍 copyCode called with elementId:', elementId);
+
     const codeElement = document.getElementById(elementId);
     if (!codeElement) {
-        console.error('Code element not found:', elementId);
+        console.error('❌ Code element not found:', elementId);
         showNotification('Failed to copy code - element not found', 'error');
         return;
     }
+
+    console.log('✅ Code element found:', codeElement);
 
     try {
         // Try modern clipboard API first
