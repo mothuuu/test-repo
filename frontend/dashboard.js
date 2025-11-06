@@ -706,7 +706,7 @@ async function manageSubscription() {
     const authToken = localStorage.getItem('authToken');
 
     if (!authToken) {
-        alert('Please log in to manage your subscription');
+        await showAlertModal('Login Required', 'Please log in to manage your subscription', 'info');
         return;
     }
 
@@ -741,7 +741,7 @@ async function manageSubscription() {
 
     } catch (error) {
         console.error('Subscription management error:', error);
-        alert(error.message || 'Failed to open subscription portal. Please try again or contact support.');
+        await showAlertModal('Error', error.message || 'Failed to open subscription portal. Please try again or contact support.', 'error');
 
         // Restore button
         const btn = document.getElementById('manageSubscriptionBtn');
@@ -751,9 +751,9 @@ async function manageSubscription() {
 }
 
 // Change Primary Domain Modal Functions
-function openDomainModal() {
+async function openDomainModal() {
     if (!user || !user.primary_domain) {
-        alert('No primary domain set yet. Your primary domain will be set automatically on your first scan.');
+        await showAlertModal('No Domain Set', 'No primary domain set yet. Your primary domain will be set automatically on your first scan.', 'info');
         return;
     }
 
@@ -809,7 +809,7 @@ async function confirmDomainChange() {
         }
 
         // Success!
-        alert(`✅ Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`);
+        await showAlertModal('Success!', `Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`, 'success');
 
         // Close modal and reload page to reflect changes
         closeDomainModal();
@@ -898,6 +898,67 @@ document.addEventListener('click', function(event) {
         closeCompetitorModal(false);
     }
 });
+
+// Xeo-branded modal helpers
+function showAlertModal(title, message, type = 'info') {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+
+        const icon = icons[type] || icons.info;
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                    <span style="font-size: 28px; line-height: 1;">${icon}</span>
+                    <div style="flex: 1;">
+                        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #2d3748;">${title}</h3>
+                        <p style="color: #4a5568; line-height: 1.6; white-space: pre-line;">${message}</p>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
+                        OK
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const okBtn = modal.querySelector('#okBtn');
+        okBtn.onclick = () => {
+            modal.remove();
+            resolve(true);
+        };
+
+        okBtn.onmouseenter = () => okBtn.style.transform = 'scale(1.05)';
+        okBtn.onmouseleave = () => okBtn.style.transform = 'scale(1)';
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(true);
+            }
+        };
+
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                modal.remove();
+                resolve(true);
+                document.removeEventListener('keydown', handleEnter);
+            }
+        };
+        document.addEventListener('keydown', handleEnter);
+    });
+}
 
 // Loading helpers
 function showLoading() {
