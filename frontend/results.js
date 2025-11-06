@@ -565,6 +565,36 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         `;
         activeContainer.appendChild(upgradeMsg);
     }
+
+    // Set up copy button event listeners after all recommendations are displayed
+    setupCopyButtonListeners();
+}
+
+// Set up event listeners for all copy buttons
+function setupCopyButtonListeners() {
+    // Remove existing listeners to avoid duplicates
+    document.removeEventListener('click', handleCopyButtonClick);
+
+    // Add single delegated event listener for all copy buttons
+    document.addEventListener('click', handleCopyButtonClick);
+}
+
+// Handle copy button clicks via event delegation
+function handleCopyButtonClick(e) {
+    // Check if clicked element is a copy button
+    if (e.target.classList.contains('copy-btn')) {
+        e.preventDefault();
+        const targetId = e.target.getAttribute('data-target');
+        if (targetId) {
+            copyCode(targetId);
+        }
+    }
+
+    // Check if clicked element is a schema copy button
+    if (e.target.classList.contains('copy-schema-btn')) {
+        e.preventDefault();
+        copySchemaCode();
+    }
 }
 
 // Tab switching function
@@ -809,7 +839,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                     <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">📝 Ready-to-Use Content</h4>
                     <div style="position: relative;">
                         <pre style="background: white; border: 1px solid #a7f3d0; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px; white-space: pre-wrap; font-family: -apple-system, system-ui; color: #2d3748;"><code id="ready-content-${index}">${escapeHtml(readyToUseContent)}</code></pre>
-                        <button onclick="copyCode('ready-content-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #10b981; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                        <button class="copy-btn" data-target="ready-content-${index}" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #10b981; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
                             Copy
                         </button>
                     </div>
@@ -821,7 +851,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                     <h4 style="font-size: 16px; font-weight: 700; color: white; margin-bottom: 12px;">💻 Implementation Code</h4>
                     <div style="position: relative;">
                         <pre style="background: #111827; color: #e5e7eb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px;"><code id="code-${index}">${escapeHtml(codeSnippet)}</code></pre>
-                        <button onclick="copyCode('code-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3b82f6; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                        <button class="copy-btn" data-target="code-${index}" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3b82f6; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
                             Copy
                         </button>
                     </div>
@@ -940,12 +970,11 @@ function displayFAQSection(faqData) {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="font-bold text-lg">📋 Complete FAQ Schema Code</h4>
-                    <button onclick="copySchemaCode()" 
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    <button class="copy-schema-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
                         Copy Schema
                     </button>
                 </div>
-                <textarea id="schemaCodeText" readonly 
+                <textarea id="schemaCodeText" readonly
                           class="w-full h-64 p-4 bg-gray-900 text-gray-100 rounded-lg font-mono text-sm resize-none">${escapeHtml(faqData.fullSchemaCode)}</textarea>
                 <div class="mt-4 p-4 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-700">
@@ -955,6 +984,9 @@ function displayFAQSection(faqData) {
                 </div>
             </div>
         `;
+
+        // Set up copy button listeners for FAQ schema
+        setupCopyButtonListeners();
     }
 }
 
