@@ -1080,26 +1080,76 @@ function toggleRecommendation(index) {
     }
 }
 
-function copyCode(elementId) {
+async function copyCode(elementId) {
     const codeElement = document.getElementById(elementId);
-    if (codeElement) {
-        navigator.clipboard.writeText(codeElement.textContent);
-        showNotification('Code copied to clipboard!', 'success');
+    if (!codeElement) {
+        console.error('Code element not found:', elementId);
+        showNotification('Failed to copy code - element not found', 'error');
+        return;
+    }
+
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(codeElement.textContent);
+            showNotification('Code copied to clipboard!', 'success');
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = codeElement.textContent;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            if (successful) {
+                showNotification('Code copied to clipboard!', 'success');
+            } else {
+                throw new Error('Copy command failed');
+            }
+        }
 
         // Track code copy interaction
         const recIndex = elementId.match(/\d+/)?.[0];
         if (recIndex && typeof trackCodeCopy === 'function') {
             trackCodeCopy(`rec-${recIndex}`, scanId);
         }
+    } catch (error) {
+        console.error('Copy failed:', error);
+        showNotification('Failed to copy code. Please try selecting and copying manually.', 'error');
     }
 }
 
-function copySchemaCode() {
+async function copySchemaCode() {
     const schemaText = document.getElementById('schemaCodeText');
-    if (schemaText) {
-        schemaText.select();
-        document.execCommand('copy');
-        showNotification('Schema code copied to clipboard!', 'success');
+    if (!schemaText) {
+        console.error('Schema code element not found');
+        showNotification('Failed to copy schema - element not found', 'error');
+        return;
+    }
+
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(schemaText.textContent || schemaText.value);
+            showNotification('Schema code copied to clipboard!', 'success');
+        } else {
+            // Fallback for older browsers
+            schemaText.select();
+            const successful = document.execCommand('copy');
+
+            if (successful) {
+                showNotification('Schema code copied to clipboard!', 'success');
+            } else {
+                throw new Error('Copy command failed');
+            }
+        }
+    } catch (error) {
+        console.error('Copy schema failed:', error);
+        showNotification('Failed to copy schema. Please try selecting and copying manually.', 'error');
     }
 }
 
@@ -1233,6 +1283,9 @@ function showConfirmModal(title, message) {
 }
 
 // Make functions globally accessible
+window.copyCode = copyCode;
+window.copySchemaCode = copySchemaCode;
+
 window.markImplemented = async function(recId) {
     console.log('Marking recommendation as implemented:', recId);
 
