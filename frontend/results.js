@@ -527,6 +527,9 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         displayRecs.forEach((rec, index) => {
             const recCard = createRecommendationCard(rec, index, userTier);
             activeContainer.appendChild(recCard);
+
+            // Attach copy button listeners immediately after adding to DOM
+            attachCopyButtonListeners(recCard);
         });
     } else if (activeRecs.length === 0) {
         activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
@@ -537,6 +540,9 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         skippedRecs.forEach((rec, index) => {
             const recCard = createRecommendationCard(rec, index + displayRecs.length, userTier, true);
             skippedContainer.appendChild(recCard);
+
+            // Attach copy button listeners immediately after adding to DOM
+            attachCopyButtonListeners(recCard);
         });
     }
 
@@ -566,35 +572,51 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         activeContainer.appendChild(upgradeMsg);
     }
 
-    // Set up copy button event listeners after all recommendations are displayed
-    setupCopyButtonListeners();
 }
 
-// Set up event listeners for all copy buttons
-function setupCopyButtonListeners() {
-    // Remove existing listeners to avoid duplicates
-    document.removeEventListener('click', handleCopyButtonClick);
+// Attach copy button listeners directly to buttons within a card
+function attachCopyButtonListeners(cardElement) {
+    console.log('📋 Attaching copy button listeners to card');
 
-    // Add single delegated event listener for all copy buttons
-    document.addEventListener('click', handleCopyButtonClick);
-}
+    // Find all copy buttons within this card
+    const copyButtons = cardElement.querySelectorAll('.copy-btn');
+    console.log(`   Found ${copyButtons.length} copy buttons in card`);
 
-// Handle copy button clicks via event delegation
-function handleCopyButtonClick(e) {
-    // Check if clicked element is a copy button
-    if (e.target.classList.contains('copy-btn')) {
-        e.preventDefault();
-        const targetId = e.target.getAttribute('data-target');
-        if (targetId) {
-            copyCode(targetId);
-        }
-    }
+    copyButtons.forEach((button, idx) => {
+        const targetId = button.getAttribute('data-target');
+        console.log(`   Button ${idx}: target=${targetId}`);
 
-    // Check if clicked element is a schema copy button
-    if (e.target.classList.contains('copy-schema-btn')) {
-        e.preventDefault();
-        copySchemaCode();
-    }
+        // Remove any existing listener to avoid duplicates
+        button.removeEventListener('click', button._copyHandler);
+
+        // Create and store the handler
+        button._copyHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Copy button clicked! Target:', targetId);
+            await copyCode(targetId);
+        };
+
+        // Attach the listener
+        button.addEventListener('click', button._copyHandler);
+    });
+
+    // Also handle schema copy buttons
+    const schemaButtons = cardElement.querySelectorAll('.copy-schema-btn');
+    console.log(`   Found ${schemaButtons.length} schema copy buttons in card`);
+
+    schemaButtons.forEach((button) => {
+        button.removeEventListener('click', button._schemaHandler);
+
+        button._schemaHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Schema copy button clicked!');
+            await copySchemaCode();
+        };
+
+        button.addEventListener('click', button._schemaHandler);
+    });
 }
 
 // Tab switching function
@@ -985,8 +1007,20 @@ function displayFAQSection(faqData) {
             </div>
         `;
 
-        // Set up copy button listeners for FAQ schema
-        setupCopyButtonListeners();
+        // Attach copy button listener for FAQ schema
+        console.log('📋 Setting up FAQ schema copy button');
+        const schemaButton = schemaContainer.querySelector('.copy-schema-btn');
+        if (schemaButton) {
+            schemaButton.removeEventListener('click', schemaButton._schemaHandler);
+            schemaButton._schemaHandler = async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🖱️ FAQ Schema copy button clicked!');
+                await copySchemaCode();
+            };
+            schemaButton.addEventListener('click', schemaButton._schemaHandler);
+            console.log('✅ FAQ schema button listener attached');
+        }
     }
 }
 
@@ -1113,12 +1147,16 @@ function toggleRecommendation(index) {
 }
 
 async function copyCode(elementId) {
+    console.log('🔍 copyCode called with elementId:', elementId);
+
     const codeElement = document.getElementById(elementId);
     if (!codeElement) {
-        console.error('Code element not found:', elementId);
+        console.error('❌ Code element not found:', elementId);
         showNotification('Failed to copy code - element not found', 'error');
         return;
     }
+
+    console.log('✅ Code element found:', codeElement);
 
     try {
         // Try modern clipboard API first
