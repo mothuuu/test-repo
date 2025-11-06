@@ -1404,7 +1404,7 @@ window.skipRecommendation = async function(recId) {
     console.log('Skipping recommendation:', recId);
 
     if (!authToken) {
-        showNotification('You must be logged in to skip recommendations.', 'info');
+        await showAlertModal('Login Required', 'You must be logged in to skip recommendations.', 'info');
         return;
     }
 
@@ -1433,11 +1433,11 @@ window.skipRecommendation = async function(recId) {
             setTimeout(() => window.location.reload(), 2000);
         } else {
             const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
-            showNotification(errorMsg, 'error');
+            await showAlertModal('Cannot Skip Yet', errorMsg, 'warning');
         }
     } catch (error) {
         console.error('Skip error:', error);
-        showNotification('Failed to skip recommendation. Please try again.', 'error');
+        await showAlertModal('Error', 'Failed to skip recommendation. Please try again.', 'error');
     }
 }
 
