@@ -193,34 +193,100 @@ async function sendVerificationEmail(email, token) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .button { display: inline-block; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-        .token-box { background: white; padding: 15px; border-left: 4px solid #00B9DA; margin: 20px 0; font-family: monospace; word-break: break-all; }
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #1a1a1a !important;
+          background-color: #ffffff !important;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #ffffff !important;
+        }
+        .header {
+          background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+          color: #ffffff !important;
+          padding: 30px;
+          text-align: center;
+          border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+          color: #ffffff !important;
+          margin: 0;
+        }
+        .content {
+          background: #ffffff !important;
+          padding: 30px;
+          border-radius: 0 0 10px 10px;
+          border: 1px solid #e5e7eb;
+          border-top: none;
+        }
+        .content p {
+          color: #1a1a1a !important;
+          margin: 15px 0;
+        }
+        .button {
+          display: inline-block;
+          background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+          color: #ffffff !important;
+          padding: 15px 40px;
+          text-decoration: none;
+          border-radius: 8px;
+          margin: 25px 0;
+          font-weight: bold;
+          font-size: 16px;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 20px;
+          color: #666666 !important;
+          font-size: 12px;
+        }
+        .token-box {
+          background: #f3f4f6 !important;
+          color: #1a1a1a !important;
+          padding: 15px;
+          border-left: 4px solid #00B9DA;
+          margin: 20px 0;
+          font-family: monospace;
+          word-break: break-all;
+          font-size: 13px;
+        }
+        /* Force light mode in email clients that support it */
+        @media (prefers-color-scheme: dark) {
+          body, .container, .content {
+            background-color: #ffffff !important;
+            color: #1a1a1a !important;
+          }
+          .content p {
+            color: #1a1a1a !important;
+          }
+        }
       </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Verify Your Email</h1>
+    <body style="background-color: #ffffff !important; color: #1a1a1a !important;">
+      <div class="container" style="background-color: #ffffff !important;">
+        <div class="header" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: #ffffff !important;">
+          <h1 style="color: #ffffff !important; margin: 0;">Verify Your Email</h1>
         </div>
-        <div class="content">
-          <p>Hello!</p>
-          <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+        <div class="content" style="background-color: #ffffff !important; color: #1a1a1a !important;">
+          <p style="color: #1a1a1a !important;">Hello!</p>
+          <p style="color: #1a1a1a !important;">Thank you for signing up! Please verify your email address by clicking the button below:</p>
           <center>
-            <a href="${verificationUrl}" class="button">Verify Email Address</a>
+            <a href="${verificationUrl}" class="button" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: #ffffff !important; text-decoration: none; display: inline-block; padding: 15px 40px; border-radius: 8px; font-weight: bold;">Verify Email Address</a>
           </center>
-          <p>Or copy and paste this link into your browser:</p>
-          <div class="token-box">${verificationUrl}</div>
-          <p>If you didn't create an account, you can safely ignore this email.</p>
+          <p style="color: #1a1a1a !important;">Or copy and paste this link into your browser:</p>
+          <div class="token-box" style="background-color: #f3f4f6 !important; color: #1a1a1a !important; padding: 15px; border-left: 4px solid #00B9DA; font-family: monospace; word-break: break-all;">${verificationUrl}</div>
+          <p style="color: #1a1a1a !important;">If you didn't create an account, you can safely ignore this email.</p>
         </div>
-        <div class="footer">
-          <p>This link will expire in 24 hours.</p>
-          <p>&copy; ${new Date().getFullYear()} AI Marketing Platform. All rights reserved.</p>
+        <div class="footer" style="color: #666666 !important;">
+          <p style="color: #666666 !important;">This link will expire in 24 hours.</p>
+          <p style="color: #666666 !important;">&copy; ${new Date().getFullYear()} AI Marketing Platform. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -257,37 +323,113 @@ async function sendPasswordResetEmail(email, token) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta name="color-scheme" content="light">
+      <meta name="supported-color-schemes" content="light">
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .button { display: inline-block; background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-        .token-box { background: white; padding: 15px; border-left: 4px solid #00B9DA; margin: 20px 0; font-family: monospace; word-break: break-all; }
-        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #1a1a1a !important;
+          background-color: #ffffff !important;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #ffffff !important;
+        }
+        .header {
+          background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+          color: #ffffff !important;
+          padding: 30px;
+          text-align: center;
+          border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+          color: #ffffff !important;
+          margin: 0;
+        }
+        .content {
+          background: #ffffff !important;
+          padding: 30px;
+          border-radius: 0 0 10px 10px;
+          border: 1px solid #e5e7eb;
+          border-top: none;
+        }
+        .content p {
+          color: #1a1a1a !important;
+          margin: 15px 0;
+        }
+        .button {
+          display: inline-block;
+          background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+          color: #ffffff !important;
+          padding: 15px 40px;
+          text-decoration: none;
+          border-radius: 8px;
+          margin: 25px 0;
+          font-weight: bold;
+          font-size: 16px;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 20px;
+          color: #666666 !important;
+          font-size: 12px;
+        }
+        .token-box {
+          background: #f3f4f6 !important;
+          color: #1a1a1a !important;
+          padding: 15px;
+          border-left: 4px solid #00B9DA;
+          margin: 20px 0;
+          font-family: monospace;
+          word-break: break-all;
+          font-size: 13px;
+        }
+        .warning {
+          background: #fef3c7 !important;
+          color: #92400e !important;
+          border-left: 4px solid #f59e0b;
+          padding: 15px;
+          margin: 20px 0;
+          border-radius: 4px;
+        }
+        .warning strong {
+          color: #92400e !important;
+        }
+        /* Force light mode in email clients that support it */
+        @media (prefers-color-scheme: dark) {
+          body, .container, .content {
+            background-color: #ffffff !important;
+            color: #1a1a1a !important;
+          }
+          .content p {
+            color: #1a1a1a !important;
+          }
+        }
       </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Reset Your Password</h1>
+    <body style="background-color: #ffffff !important; color: #1a1a1a !important;">
+      <div class="container" style="background-color: #ffffff !important;">
+        <div class="header" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: #ffffff !important;">
+          <h1 style="color: #ffffff !important; margin: 0;">Reset Your Password</h1>
         </div>
-        <div class="content">
-          <p>Hello!</p>
-          <p>We received a request to reset your password. Click the button below to create a new password:</p>
+        <div class="content" style="background-color: #ffffff !important; color: #1a1a1a !important;">
+          <p style="color: #1a1a1a !important;">Hello!</p>
+          <p style="color: #1a1a1a !important;">We received a request to reset your password. Click the button below to create a new password:</p>
           <center>
-            <a href="${resetUrl}" class="button">Reset Password</a>
+            <a href="${resetUrl}" class="button" style="background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%); color: #ffffff !important; text-decoration: none; display: inline-block; padding: 15px 40px; border-radius: 8px; font-weight: bold;">Reset Password</a>
           </center>
-          <p>Or copy and paste this link into your browser:</p>
-          <div class="token-box">${resetUrl}</div>
-          <div class="warning">
-            <strong>⚠️ Security Notice:</strong> If you didn't request a password reset, please ignore this email. Your password will remain unchanged.
+          <p style="color: #1a1a1a !important;">Or copy and paste this link into your browser:</p>
+          <div class="token-box" style="background-color: #f3f4f6 !important; color: #1a1a1a !important; padding: 15px; border-left: 4px solid #00B9DA; font-family: monospace; word-break: break-all;">${resetUrl}</div>
+          <div class="warning" style="background-color: #fef3c7 !important; color: #92400e !important; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px;">
+            <strong style="color: #92400e !important;">⚠️ Security Notice:</strong> If you didn't request a password reset, please ignore this email. Your password will remain unchanged.
           </div>
         </div>
-        <div class="footer">
-          <p>This link will expire in 1 hour for security reasons.</p>
-          <p>&copy; ${new Date().getFullYear()} AI Marketing Platform. All rights reserved.</p>
+        <div class="footer" style="color: #666666 !important;">
+          <p style="color: #666666 !important;">This link will expire in 1 hour for security reasons.</p>
+          <p style="color: #666666 !important;">&copy; ${new Date().getFullYear()} AI Marketing Platform. All rights reserved.</p>
         </div>
       </div>
     </body>
