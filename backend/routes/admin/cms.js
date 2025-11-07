@@ -132,4 +132,29 @@ router.get('/public/content', async (req, res) => {
   }
 });
 
+// POST run CMS migration (admin only)
+// /api/admin/cms/migrate
+router.post('/migrate', authenticateAdmin, requirePermission('manage_content'), async (req, res) => {
+  try {
+    console.log('🚀 Running CMS migration via API...');
+
+    // Import and run the migration
+    const { migrateLandingPageCMS } = require('../../db/migrate-landing-page-cms');
+    await migrateLandingPageCMS();
+
+    res.json({
+      success: true,
+      message: 'CMS migration completed successfully',
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error running CMS migration:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to run CMS migration',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;
