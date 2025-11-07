@@ -1945,7 +1945,20 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                             testimonialCards[i].querySelector('.testimonial-text').textContent = testimonial.text;
                             testimonialCards[i].querySelector('.author-avatar').textContent = testimonial.authorInitials;
                             testimonialCards[i].querySelector('.author-name').textContent = testimonial.authorName;
-                            testimonialCards[i].querySelector('.author-title').textContent = testimonial.authorTitle;
+
+                            // Handle author title with optional URL
+                            const authorTitleEl = testimonialCards[i].querySelector('.author-title');
+                            if (testimonial.authorUrl) {
+                                // Parse the title to find company name and wrap it in a link
+                                const titleParts = testimonial.authorTitle.split(', ');
+                                if (titleParts.length === 2) {
+                                    authorTitleEl.innerHTML = `${titleParts[0]}, <a href="${testimonial.authorUrl}" target="_blank" rel="noopener noreferrer" style="color: #00B9DA; text-decoration: none;">${titleParts[1]}</a>`;
+                                } else {
+                                    authorTitleEl.textContent = testimonial.authorTitle;
+                                }
+                            } else {
+                                authorTitleEl.textContent = testimonial.authorTitle;
+                            }
                         }
                     });
 

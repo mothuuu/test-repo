@@ -73,9 +73,9 @@ async function migrateLandingPageCMS() {
       {
         section_key: 'pillars',
         content: {
-          badge: '8-Pillar Framework',
+          badge: 'AI-First Framework',
           title: 'What We Analyze (And Fix)',
-          subtitle: 'Our scoring engine evaluates 47 factors across 8 critical categories. Each fix directly impacts your AI visibility.',
+          subtitle: 'Our scoring engine evaluates multiple critical categories that directly impact your brand\'s AI visibility. We identify every gap keeping AI search engines from finding and recommending you—and gives you step-by-step instructions to fix each issue. No technical expertise required.\n\nNo guesswork. No jargon. Just clear actions you can implement today.',
           pillars: [
             {
               icon: '🤖',
@@ -176,9 +176,10 @@ async function migrateLandingPageCMS() {
             {
               stars: 5,
               text: 'Finally, a tool that bridges the gap between traditional SEO and AI optimization. The category breakdown made it crystal clear where to focus.',
-              authorInitials: 'LP',
-              authorName: 'Lisa Park',
-              authorTitle: 'Marketing Director, FinFlow'
+              authorInitials: 'LR',
+              authorName: 'Lakshmi R.',
+              authorTitle: 'CEO, Idril Services',
+              authorUrl: 'https://idrilservices.io/'
             }
           ],
           resultsShowcase: {
@@ -215,12 +216,13 @@ async function migrateLandingPageCMS() {
       }
     ];
 
-    // Insert default content using ON CONFLICT to avoid duplicates
+    // Insert or update content
     for (const item of defaultContent) {
       await db.query(
-        `INSERT INTO landing_page_content (section_key, content)
-         VALUES ($1, $2)
-         ON CONFLICT (section_key) DO NOTHING`,
+        `INSERT INTO landing_page_content (section_key, content, updated_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (section_key)
+         DO UPDATE SET content = $2, updated_at = CURRENT_TIMESTAMP`,
         [item.section_key, JSON.stringify(item.content)]
       );
     }
