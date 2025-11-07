@@ -791,10 +791,118 @@
             opacity: 0.6;
         }
 
+        /* Compare Features Section */
+        .compare-section {
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .compare-button {
+            padding: 16px 40px;
+            background: white;
+            color: #00B9DA;
+            border: 2px solid #00B9DA;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .compare-button:hover {
+            background: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .compare-button.active {
+            background: #00B9DA;
+            color: white;
+        }
+
+        /* Feature Comparison Table */
+        .comparison-table {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .comparison-table.active {
+            display: block;
+        }
+
+        .comparison-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+
+        .feature-category {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #2d3748;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00B9DA;
+        }
+
+        .feature-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 15px 20px;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .feature-row:last-child {
+            border-bottom: none;
+        }
+
+        .feature-name {
+            font-size: 15px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .feature-value {
+            text-align: center;
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .feature-check {
+            text-align: center;
+            font-size: 20px;
+            color: #10b981;
+        }
+
+        .feature-cross {
+            text-align: center;
+            font-size: 18px;
+            color: #cbd5e0;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .pricing-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .feature-row {
+                grid-template-columns: 2fr repeat(5, 1fr);
+                font-size: 14px;
             }
         }
 
@@ -829,6 +937,17 @@
 
             .pillars-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .feature-value,
+            .feature-check,
+            .feature-cross {
+                text-align: left;
             }
         }
     </style>
@@ -1139,7 +1258,7 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                     <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For solopreneurs & small teams</span></div>
 
                     <ul class="plan-features">
-                        <li><span class="check-icon">✓</span> Unlimited scans</li>
+                        <li><span class="check-icon">✓</span> 25 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 5 pages per scan</li>
                         <li><span class="check-icon">✓</span> Website Visibility Index (full)</li>
                         <li><span class="check-icon">✓</span> Copy-paste code snippets</li>
@@ -1157,7 +1276,7 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                     <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For growing businesses</span></div>
 
                     <ul class="plan-features">
-                        <li><span class="check-icon">✓</span> Unlimited scans</li>
+                        <li><span class="check-icon">✓</span> 50 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 25 pages per scan</li>
                         <li><span class="check-icon">✓</span> Brand Visibility Index (Lite)</li>
                         <li><span class="check-icon">✓</span> 3 competitor analyses</li>
@@ -1175,7 +1294,8 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                     <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For mid-market companies</span></div>
 
                     <ul class="plan-features">
-                        <li><span class="check-icon">✓</span> Unlimited scans & pages</li>
+                        <li><span class="check-icon">✓</span> 200 scans per month</li>
+                        <li><span class="check-icon">✓</span> Up to 100 pages per scan</li>
                         <li><span class="check-icon">✓</span> Brand Visibility Index (Full)</li>
                         <li><span class="check-icon">✓</span> 10 competitor analyses</li>
                         <li><span class="check-icon">✓</span> Advanced AI monitoring (50+ queries)</li>
@@ -1212,6 +1332,310 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                 </div>
 
                 <a href="mailto:aivisibility@xeo.marketing" style="display: inline-block; padding: 18px 40px; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; border-radius: 12px; font-size: 18px; font-weight: 700; text-decoration: none; transition: all 0.3s ease;">Contact Us for Custom Pricing</a>
+            </div>
+
+            <!-- Compare Features Button -->
+            <div class="compare-section">
+                <button class="compare-button" id="compareBtn" onclick="toggleComparison()">
+                    Compare All Features
+                </button>
+            </div>
+
+            <!-- Feature Comparison Table -->
+            <div class="comparison-table" id="comparisonTable">
+                <h3 class="comparison-title">Complete Feature Comparison</h3>
+
+                <!-- SCANNING Category -->
+                <div class="feature-category">
+                    <div class="category-title">SCANNING & PAGES</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Scans per month</div>
+                        <div class="feature-value">2</div>
+                        <div class="feature-value">25</div>
+                        <div class="feature-value">50</div>
+                        <div class="feature-value">200</div>
+                        <div class="feature-value">5000</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Pages per scan</div>
+                        <div class="feature-value">1 (Homepage)</div>
+                        <div class="feature-value">5</div>
+                        <div class="feature-value">25</div>
+                        <div class="feature-value">100</div>
+                        <div class="feature-value">1000</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Domains supported</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+                </div>
+
+                <!-- VISIBILITY INDEXES Category -->
+                <div class="feature-category">
+                    <div class="category-title">VISIBILITY INDEXES</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Website Visibility Index</div>
+                        <div class="feature-value">Basic</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Brand Visibility Index</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">✓ Lite</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                    </div>
+                </div>
+
+                <!-- ANALYSIS & RECOMMENDATIONS Category -->
+                <div class="feature-category">
+                    <div class="category-title">ANALYSIS & RECOMMENDATIONS</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">AI Visibility Score</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Basic recommendations</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Page-level action items</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Detailed recommendations</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">Up to 10</div>
+                        <div class="feature-value">Up to 25</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Copy-paste code snippets</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Industry-specific insights</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- TRACKING & HISTORY Category -->
+                <div class="feature-category">
+                    <div class="category-title">TRACKING & HISTORY</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Score tracking</div>
+                        <div class="feature-value">Overall only</div>
+                        <div class="feature-value">Overall only</div>
+                        <div class="feature-value">Historical</div>
+                        <div class="feature-value">Historical</div>
+                        <div class="feature-value">Historical</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Scan history</div>
+                        <div class="feature-value">30 days</div>
+                        <div class="feature-value">90 days</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Score trend analysis</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- COMPETITOR ANALYSIS Category -->
+                <div class="feature-category">
+                    <div class="category-title">COMPETITOR ANALYSIS & AI MONITORING</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Competitors tracked</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">10</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">AI monitoring (queries/month)</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">Basic (10)</div>
+                        <div class="feature-value">Advanced (50+)</div>
+                        <div class="feature-value">Advanced (50+)</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Media tracking</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Social media monitoring</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- REPORTING & EXPORT Category -->
+                <div class="feature-category">
+                    <div class="category-title">REPORTING & EXPORT</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Export reports (PDF/CSV)</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">White-label reports</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Custom branding</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- COLLABORATION Category -->
+                <div class="feature-category">
+                    <div class="category-title">COLLABORATION</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">User seats</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Multi-client dashboard</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Client access links</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- SUPPORT & EXTRAS Category -->
+                <div class="feature-category">
+                    <div class="category-title">SUPPORT & EXTRAS</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Support level</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Priority</div>
+                        <div class="feature-value">Dedicated</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">API access</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Custom integrations</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Onboarding call</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1380,6 +1804,25 @@ No guesswork. No jargon. Just clear actions you can implement today.</p>
                 alert('❌ Failed to analyze website. Please try again.');
                 button.disabled = false;
                 button.textContent = originalText;
+            }
+        }
+
+        // Toggle comparison table
+        function toggleComparison() {
+            const table = document.getElementById('comparisonTable');
+            const button = document.getElementById('compareBtn');
+
+            table.classList.toggle('active');
+            button.classList.toggle('active');
+
+            if (table.classList.contains('active')) {
+                button.textContent = 'Hide Features';
+                // Smooth scroll to table
+                setTimeout(() => {
+                    table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            } else {
+                button.textContent = 'Compare All Features';
             }
         }
     </script>
