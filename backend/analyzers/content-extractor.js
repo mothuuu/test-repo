@@ -211,9 +211,12 @@ const $ = cheerio.load(html);
    * Extract main content - text, headings, paragraphs
    */
   extractContent($) {
+    // IMPORTANT: Extract FAQs BEFORE removing footer (FAQs are often in footer!)
+    const faqs = this.extractFAQs($);
+
     // Remove script, style, and navigation elements
     $('script, style, nav, header, footer, aside').remove();
-    
+
     const headings = {
       h1: [],
       h2: [],
@@ -348,7 +351,23 @@ const $ = cheerio.load(html);
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
     const wordCount = bodyText.split(/\s+/).length;
 
-    // Extract FAQs if present (enhanced detection)
+    return {
+      headings,
+      paragraphs: paragraphs.slice(0, 50), // First 50 paragraphs
+      lists,
+      tables,
+      faqs: faqs, // FAQs extracted before footer removal
+      wordCount,
+      textLength: bodyText.length,
+      bodyText: bodyText.substring(0, 10000) // First 10K chars for analysis
+    };
+  }
+
+  /**
+   * Extract FAQs with enhanced 3-tier detection
+   * IMPORTANT: Call this BEFORE removing footer/nav elements
+   */
+  extractFAQs($) {
     const faqs = [];
 
     // Method 1: Detect FAQs with schema markup
@@ -450,16 +469,7 @@ const $ = cheerio.load(html);
 
     console.log(`[ContentExtractor] Found ${uniqueFAQs.length} FAQs (schema: ${uniqueFAQs.filter(f => f.source === 'schema').length}, html: ${uniqueFAQs.filter(f => f.source === 'html').length}, details: ${uniqueFAQs.filter(f => f.source === 'details').length}, heading: ${uniqueFAQs.filter(f => f.source === 'heading').length})`);
 
-    return {
-      headings,
-      paragraphs: paragraphs.slice(0, 50), // First 50 paragraphs
-      lists,
-      tables,
-      faqs: uniqueFAQs,
-      wordCount,
-      textLength: bodyText.length,
-      bodyText: bodyText.substring(0, 10000) // First 10K chars for analysis
-    };
+    return uniqueFAQs;
   }
 
   /**
