@@ -341,24 +341,114 @@ const $ = cheerio.load(html);
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
     const wordCount = bodyText.split(/\s+/).length;
 
-    // Extract FAQs if present (common patterns)
+    // Extract FAQs if present (enhanced detection)
     const faqs = [];
+
+    // Method 1: Detect FAQs with schema markup
     $('[itemtype*="FAQPage"], [itemtype*="Question"]').each((idx, el) => {
-      const question = $(el).find('[itemprop="name"]').text().trim() || 
+      const question = $(el).find('[itemprop="name"]').text().trim() ||
                        $(el).find('h2, h3, h4, strong').first().text().trim();
       const answer = $(el).find('[itemprop="acceptedAnswer"]').text().trim() ||
                      $(el).find('p').first().text().trim();
       if (question && answer) {
-        faqs.push({ question, answer });
+        faqs.push({ question, answer, source: 'schema' });
       }
     });
+
+    // Method 2: Detect FAQ sections by class/id (common patterns)
+    const faqSelectors = [
+      '[class*="faq" i], [id*="faq" i]',
+      '[class*="question" i], [id*="question" i]',
+      '[class*="accordion" i]',
+      'details'
+    ].join(', ');
+
+    $(faqSelectors).each((idx, el) => {
+      const $el = $(el);
+
+      // For details/summary elements
+      if (el.name === 'details') {
+        const question = $el.find('summary').text().trim();
+        const answer = $el.contents().not('summary').text().trim();
+        if (question && answer && question.length > 10) {
+          faqs.push({ question, answer, source: 'details' });
+        }
+        return;
+      }
+
+      // For FAQ containers, look for Q&A patterns
+      const headings = $el.find('h2, h3, h4, h5, dt, [class*="question" i], [class*="title" i]');
+      headings.each((i, heading) => {
+        const $heading = $(heading);
+        const question = $heading.text().trim();
+
+        // Get the answer (next siblings until next heading)
+        let answer = '';
+        if (heading.name === 'dt') {
+          // Definition list pattern
+          answer = $heading.next('dd').text().trim();
+        } else {
+          // Get content until next heading
+          let $next = $heading.next();
+          while ($next.length && !$next.is('h1, h2, h3, h4, h5, h6, dt')) {
+            answer += ' ' + $next.text().trim();
+            $next = $next.next();
+          }
+        }
+
+        // Only add if it looks like a Q&A (question ends with ? or is in FAQ section)
+        if (question && answer &&
+            (question.includes('?') || question.length > 15) &&
+            answer.length > 20) {
+          faqs.push({ question, answer, source: 'html' });
+        }
+      });
+    });
+
+    // Method 3: Look for question-like headings followed by content
+    if (faqs.length === 0) {
+      $('h2, h3, h4').each((idx, heading) => {
+        const $heading = $(heading);
+        const question = $heading.text().trim();
+
+        // Check if heading looks like a question
+        if (question.includes('?') && question.length > 15) {
+          // Get the next paragraph(s) as answer
+          let answer = '';
+          let $next = $heading.next();
+          while ($next.length && !$next.is('h1, h2, h3, h4, h5, h6') && answer.length < 500) {
+            if ($next.is('p, div')) {
+              answer += ' ' + $next.text().trim();
+            }
+            $next = $next.next();
+          }
+
+          if (answer.length > 50) {
+            faqs.push({ question, answer, source: 'heading' });
+          }
+        }
+      });
+    }
+
+    // Deduplicate FAQs (keep first occurrence)
+    const uniqueFAQs = [];
+    const seen = new Set();
+    for (const faq of faqs) {
+      const key = faq.question.toLowerCase().substring(0, 50);
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueFAQs.push(faq);
+      }
+    }
+
+    console.log(`[ContentExtractor] Found ${uniqueFAQs.length} FAQs (schema: ${uniqueFAQs.filter(f => f.source === 'schema').length}, html: ${uniqueFAQs.filter(f => f.source === 'html').length}, details: ${uniqueFAQs.filter(f => f.source === 'details').length}, heading: ${uniqueFAQs.filter(f => f.source === 'heading').length})`);
 
     return {
       headings,
       paragraphs: paragraphs.slice(0, 50), // First 50 paragraphs
       lists,
       tables,
-      faqs,
+      faqs: uniqueFAQs,
       wordCount,
       textLength: bodyText.length,
       bodyText: bodyText.substring(0, 10000) // First 10K chars for analysis
