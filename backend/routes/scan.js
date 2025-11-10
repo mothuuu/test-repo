@@ -1097,14 +1097,14 @@ function transformV5ToSubfactors(v5Categories) {
     const topical = asr.topicalAuthority || {};
 
     subfactors.aiSearchReadiness = {
-      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 33,  // 0-3 → 0-100
+      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 50,  // 0-2 → 0-100 (hybrid scoring)
       scannabilityScore: (directAnswer.factors?.scannability || 0) * 50,  // 0-2 → 0-100
-      readabilityScore: (directAnswer.factors?.readability || 0) * 33,  // 0-3 → 0-100
-      faqScore: (directAnswer.factors?.icpQA || 0) * 33,  // 0-3 → 0-100
-      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 33,  // 0-3 → 0-100
-      pillarPagesScore: (topical.factors?.pillarPages || 0) * 33,  // 0-3 → 0-100
-      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 33,  // 0-3 → 0-100
-      painPointsScore: (topical.factors?.contentDepth || 0) * 33,  // 0-3 → 0-100
+      readabilityScore: (directAnswer.factors?.readability || 0) * 50,  // 0-2 → 0-100 (factor max is 2.0)
+      faqScore: (directAnswer.factors?.icpQA || 0) * 50,  // 0-2 → 0-100 (FIXED: was * 33, now * 50)
+      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 50,  // 0-2 → 0-100
+      pillarPagesScore: (topical.factors?.pillarPages || 0) * 50,  // 0-2 → 0-100 (max is 2.0, not 3.0)
+      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
+      painPointsScore: (topical.factors?.contentDepth || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
       geoContentScore: 50  // Default middle value if not available
     };
   }
@@ -1189,11 +1189,11 @@ function transformV5ToSubfactors(v5Categories) {
     const voice = vo.voiceSearch || {};
 
     subfactors.voiceOptimization = {
-      longTailScore: (conversational.factors?.longTail || 0) * 33,  // 0-3 → 0-100
-      localIntentScore: (conversational.factors?.localIntent || 0) * 33,  // 0-3 → 0-100
-      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 33,  // 0-3 → 0-100
-      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 33,  // 0-3 → 0-100
-      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 33  // 0-3 → 0-100
+      longTailScore: (conversational.factors?.longTail || 0) * 83,  // 0-1.2 → 0-100
+      localIntentScore: (conversational.factors?.localIntent || 0) * 83,  // 0-1.2 → 0-100
+      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 83,  // 0-1.2 → 0-100
+      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 83,  // 0-1.2 → 0-100 (hybrid scoring)
+      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 83  // 0-1.2 → 0-100
     };
   }
 

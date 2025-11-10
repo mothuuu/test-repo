@@ -112,32 +112,76 @@ class SiteCrawler {
   }
 
   /**
-   * Fetch URLs from sitemap.xml
+   * Fetch URLs from sitemap.xml (tries multiple common sitemap locations)
    */
   async fetchSitemapUrls() {
     const sitemapUrls = [];
     const urlObj = new URL(this.baseUrl);
-    const sitemapUrl = `${urlObj.protocol}//${urlObj.host}/sitemap.xml`;
+
+    // Try multiple common sitemap locations (WordPress, Yoast, RankMath, etc.)
+    const sitemapLocations = [
+      'sitemap.xml',
+      'sitemap_index.xml',
+      'sitemap-index.xml',
+      'wp-sitemap.xml',
+      'sitemap1.xml'
+    ];
+
+    let foundSitemap = null;
+    let lastError = null;
+
+    // Try each location until we find one
+    for (const location of sitemapLocations) {
+      const sitemapUrl = `${urlObj.protocol}//${urlObj.host}/${location}`;
+
+      try {
+        console.log(`[Crawler] Trying sitemap: ${sitemapUrl}`);
+
+        // Add cache-busting query parameter to get fresh sitemap
+        const cacheBustUrl = sitemapUrl.includes('?')
+          ? `${sitemapUrl}&_cb=${Date.now()}`
+          : `${sitemapUrl}?_cb=${Date.now()}`;
+
+        const response = await axios.get(cacheBustUrl, {
+          timeout: this.options.timeout,
+          headers: {
+            'User-Agent': this.options.userAgent,
+            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        // Success! Found a sitemap
+        foundSitemap = { url: sitemapUrl, data: response.data };
+        console.log(`[Crawler] ✓ Found sitemap at: ${location}`);
+        break;
+
+      } catch (error) {
+        lastError = error;
+        if (error.response && error.response.status === 404) {
+          console.log(`[Crawler]   Not found: ${location}`);
+        } else {
+          console.log(`[Crawler]   Error: ${error.message}`);
+        }
+        // Continue to next location
+      }
+    }
+
+    // If no sitemap found at any location
+    if (!foundSitemap) {
+      if (lastError && lastError.response && lastError.response.status === 404) {
+        console.warn(`[Crawler] ✗ No sitemap found at any common location`);
+        console.warn(`[Crawler]   Tried: ${sitemapLocations.join(', ')}`);
+        console.warn(`[Crawler]   Tip: Create a sitemap.xml file at your domain root to improve crawl coverage`);
+      } else {
+        console.warn(`[Crawler] ✗ Could not fetch sitemap: ${lastError?.message || 'Unknown error'}`);
+      }
+      return [];
+    }
 
     try {
-      console.log(`[Crawler] Fetching sitemap: ${sitemapUrl}`);
-
-      // Add cache-busting query parameter to get fresh sitemap
-      const cacheBustUrl = sitemapUrl.includes('?')
-        ? `${sitemapUrl}&_cb=${Date.now()}`
-        : `${sitemapUrl}?_cb=${Date.now()}`;
-
-      const response = await axios.get(cacheBustUrl, {
-        timeout: this.options.timeout,
-        headers: {
-          'User-Agent': this.options.userAgent,
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-
-      const xml = response.data;
+      const xml = foundSitemap.data;
 
       // Check if this is a sitemap index (WordPress style with nested sitemaps)
       if (xml.includes('<sitemapindex')) {
@@ -184,12 +228,7 @@ class SiteCrawler {
       return this.prioritizeUrls(sitemapUrls);
 
     } catch (error) {
-      if (error.response && error.response.status === 404) {
-        console.warn(`[Crawler] ✗ Sitemap not found (404): ${sitemapUrl}`);
-        console.warn(`[Crawler]   Tip: Create a sitemap.xml file at your domain root to improve crawl coverage`);
-      } else {
-        console.warn(`[Crawler] ✗ Could not fetch sitemap: ${error.message}`);
-      }
+      console.warn(`[Crawler] ✗ Error parsing sitemap: ${error.message}`);
       return [];
     }
   }
