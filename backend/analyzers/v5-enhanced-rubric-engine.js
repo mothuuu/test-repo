@@ -52,10 +52,41 @@ class V5EnhancedRubricEngine {
 
       this.siteData = await crawler.crawl();
 
-      // Expose first page evidence for compatibility with scan route
-      this.evidence = this.siteData.pages && this.siteData.pages[0]
-        ? this.siteData.pages[0].evidence
-        : null;
+      // Expose enhanced evidence with site-wide FAQ data for accurate Finding generation
+      // This ensures the Finding text matches the site-wide scoring data
+      if (this.siteData.pages && this.siteData.pages[0]) {
+        const firstPageEvidence = this.siteData.pages[0].evidence;
+
+        // Aggregate FAQ data from all pages
+        const allFAQs = [];
+        let hasFAQSchema = false;
+
+        for (const page of this.siteData.pages) {
+          if (page.evidence.content && page.evidence.content.faqs) {
+            allFAQs.push(...page.evidence.content.faqs);
+          }
+          if (page.evidence.technical && page.evidence.technical.hasFAQSchema) {
+            hasFAQSchema = true;
+          }
+        }
+
+        // Create enhanced evidence object with aggregated FAQ data
+        this.evidence = {
+          ...firstPageEvidence,
+          content: {
+            ...firstPageEvidence.content,
+            faqs: allFAQs  // Use aggregated FAQs from all pages
+          },
+          technical: {
+            ...firstPageEvidence.technical,
+            hasFAQSchema: hasFAQSchema  // True if ANY page has FAQ schema
+          }
+        };
+
+        console.log(`[V5-Enhanced] Aggregated ${allFAQs.length} FAQs from ${this.siteData.pages.length} pages`);
+      } else {
+        this.evidence = null;
+      }
 
       console.log(`[V5-Enhanced] Crawled ${this.siteData.pageCount} pages`);
 
