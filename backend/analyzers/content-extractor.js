@@ -442,6 +442,14 @@ const $ = cheerio.load(html);
           // Get the next paragraph(s) as answer
           let answer = '';
           let $next = $heading.next();
+
+          // If heading has no next sibling, check if parent's next sibling has content
+          // This handles cases where headings are wrapped in divs (e.g., theme containers)
+          if ($next.length === 0) {
+            const $parent = $heading.parent();
+            $next = $parent.next();
+          }
+
           while ($next.length && !$next.is('h1, h2, h3, h4, h5, h6') && answer.length < 500) {
             if ($next.is('p, div')) {
               answer += ' ' + $next.text().trim();
