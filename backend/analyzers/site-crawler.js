@@ -101,9 +101,20 @@ class SiteCrawler {
 
     try {
       console.log(`[Crawler] Fetching sitemap: ${sitemapUrl}`);
-      const response = await axios.get(sitemapUrl, {
+
+      // Add cache-busting query parameter to get fresh sitemap
+      const cacheBustUrl = sitemapUrl.includes('?')
+        ? `${sitemapUrl}&_cb=${Date.now()}`
+        : `${sitemapUrl}?_cb=${Date.now()}`;
+
+      const response = await axios.get(cacheBustUrl, {
         timeout: this.options.timeout,
-        headers: { 'User-Agent': this.options.userAgent }
+        headers: {
+          'User-Agent': this.options.userAgent,
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
 
       const xml = response.data;
@@ -165,9 +176,19 @@ class SiteCrawler {
     const urls = [];
 
     try {
-      const response = await axios.get(sitemapUrl, {
+      // Add cache-busting query parameter to get fresh sitemap
+      const cacheBustUrl = sitemapUrl.includes('?')
+        ? `${sitemapUrl}&_cb=${Date.now()}`
+        : `${sitemapUrl}?_cb=${Date.now()}`;
+
+      const response = await axios.get(cacheBustUrl, {
         timeout: this.options.timeout,
-        headers: { 'User-Agent': this.options.userAgent }
+        headers: {
+          'User-Agent': this.options.userAgent,
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
 
       const xml = response.data;
