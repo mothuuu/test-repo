@@ -70,13 +70,24 @@ class SiteCrawler {
     urls.add(this.baseUrl);
 
     // Try to get URLs from sitemap
+    let sitemapDetected = false;
     if (this.options.includeSitemap) {
       const sitemapUrls = await this.fetchSitemapUrls();
-      sitemapUrls.forEach(url => urls.add(url));
+      if (sitemapUrls.length > 0) {
+        sitemapDetected = true;
+        sitemapUrls.forEach(url => urls.add(url));
+        console.log(`[Crawler] ✓ Sitemap detected with ${sitemapUrls.length} URLs`);
+      } else {
+        console.log(`[Crawler] ✗ No sitemap found, will use internal link crawling`);
+      }
     }
+
+    // Store sitemap status for reporting
+    this.sitemapDetected = sitemapDetected;
 
     // If we don't have enough URLs, crawl the base page for internal links
     if (urls.size < this.options.maxPages && this.options.includeInternalLinks) {
+      console.log(`[Crawler] Supplementing with internal links (current: ${urls.size}, target: ${this.options.maxPages})`);
       const internalLinks = await this.fetchInternalLinks(this.baseUrl);
       internalLinks.forEach(url => urls.add(url));
     }
@@ -88,7 +99,16 @@ class SiteCrawler {
       console.log(`[Crawler] Filtered out ${urls.size - filteredUrls.length} XML files from crawl list`);
     }
 
-    return filteredUrls;
+    // CRITICAL FIX: Prioritize and sort URLs deterministically
+    // This ensures consistent page selection across scans
+    const prioritizedUrls = this.prioritizeUrls(filteredUrls);
+
+    console.log(`[Crawler] Final URL list (top ${Math.min(this.options.maxPages, prioritizedUrls.length)} of ${prioritizedUrls.length}):`);
+    prioritizedUrls.slice(0, this.options.maxPages).forEach((url, idx) => {
+      console.log(`  ${idx + 1}. ${url}`);
+    });
+
+    return prioritizedUrls;
   }
 
   /**
@@ -164,7 +184,12 @@ class SiteCrawler {
       return this.prioritizeUrls(sitemapUrls);
 
     } catch (error) {
-      console.warn(`[Crawler] Could not fetch sitemap:`, error.message);
+      if (error.response && error.response.status === 404) {
+        console.warn(`[Crawler] ✗ Sitemap not found (404): ${sitemapUrl}`);
+        console.warn(`[Crawler]   Tip: Create a sitemap.xml file at your domain root to improve crawl coverage`);
+      } else {
+        console.warn(`[Crawler] ✗ Could not fetch sitemap: ${error.message}`);
+      }
       return [];
     }
   }
@@ -336,6 +361,7 @@ class SiteCrawler {
       siteUrl: this.baseUrl,
       pageCount: this.pageEvidences.length,
       pages: this.pageEvidences,
+      sitemapDetected: this.sitemapDetected || false,
 
       // Site-wide metrics for scoring
       siteMetrics: {
