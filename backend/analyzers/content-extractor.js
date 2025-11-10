@@ -69,7 +69,14 @@ const $ = cheerio.load(html);
     for (let i = 0; i < userAgents.length; i++) {
       try {
         const startTime = Date.now();
-        const response = await axios.get(this.url, {
+
+        // Add cache-busting query parameter to force fresh content
+        // This bypasses CDN/proxy caches that might serve stale content
+        const cacheBustUrl = this.url.includes('?')
+          ? `${this.url}&_cb=${Date.now()}`
+          : `${this.url}?_cb=${Date.now()}`;
+
+        const response = await axios.get(cacheBustUrl, {
           timeout: this.timeout,
           maxContentLength: this.maxContentLength,
           maxRedirects: 5, // Follow up to 5 redirects
@@ -84,8 +91,9 @@ const $ = cheerio.load(html);
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           validateStatus: (status) => status >= 200 && status < 400 // Accept 2xx and 3xx
         });
@@ -652,9 +660,22 @@ const $ = cheerio.load(html);
   async checkPerformance() {
     try {
       const startTime = Date.now();
-      const response = await axios.head(this.url, { timeout: 5000 });
+
+      // Add cache-busting query parameter to get fresh performance metrics
+      const cacheBustUrl = this.url.includes('?')
+        ? `${this.url}&_cb=${Date.now()}`
+        : `${this.url}?_cb=${Date.now()}`;
+
+      const response = await axios.head(cacheBustUrl, {
+        timeout: 5000,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       const ttfb = Date.now() - startTime; // Time to First Byte
-      
+
       return {
         ttfb,
         responseTime: ttfb,
