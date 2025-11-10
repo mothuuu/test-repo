@@ -838,6 +838,11 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
 FAQPage schema detected in JSON-LD, but no visible FAQ content found on ${domain}. Search engines and AI assistants need BOTH schema markup AND on-page Q&A pairs to surface your answers in rich results.
 
 Your schema exists but is disconnected from actual user-facing FAQ content.`;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // BOTH schema and content exist - good progress!
+    finding = `Status: Good Progress
+
+${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. You're on the right track! To maximize AI visibility, aim for 5-10 strategically crafted FAQ pairs that directly address your ideal customer's questions about ROI, implementation, and outcomes.`;
   } else if (!hasFAQSchema && faqCount > 0) {
     // Content exists but no schema
     finding = `Status: Missing Schema
