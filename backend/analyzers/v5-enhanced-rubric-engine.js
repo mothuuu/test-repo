@@ -117,9 +117,10 @@ class V5EnhancedRubricEngine {
         categories: categoryScores,
         siteMetrics: this.siteData.siteMetrics,
         pageCount: this.siteData.pageCount,
+        sitemapDetected: this.siteData.sitemapDetected || false,
         metadata: {
           analyzedAt: new Date().toISOString(),
-          version: '5.0-enhanced'
+          version: '5.0-enhanced-hybrid'
         }
       };
 
@@ -162,12 +163,21 @@ class V5EnhancedRubricEngine {
 
     // Factor 1: Question-Based Content Density
     // PDF: ≥60% → 2.0, 35-59% → 1.2, 15-34% → 0.6, else 0
+    // HYBRID SCORING: Reward both percentage AND absolute count
     const questionPercent = this.siteData.siteMetrics.pagesWithQuestionHeadings * 100;
-    factors.questionDensity = this.scoreTier(questionPercent, [
+    const questionCount = this.siteData.pages.filter(p => this.hasQuestionHeadings(p.evidence)).length;
+
+    const questionPercentScore = this.scoreTier(questionPercent, [
       { threshold: 60, score: 2.0 },
       { threshold: 35, score: 1.2 },
       { threshold: 15, score: 0.6 }
     ]);
+    const questionAbsoluteScore = this.scoreTier(questionCount, [
+      { threshold: 8, score: 2.0 },   // 8+ pages with questions = excellent
+      { threshold: 5, score: 1.2 },   // 5+ pages with questions = good
+      { threshold: 2, score: 0.6 }    // 2+ pages with questions = decent
+    ]);
+    factors.questionDensity = Math.max(questionPercentScore, questionAbsoluteScore);
 
     // Factor 2: Scannability Enhancement
     // PDF: ≥70% → 2.0, 40-69% → 1.2, 20-39% → 0.6, else 0
@@ -192,11 +202,23 @@ class V5EnhancedRubricEngine {
 
     // Factor 4: ICP-Specific Q&A Coverage
     // PDF: ≥5 ICP-specific Q&A → 2.0, 2-4 → 1.2, else 0
+    // HYBRID SCORING: Reward both percentage AND absolute count to prevent dilution
     const faqPercent = this.siteData.siteMetrics.pagesWithFAQs * 100;
-    factors.icpQA = this.scoreTier(faqPercent, [
+    const faqCount = this.siteData.pages.filter(p => p.evidence.content.faqs.length > 0).length;
+
+    // Score based on EITHER percentage OR absolute count (whichever is better)
+    const faqPercentScore = this.scoreTier(faqPercent, [
       { threshold: 40, score: 2.0 },  // At least 40% of pages have FAQs = good coverage
       { threshold: 20, score: 1.2 }
     ]);
+    const faqAbsoluteScore = this.scoreTier(faqCount, [
+      { threshold: 5, score: 2.0 },   // At least 5 pages with FAQs = good absolute coverage
+      { threshold: 3, score: 1.8 },   // At least 3 pages with FAQs = decent coverage
+      { threshold: 1, score: 1.2 }    // At least 1 page with FAQs = some coverage
+    ]);
+    factors.icpQA = Math.max(faqPercentScore, faqAbsoluteScore);  // Use the better of the two scores
+
+    console.log(`[V5-Enhanced] FAQ Scoring - Pages: ${faqCount}/${this.siteData.pageCount} (${Math.round(faqPercent)}%) | Percent Score: ${faqPercentScore} | Absolute Score: ${faqAbsoluteScore} | Final: ${factors.icpQA}`);
 
     // Factor 5: Answer Completeness
     // PDF: 50-150 words with clear structure → 2.0, partial → 1.2, else 0
@@ -461,12 +483,20 @@ class V5EnhancedRubricEngine {
     ]);
 
     // Factor 4: Featured Snippet Optimization
+    // HYBRID SCORING: Reward both percentage AND absolute count
     const faqSchemaPercent = this.siteData.siteMetrics.pagesWithFAQSchema * 100;
-    factors.snippetOptimization = this.scoreTier(faqSchemaPercent, [
+    const faqSchemaCount = this.siteData.pages.filter(p => p.evidence.technical.hasFAQSchema).length;
+
+    const schemaPercentScore = this.scoreTier(faqSchemaPercent, [
       { threshold: 30, score: 1.2 },
       { threshold: 15, score: 0.8 },
       { threshold: 5, score: 0.4 }
     ]);
+    const schemaAbsoluteScore = this.scoreTier(faqSchemaCount, [
+      { threshold: 3, score: 1.2 },   // 3+ pages with FAQ schema = excellent
+      { threshold: 1, score: 0.8 }    // 1+ page with FAQ schema = good
+    ]);
+    factors.snippetOptimization = Math.max(schemaPercentScore, schemaAbsoluteScore);
 
     // Factor 5: Follow-up Question Anticipation
     const listPercent = this.siteData.siteMetrics.pagesWithLists * 100;
@@ -937,6 +967,23 @@ class V5EnhancedRubricEngine {
     const text = evidence.content.bodyText.toLowerCase();
     const credentialKeywords = ['certified', 'certification', 'license', 'accredited', 'phd', 'mba', 'degree'];
     return credentialKeywords.some(k => text.includes(k));
+  }
+
+  /**
+   * Check if evidence has question-based headings
+   */
+  hasQuestionHeadings(evidence) {
+    const allHeadings = [
+      ...evidence.content.headings.h1,
+      ...evidence.content.headings.h2,
+      ...evidence.content.headings.h3
+    ];
+
+    const questionWords = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can', 'should', 'does'];
+    return allHeadings.some(h => {
+      const lower = h.toLowerCase();
+      return questionWords.some(q => lower.startsWith(q)) || lower.includes('?');
+    });
   }
 }
 
