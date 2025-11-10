@@ -816,18 +816,38 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   // Industry is passed from V5 analysis (detected from content/metadata)
   const detectedIndustry = industry || 'General';
 
-  // Try rich library first, then hardcoded fallback
-  let faqLib = loadFAQLibrary(detectedIndustry);
-  if (!faqLib) {
-    faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
-    console.log(`📚 Using hardcoded FAQ library for: ${detectedIndustry}`);
-  } else {
-    console.log(`📚 Using rich FAQ library for: ${detectedIndustry}`);
-  }
-
   // Check if FAQ schema exists (but content might be missing)
   const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
-  const faqCount = scanEvidence.content?.faqs?.length || 0;
+  const actualFAQs = scanEvidence.content?.faqs || [];
+  const faqCount = actualFAQs.length;
+
+  console.log(`📊 FAQ Analysis: Found ${faqCount} FAQs on site, Schema: ${hasFAQSchema ? 'Yes' : 'No'}`);
+
+  // CRITICAL: Use ACTUAL FAQs from site if they exist, otherwise use templates
+  let faqsToUse = [];
+  let usingActualContent = false;
+
+  if (faqCount > 0) {
+    // ✅ USER HAS REAL FAQs - Use them!
+    usingActualContent = true;
+    faqsToUse = actualFAQs.map(faq => ({
+      q: faq.question,
+      pageAnswer: faq.answer,
+      schemaAnswer: faq.answer.substring(0, 300) // Truncate for schema (300 char limit)
+    }));
+    console.log(`✅ Using ${faqCount} ACTUAL FAQs from website (not templates)`);
+  } else {
+    // ❌ USER HAS NO FAQs - Provide templates
+    let faqLib = loadFAQLibrary(detectedIndustry);
+    if (!faqLib) {
+      faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+      console.log(`📚 Using hardcoded FAQ library for: ${detectedIndustry}`);
+    } else {
+      console.log(`📚 Using rich FAQ library for: ${detectedIndustry}`);
+    }
+    faqsToUse = faqLib.questions;
+    console.log(`📋 Using ${faqsToUse.length} template FAQs (no FAQs found on site)`);
+  }
 
   // Build the finding based on what exists
   let finding;
@@ -840,29 +860,41 @@ FAQPage schema detected in JSON-LD, but no visible FAQ content found on ${domain
 Your schema exists but is disconnected from actual user-facing FAQ content.`;
   } else if (hasFAQSchema && faqCount > 0) {
     // BOTH schema and content exist - good progress!
-    finding = `Status: Good Progress
+    // Check if they're well-distributed across pages
+    if (faqCount >= 5) {
+      finding = `Status: Excellent! ✅
 
-${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. You're on the right track! To maximize AI visibility, aim for 5-10 strategically crafted FAQ pairs that directly address your ideal customer's questions about ROI, implementation, and outcomes.`;
+${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. Your FAQ implementation is strong! The system has analyzed your actual FAQs and they cover relevant topics for your audience.
+
+Next steps: Ensure FAQs are distributed across multiple pages (About, Services, Contact) for maximum AI visibility.`;
+    } else {
+      finding = `Status: Good Progress
+
+${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. You're on the right track! Consider adding more FAQs (aim for 5-10 total) across different pages to cover ROI, implementation, pricing, and common objections.`;
+    }
   } else if (!hasFAQSchema && faqCount > 0) {
     // Content exists but no schema
     finding = `Status: Missing Schema
 
-${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Adding schema will help AI assistants extract and cite your answers in voice search and rich results.`;
+${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Your content is good, but adding schema will help AI assistants extract and cite your answers in voice search and rich results.
+
+The system has extracted your actual FAQs and generated schema for you below - just copy and paste!`;
   } else {
     // Neither exists
     finding = `Status: Missing
 
 No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
   }
-  const faqPageCopy = faqLib.questions.map((faq, idx) =>
+  // Use ACTUAL FAQs if available, otherwise templates
+  const faqPageCopy = faqsToUse.map((faq, idx) =>
     `Q${idx + 1}. ${faq.q}\n${faq.pageAnswer}`
   ).join('\n\n');
 
-  // Build JSON-LD schema
+  // Build JSON-LD schema from ACTUAL FAQs
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqLib.questions.map(faq => ({
+    "mainEntity": faqsToUse.map(faq => ({
       "@type": "Question",
       "name": faq.q,
       "acceptedAnswer": {
@@ -878,10 +910,27 @@ No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how 
   const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
   const title = `${categoryName}: FAQ Section`;
 
-  // Impact is consistent regardless of scenario
+  // Impact varies based on what exists
+  let impactText;
+  if (usingActualContent) {
+    // User has FAQs, impact is about optimization
+    if (!hasFAQSchema) {
+      impactText = `Adding FAQPage schema to your existing ${faqCount} FAQs will help AI assistants cite your content in voice search results and answer engines like ChatGPT and Perplexity. This structured data markup makes your expertise machine-readable.`;
+    } else {
+      impactText = `Your FAQ implementation is complete. Continue monitoring and updating FAQs based on actual customer questions from support tickets and sales calls. Consider distributing FAQs across multiple pages for broader topic coverage.`;
+    }
+  } else {
+    // User has no FAQs, use template impact
+    let faqLib = loadFAQLibrary(detectedIndustry);
+    if (!faqLib) {
+      faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+    }
+    impactText = faqLib.impact;
+  }
+
   const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
 
-${faqLib.impact}`;
+${impactText}`;
 
   // Action steps vary based on what exists
   let actionSteps;
@@ -894,13 +943,19 @@ ${faqLib.impact}`;
 5. Validate in Google Rich Results Test to ensure schema matches visible content
 6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score"`;
   } else if (!hasFAQSchema && faqCount > 0) {
-    // Content exists but schema missing - just add schema
-    actionSteps = `1. Review your existing on-page FAQ content
-2. Copy the FAQ Schema JSON-LD from the "FAQ Schema" section below
-3. Customize the Q&A pairs in the schema to match your actual on-page FAQs
-4. Paste the JSON-LD into your page <head> (or via tag manager)
-5. Validate in Google Rich Results Test
-6. Re-scan in the AI Visibility Tool to confirm lift`;
+    // Content exists but schema missing - just add schema (THE SYSTEM HAS EXTRACTED YOUR REAL FAQs!)
+    actionSteps = `1. The system has detected your ${faqCount} existing FAQs and generated schema for you
+2. Copy the FAQ Schema JSON-LD below (it contains YOUR actual questions and answers)
+3. Paste the JSON-LD into your page <head> tag or via Google Tag Manager
+4. Validate in Google Rich Results Test (search.google.com/test/rich-results)
+5. Re-scan in the AI Visibility Tool - your FAQ score should improve significantly!`;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // Both exist - optimization mode
+    actionSteps = `1. Your implementation is complete! No urgent action needed.
+2. Optional: Review the FAQ schema below (generated from your actual FAQs) to ensure it matches your on-page content
+3. Consider adding more FAQs on other pages (About, Services, Pricing) to increase coverage
+4. Update FAQs quarterly based on real customer questions from support/sales
+5. Monitor Google Search Console for "FAQ rich result" appearances`;
   } else {
     // Neither exists - full implementation
     actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
@@ -934,22 +989,28 @@ ${faqLib.impact}`;
   let backendCode = '';
 
   if (hasFAQSchema && faqCount === 0) {
-    // Schema exists, just need on-page content
-    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
+    // Schema exists, just need on-page content (use templates)
+    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqsToUse.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
     readyToUseContent = faqPageCopy;
-    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqsToUse.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = `**Note:** You already have FAQ schema. Update it to match the new on-page content above.`;
   } else if (!hasFAQSchema && faqCount > 0) {
-    // Content exists, just need schema
-    customizedImplementation = `### Your Customized FAQ Schema Implementation\n\nYou already have FAQ content on your page (${faqCount} question${faqCount > 1 ? 's' : ''} detected). Now you need to add structured data schema so AI systems like ChatGPT, Perplexity, and Google can understand and reference your FAQs.\n\n**What's Missing:** FAQPage schema in JSON-LD format\n\n**Impact:** Without schema, AI can see your FAQ text but can't reliably extract and cite specific Q&A pairs. Adding schema makes your expertise directly quotable by AI.`;
-    readyToUseContent = '**Note:** You already have FAQ content on your page. Just add the schema below to your page <head>.';
-    frontendCode = '<!-- Your existing FAQ content is good. No changes needed. -->';
+    // Content exists, just need schema - USE ACTUAL FAQs!
+    customizedImplementation = `### ✅ Your FAQs Have Been Extracted!\n\n**Great news!** The system detected ${faqCount} FAQ pairs on your site and has generated structured data schema for you.\n\n**Your Actual FAQs:**\n\n${faqsToUse.slice(0, 5).map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}${faqCount > 5 ? `\n\n*...and ${faqCount - 5} more questions*` : ''}\n\n**What You Need to Do:**\n\nThe system has already extracted your FAQs and generated the schema below. Simply copy the JSON-LD code and paste it into your page <head> tag. This will make your expertise machine-readable for AI assistants.`;
+    readyToUseContent = `✅ **Your ${faqCount} existing FAQs are already on the page.** Just add the schema below!`;
+    frontendCode = '<!-- ✅ Your existing FAQ content is good. No changes needed. -->';
     backendCode = schemaCode;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // Both exist - show what was detected
+    customizedImplementation = `### ✅ Implementation Complete!\n\n**Congratulations!** Your FAQ section is fully optimized:\n\n✓ ${faqCount} FAQ pairs detected on-page\n✓ FAQPage schema markup present\n✓ Content is machine-readable for AI\n\n**Your Detected FAQs:**\n\n${faqsToUse.slice(0, 5).map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}${faqCount > 5 ? `\n\n*...and ${faqCount - 5} more questions*` : ''}\n\n**Next Steps:**\n\n1. Verify schema matches your on-page content (see generated schema below)\n2. Consider adding FAQs to additional pages (About, Services, Pricing)\n3. Update quarterly with new customer questions`;
+    readyToUseContent = `✅ **You already have ${faqCount} FAQs with schema!** See below for what was detected.`;
+    frontendCode = '<!-- ✅ Your FAQ content and schema are both implemented! -->';
+    backendCode = `<!-- Below is the schema generated from your actual FAQs -->\n${schemaCode}`;
   } else {
-    // Need both - full implementation
-    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
+    // Need both - full implementation (use templates)
+    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqsToUse.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
     readyToUseContent = faqPageCopy;
-    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqsToUse.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = schemaCode;
   }
 
@@ -970,15 +1031,21 @@ ${faqLib.impact}`;
     customizedImplementation: customizedImplementation,  // ✅ ADDED: Customized implementation for blue box
     readyToUseContent: readyToUseContent,
     implementationNotes: implementationNotes,
-    quickWins: faqLib.quickWins,
+    quickWins: usingActualContent ? [`${faqCount} FAQs already detected - schema implementation is quick!`, 'Your actual Q&As are ready to be structured', 'Simple copy-paste of generated schema'] : (FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General).quickWins,
     validationChecklist: validationChecklist,
     estimatedTime: "1-2 hours",
     difficulty: "Easy",
     estimatedScoreGain: Math.max(12, Math.round(issue.gap * 0.8)),
     currentScore: issue.currentScore,
     targetScore: issue.threshold,
-    evidence: { faqDetected: false, industry: detectedIndustry },
-    generatedBy: 'programmatic_faq_library'
+    evidence: {
+      faqDetected: faqCount > 0,
+      faqCount: faqCount,
+      hasFAQSchema: hasFAQSchema,
+      usingActualContent: usingActualContent,
+      industry: detectedIndustry
+    },
+    generatedBy: usingActualContent ? 'actual_faq_extraction' : 'programmatic_faq_library'
   };
 }
 
