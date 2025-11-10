@@ -256,6 +256,7 @@ class SiteCrawler {
 
   /**
    * Prioritize URLs to get diverse content
+   * Uses deterministic sorting to ensure consistent page selection
    */
   prioritizeUrls(urls) {
     // Prioritize different types of pages
@@ -283,8 +284,16 @@ class SiteCrawler {
       return { url, score };
     });
 
-    // Sort by priority and return URLs
-    return scored.sort((a, b) => b.score - a.score).map(item => item.url);
+    // Sort by priority DESC, then alphabetically ASC for deterministic ordering
+    // This ensures same site always produces same page order
+    return scored
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;  // Higher priority first
+        }
+        return a.url.localeCompare(b.url);  // Alphabetical tiebreaker
+      })
+      .map(item => item.url);
   }
 
   /**
