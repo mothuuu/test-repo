@@ -153,8 +153,9 @@ class SiteCrawler {
         });
 
         // Success! Found a sitemap
-        foundSitemap = { url: sitemapUrl, data: response.data };
+        foundSitemap = { url: sitemapUrl, location: location, data: response.data };
         console.log(`[Crawler] ✓ Found sitemap at: ${location}`);
+        this.detectedSitemapLocation = location;  // Store for reporting
         break;
 
       } catch (error) {
@@ -401,6 +402,7 @@ class SiteCrawler {
       pageCount: this.pageEvidences.length,
       pages: this.pageEvidences,
       sitemapDetected: this.sitemapDetected || false,
+      sitemapLocation: this.detectedSitemapLocation || null,  // Which sitemap file was found
 
       // Site-wide metrics for scoring
       siteMetrics: {

@@ -3547,15 +3547,27 @@ function makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
   const domain = extractDomain(scanEvidence.url);
 
-  // Check for sitemap
-  const hasSitemap = scanEvidence.technical?.hasSitemap || false;
-  const sitemapUrl = scanEvidence.technical?.sitemapUrl || `${domain}/sitemap.xml`;
+  // Check for sitemap (try multiple properties for backward compatibility)
+  const hasSitemap = scanEvidence.technical?.hasSitemap ||
+                     scanEvidence.technical?.sitemapDetected ||
+                     false;
+
+  console.log(`[Sitemap Rec] Checking sitemap status: hasSitemap=${scanEvidence.technical?.hasSitemap}, sitemapDetected=${scanEvidence.technical?.sitemapDetected}, final=${hasSitemap}`);
+
+  // Use the actual detected sitemap location if available
+  const sitemapLocation = scanEvidence.technical?.sitemapLocation || 'sitemap.xml';
+  const sitemapUrl = `${domain}/${sitemapLocation}`;
   const pageCount = scanEvidence.technical?.sitemapPageCount || 0;
   const lastModified = scanEvidence.technical?.sitemapLastModified || 'Unknown';
 
   // Build finding text
   const finding = hasSitemap
-    ? `Your sitemap exists at ${sitemapUrl} with ${pageCount} URLs (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). However, it may need optimization or proper submission to search engines and AI crawlers. Last modified: ${lastModified}.`
+    ? `✅ **Sitemap Detected!** Your sitemap was found at **${sitemapLocation}** with ${pageCount} pages crawled (Score: ${issue.currentScore}/100, Target: ${issue.threshold}).
+
+The tool successfully detected your sitemap and is using it to analyze your site. To maximize AI visibility, ensure:
+- All important pages are included in the sitemap
+- The sitemap is submitted to Google Search Console and Bing Webmaster Tools
+- The sitemap is updated automatically when you add/remove pages`
     : `Your site is missing an XML sitemap (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Without a sitemap, search engines and AI crawlers have difficulty discovering all your pages, reducing visibility in answer engines like ChatGPT, Perplexity, and Google AI Overviews.`;
 
   // Build impact description

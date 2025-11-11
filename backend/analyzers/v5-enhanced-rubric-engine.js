@@ -79,11 +79,16 @@ class V5EnhancedRubricEngine {
           },
           technical: {
             ...firstPageEvidence.technical,
-            hasFAQSchema: hasFAQSchema  // True if ANY page has FAQ schema
+            hasFAQSchema: hasFAQSchema,  // True if ANY page has FAQ schema
+            hasSitemap: this.siteData.sitemapDetected || false,  // CRITICAL FIX: Pass sitemap detection
+            sitemapDetected: this.siteData.sitemapDetected || false,  // Alternative property name
+            sitemapLocation: this.siteData.sitemapLocation || null,  // Which sitemap file was detected
+            sitemapPageCount: this.siteData.pageCount || 0  // How many pages were crawled from sitemap
           }
         };
 
         console.log(`[V5-Enhanced] Aggregated ${allFAQs.length} FAQs from ${this.siteData.pages.length} pages`);
+        console.log(`[V5-Enhanced] Sitemap detected: ${this.siteData.sitemapDetected ? 'YES' : 'NO'}`);
       } else {
         this.evidence = null;
       }
