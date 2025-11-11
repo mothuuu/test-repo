@@ -464,10 +464,14 @@ router.get('/portal', authenticateToken, async (req, res) => {
     console.log('✅ Found Stripe customer ID:', customerId);
 
     // Create Stripe Customer Portal session
+    // NOTE: To enable plan upgrades/downgrades in the portal:
+    // 1. Go to Stripe Dashboard > Settings > Billing > Customer Portal
+    // 2. Enable "Allow customers to switch plans"
+    // 3. Select which plans customers can switch to
     console.log('🔄 Creating portal session...');
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.FRONTEND_URL}/index.html`,
+      return_url: `${process.env.FRONTEND_URL}/dashboard.html`,
     });
 
     console.log('✅ Portal session created:', session.id);
