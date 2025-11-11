@@ -210,6 +210,17 @@ class V5EnhancedRubricEngine {
     // HYBRID SCORING: Reward both percentage AND absolute count to prevent dilution
     const faqPercent = this.siteData.siteMetrics.pagesWithFAQs * 100;
     const faqCount = this.siteData.pages.filter(p => p.evidence.content.faqs.length > 0).length;
+    const totalFAQs = this.siteData.pages.reduce((sum, p) => sum + p.evidence.content.faqs.length, 0);
+
+    // Log FAQ distribution across pages for debugging
+    console.log(`[V5-Enhanced] ===== FAQ DISTRIBUTION ANALYSIS =====`);
+    console.log(`[V5-Enhanced] Total FAQs across all pages: ${totalFAQs}`);
+    console.log(`[V5-Enhanced] Pages with FAQs: ${faqCount}/${this.siteData.pageCount}`);
+    this.siteData.pages.forEach((page, idx) => {
+      if (page.evidence.content.faqs.length > 0) {
+        console.log(`[V5-Enhanced]   Page ${idx + 1} (${page.url}): ${page.evidence.content.faqs.length} FAQs`);
+      }
+    });
 
     // Score based on EITHER percentage OR absolute count (whichever is better)
     const faqPercentScore = this.scoreTier(faqPercent, [
@@ -610,15 +621,24 @@ class V5EnhancedRubricEngine {
       { threshold: 500, score: 1.2, reverse: true }
     ], 0.6);
 
-    // Factor 4: API Endpoint Accessibility
-    // (Check for API indicators)
-    factors.apiEndpoints = 0; // Would need API discovery
+    // Factor 4: XML Sitemap Availability (CRITICAL FIX!)
+    // Sitemap helps crawlers discover all pages efficiently
+    if (this.siteData.sitemapDetected) {
+      factors.sitemap = 1.8;  // Sitemap found = excellent
+      console.log(`[V5-Enhanced] Sitemap scoring: 1.8 (detected at ${this.siteData.sitemapLocation})`);
+    } else {
+      factors.sitemap = 0;  // No sitemap = 0 points
+      console.log(`[V5-Enhanced] Sitemap scoring: 0 (not detected)`);
+    }
 
     // Factor 5: CDN & Global Accessibility
     // (Check for CDN headers)
     factors.cdn = firstPage.technical.cacheControl ? 1.2 : 0.6;
 
     const totalScore = Object.values(factors).reduce((a, b) => a + b, 0);
+
+    console.log(`[V5-Enhanced] Crawler Access Factors:`, factors);
+    console.log(`[V5-Enhanced] Crawler Access Total: ${totalScore}/9.0 = ${(totalScore / 9.0) * 100}%`);
 
     return {
       score: (totalScore / 9.0) * 100,
