@@ -39,9 +39,16 @@ class SiteCrawler {
       // Get URLs to crawl
       const urlsToCrawl = await this.getUrlsToCrawl();
       console.log(`[Crawler] Found ${urlsToCrawl.length} URLs to analyze`);
+      console.log(`[Crawler] URLs discovered from sitemap/links:`);
+      urlsToCrawl.forEach((url, idx) => {
+        console.log(`[Crawler]   ${idx + 1}. ${url}`);
+      });
 
       // Crawl each URL
-      for (const url of urlsToCrawl.slice(0, this.options.maxPages)) {
+      const urlsToActuallyCrawl = urlsToCrawl.slice(0, this.options.maxPages);
+      console.log(`[Crawler] Will crawl ${urlsToActuallyCrawl.length} pages (maxPages: ${this.options.maxPages})`);
+
+      for (const url of urlsToActuallyCrawl) {
         try {
           await this.crawlPage(url);
         } catch (error) {
@@ -375,6 +382,17 @@ class SiteCrawler {
     try {
       const extractor = new ContentExtractor(url, this.options);
       const evidence = await extractor.extract();
+
+      // Log FAQ extraction results for this page
+      const faqCount = evidence.content?.faqs?.length || 0;
+      if (faqCount > 0) {
+        console.log(`[Crawler] ✓ Found ${faqCount} FAQs on ${url}`);
+        evidence.content.faqs.forEach((faq, idx) => {
+          console.log(`[Crawler]     FAQ ${idx + 1}: ${faq.question.substring(0, 80)}...`);
+        });
+      } else {
+        console.log(`[Crawler] ✗ No FAQs found on ${url}`);
+      }
 
       this.pageEvidences.push({
         url,
