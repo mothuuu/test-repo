@@ -202,9 +202,9 @@ async function handleSubscriptionChange(subscription) {
   console.log('🔄 Processing subscription change');
   console.log('Subscription ID:', subscription.id);
   console.log('Status:', subscription.status);
-  
+
   const customerId = subscription.customer;
-  
+
   const userResult = await db.query(
     'SELECT id, email FROM users WHERE stripe_customer_id = $1',
     [customerId]
@@ -218,12 +218,31 @@ async function handleSubscriptionChange(subscription) {
   const userId = userResult.rows[0].id;
   const userEmail = userResult.rows[0].email;
   const isActive = subscription.status === 'active';
-  const plan = isActive ? (subscription.metadata.plan || 'free') : 'free';
+
+  // Determine plan from price ID (handles upgrades/downgrades via Customer Portal)
+  let plan = 'free';
+  if (isActive && subscription.items && subscription.items.data && subscription.items.data.length > 0) {
+    const priceId = subscription.items.data[0].price.id;
+    console.log('📋 Price ID from subscription:', priceId);
+
+    // Match price ID to plan
+    if (priceId === PRICE_IDS.pro || priceId === process.env.STRIPE_PRICE_PRO) {
+      plan = 'pro';
+    } else if (priceId === PRICE_IDS.diy || priceId === process.env.STRIPE_PRICE_DIY) {
+      plan = 'diy';
+    } else {
+      // Fallback to metadata if price ID doesn't match
+      plan = subscription.metadata.plan || 'free';
+      console.warn('⚠️ Unknown price ID, using metadata fallback:', plan);
+    }
+  }
+
+  console.log(`📊 Determined plan: ${plan} (active: ${isActive})`);
 
   try {
     const result = await db.query(
-      `UPDATE users 
-       SET plan = $1, 
+      `UPDATE users
+       SET plan = $1,
            stripe_subscription_id = $2,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
