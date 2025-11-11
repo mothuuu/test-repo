@@ -26,12 +26,15 @@ class ContentExtractor {
 const html = fetchResult.html; // Extract the HTML string from the object
 const $ = cheerio.load(html);
 
+      // Extract technical data first (includes JSON-LD parsing)
+      const technical = this.extractTechnical($, html);
+
       const evidence = {
         url: this.url,
         html: html, // Store HTML for analysis
         metadata: this.extractMetadata($),
-        technical: this.extractTechnical($, html), // MUST run BEFORE extractContent removes <script> tags!
-        content: this.extractContent($),
+        technical: technical, // Already extracted
+        content: this.extractContent($, technical.structuredData), // Pass structuredData to extractContent
         structure: this.extractStructure($),
         media: this.extractMedia($),
         performance: await this.checkPerformance(),
@@ -218,9 +221,9 @@ const $ = cheerio.load(html);
   /**
    * Extract main content - text, headings, paragraphs
    */
-  extractContent($) {
+  extractContent($, structuredData = []) {
     // IMPORTANT: Extract FAQs BEFORE removing footer (FAQs are often in footer!)
-    const faqs = this.extractFAQs($);
+    const faqs = this.extractFAQs($, structuredData);
 
     // Remove script, style, and navigation elements
     $('script, style, nav, header, footer, aside').remove();
@@ -375,10 +378,29 @@ const $ = cheerio.load(html);
    * Extract FAQs with enhanced 3-tier detection
    * IMPORTANT: Call this BEFORE removing footer/nav elements
    */
-  extractFAQs($) {
+  extractFAQs($, structuredData = []) {
     const faqs = [];
 
-    // Method 1: Detect FAQs with schema markup
+    // Method 0: Extract FAQs from JSON-LD FAQPage schema (NEW!)
+    const faqSchemas = structuredData.filter(sd => sd.type === 'FAQPage');
+    if (faqSchemas.length > 0) {
+      console.log(`[ContentExtractor] Found ${faqSchemas.length} FAQPage schemas in JSON-LD`);
+      faqSchemas.forEach((schema, schemaIdx) => {
+        const mainEntity = schema.raw.mainEntity || [];
+        if (Array.isArray(mainEntity)) {
+          mainEntity.forEach((entity, idx) => {
+            const question = entity.name || '';
+            const answer = entity.acceptedAnswer?.text || entity.acceptedAnswer || '';
+            if (question && answer) {
+              faqs.push({ question, answer, source: 'schema' });
+              console.log(`[ContentExtractor] Extracted FAQ from JSON-LD schema #${schemaIdx + 1}, question #${idx + 1}: ${question.substring(0, 60)}...`);
+            }
+          });
+        }
+      });
+    }
+
+    // Method 1: Detect FAQs with microdata schema markup
     $('[itemtype*="FAQPage"], [itemtype*="Question"]').each((idx, el) => {
       const question = $(el).find('[itemprop="name"]').text().trim() ||
                        $(el).find('h2, h3, h4, strong').first().text().trim();
