@@ -1028,7 +1028,10 @@ async function performCompetitorScan(url) {
   try {
     // Run V5 Rubric Engine for scoring only
     console.log('📊 Running V5 Rubric Engine (scores only)...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 50,  // Increased from 15 to capture FAQs across more pages
+      timeout: 10000
+    });
     const v5Results = await engine.analyze();
 
     // Extract scores from category results
@@ -1206,7 +1209,10 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 50,  // Increased from 15 to capture FAQs across more pages
+      timeout: 10000
+    });
     const v5Results = await engine.analyze();
 
     // Extract scores from category results
