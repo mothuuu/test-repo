@@ -35,7 +35,7 @@ After the changes are deployed to Render, follow these steps:
 
 ### Step 2: Run Browser Diagnostic
 
-1. Open your admin overview page: `https://aome.xeo.marketing/admin/overview.html`
+1. Open your admin overview page: `https://www.visible2ai.com/admin/overview.html`
 2. Press `F12` to open Developer Tools
 3. Click the "Console" tab
 4. Copy and paste this entire file: `frontend/admin/browser-diagnostic.js`

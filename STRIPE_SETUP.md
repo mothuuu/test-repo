@@ -6,7 +6,7 @@ This guide will walk you through setting up Stripe payments for the AI Visibilit
 
 1. A Stripe account (sign up at https://stripe.com)
 2. Access to your Render dashboard (for backend environment variables)
-3. Access to your production site (https://aome.xeo.marketing/)
+3. Access to your production site (https://www.visible2ai.com/)
 
 ## Step 1: Create Stripe Products & Prices
 
@@ -108,7 +108,7 @@ Add the following environment variables:
 | `STRIPE_PRICE_DIY` | DIY plan price ID from Step 1.2 | `price_abc123xyz` |
 | `STRIPE_PRICE_PRO` | Pro plan price ID from Step 1.3 | `price_def456uvw` |
 | `STRIPE_WEBHOOK_SECRET` | Webhook secret from Step 3.2 | `whsec_123...` |
-| `FRONTEND_URL` | Your frontend URL | `https://aome.xeo.marketing` |
+| `FRONTEND_URL` | Your frontend URL | `https://www.visible2ai.com` |
 
 ### 4.3 Save and Redeploy
 
@@ -119,7 +119,7 @@ Add the following environment variables:
 
 ### 5.1 Test Checkout Flow
 
-1. Go to your site: https://aome.xeo.marketing/
+1. Go to your site: https://www.visible2ai.com/
 2. Sign in to your account
 3. Click on **Upgrade** or go to checkout
 4. Use Stripe's test card:
