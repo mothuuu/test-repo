@@ -94,9 +94,15 @@ function updateUserInfo() {
     };
     document.getElementById('planInfo').textContent = planInfo[user.plan];
 
-    // Show manage subscription button for paid users
-    if (user.plan === 'diy' || user.plan === 'pro') {
-        document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
+    // Show manage subscription button for ALL users (free can upgrade, paid can manage/downgrade)
+    const manageBtn = document.getElementById('manageSubscriptionBtn');
+    manageBtn.style.display = 'inline-block';
+
+    // Update button text based on plan
+    if (user.plan === 'free') {
+        manageBtn.innerHTML = '⬆️ Upgrade Plan';
+    } else {
+        manageBtn.innerHTML = '💳 Manage Subscription';
     }
 
     // Show waitlist banner for DIY users
@@ -710,6 +716,10 @@ async function manageSubscription() {
         return;
     }
 
+    // Get current user plan from stored user object
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentPlan = storedUser.plan || 'free';
+
     try {
         // Show loading state
         const btn = document.getElementById('manageSubscriptionBtn');
@@ -717,7 +727,13 @@ async function manageSubscription() {
         btn.disabled = true;
         btn.innerHTML = '⏳ Loading...';
 
-        // Get Stripe Customer Portal URL
+        // For FREE users: redirect to checkout page for upgrade
+        if (currentPlan === 'free') {
+            window.location.href = 'checkout.html';
+            return;
+        }
+
+        // For PAID users: redirect to Stripe Customer Portal (manage/downgrade/cancel)
         const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
             method: 'GET',
             headers: {
@@ -746,7 +762,7 @@ async function manageSubscription() {
         // Restore button
         const btn = document.getElementById('manageSubscriptionBtn');
         btn.disabled = false;
-        btn.innerHTML = '⚙️ Manage Subscription';
+        btn.innerHTML = originalText;
     }
 }
 
