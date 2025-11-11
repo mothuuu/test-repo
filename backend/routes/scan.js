@@ -1133,11 +1133,11 @@ function transformV5ToSubfactors(v5Categories) {
     const entity = cs.entityRecognition || {};
 
     subfactors.contentStructure = {
-      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 33,  // 0-3 → 0-100
-      navigationScore: (semantic.factors?.contentSectioning || 0) * 33,  // 0-3 → 0-100
-      entityCuesScore: (entity.factors?.namedEntities || 0) * 33,  // 0-3 → 0-100
-      accessibilityScore: (semantic.factors?.accessibility || 0) * 33,  // 0-3 → 0-100
-      geoMetaScore: (entity.factors?.geoEntities || 0) * 33  // 0-3 → 0-100
+      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 66.7,  // 0-1.5 → 0-100
+      navigationScore: (semantic.factors?.contentSectioning || 0) * 66.7,  // 0-1.5 → 0-100
+      entityCuesScore: (entity.factors?.namedEntities || 0) * 66.7,  // 0-1.5 → 0-100
+      accessibilityScore: (semantic.factors?.accessibility || 0) * 66.7,  // 0-1.5 → 0-100
+      geoMetaScore: (entity.factors?.geoEntities || 0) * 66.7  // 0-1.5 → 0-100
     };
   }
 
@@ -1160,11 +1160,11 @@ function transformV5ToSubfactors(v5Categories) {
     const structured = ts.structuredData || {};
 
     subfactors.technicalSetup = {
-      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 33,  // 0-3 → 0-100
-      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 33,  // 0-3 → 0-100
+      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 55.6,  // 0-1.8 → 0-100
+      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 55.6,  // 0-1.8 → 0-100
       canonicalHreflangScore: 50,  // Not in new structure, use default
       openGraphScore: 50,  // Not in new structure, use default
-      sitemapScore: (crawler.factors?.serverResponse || 0) * 33,  // 0-3 → 0-100
+      sitemapScore: (crawler.factors?.sitemap || 0) * 55.6,  // 0-1.8 → 0-100 (FIXED: was reading serverResponse!)
       indexNowScore: 50,  // Not in new structure, use default
       rssFeedScore: 50  // Not in new structure, use default
     };
