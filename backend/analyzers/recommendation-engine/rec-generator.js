@@ -5418,6 +5418,17 @@ function buildSmartFinding(issue, scanEvidence) {
     const withAlt = evidence.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
     const missing = evidence.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
     const coverage = total > 0 ? Math.round((withAlt/total) * 100) : 0;
+
+    // Debug logging
+    console.log('[DEBUG] Alt Text Recommendation Data:', {
+      total,
+      withAlt,
+      missing,
+      coverage,
+      evidenceImages: evidence.totalImages,
+      scanEvidenceImages: scanEvidence.media?.imageCount
+    });
+
     return `Alt text coverage: ${coverage}% (${withAlt}/${total} images). ${missing} images missing alt text, making them invisible to multimodal AI search.`;
   }
 
