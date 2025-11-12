@@ -1215,6 +1215,10 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     });
     const v5Results = await engine.analyze();
 
+    // Debug: Log sitemap detection from crawler
+    console.log('[DEBUG] Sitemap detected:', engine.evidence?.technical?.sitemapDetected || engine.evidence?.technical?.hasSitemap);
+    console.log('[DEBUG] Technical Setup category:', JSON.stringify(v5Results.categories.technicalSetup, null, 2));
+
     // Extract scores from category results
     const categories = {
       aiReadability: v5Results.categories.aiReadability.score || 0,
@@ -1234,6 +1238,7 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     // The V5 engine returns nested structures, but issue detector expects flat key-value pairs
     const subfactorScores = transformV5ToSubfactors(v5Results.categories);
     console.log('[V5Transform] Transformed subfactor scores for issue detection');
+    console.log('[V5Transform] Technical Setup subfactors:', JSON.stringify(subfactorScores.technicalSetup, null, 2));
 
     // Determine industry: Prioritize user-selected > auto-detected > fallback
     const finalIndustry = userIndustry || v5Results.industry || 'General';
