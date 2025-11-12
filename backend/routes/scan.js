@@ -1096,8 +1096,8 @@ function transformV5ToSubfactors(v5Categories) {
   // AI Search Readiness - Extract from nested structure and scale
   if (v5Categories.aiSearchReadiness) {
     const asr = v5Categories.aiSearchReadiness;
-    const directAnswer = asr.directAnswerStructure || {};
-    const topical = asr.topicalAuthority || {};
+    const directAnswer = asr.subfactors?.directAnswerStructure || {};  // CRITICAL FIX: Added .subfactors
+    const topical = asr.subfactors?.topicalAuthority || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.aiSearchReadiness = {
       questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 50,  // 0-2 → 0-100 (hybrid scoring)
@@ -1129,8 +1129,8 @@ function transformV5ToSubfactors(v5Categories) {
   // Content Structure - Extract from nested structure and scale
   if (v5Categories.contentStructure) {
     const cs = v5Categories.contentStructure;
-    const semantic = cs.semanticHTML || {};
-    const entity = cs.entityRecognition || {};
+    const semantic = cs.subfactors?.semanticHTML || {};  // CRITICAL FIX: Added .subfactors
+    const entity = cs.subfactors?.entityRecognition || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.contentStructure = {
       headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 66.7,  // 0-1.5 → 0-100
@@ -1156,8 +1156,8 @@ function transformV5ToSubfactors(v5Categories) {
   // Technical Setup - Extract from nested structure and scale
   if (v5Categories.technicalSetup) {
     const ts = v5Categories.technicalSetup;
-    const crawler = ts.crawlerAccess || {};
-    const structured = ts.structuredData || {};
+    const crawler = ts.subfactors?.crawlerAccess || {};  // CRITICAL FIX: Added .subfactors
+    const structured = ts.subfactors?.structuredData || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.technicalSetup = {
       crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 55.6,  // 0-1.8 → 0-100
@@ -1173,8 +1173,8 @@ function transformV5ToSubfactors(v5Categories) {
   // Trust & Authority - Extract from nested structure and scale
   if (v5Categories.trustAuthority) {
     const ta = v5Categories.trustAuthority;
-    const eeat = ta.eeat || {};
-    const authority = ta.authorityNetwork || {};
+    const eeat = ta.subfactors?.eeat || {};  // CRITICAL FIX: Added .subfactors
+    const authority = ta.subfactors?.authorityNetwork || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.trustAuthority = {
       authorBiosScore: (eeat.factors?.authorProfiles || 0) * 50,  // 0-2 → 0-100
@@ -1188,8 +1188,8 @@ function transformV5ToSubfactors(v5Categories) {
   // Voice Optimization - Extract from nested structure and scale
   if (v5Categories.voiceOptimization) {
     const vo = v5Categories.voiceOptimization;
-    const conversational = vo.conversationalKeywords || {};
-    const voice = vo.voiceSearch || {};
+    const conversational = vo.subfactors?.conversationalKeywords || {};  // CRITICAL FIX: Added .subfactors
+    const voice = vo.subfactors?.voiceSearch || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.voiceOptimization = {
       longTailScore: (conversational.factors?.longTail || 0) * 83,  // 0-1.2 → 0-100
