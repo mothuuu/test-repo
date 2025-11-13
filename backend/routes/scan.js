@@ -256,10 +256,10 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain, domain
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain]
+      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain, scanDomain]
     );
 
     const scan = scanRecord.rows[0];
@@ -459,15 +459,16 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const userId = req.userId;
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         id, user_id, url, status, total_score, rubric_version,
         ai_readability_score, ai_search_readiness_score,
         content_freshness_score, content_structure_score,
         speed_ux_score, technical_setup_score,
         trust_authority_score, voice_optimization_score,
         industry, page_count, pages_analyzed,
-        detailed_analysis, faq_schema, created_at, completed_at
-       FROM scans 
+        detailed_analysis, faq_schema, created_at, completed_at,
+        domain, extracted_domain, domain_type
+       FROM scans
        WHERE id = $1 AND user_id = $2`,
       [scanId, userId]
     );
