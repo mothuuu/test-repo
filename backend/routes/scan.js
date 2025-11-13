@@ -124,6 +124,8 @@ router.post('/guest', async (req, res) => {
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
+      categoryBreakdown: scanResult.categories,
+      categoryWeights: V5_WEIGHTS, // Include weights for display
       recommendations: scanResult.recommendations, // Will be empty array for guest tier
       faq: null, // No FAQ for guest
       upgrade: scanResult.upgrade || null, // CTA to sign up
@@ -410,6 +412,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         primary_domain: user.primary_domain,
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
@@ -694,6 +697,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         ...scan,
         categories: categoryScores,
         categoryBreakdown: categoryScores, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
