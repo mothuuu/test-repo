@@ -99,9 +99,16 @@ class V5EnhancedRubricEngine {
       console.log(`[V5-Enhanced] Crawled ${this.siteData.pageCount} pages`);
 
       // Step 1.5: Detect certifications if industry is provided
+      // Wrapped in try-catch to prevent certification detection errors from crashing scans
       if (this.industry) {
-        console.log(`[V5-Enhanced] Detecting certifications for industry: ${this.industry}`);
-        this.certificationData = detectCertifications(this.siteData, this.industry);
+        try {
+          console.log(`[V5-Enhanced] Detecting certifications for industry: ${this.industry}`);
+          this.certificationData = detectCertifications(this.siteData, this.industry);
+        } catch (certError) {
+          console.error(`[V5-Enhanced] ⚠️  Certification detection failed (non-fatal):`, certError.message);
+          console.error(`[V5-Enhanced] Stack:`, certError.stack);
+          this.certificationData = null; // Continue scan without certification data
+        }
       } else {
         console.log(`[V5-Enhanced] No industry specified, skipping certification detection`);
         this.certificationData = null;
