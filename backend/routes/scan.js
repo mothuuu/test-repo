@@ -124,6 +124,8 @@ router.post('/guest', async (req, res) => {
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
+      categoryBreakdown: scanResult.categories,
+      categoryWeights: V5_WEIGHTS, // Include weights for display
       recommendations: scanResult.recommendations, // Will be empty array for guest tier
       faq: null, // No FAQ for guest
       upgrade: scanResult.upgrade || null, // CTA to sign up
@@ -410,6 +412,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         primary_domain: user.primary_domain,
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
@@ -694,6 +697,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         ...scan,
         categories: categoryScores,
         categoryBreakdown: categoryScores, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
@@ -1093,7 +1097,7 @@ async function performCompetitorScan(url) {
     // Run V5 Rubric Engine for scoring only
     console.log('📊 Running V5 Rubric Engine (scores only)...');
     const engine = new V5RubricEngine(url, {
-      maxPages: 15,  // Reverted from 50 to 15 to fix scan failures
+      maxPages: 25,  // Set to 25 pages per user request
       timeout: 10000
     });
     const v5Results = await engine.analyze();
@@ -1274,7 +1278,7 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
     const engine = new V5RubricEngine(url, {
-      maxPages: 15,  // Reverted from 50 to 15 to fix scan failures
+      maxPages: 25,  // Set to 25 pages per user request
       timeout: 10000,
       industry: userIndustry  // Pass industry for certification detection
     });

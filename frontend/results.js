@@ -147,7 +147,7 @@ function displayResults(scan, quota) {
 
     // Display category scores
     if (scan.categoryBreakdown) {
-        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
+        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || [], scan.categoryWeights || {});
     }
 
     // Update recommendations count
@@ -193,15 +193,17 @@ function displayResults(scan, quota) {
     }
 }
 
-function displayCategoryScores(categories, recommendations) {
+function displayCategoryScores(categories, recommendations, weights = {}) {
     const container = document.getElementById('categoryScores');
     container.innerHTML = '';
 
-    // Prepare category data with scores
+    // Prepare category data with scores and weights
     const categoryData = Object.entries(categories).map(([categoryKey, score]) => {
         const displayScore = Math.round(score * 10); // Convert to 0-1000
         const categoryName = categoryNames[categoryKey] || formatCategoryName(categoryKey);
-        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore };
+        const weight = weights[categoryKey] || 0;
+        const weightPercent = Math.round(weight * 100); // Convert to percentage
+        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore, weight: weight, weightPercent: weightPercent };
     });
 
     // Calculate and display metrics
@@ -239,6 +241,7 @@ function displayCategoryScores(categories, recommendations) {
         item.innerHTML = `
             <div class="category-info">
                 <div class="category-name">${cat.name}</div>
+                ${cat.weightPercent > 0 ? `<div class="category-weight" style="font-size: 12px; color: #718096; margin-top: 4px;">Weight: ${cat.weightPercent}% of total score</div>` : ''}
             </div>
             <div class="category-score-section">
                 <div class="${scoreColor}">${displayScore}</div>
