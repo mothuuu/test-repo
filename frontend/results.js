@@ -186,6 +186,11 @@ function displayResults(scan, quota) {
             exportSection.style.display = 'flex';
         }
     }
+
+    // Display historic comparison if available
+    if (scan.comparison || scan.historicalTimeline) {
+        displayHistoricComparison(scan.comparison, scan.historicalTimeline);
+    }
 }
 
 function displayCategoryScores(categories, recommendations) {
@@ -1888,6 +1893,287 @@ window.collapseAll = function() {
     cards.forEach(card => {
         card.classList.remove('expanded');
     });
+}
+
+// ============================================
+// HISTORIC COMPARISON FUNCTIONS
+// ============================================
+
+// Global variable to store timeline chart
+let timelineChart = null;
+
+// Toggle comparison section visibility
+window.toggleComparison = function() {
+    const content = document.getElementById('comparisonContent');
+    const toggle = document.getElementById('comparisonToggle');
+
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        toggle.classList.remove('expanded');
+    } else {
+        content.classList.add('active');
+        toggle.classList.add('expanded');
+    }
+}
+
+// Display historic comparison data
+function displayHistoricComparison(comparison, historicalTimeline) {
+    if (!comparison || !comparison.hasPreviousScan) {
+        // No comparison data available
+        return;
+    }
+
+    console.log('📊 Displaying historic comparison:', comparison);
+
+    // Show comparison section
+    const comparisonSection = document.getElementById('comparisonSection');
+    if (comparisonSection) {
+        comparisonSection.style.display = 'block';
+    }
+
+    // Update subtitle with date info
+    const subtitle = document.getElementById('comparisonSubtitle');
+    if (subtitle && comparison.previousScanDate) {
+        const prevDate = new Date(comparison.previousScanDate).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        subtitle.textContent = `Compared with scan from ${prevDate} (${comparison.daysBetweenScans} days ago)`;
+    }
+
+    // Display score change summary
+    displayScoreChangeSummary(comparison);
+
+    // Display category comparison table
+    displayCategoryComparisonTable(comparison);
+
+    // Display timeline if available
+    if (historicalTimeline && historicalTimeline.dataPoints && historicalTimeline.dataPoints.length > 1) {
+        displayTimeline(historicalTimeline);
+    }
+}
+
+// Display score change summary cards
+function displayScoreChangeSummary(comparison) {
+    const container = document.getElementById('scoreChangeSummary');
+    if (!container) return;
+
+    const scoreChange = comparison.scoreChange;
+    const improved = comparison.summary.improved;
+    const declined = comparison.summary.declined;
+
+    let scoreChangeClass = 'neutral';
+    let scoreChangeSign = '';
+    if (scoreChange.total > 0) {
+        scoreChangeClass = 'positive';
+        scoreChangeSign = '+';
+    } else if (scoreChange.total < 0) {
+        scoreChangeClass = 'negative';
+    }
+
+    container.innerHTML = `
+        <div class="score-change-card ${scoreChangeClass}">
+            <div class="score-change-label">Overall Score Change</div>
+            <div class="score-change-value ${scoreChangeClass}">
+                ${scoreChangeSign}${Math.round(scoreChange.total * 10)}
+            </div>
+            <div class="score-change-delta">
+                ${Math.round(scoreChange.previous * 10)} → ${Math.round(scoreChange.current * 10)}
+            </div>
+        </div>
+
+        <div class="score-change-card positive">
+            <div class="score-change-label">Categories Improved</div>
+            <div class="score-change-value positive">${improved}</div>
+            <div class="score-change-delta">
+                ${improved === 1 ? 'category' : 'categories'} got better
+            </div>
+        </div>
+
+        <div class="score-change-card ${declined > 0 ? 'negative' : 'neutral'}">
+            <div class="score-change-label">Categories Declined</div>
+            <div class="score-change-value ${declined > 0 ? 'negative' : 'neutral'}">${declined}</div>
+            <div class="score-change-delta">
+                ${declined === 1 ? 'category' : 'categories'} need attention
+            </div>
+        </div>
+    `;
+}
+
+// Display category comparison table
+function displayCategoryComparisonTable(comparison) {
+    const container = document.getElementById('categoryComparisonTable');
+    if (!container) return;
+
+    const allCategories = [...comparison.categoriesImproved, ...comparison.categoriesDeclined];
+
+    // Sort by absolute change (biggest changes first)
+    allCategories.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+
+    if (allCategories.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #718096;">
+                <p style="font-size: 16px; margin-bottom: 10px;">✨ No significant changes detected</p>
+                <p style="font-size: 14px;">All categories remained stable (±5 points)</p>
+            </div>
+        `;
+        return;
+    }
+
+    let tableHTML = `
+        <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 15px; margin-top: 20px;">
+            Category Changes
+        </h3>
+        <table class="category-comparison-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Previous Score</th>
+                    <th>Current Score</th>
+                    <th>Change</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    allCategories.forEach(cat => {
+        const changeClass = cat.change > 0 ? 'positive' : 'negative';
+        const changeSign = cat.change > 0 ? '+' : '';
+        const statusClass = cat.change > 0 ? 'improved' : 'declined';
+        const statusText = cat.change > 0 ? 'Improved' : 'Declined';
+        const arrow = cat.change > 0 ? '↑' : '↓';
+
+        tableHTML += `
+            <tr>
+                <td class="category-name-cell">${cat.name}</td>
+                <td>${Math.round(cat.previousScore * 10)}</td>
+                <td>${Math.round(cat.currentScore * 10)}</td>
+                <td>
+                    <div class="change-indicator ${changeClass}">
+                        <span class="change-arrow">${arrow}</span>
+                        <span>${changeSign}${Math.round(cat.change * 10)}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="score-badge ${statusClass}">${statusText}</span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = tableHTML;
+}
+
+// Display timeline chart
+function displayTimeline(historicalTimeline) {
+    const timelineSection = document.getElementById('timelineSection');
+    if (timelineSection) {
+        timelineSection.style.display = 'block';
+    }
+
+    const ctx = document.getElementById('timelineChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+
+    // Prepare data
+    const dataPoints = historicalTimeline.dataPoints;
+    const labels = dataPoints.map(dp => {
+        const date = new Date(dp.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const scores = dataPoints.map(dp => Math.round(dp.totalScore * 10));
+
+    // Create gradient
+    const canvas = ctx.getContext('2d');
+    const gradient = canvas.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(0, 185, 218, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 185, 218, 0.0)');
+
+    timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Score',
+                data: scores,
+                borderColor: '#00B9DA',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#00B9DA',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#f31c7e',
+                pointHoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.parsed.y}/1000`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1000,
+                    ticks: {
+                        stepSize: 200,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    console.log('📈 Timeline chart created with', dataPoints.length, 'data points');
 }
 
 // Initialize on page load
