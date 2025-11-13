@@ -169,9 +169,10 @@ async function migrateLandingPageCMS() {
             {
               stars: 5,
               text: 'The recommendations were so specific and actionable. We implemented the top 5 fixes and saw immediate improvements in how AI tools surfaced our content.',
-              authorInitials: 'JC',
-              authorName: 'James Chen',
-              authorTitle: 'Founder, CloudSecure'
+              authorInitials: 'DY',
+              authorName: 'Dano Ybarra',
+              authorTitle: 'CEO, Vozmia',
+              authorUrl: 'https://vozmia.com/'
             },
             {
               stars: 5,
