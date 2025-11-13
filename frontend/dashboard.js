@@ -652,7 +652,7 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
             
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || 'Scan failed');
+                throw new Error(error.error || 'Scan blocked');
             }
             
             const data = await response.json();
@@ -677,20 +677,29 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
         console.error('Scan error:', error);
 
         const content = `
-            <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
-                <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
-                    ❌ Scan Failed
+            <div style="text-align: center; background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%); padding: 30px; border-radius: 12px; margin-bottom: 20px; color: white;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🛡️</div>
+                <p style="margin: 0; font-size: 1.3rem; font-weight: 700; margin-bottom: 10px;">
+                    Scan Blocked
                 </p>
-                <p style="margin: 15px 0 0 0; color: #7f1d1d; font-size: 0.95rem; font-family: monospace; background: white; padding: 10px; border-radius: 6px;">
-                    ${error.message}
+                <p style="margin: 0; font-size: 1rem; opacity: 0.95; line-height: 1.6;">
+                    Your website's security settings are blocking our AI scan from crawling your site.
                 </p>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: left;">
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
-                    Please try again or contact support if the issue persists.
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; text-align: left;">
+                <p style="margin: 0 0 15px 0; color: #2d3748; font-weight: 600; font-size: 1.05rem;">
+                    This usually means:
                 </p>
-                <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
-                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none;">aivisibility@xeo.marketing</a>
+                <div style="color: #4a5568; font-size: 0.95rem; line-height: 1.8; margin-bottom: 20px;">
+                    <p style="margin: 0 0 8px 0;">• Your firewall or security plugin is blocking our crawler</p>
+                    <p style="margin: 0 0 8px 0;">• Your robots.txt file restricts automated scans</p>
+                    <p style="margin: 0 0 8px 0;">• Your hosting provider has aggressive bot protection</p>
+                </div>
+                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
+                    Need help? Contact our support team:
+                </p>
+                <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">
+                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none; font-weight: 600;">aivisibility@xeo.marketing</a>
                 </p>
             </div>
         `;
