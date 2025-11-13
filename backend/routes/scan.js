@@ -135,9 +135,9 @@ router.post('/guest', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Guest scan error:', error);
-    res.status(500).json({ 
-      error: 'Scan failed',
-      details: error.message 
+    res.status(500).json({
+      error: 'Scan blocked',
+      details: error.message
     });
   }
 });
@@ -447,7 +447,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     }
 
     res.status(500).json({
-      error: 'Scan failed',
+      error: 'Scan blocked',
       details: error.message
     });
   }
