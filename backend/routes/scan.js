@@ -4,6 +4,7 @@ const db = require('../db/database');
 
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
+const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -626,6 +627,66 @@ router.get('/:id', authenticateToken, async (req, res) => {
       voiceOptimization: scan.voice_optimization_score
     };
 
+    // ============================================
+    // HISTORIC COMPARISON LOGIC
+    // ============================================
+    let comparisonData = null;
+    let historicalTimeline = null;
+
+    try {
+      // Check if scan has domain field for comparison
+      if (scan.domain) {
+        // Fetch previous scan for the same domain by this user
+        const previousScanResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND id < $3
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 1`,
+          [userId, scan.domain, scanId]
+        );
+
+        if (previousScanResult.rows.length > 0) {
+          const previousScan = previousScanResult.rows[0];
+          comparisonData = calculateScanComparison(scan, previousScan);
+          console.log(`📊 Comparison calculated for scan ${scanId} vs ${previousScan.id}`);
+        }
+
+        // Fetch all scans for this domain for timeline visualization (last 10)
+        const historicalScansResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 10`,
+          [userId, scan.domain]
+        );
+
+        if (historicalScansResult.rows.length > 1) {
+          historicalTimeline = getHistoricalTimeline(historicalScansResult.rows);
+          console.log(`📈 Historical timeline generated with ${historicalScansResult.rows.length} data points`);
+        }
+      }
+    } catch (comparisonError) {
+      console.error('⚠️  Error calculating comparison (non-fatal):', comparisonError);
+      // Continue without comparison data - it's optional
+    }
+
     res.json({
       success: true,
       scan: {
@@ -636,7 +697,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
         nextBatchUnlock: nextBatchUnlock, // Next batch unlock info
-        batchesUnlocked: batchesUnlocked // How many batches were just unlocked
+        batchesUnlocked: batchesUnlocked, // How many batches were just unlocked
+        comparison: comparisonData, // Historic comparison data
+        historicalTimeline: historicalTimeline // Timeline data for visualization
       }
     });
 
