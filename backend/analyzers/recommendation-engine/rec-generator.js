@@ -1058,13 +1058,17 @@ function makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry) {
   const detectedIndustry = industry || 'General';
 
   // Extract image data
-  const images = scanEvidence.content?.images || [];
+  const images = scanEvidence.media?.images || [];
+  console.log(`[AltText] Found ${images.length} images in scanEvidence.media.images`);
+
   const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
   const imagesWithAlt = images.filter(img => img.alt && img.alt.trim() !== '');
 
   const totalImages = images.length;
   const missingAltCount = imagesWithoutAlt.length;
   const altCoverage = totalImages > 0 ? Math.round((imagesWithAlt.length / totalImages) * 100) : 0;
+
+  console.log(`[AltText] Images with alt: ${imagesWithAlt.length}, without alt: ${missingAltCount}, coverage: ${altCoverage}%`);
 
   // Build Finding
   const finding = `Status: ${missingAltCount === 0 ? 'Good' : 'Needs Improvement'}
