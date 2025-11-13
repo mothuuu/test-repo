@@ -604,11 +604,42 @@ const $ = cheerio.load(html);
   /**
    * Extract technical SEO elements
    */
+  /**
+   * Recursively extract all @type values from a schema object, including nested ones
+   */
+  extractAllSchemaTypes(obj, types = new Set()) {
+    if (!obj || typeof obj !== 'object') return types;
+
+    // Handle @type field (can be string or array)
+    if (obj['@type']) {
+      const typeValue = obj['@type'];
+      if (Array.isArray(typeValue)) {
+        typeValue.forEach(t => types.add(t));
+      } else {
+        types.add(typeValue);
+      }
+    }
+
+    // Recursively check all properties
+    for (const key in obj) {
+      if (key !== '@type' && obj[key] && typeof obj[key] === 'object') {
+        if (Array.isArray(obj[key])) {
+          obj[key].forEach(item => this.extractAllSchemaTypes(item, types));
+        } else {
+          this.extractAllSchemaTypes(obj[key], types);
+        }
+      }
+    }
+
+    return types;
+  }
+
   extractTechnical($, htmlData) {
     const html = typeof htmlData === 'string' ? htmlData : htmlData.html;
-    
+
     // Structured data detection (JSON-LD)
     const structuredData = [];
+    const allSchemaTypes = new Set(); // Track all schema types including nested ones
     const jsonLdScripts = $('script[type="application/ld+json"]');
     console.log(`[ContentExtractor] Found ${jsonLdScripts.length} JSON-LD script tags`);
 
@@ -617,31 +648,45 @@ const $ = cheerio.load(html);
         const scriptContent = $(el).html();
         console.log(`[ContentExtractor] Parsing JSON-LD #${idx + 1}, length: ${scriptContent?.length || 0} chars`);
         const data = JSON.parse(scriptContent);
-        const schemaType = data['@type'] || 'Unknown';
-        console.log(`[ContentExtractor] Successfully parsed: ${schemaType}`);
+
+        // Extract top-level type (can be string or array)
+        let topLevelType = data['@type'] || 'Unknown';
+        if (Array.isArray(topLevelType)) {
+          topLevelType = topLevelType[0]; // Use first type as primary
+        }
+        console.log(`[ContentExtractor] Successfully parsed: ${topLevelType}`);
+
         structuredData.push({
-          type: schemaType,
+          type: topLevelType,
           context: data['@context'] || '',
           raw: data
         });
+
+        // Extract all types including nested ones
+        const typesInThisSchema = this.extractAllSchemaTypes(data);
+        typesInThisSchema.forEach(type => allSchemaTypes.add(type));
+
       } catch (e) {
         console.log(`[ContentExtractor] Failed to parse JSON-LD #${idx + 1}:`, e.message);
       }
     });
 
     console.log(`[ContentExtractor] Total structured data found: ${structuredData.length}`);
-    console.log(`[ContentExtractor] Has Organization: ${structuredData.some(sd => sd.type === 'Organization')}`);
-    console.log(`[ContentExtractor] Has FAQPage: ${structuredData.some(sd => sd.type === 'FAQPage')}`);
-    console.log(`[ContentExtractor] Has LocalBusiness: ${structuredData.some(sd => sd.type === 'LocalBusiness')}`);
+    console.log(`[ContentExtractor] All schema types (including nested): ${Array.from(allSchemaTypes).join(', ')}`);
+    console.log(`[ContentExtractor] Has Organization: ${allSchemaTypes.has('Organization')}`);
+    console.log(`[ContentExtractor] Has FAQPage: ${allSchemaTypes.has('FAQPage')}`);
+    console.log(`[ContentExtractor] Has LocalBusiness: ${allSchemaTypes.has('LocalBusiness')}`);
+    console.log(`[ContentExtractor] Has Place: ${allSchemaTypes.has('Place')}`);
+    console.log(`[ContentExtractor] Has GeoCoordinates: ${allSchemaTypes.has('GeoCoordinates')}`);
 
     return {
       // Structured Data
       structuredData,
-      hasOrganizationSchema: structuredData.some(sd => sd.type === 'Organization'),
-      hasLocalBusinessSchema: structuredData.some(sd => sd.type === 'LocalBusiness'),
-      hasFAQSchema: structuredData.some(sd => sd.type === 'FAQPage'),
-      hasArticleSchema: structuredData.some(sd => sd.type === 'Article' || sd.type === 'BlogPosting'),
-      hasBreadcrumbSchema: structuredData.some(sd => sd.type === 'BreadcrumbList'),
+      hasOrganizationSchema: allSchemaTypes.has('Organization'),
+      hasLocalBusinessSchema: allSchemaTypes.has('LocalBusiness'),
+      hasFAQSchema: allSchemaTypes.has('FAQPage'),
+      hasArticleSchema: allSchemaTypes.has('Article') || allSchemaTypes.has('BlogPosting'),
+      hasBreadcrumbSchema: allSchemaTypes.has('BreadcrumbList'),
       
       // Hreflang
       hreflangTags: $('link[rel="alternate"][hreflang]').length,
