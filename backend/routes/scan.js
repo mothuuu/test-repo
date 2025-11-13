@@ -1246,7 +1246,10 @@ function transformV5ToSubfactors(v5Categories) {
 
     subfactors.trustAuthority = {
       authorBiosScore: (eeat.factors?.authorProfiles || 0) * 50,  // 0-2 → 0-100
-      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100
+      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100 (legacy)
+      professionalCertifications: (eeat.factors?.professionalCertifications || 0) * 83.3,  // 0-1.2 → 0-100
+      teamCredentials: (eeat.factors?.teamCredentials || 0) * 83.3,  // 0-1.2 → 0-100
+      industryMemberships: (authority.factors?.industryMemberships || 0) * 83.3,  // 0-1.2 → 0-100
       domainAuthorityScore: (authority.factors?.domainAuthority || 0) * 33,  // 0-3 → 0-100
       thoughtLeadershipScore: (authority.factors?.thoughtLeadership || 0) * 33,  // 0-3 → 0-100
       thirdPartyProfilesScore: (authority.factors?.socialAuthority || 0) * 50  // 0-2 → 0-100
