@@ -1,0 +1,386 @@
+================================================================================
+                    AI VISIBILITY TOOL - ARCHITECTURE DIAGRAM
+================================================================================
+
+LAYER 1: DATA EXTRACTION
+================================================================================
+
+┌─────────────────┐
+│   Website URL   │
+└────────┬────────┘
+         │
+         ▼
+    ┌────────────────────────────────────────┐
+    │      SiteCrawler (15 pages max)        │
+    ├────────────────────────────────────────┤
+    │ • Fetch sitemap.xml (multiple paths)   │
+    │ • Extract internal links               │
+    │ • Prioritize diverse content types     │
+    │ • Aggregate metrics across pages       │
+    └────────┬───────────────────────────────┘
+             │
+             ├─────────────────────────────────────────────┐
+             │                                             │
+             ▼                                             ▼
+      ┌────────────────┐                          ┌────────────────┐
+      │   Page 1 URL   │                          │   Page N URL   │
+      │   (Homepage)   │                          │   (FAQ page)   │
+      └────────┬───────┘                          └────────┬───────┘
+               │                                          │
+               ├──────────────────────────────────────────┤
+               │                                          │
+               ▼                                          ▼
+      ┌──────────────────────────────────────────────────────────┐
+      │    ContentExtractor (for each page)                      │
+      ├──────────────────────────────────────────────────────────┤
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ fetchHTML() - Get page with fallback user agents   │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ extractTechnical() - JSON-LD & schema.org           │  │
+      │ │ • Detects: Organization, FAQPage, Article, etc     │  │
+      │ │ • Recursive type extraction (nested schemas)        │  │
+      │ │ • Canonical, hreflang, sitemap detection           │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ extractContent() - Text structure                  │  │
+      │ │ • Headings (H1-H6), paragraphs (prioritized)       │  │
+      │ │ • FAQs (4 detection methods)                       │  │
+      │ │ • Lists, tables, readability metrics               │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ extractMetadata() - Meta tags                       │  │
+      │ │ • Title, description, author, keywords             │  │
+      │ │ • Open Graph, Twitter Cards                        │  │
+      │ │ • Published/modified dates                         │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ extractStructure() - HTML semantics                │  │
+      │ │ • Semantic HTML5 (main, article, section)          │  │
+      │ │ • ARIA landmarks, heading hierarchy                │  │
+      │ │ • Internal/external links, breadcrumbs             │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      │ ┌─────────────────────────────────────────────────────┐  │
+      │ │ extractMedia() - Images, videos, audio             │  │
+      │ │ • Images with alt text coverage %                  │  │
+      │ │ • Video transcripts & captions                     │  │
+      │ └─────────────────────────────────────────────────────┘  │
+      └────────┬───────────────────────────────────────────────────┘
+               │
+               ▼
+      ┌──────────────────────────────────────┐
+      │    EntityAnalyzer                    │
+      ├──────────────────────────────────────┤
+      │ • Extract entities from schema.org   │
+      │ • Extract from text (NER)            │
+      │ • Map relationships                  │
+      │ • Geographic analysis                │
+      │ • Professional credentials           │
+      └──────────────────────────────────────┘
+
+LAYER 2: EVIDENCE AGGREGATION & SCORING
+================================================================================
+
+      Extracted Evidence (15 pages)
+             │
+             ▼
+      ┌──────────────────────────────────────────────────────┐
+      │  Aggregate Site-Wide Metrics                         │
+      ├──────────────────────────────────────────────────────┤
+      │ • % pages with FAQs, schema, question headings       │
+      │ • % pages with proper H1, alt text coverage          │
+      │ • Average word count, readability score              │
+      │ • Pillar pages, topic clusters                       │
+      │ • Sitemap detection, internal linking                │
+      └────────────────┬─────────────────────────────────────┘
+                       │
+                       ▼
+            ┌──────────────────────────────────────────┐
+            │  V5EnhancedRubricEngine.analyze()        │
+            ├──────────────────────────────────────────┤
+            │  Score 8 Categories (weighted):          │
+            │                                          │
+            │  • AI Readability (10%)                  │
+            │    ├─ altTextScore                       │
+            │    ├─ captionsTranscriptsScore           │
+            │    └─ crossMediaScore                    │
+            │                                          │
+            │  • AI Search Readiness (20%) ⭐BIGGEST  │
+            │    ├─ questionHeadingsScore              │
+            │    ├─ faqScore                           │
+            │    ├─ snippetEligibleScore               │
+            │    ├─ pillarPagesScore                   │
+            │    └─ linkedSubpagesScore                │
+            │                                          │
+            │  • Content Structure (15%)               │
+            │    ├─ headingHierarchyScore              │
+            │    └─ navigationScore                    │
+            │                                          │
+            │  • Technical Setup (18%)                 │
+            │    ├─ structuredDataScore                │
+            │    ├─ sitemapScore                       │
+            │    └─ crawlerAccessScore                 │
+            │                                          │
+            │  • Trust & Authority (12%)               │
+            │    ├─ authorBiosScore                    │
+            │    ├─ certificationsScore ◄─ CERT LIB   │
+            │    └─ domainAuthorityScore               │
+            │                                          │
+            │  • Content Freshness (8%)                │
+            │  • Speed & UX (5%)                       │
+            │  • Voice Optimization (12%)              │
+            │                                          │
+            └────────────┬──────────────────────────────┘
+                         │
+                         ▼
+            ┌──────────────────────────────────────┐
+            │  Transform V5 to Subfactor Format    │
+            │  (flatten nested structures)          │
+            │  (scale to 0-100 range)              │
+            └────────────┬─────────────────────────┘
+
+LAYER 3: ISSUE DETECTION
+================================================================================
+
+       Subfactor Scores (0-100 each)
+             │
+             ▼
+      ┌──────────────────────────────────────────────────────┐
+      │  IssueDetector.detectPageIssues()                    │
+      ├──────────────────────────────────────────────────────┤
+      │                                                      │
+      │  Compare each subfactor against THRESHOLDS           │
+      │                                                      │
+      │  Example:                                            │
+      │  ┌────────────────────────────────────────┐          │
+      │  │ structuredDataScore = 45               │          │
+      │  │ THRESHOLD = 75                         │          │
+      │  │ GAP = 30                               │          │
+      │  │ SEVERITY = "high" (gap > 25)           │          │
+      │  │ PRIORITY = (18 × 30) / 10 = 54         │          │
+      │  │ STATUS = ISSUE DETECTED ✓              │          │
+      │  └────────────────────────────────────────┘          │
+      │                                                      │
+      │  Process:                                            │
+      │  • Loop through all 50+ subfactors                  │
+      │  • Create issue if score < threshold                │
+      │  • Calculate severity (critical/high/med/low)       │
+      │  • Calculate priority (category weight × gap)       │
+      │  • Extract relevant evidence                         │
+      │  • Sort by priority (descending)                    │
+      │                                                      │
+      └────────────┬─────────────────────────────────────────┘
+                   │
+                   ▼
+         ┌──────────────────────────┐
+         │  Issues Array (sorted)   │
+         │  by priority             │
+         ├──────────────────────────┤
+         │ Issue #1 (priority: 54)  │
+         │ Issue #2 (priority: 48)  │
+         │ Issue #3 (priority: 42)  │
+         │ ...                      │
+         └────────┬─────────────────┘
+
+LAYER 4: RECOMMENDATION GENERATION (HYBRID)
+================================================================================
+
+       Issues Array (Top 5 prioritized)
+             │
+             ├─────────────────────────────────────┐
+             │                                     │
+             ▼                                     ▼
+      ┌──────────────────┐              ┌──────────────────┐
+      │  Top 5 Issues    │              │  Issues 6+       │
+      │  (Premium)       │              │  (Templates)     │
+      └────────┬─────────┘              └────────┬─────────┘
+               │                                 │
+               ▼                                 ▼
+      ┌──────────────────────────────┐  ┌─────────────────────┐
+      │ generateRecommendations()    │  │ RECOMMENDATION_     │
+      │ (for each top 5 issue):      │  │ TEMPLATES           │
+      ├──────────────────────────────┤  ├─────────────────────┤
+      │                              │  │ structuredDataScore:│
+      │  Step 1: Check Library       │  │  title: "Implement" │
+      │  ├─ hasLibrary(industry)     │  │  difficulty: "Easy" │
+      │  └─ loadLibrary()            │  │  gain: 18 points    │
+      │                              │  │                     │
+      │  Step 2: AI Generation       │  │ faqScore:           │
+      │  ├─ ChatGPT prompt           │  │  title: "Add FAQ"   │
+      │  ├─ Code snippet             │  │  gain: 12 points    │
+      │  └─ Custom explanation       │  │                     │
+      │                              │  │ ... (10+ templates) │
+      │  Step 3: Extract Evidence    │  │                     │
+      │  └─ Pull from findings       │  └─────────────────────┘
+      │                              │
+      │  Step 4: Validate Quality    │
+      │  └─ Confidence check         │
+      │                              │
+      └────────┬─────────────────────┘
+               │
+               ├────────────────────────────────────────┐
+               │                                        │
+               ▼                                        ▼
+      ┌──────────────────────────┐          ┌────────────────────┐
+      │  AI-Generated Rec        │          │  Template Rec      │
+      ├──────────────────────────┤          ├────────────────────┤
+      │ title: "Implement..."    │          │ title: "Implement" │
+      │ finding: "Currently..."  │          │ finding: "..."     │
+      │ actionSteps: [...]       │          │ actionSteps: [...] │
+      │ codeSnippet: "..."       │          │ (no code)          │
+      │ customizedImplement: "..." │         └────────────────────┘
+      │ evidence: {...}          │
+      └──────────────────────────┘
+
+       All Recommendations Combined
+             │
+             ▼
+      ┌────────────────────────────────────────┐
+      │  FAQ Generation (DIY+ only)            │
+      │  generateCustomizedFAQ()               │
+      ├────────────────────────────────────────┤
+      │                                        │
+      │  Industry has library? YES             │
+      │  ├─ Load FAQ library                   │
+      │  ├─ Select top 5 by priority           │
+      │  ├─ Extract company facts              │
+      │  │  (uptime %, company name, etc)      │
+      │  ├─ Customize with Claude              │
+      │  ├─ Fill placeholders                  │
+      │  └─ Return JSON-LD + code              │
+      │                                        │
+      │  OR: Generate with Claude fallback     │
+      │                                        │
+      └────────────┬──────────────────────────┘
+
+LAYER 5: TIER FILTERING & DELIVERY
+================================================================================
+
+     All Recommendations + FAQ
+             │
+             ▼
+      ┌──────────────────────────────────────────────────────┐
+      │  filterByTier(recommendations, tier, userProgress)  │
+      ├──────────────────────────────────────────────────────┤
+      │                                                      │
+      │  TIER: guest                                         │
+      │  ├─ Max Recommendations: 0 (NONE)                   │
+      │  ├─ Show Code: NO                                   │
+      │  ├─ Show FAQ: NO                                    │
+      │  └─ CTA: "Sign up free"                             │
+      │                                                      │
+      │  TIER: free                                          │
+      │  ├─ Max Recommendations: 3 (TOP 3)                  │
+      │  ├─ Show Code: NO                                   │
+      │  ├─ Show FAQ: NO (preview only)                    │
+      │  └─ CTA: "Upgrade to DIY"                           │
+      │                                                      │
+      │  TIER: diy                                           │
+      │  ├─ Progressive Unlock: YES                          │
+      │  ├─ Per Unlock: 5 recommendations                    │
+      │  ├─ Interval: 5 days                                 │
+      │  ├─ Show Code: YES                                  │
+      │  ├─ Show FAQ: YES (full)                            │
+      │  └─ Use user_progress data                          │
+      │                                                      │
+      │  TIER: pro                                           │
+      │  ├─ Max Recommendations: ALL (300+)                 │
+      │  ├─ Show Code: YES                                  │
+      │  ├─ Show FAQ: YES (full)                            │
+      │  └─ Competitor Analysis: YES                        │
+      │                                                      │
+      └────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+         ┌────────────────────────────────┐
+         │  Tier-Filtered Response        │
+         ├────────────────────────────────┤
+         │ {                              │
+         │   scan: {                      │
+         │     id, url, total_score,      │
+         │     categories: {...},         │
+         │     recommendations: [...]  ◄─ Tier-limited
+         │     faq: {...}             ◄─ Tier-limited
+         │     unlock_schedule: {...} ◄─ DIY only
+         │   }                            │
+         │ }                              │
+         └────────────────────────────────┘
+
+================================================================================
+LIBRARY ARCHITECTURE (For Certifications)
+================================================================================
+
+                    ┌─────────────────────────────────┐
+                    │  Certification Library System    │
+                    └─────────────────┬───────────────┘
+                                      │
+                ┌─────────────────────┼─────────────────────┐
+                │                     │                     │
+                ▼                     ▼                     ▼
+         ┌────────────────┐  ┌──────────────────┐  ┌────────────────┐
+         │ certification  │  │ Load/Normalize   │  │ Industry-      │
+         │ -detector.js   │  │ Industry         │  │ specific       │
+         │                │  │                  │  │ JSON libraries │
+         │ • Scan for     │  │ • Healthcare →   │  │                │
+         │   cert names   │  │   HIPAA, SOC2    │  │ healthcare.    │
+         │ • Look in      │  │ • Finance →      │  │ json           │
+         │   schema.org   │  │   PCI-DSS, GLBA  │  │                │
+         │ • Pattern scan │  │ • Cybersecurity →│  │ finance.json   │
+         │   for badges   │  │   ISO27001, CEH  │  │                │
+         │                │  │ • UCaaS →        │  │ security.json  │
+         │                │  │   SOC2, ISO27001 │  │                │
+         └────────┬───────┘  └────────┬─────────┘  └────────┬───────┘
+                  │                   │                     │
+                  └───────────────────┼─────────────────────┘
+                                      │
+                                      ▼
+                        ┌──────────────────────────────┐
+                        │ calculateCertifications      │
+                        │ Score()                      │
+                        ├──────────────────────────────┤
+                        │ • Count critical certs: ✓    │
+                        │ • Count important certs: ✓   │
+                        │ • Score = (found / expected) │
+                        │ • Range: 0-100               │
+                        └──────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌──────────────────────────────┐
+                        │ Generate Certification       │
+                        │ Recommendations              │
+                        ├──────────────────────────────┤
+                        │ • Show missing certs         │
+                        │ • Priority by industry need  │
+                        │ • Code snippet (schema)      │
+                        │ • Impact estimate            │
+                        └──────────────────────────────┘
+
+================================================================================
+KEY METRICS USED IN SCORING
+================================================================================
+
+SITE-WIDE AGGREGATION (from 15 pages):
+┌─────────────────────────────────────────────────────────┐
+│ • % pages with question headings                        │
+│ • % pages with FAQs (any method)                        │
+│ • % pages with FAQ schema                              │
+│ • % pages with lists (2+)                              │
+│ • % pages with tables                                  │
+│ • Average Flesch reading score                         │
+│ • % pages with proper H1                               │
+│ • % pages with semantic HTML                          │
+│ • % pages with good alt text (90%+ coverage)           │
+│ • % pages with schema markup                           │
+│ • % pages with Organization schema                     │
+│ • % pages with last-modified metadata                  │
+│ • % pages with current year mention                    │
+│ • Pillar page count (1500+ words, 5+ subheadings)     │
+│ • Topic cluster coverage (internal linking analysis)    │
+│ • Average word count per page                          │
+│ • Average images per page                              │
+│ • Entity density per page                              │
+│ • Location/geo content coverage                        │
+└─────────────────────────────────────────────────────────┘
+
+================================================================================
+
