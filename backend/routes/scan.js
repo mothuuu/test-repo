@@ -1093,7 +1093,7 @@ async function performCompetitorScan(url) {
     // Run V5 Rubric Engine for scoring only
     console.log('📊 Running V5 Rubric Engine (scores only)...');
     const engine = new V5RubricEngine(url, {
-      maxPages: 15,  // Reverted from 50 to 15 to fix scan failures
+      maxPages: 25,  // Set to 25 pages per user request
       timeout: 10000
     });
     const v5Results = await engine.analyze();
@@ -1274,7 +1274,7 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
     const engine = new V5RubricEngine(url, {
-      maxPages: 15,  // Reverted from 50 to 15 to fix scan failures
+      maxPages: 25,  // Set to 25 pages per user request
       timeout: 10000,
       industry: userIndustry  // Pass industry for certification detection
     });
