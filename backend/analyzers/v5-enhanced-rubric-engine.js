@@ -1,5 +1,6 @@
 const SiteCrawler = require('./site-crawler');
 const ContentExtractor = require('./content-extractor');
+const { detectCertifications, calculateCertificationScore } = require('./recommendation-engine/certification-detector');
 
 /**
  * V5 Enhanced Rubric Scoring Engine
@@ -23,6 +24,8 @@ class V5EnhancedRubricEngine {
     this.url = url;
     this.options = options;
     this.siteData = null;
+    this.industry = options.industry || null;
+    this.certificationData = null;
 
     // Category weights (from PDF v3.0)
     this.weights = {
@@ -95,6 +98,15 @@ class V5EnhancedRubricEngine {
 
       console.log(`[V5-Enhanced] Crawled ${this.siteData.pageCount} pages`);
 
+      // Step 1.5: Detect certifications if industry is provided
+      if (this.industry) {
+        console.log(`[V5-Enhanced] Detecting certifications for industry: ${this.industry}`);
+        this.certificationData = detectCertifications(this.siteData, this.industry);
+      } else {
+        console.log(`[V5-Enhanced] No industry specified, skipping certification detection`);
+        this.certificationData = null;
+      }
+
       // Step 2: Analyze each category using site-wide data
       const categoryScores = {
         aiSearchReadiness: this.analyzeAISearchReadiness(),
@@ -123,6 +135,7 @@ class V5EnhancedRubricEngine {
         siteMetrics: this.siteData.siteMetrics,
         pageCount: this.siteData.pageCount,
         sitemapDetected: this.siteData.sitemapDetected || false,
+        certificationData: this.certificationData, // Include certification analysis
         metadata: {
           analyzedAt: new Date().toISOString(),
           version: '5.0-enhanced-hybrid'
@@ -721,8 +734,20 @@ class V5EnhancedRubricEngine {
     const hasAuthor = firstPage.metadata.author ? 1 : 0;
     factors.authorProfiles = hasAuthor ? 1.2 : 0.4;
 
-    // Factor 2: Professional Credential Documentation
-    factors.credentials = this.detectCredentials(firstPage) ? 1.2 : 0;
+    // Factor 2: Professional Credential Documentation (Enhanced with Certification Library)
+    if (this.certificationData) {
+      // Use certification detection results
+      const certScore = calculateCertificationScore(this.certificationData);
+      // Map 0-100 score to 0-1.2 scale for factor scoring
+      factors.professionalCertifications = (certScore / 100) * 1.2;
+
+      // Additional factor for team credentials (Person schema with credentials)
+      const teamCredScore = this.detectTeamCredentials();
+      factors.teamCredentials = teamCredScore;
+    } else {
+      // Fallback to basic detection
+      factors.credentials = this.detectCredentials(firstPage) ? 1.2 : 0;
+    }
 
     // Factor 3: Content Attribution & Byline Consistency
     factors.attribution = hasAuthor ? 1.2 : 0.4;
@@ -738,9 +763,10 @@ class V5EnhancedRubricEngine {
     ]);
 
     const totalScore = Object.values(factors).reduce((a, b) => a + b, 0);
+    const maxScore = this.certificationData ? 7.2 : 6.0; // 6 factors with cert data, 5 without
 
     return {
-      score: (totalScore / 6.0) * 100,
+      score: (totalScore / maxScore) * 100,
       factors
     };
   }
@@ -761,8 +787,12 @@ class V5EnhancedRubricEngine {
       { threshold: 40, score: 0.8 }
     ], 0.4);
 
-    // Factor 2: Industry-Specific Citation Network
-    factors.industryCitations = 0.8; // Base score
+    // Factor 2: Industry Memberships & Associations (Enhanced)
+    if (this.certificationData) {
+      factors.industryMemberships = this.detectIndustryMemberships();
+    } else {
+      factors.industryCitations = 0.8; // Fallback base score
+    }
 
     // Factor 3: Content Citation & Reference Quality
     factors.outboundLinks = 0.8; // Would need link analysis
@@ -992,6 +1022,87 @@ class V5EnhancedRubricEngine {
     const text = evidence.content.bodyText.toLowerCase();
     const credentialKeywords = ['certified', 'certification', 'license', 'accredited', 'phd', 'mba', 'degree'];
     return credentialKeywords.some(k => text.includes(k));
+  }
+
+  /**
+   * Detect team member credentials (Person schema with hasCredential)
+   * @returns {number} - Score from 0 to 1.2
+   */
+  detectTeamCredentials() {
+    let teamMembersWithCredentials = 0;
+    let totalTeamMembers = 0;
+
+    // Scan all pages for Person schemas
+    this.siteData.pages.forEach(page => {
+      if (!page.evidence.technical || !page.evidence.technical.schemas) return;
+
+      page.evidence.technical.schemas.forEach(schema => {
+        if (schema['@type'] === 'Person') {
+          totalTeamMembers++;
+          if (schema.hasCredential || schema.credential || schema.award || schema.honorificSuffix) {
+            teamMembersWithCredentials++;
+          }
+        }
+      });
+    });
+
+    if (totalTeamMembers === 0) {
+      // No Person schemas found, check for basic team mentions
+      const firstPage = this.siteData.pages[0].evidence;
+      const hasTeamPage = firstPage.content.bodyText.toLowerCase().includes('team') ||
+                          firstPage.content.bodyText.toLowerCase().includes('about us');
+      return hasTeamPage ? 0.4 : 0;
+    }
+
+    // Calculate score based on percentage with credentials
+    const credentialPercentage = (teamMembersWithCredentials / totalTeamMembers) * 100;
+
+    return this.scoreTier(credentialPercentage, [
+      { threshold: 75, score: 1.2 },
+      { threshold: 50, score: 0.8 },
+      { threshold: 25, score: 0.4 }
+    ], 0);
+  }
+
+  /**
+   * Detect industry memberships (Organization.memberOf)
+   * @returns {number} - Score from 0 to 1.2
+   */
+  detectIndustryMemberships() {
+    let hasMemberships = false;
+    const memberships = [];
+
+    // Scan all pages for Organization schemas with memberOf
+    this.siteData.pages.forEach(page => {
+      if (!page.evidence.technical || !page.evidence.technical.schemas) return;
+
+      page.evidence.technical.schemas.forEach(schema => {
+        if (schema['@type'] === 'Organization' && schema.memberOf) {
+          hasMemberships = true;
+          if (Array.isArray(schema.memberOf)) {
+            memberships.push(...schema.memberOf);
+          } else {
+            memberships.push(schema.memberOf);
+          }
+        }
+      });
+    });
+
+    if (!hasMemberships) {
+      // Check for membership keywords in text
+      const firstPage = this.siteData.pages[0].evidence;
+      const text = firstPage.content.bodyText.toLowerCase();
+      const membershipKeywords = ['member of', 'association', 'partner', 'certified partner', 'industry member'];
+      const hasKeyword = membershipKeywords.some(k => text.includes(k));
+      return hasKeyword ? 0.6 : 0;
+    }
+
+    // Score based on number of memberships
+    const membershipCount = memberships.length;
+    return this.scoreTier(membershipCount, [
+      { threshold: 3, score: 1.2 },
+      { threshold: 1, score: 0.8 }
+    ], 0);
   }
 
   /**

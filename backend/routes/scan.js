@@ -1211,7 +1211,8 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     console.log('📊 Running V5 Rubric Engine...');
     const engine = new V5RubricEngine(url, {
       maxPages: 50,  // Increased from 15 to capture FAQs across more pages
-      timeout: 10000
+      timeout: 10000,
+      industry: userIndustry  // Pass industry for certification detection
     });
     const v5Results = await engine.analyze();
 
@@ -1233,6 +1234,16 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
 
     const totalScore = v5Results.totalScore;
     const scanEvidence = engine.evidence;
+
+    // Add certification data to scanEvidence for recommendation generation
+    if (v5Results.certificationData) {
+      scanEvidence.certificationData = v5Results.certificationData;
+      console.log(`🏆 Certification data added to scanEvidence:`, {
+        detected: v5Results.certificationData.detected?.length || 0,
+        missing: v5Results.certificationData.missing?.length || 0,
+        coverage: v5Results.certificationData.overallCoverage || 0
+      });
+    }
 
     // Transform V5 categories structure to flat subfactor scores for issue detection
     // The V5 engine returns nested structures, but issue detector expects flat key-value pairs

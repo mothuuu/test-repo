@@ -18,6 +18,13 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 const { loadLibrary, hasLibrary } = require('./faq-library-loader');
 const { generateCustomizedFAQ } = require('./faq-customizer');
 
+// ✅ Certification recommendation generators
+const {
+  makeProgrammaticCertificationRecommendation,
+  makeProgrammaticTeamCredentialsRecommendation,
+  makeProgrammaticMembershipsRecommendation
+} = require('./certification-recommendation-generators');
+
 // -----------------------------------------
 // Inline helpers (no external file imports)
 // -----------------------------------------
@@ -177,6 +184,30 @@ const RECOMMENDATION_TEMPLATES = {
     typicalTimeToFix: "15–30 minutes",
     difficulty: "Easy",
     estimatedGain: 8
+  },
+  professionalCertifications: {
+    title: "Display Industry Certifications",
+    impactArea: "Trust & Authority (E-E-A-T)",
+    whyItMatters: "Professional certifications demonstrate expertise, compliance, and industry standards. AI systems heavily weight these trust signals when citing sources.",
+    typicalTimeToFix: "20–30 minutes",
+    difficulty: "Easy",
+    estimatedGain: 22
+  },
+  teamCredentials: {
+    title: "Add Team Member Credentials",
+    impactArea: "Expertise & Authority (E-E-A-T)",
+    whyItMatters: "Documenting team expertise with Person schema and credentials boosts E-E-A-T signals. AI systems look for verifiable expertise when determining source authority.",
+    typicalTimeToFix: "1–2 hours",
+    difficulty: "Medium",
+    estimatedGain: 18
+  },
+  industryMemberships: {
+    title: "Display Industry Memberships & Associations",
+    impactArea: "Authority Network & Trust",
+    whyItMatters: "Industry memberships demonstrate active participation in professional communities. These network signals strengthen your authority and credibility with AI systems.",
+    typicalTimeToFix: "15–20 minutes",
+    difficulty: "Easy",
+    estimatedGain: 14
   }
 };
 
@@ -378,6 +409,39 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         const rec = makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry);
         if (rec) {
           console.log(`✅ Crawl accessibility recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2o) Professional Certifications - Industry credentials and trust signals
+      if (issue.subfactor === 'professionalCertifications') {
+        console.log(`✅ Detected professionalCertifications issue - calling programmatic certification generator`);
+        const rec = makeProgrammaticCertificationRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Professional certification recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2p) Team Credentials - Team member expertise documentation
+      if (issue.subfactor === 'teamCredentials') {
+        console.log(`✅ Detected teamCredentials issue - calling programmatic team credentials generator`);
+        const rec = makeProgrammaticTeamCredentialsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Team credentials recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2q) Industry Memberships - Professional associations and network signals
+      if (issue.subfactor === 'industryMemberships') {
+        console.log(`✅ Detected industryMemberships issue - calling programmatic memberships generator`);
+        const rec = makeProgrammaticMembershipsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Industry memberships recommendation generated successfully`);
           out.push(rec);
           continue;
         }
