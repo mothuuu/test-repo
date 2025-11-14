@@ -16,6 +16,7 @@
     let conversationHistory = [];
     let userContext = {};
     let firstTimeOpen = true; // Track if this is the first time chat is opened
+    let hasUserSentMessage = false; // Track if user has sent their first message
 
     // Initialize chat widget when DOM is ready
     if (document.readyState === 'loading') {
@@ -195,6 +196,9 @@
 
         if (!message) return;
 
+        // Mark that user has sent their first message (to hide sample questions)
+        hasUserSentMessage = true;
+
         // Add user message to chat
         addMessage(message, 'user');
 
@@ -253,11 +257,14 @@
         const messagesContainer = document.getElementById('chat-messages');
         const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
+        // Use markdown rendering for bot messages, escape HTML for user messages
+        const formattedText = sender === 'bot' ? renderMarkdown(text) : escapeHtml(text);
+
         const messageHTML = `
             <div class="chat-message ${sender}">
                 <div class="chat-message-avatar">${sender === 'bot' ? '🤖' : '👤'}</div>
                 <div class="chat-message-content">
-                    <p class="chat-message-text">${escapeHtml(text)}</p>
+                    <p class="chat-message-text">${formattedText}</p>
                     <div class="chat-message-time">${time}</div>
                 </div>
             </div>
@@ -265,8 +272,8 @@
 
         messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
 
-        // Show quick replies if provided
-        if (quickReplies && quickReplies.length > 0) {
+        // Show quick replies if provided, but hide them after first user message
+        if (quickReplies && quickReplies.length > 0 && !hasUserSentMessage) {
             showQuickReplies(quickReplies);
         } else {
             hideQuickReplies();
@@ -320,5 +327,47 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // Render markdown safely (escapes HTML first, then applies markdown)
+    function renderMarkdown(text) {
+        if (!text) return '';
+
+        // First escape HTML to prevent XSS
+        let safe = escapeHtml(text);
+
+        // Then apply markdown transformations
+        let html = safe
+            // Headers
+            .replace(/^### (.*$)/gim, '<h3 style="font-weight: 700; margin: 12px 0 8px 0; font-size: 1.1em;">$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2 style="font-weight: 700; margin: 16px 0 10px 0; font-size: 1.2em;">$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1 style="font-weight: 700; margin: 18px 0 12px 0; font-size: 1.3em;">$1</h1>')
+
+            // Bold: **text**
+            .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+
+            // Italic: *text*
+            .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+
+            // Code blocks: ```code```
+            .replace(/```([\s\S]*?)```/gim, '<pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 6px; margin: 10px 0; overflow-x: auto; font-size: 13px;"><code>$1</code></pre>')
+
+            // Inline code: `code`
+            .replace(/`([^`]+)`/gim, '<code style="background: #e2e8f0; color: #2d3748; padding: 2px 6px; border-radius: 4px; font-size: 13px;">$1</code>')
+
+            // Bullet lists: - item or * item
+            .replace(/^[\-\*] (.+)$/gim, '<li style="margin-left: 20px;">$1</li>')
+
+            // Numbered lists: 1. item
+            .replace(/^\d+\. (.+)$/gim, '<li style="margin-left: 20px; list-style-type: decimal;">$1</li>')
+
+            // Horizontal rules: ---
+            .replace(/^---$/gim, '<hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e8f0;">')
+
+            // Line breaks (double newline = paragraph break, single = line break)
+            .replace(/\n\n/gim, '<br><br>')
+            .replace(/\n/gim, '<br>');
+
+        return html;
     }
 })();
