@@ -6131,6 +6131,57 @@ function buildCurrentState(issue, scanEvidence) {
     return `- No video content detected\n- If you have videos, ensure they have captions and full transcripts`;
   }
 
+  // Professional Certifications
+  if (sub === 'professionalCertifications') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const detectedNames = certData.detected.map(c => c.name).join(', ') || 'None';
+      const missingCritical = certData.missing.filter(c => c.priority === 'critical').map(c => c.name);
+      const missingImportant = certData.missing.filter(c => c.priority === 'important').map(c => c.name);
+
+      let state = `- Industry: ${certData.industry}\n`;
+      state += `- Certifications detected: ${certData.detected.length > 0 ? detectedNames : 'None'}\n`;
+      state += `- Coverage: ${certData.overallCoverage}%\n`;
+
+      if (missingCritical.length > 0) {
+        state += `- Missing CRITICAL certifications (${missingCritical.length}): ${missingCritical.slice(0, 3).join(', ')}${missingCritical.length > 3 ? ` and ${missingCritical.length - 3} more` : ''}\n`;
+      }
+      if (missingImportant.length > 0) {
+        state += `- Missing IMPORTANT certifications (${missingImportant.length}): ${missingImportant.slice(0, 3).join(', ')}${missingImportant.length > 3 ? ` and ${missingImportant.length - 3} more` : ''}\n`;
+      }
+
+      state += `\n**CRITICAL INSTRUCTION**: Use the ACTUAL missing certifications listed above in your recommendation. DO NOT use generic placeholders like "Certified Digital Marketing Professional". Focus on the top 1-2 missing certifications from the lists above.`;
+      return state;
+    }
+    return `- No certification schema detected\n- No industry-specific certification data available\n- Add certification badges and schema markup to establish trust`;
+  }
+
+  // Team Credentials
+  if (sub === 'teamCredentials') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const teamCerts = certData.missing.filter(c => c.recommendation?.impact_areas?.includes('Team Expertise'));
+      if (teamCerts.length > 0) {
+        const certNames = teamCerts.slice(0, 5).map(c => c.name).join(', ');
+        return `- Industry: ${certData.industry}\n- Recommended team certifications: ${certNames}\n- No Person schema detected for team members\n\n**CRITICAL INSTRUCTION**: Use the actual certifications listed above (${certNames}) in your recommendation, not generic placeholders.`;
+      }
+    }
+    return `- No Person schema detected for team members\n- No team credentials documented\n- Add Person schema with hasCredential properties`;
+  }
+
+  // Industry Memberships
+  if (sub === 'industryMemberships') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const memberships = certData.missing.filter(c => c.recommendation?.category === 'association');
+      if (memberships.length > 0) {
+        const membershipNames = memberships.slice(0, 5).map(c => c.name).join(', ');
+        return `- Industry: ${certData.industry}\n- Recommended memberships: ${membershipNames}\n- No Organization.memberOf schema detected\n\n**CRITICAL INSTRUCTION**: Use the actual industry memberships listed above (${membershipNames}) in your recommendation, not generic placeholders.`;
+      }
+    }
+    return `- No Organization.memberOf schema detected\n- No industry memberships documented\n- Add memberOf properties to Organization schema`;
+  }
+
   // Generic fallback with more context
   return `- Current score: ${issue.currentScore}/100 (target: ${issue.threshold}/100)\n- Gap: ${issue.gap} points\n- Page word count: ${content.wordCount || 0}\n- Improvement needed for AI visibility`;
 }
