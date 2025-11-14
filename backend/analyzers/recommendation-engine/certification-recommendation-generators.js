@@ -12,28 +12,43 @@ const certLib = require('./certification-library-loader');
  * Generate professional certification recommendation with library data
  */
 function makeProgrammaticCertificationRecommendation(issue, scanEvidence, industry) {
+  console.log(`\n🏆 [Programmatic Cert Generator] Starting for industry: ${industry}`);
+
   const library = certLib.loadLibrary(industry);
 
   if (!library) {
-    console.log('⚠️  No certification library for this industry, falling back to generic recommendation');
+    console.log(`⚠️  [Programmatic Cert Generator] No certification library for industry "${industry}", falling back to ChatGPT/template`);
+    console.log(`   Available industries: cybersecurity, healthcare, fintech, msp-var, telecom-csp`);
     return null; // Fall back to ChatGPT/template
   }
+
+  console.log(`✅ [Programmatic Cert Generator] Library loaded: ${library.industry} (${library.certifications?.length || 0} certifications)`);
 
   // Get certification data from scanEvidence
   const certData = scanEvidence.certificationData;
   if (!certData) {
-    console.log('⚠️  No certification data in scanEvidence');
+    console.log(`⚠️  [Programmatic Cert Generator] No certification data in scanEvidence`);
+    console.log(`   scanEvidence keys: ${Object.keys(scanEvidence).join(', ')}`);
     return null;
   }
+
+  console.log(`✅ [Programmatic Cert Generator] Certification data found:`);
+  console.log(`   - Detected: ${certData.detected?.length || 0}`);
+  console.log(`   - Missing: ${certData.missing?.length || 0}`);
+  console.log(`   - Coverage: ${certData.overallCoverage}%`);
 
   // Get top missing certifications by priority
   const missingCritical = certData.missing.filter(c => c.priority === 'critical').slice(0, 3);
   const missingImportant = certData.missing.filter(c => c.priority === 'important').slice(0, 2);
 
   if (missingCritical.length === 0 && missingImportant.length === 0) {
-    console.log('✅ No missing certifications detected');
+    console.log('✅ [Programmatic Cert Generator] No missing certifications detected - site has great coverage!');
     return null;
   }
+
+  console.log(`📋 [Programmatic Cert Generator] Missing certifications to recommend:`);
+  console.log(`   - Critical: ${missingCritical.map(c => c.name).join(', ')}`);
+  console.log(`   - Important: ${missingImportant.map(c => c.name).join(', ')}`);
 
   // Focus on the highest priority missing certification
   const topMissing = missingCritical[0] || missingImportant[0];
