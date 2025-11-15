@@ -614,6 +614,7 @@
             border-radius: 20px;
             border: 2px solid #e2e8f0;
             transition: all 0.3s;
+            position: relative;
         }
 
         .pricing-card.featured {
@@ -790,10 +791,118 @@
             opacity: 0.6;
         }
 
+        /* Compare Features Section */
+        .compare-section {
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .compare-button {
+            padding: 16px 40px;
+            background: white;
+            color: #00B9DA;
+            border: 2px solid #00B9DA;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .compare-button:hover {
+            background: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .compare-button.active {
+            background: #00B9DA;
+            color: white;
+        }
+
+        /* Feature Comparison Table */
+        .comparison-table {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .comparison-table.active {
+            display: block;
+        }
+
+        .comparison-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+
+        .feature-category {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #2d3748;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00B9DA;
+        }
+
+        .feature-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 15px 20px;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .feature-row:last-child {
+            border-bottom: none;
+        }
+
+        .feature-name {
+            font-size: 15px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .feature-value {
+            text-align: center;
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .feature-check {
+            text-align: center;
+            font-size: 20px;
+            color: #10b981;
+        }
+
+        .feature-cross {
+            text-align: center;
+            font-size: 18px;
+            color: #cbd5e0;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .pricing-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .feature-row {
+                grid-template-columns: 2fr repeat(5, 1fr);
+                font-size: 14px;
             }
         }
 
@@ -828,6 +937,17 @@
 
             .pillars-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .feature-value,
+            .feature-check,
+            .feature-cross {
+                text-align: left;
             }
         }
     </style>
@@ -934,9 +1054,11 @@
     <section class="pillars-section">
         <div class="section-container">
             <div class="section-header">
-                <div class="section-badge" style="background: #dbeafe; color: #1e40af;">8-Pillar Framework</div>
+                <div class="section-badge" style="background: #dbeafe; color: #1e40af;">AI-First Framework</div>
                 <h2 class="section-title">What We Analyze (And Fix)</h2>
-                <p class="section-subtitle">Our scoring engine evaluates 47 factors across 8 critical categories. Each fix directly impacts your AI visibility.</p>
+                <p class="section-subtitle">Our scoring engine evaluates multiple critical categories that directly impact your brand's AI visibility. We identify every gap keeping AI search engines from finding and recommending you—and gives you step-by-step instructions to fix each issue. No technical expertise required.
+
+No guesswork. No jargon. Just clear actions you can implement today.</p>
             </div>
 
             <div class="pillars-grid">
@@ -1058,10 +1180,10 @@
                     <div class="testimonial-stars">★★★★★</div>
                     <div class="testimonial-text">"The recommendations were so specific and actionable. We implemented the top 5 fixes and saw immediate improvements in how AI tools surfaced our content."</div>
                     <div class="testimonial-author">
-                        <div class="author-avatar">JC</div>
+                        <div class="author-avatar">DY</div>
                         <div class="author-info">
-                            <div class="author-name">James Chen</div>
-                            <div class="author-title">Founder, CloudSecure</div>
+                            <div class="author-name">Dano Ybarra</div>
+                            <div class="author-title">CEO, <a href="https://vozmia.com/" target="_blank" rel="noopener noreferrer" style="color: #00B9DA; text-decoration: none;">Vozmia</a></div>
                         </div>
                     </div>
                 </div>
@@ -1070,10 +1192,10 @@
                     <div class="testimonial-stars">★★★★★</div>
                     <div class="testimonial-text">"Finally, a tool that bridges the gap between traditional SEO and AI optimization. The category breakdown made it crystal clear where to focus."</div>
                     <div class="testimonial-author">
-                        <div class="author-avatar">LP</div>
+                        <div class="author-avatar">LR</div>
                         <div class="author-info">
-                            <div class="author-name">Lisa Park</div>
-                            <div class="author-title">Marketing Director, FinFlow</div>
+                            <div class="author-name">Lakshmi R.</div>
+                            <div class="author-title">CEO, <a href="https://idrilservices.io/" target="_blank" rel="noopener noreferrer" style="color: #00B9DA; text-decoration: none;">Idril Services</a></div>
                         </div>
                     </div>
                 </div>
@@ -1111,96 +1233,408 @@
             </div>
 
             <div class="pricing-grid" style="grid-template-columns: repeat(4, 1fr);">
-                <!-- Free Plan -->
+                <!-- Card 1: Free -->
                 <div class="pricing-card">
-                    <div class="plan-badge badge-free">Free Forever</div>
-                    <div class="plan-name">Starter</div>
+                    <span class="plan-badge badge-free" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">FREE FOREVER</span>
+                    <div class="plan-name" style="margin-top: 10px;">Free</div>
                     <div class="plan-price">$0</div>
-                    <div class="plan-price-small">Perfect to get started</div>
+                    <div class="plan-price-small">Try before you buy</div>
 
                     <ul class="plan-features">
                         <li><span class="check-icon">✓</span> 2 scans per month</li>
                         <li><span class="check-icon">✓</span> Homepage analysis only</li>
-                        <li><span class="check-icon">✓</span> Basic recommendations</li>
-                        <li><span class="check-icon">✓</span> Overall AI score</li>
-                        <li><span class="check-icon">✓</span> Category breakdown</li>
+                        <li><span class="check-icon">✓</span> Website Visibility Index (basic)</li>
+                        <li><span class="check-icon">✓</span> Top 5 recommendations</li>
                     </ul>
 
-                    <button class="plan-cta" onclick="scrollToScan(event)">Start Free Scan</button>
+                    <button class="plan-cta" onclick="scrollToScan(event)">Get Started Free</button>
                 </div>
 
-                <!-- DIY Plan -->
+                <!-- Card 2: DIY/SOHO (Most Popular) -->
                 <div class="pricing-card featured">
-                    <div class="plan-badge badge-popular">Most Popular</div>
-                    <div class="plan-name">DIY</div>
+                    <span class="plan-badge badge-popular" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white;">MOST POPULAR</span>
+                    <div class="plan-name" style="margin-top: 10px;">DIY</div>
                     <div class="plan-price">$29</div>
-                    <div class="plan-price-small">per month</div>
+                    <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For solopreneurs & small teams</span></div>
 
                     <ul class="plan-features">
                         <li><span class="check-icon">✓</span> 25 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 5 pages per scan</li>
-                        <li><span class="check-icon">✓</span> Page-level action items</li>
+                        <li><span class="check-icon">✓</span> Website Visibility Index (full)</li>
                         <li><span class="check-icon">✓</span> Copy-paste code snippets</li>
-                        <li><span class="check-icon">✓</span> Industry-specific FAQ schema (JSON-LD)</li>
-                        <li><span class="check-icon">✓</span> Evidence-based findings</li>
-                        <li><span class="check-icon">✓</span> JSON-LD export</li>
-                        <li><span class="check-icon">✓</span> Historical comparison</li>
-                        <li><span class="check-icon">✓</span> Industry-specific insights</li>
-                        <li><span class="check-icon">✓</span> Export reports (PDF/CSV)</li>
-                        <li><span class="check-icon">✓</span> Score trend analysis</li>
-                        <li><span class="check-icon">✓</span> 2 competitor scan comparisons (view only, not claim)</li>
+                        <li><span class="check-icon">✓</span> PDF export & tracking</li>
                     </ul>
 
                     <button class="plan-cta" onclick="window.location.href='auth.html'">Get Started Now</button>
                 </div>
 
-                <!-- Pro Plan -->
+                <!-- Card 3: SMB/Pro -->
                 <div class="pricing-card">
-                    <div class="plan-badge badge-pro">For Power Users</div>
-                    <div class="plan-name">Pro</div>
-                    <div class="plan-price">$99</div>
-                    <div class="plan-price-small">per month</div>
+                    <span class="plan-badge" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; background: linear-gradient(135deg, #4DACA6 0%, #f31c7e 100%); color: white;">GREAT VALUE</span>
+                    <div class="plan-name" style="margin-top: 10px;">Pro</div>
+                    <div class="plan-price">$149</div>
+                    <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For growing businesses</span></div>
 
                     <ul class="plan-features">
                         <li><span class="check-icon">✓</span> 50 scans per month</li>
                         <li><span class="check-icon">✓</span> Up to 25 pages per scan</li>
-                        <li><span class="check-icon">✓</span> Everything in DIY, PLUS:</li>
-                        <li><span class="check-icon">✓</span> Up to 25 detailed recommendations</li>
-                        <li><span class="check-icon">✓</span> Dual Index Scores:</li>
-                        <li style="margin-left: 20px;"><span class="check-icon">✓</span> Website Visibility Index (0-1000)</li>
-                        <li style="margin-left: 20px;"><span class="check-icon">✓</span> Brand Visibility Index (0-1000)</li>
-                        <li><span class="check-icon">✓</span> Advanced competitor analysis</li>
-                        <li><span class="check-icon">✓</span> 5 competitor scan comparisons (view only)</li>
-                        <li><span class="check-icon">✓</span> Outside-in crawl (PR mentions, reviews, social signals)</li>
-                        <li><span class="check-icon">✓</span> PDF/CSV export for reports</li>
-                        <li><span class="check-icon">✓</span> White-label reports</li>
-                        <li><span class="check-icon">✓</span> API access</li>
-                        <li><span class="check-icon">✓</span> Priority support</li>
-                        <li><span class="check-icon">✓</span> Custom branding</li>
+                        <li><span class="check-icon">✓</span> Brand Visibility Index (Lite)</li>
+                        <li><span class="check-icon">✓</span> 3 competitor analyses</li>
+                        <li><span class="check-icon">✓</span> Basic AI monitoring (10 queries)</li>
                     </ul>
 
                     <button class="plan-cta" style="opacity: 0.6; cursor: not-allowed;" disabled>Coming Soon</button>
                 </div>
 
-                <!-- Agency Plan -->
+                <!-- Card 4: Enterprise -->
                 <div class="pricing-card">
-                    <div class="plan-badge" style="background: linear-gradient(135deg, #f31c7e 0%, #7D41A5 100%); color: white;">For Agencies</div>
-                    <div class="plan-name">Agency</div>
+                    <span class="plan-badge" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; background: linear-gradient(135deg, #7D41A5 0%, #f31c7e 100%); color: white;">FOR ENTERPRISES</span>
+                    <div class="plan-name" style="margin-top: 10px;">Enterprise</div>
                     <div class="plan-price">$499</div>
-                    <div class="plan-price-small">per month</div>
+                    <div class="plan-price-small">per month<br><span style="font-size: 14px; color: #4a5568;">For mid-market companies</span></div>
 
                     <ul class="plan-features">
-                        <li><span class="check-icon">✓</span> Unlimited scans</li>
-                        <li><span class="check-icon">✓</span> Unlimited pages per scan</li>
-                        <li><span class="check-icon">✓</span> Everything in Pro, plus:</li>
-                        <li><span class="check-icon">✓</span> Multi-client dashboard</li>
-                        <li><span class="check-icon">✓</span> Unlimited competitor scans</li>
-                        <li><span class="check-icon">✓</span> White-label everything</li>
-                        <li><span class="check-icon">✓</span> Dedicated account manager</li>
-                        <li><span class="check-icon">✓</span> Custom integrations</li>
+                        <li><span class="check-icon">✓</span> 200 scans per month</li>
+                        <li><span class="check-icon">✓</span> Up to 100 pages per scan</li>
+                        <li><span class="check-icon">✓</span> Brand Visibility Index (Full)</li>
+                        <li><span class="check-icon">✓</span> 10 competitor analyses</li>
+                        <li><span class="check-icon">✓</span> Advanced AI monitoring (50+ queries)</li>
+                        <li><span class="check-icon">✓</span> Media & social tracking</li>
                     </ul>
 
                     <button class="plan-cta" style="opacity: 0.6; cursor: not-allowed;" disabled>Coming Soon</button>
+                </div>
+            </div>
+
+            <!-- Agency Box -->
+            <div style="background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%); border-radius: 20px; padding: 50px 40px; text-align: center; color: white; margin: 50px 0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+                <div style="font-size: 56px; margin-bottom: 20px;">🏢</div>
+                <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 15px;">Need an Agency Plan?</h2>
+                <p style="font-size: 18px; margin-bottom: 30px; opacity: 0.9;">Managing multiple clients? We've got you covered.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 35px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                    <div style="font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="color: #00B9DA; font-weight: 800; font-size: 18px;">✓</span>
+                        Unlimited scans & pages
+                    </div>
+                    <div style="font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="color: #00B9DA; font-weight: 800; font-size: 18px;">✓</span>
+                        Multi-client dashboard
+                    </div>
+                    <div style="font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="color: #00B9DA; font-weight: 800; font-size: 18px;">✓</span>
+                        Custom branding & integrations
+                    </div>
+                    <div style="font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="color: #00B9DA; font-weight: 800; font-size: 18px;">✓</span>
+                        Dedicated account manager
+                    </div>
+                </div>
+
+                <a href="mailto:aivisibility@xeo.marketing" style="display: inline-block; padding: 18px 40px; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; border-radius: 12px; font-size: 18px; font-weight: 700; text-decoration: none; transition: all 0.3s ease;">Contact Us for Custom Pricing</a>
+            </div>
+
+            <!-- Compare Features Button -->
+            <div class="compare-section">
+                <button class="compare-button" id="compareBtn" onclick="toggleComparison()">
+                    Compare All Features
+                </button>
+            </div>
+
+            <!-- Feature Comparison Table -->
+            <div class="comparison-table" id="comparisonTable">
+                <h3 class="comparison-title">Complete Feature Comparison</h3>
+
+                <!-- SCANNING Category -->
+                <div class="feature-category">
+                    <div class="category-title">SCANNING & PAGES</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Scans per month</div>
+                        <div class="feature-value">2</div>
+                        <div class="feature-value">25</div>
+                        <div class="feature-value">50</div>
+                        <div class="feature-value">200</div>
+                        <div class="feature-value">5000</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Pages per scan</div>
+                        <div class="feature-value">1 (Homepage)</div>
+                        <div class="feature-value">5</div>
+                        <div class="feature-value">25</div>
+                        <div class="feature-value">100</div>
+                        <div class="feature-value">1000</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Domains supported</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+                </div>
+
+                <!-- VISIBILITY INDEXES Category -->
+                <div class="feature-category">
+                    <div class="category-title">VISIBILITY INDEXES</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Website Visibility Index</div>
+                        <div class="feature-value">Basic</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Brand Visibility Index</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">✓ Lite</div>
+                        <div class="feature-check">✓ Full</div>
+                        <div class="feature-check">✓ Full</div>
+                    </div>
+                </div>
+
+                <!-- ANALYSIS & RECOMMENDATIONS Category -->
+                <div class="feature-category">
+                    <div class="category-title">ANALYSIS & RECOMMENDATIONS</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">AI Visibility Score</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Basic recommendations</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Page-level action items</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Detailed recommendations</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">Up to 10</div>
+                        <div class="feature-value">Up to 25</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Copy-paste code snippets</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Industry-specific insights</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- TRACKING & HISTORY Category -->
+                <div class="feature-category">
+                    <div class="category-title">TRACKING & HISTORY</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Score tracking</div>
+                        <div class="feature-value">Overall only</div>
+                        <div class="feature-value">Overall only</div>
+                        <div class="feature-value">Historical</div>
+                        <div class="feature-value">Historical</div>
+                        <div class="feature-value">Historical</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Scan history</div>
+                        <div class="feature-value">30 days</div>
+                        <div class="feature-value">90 days</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Score trend analysis</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- COMPETITOR ANALYSIS Category -->
+                <div class="feature-category">
+                    <div class="category-title">COMPETITOR ANALYSIS & AI MONITORING</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Competitors tracked</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">10</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">AI monitoring (queries/month)</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-value">Basic (10)</div>
+                        <div class="feature-value">Advanced (50+)</div>
+                        <div class="feature-value">Advanced (50+)</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Media tracking</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Social media monitoring</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- REPORTING & EXPORT Category -->
+                <div class="feature-category">
+                    <div class="category-title">REPORTING & EXPORT</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Export reports (PDF/CSV)</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">White-label reports</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Custom branding</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- COLLABORATION Category -->
+                <div class="feature-category">
+                    <div class="category-title">COLLABORATION</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">User seats</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">1</div>
+                        <div class="feature-value">3</div>
+                        <div class="feature-value">Unlimited</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Multi-client dashboard</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Client access links</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+                </div>
+
+                <!-- SUPPORT & EXTRAS Category -->
+                <div class="feature-category">
+                    <div class="category-title">SUPPORT & EXTRAS</div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Support level</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Email</div>
+                        <div class="feature-value">Priority</div>
+                        <div class="feature-value">Dedicated</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">API access</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Custom integrations</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                    </div>
+
+                    <div class="feature-row">
+                        <div class="feature-name">Onboarding call</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-cross">—</div>
+                        <div class="feature-check">✓</div>
+                        <div class="feature-check">✓</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1359,7 +1793,7 @@
                     }, 500);
                 } else {
                     document.body.removeChild(loadingOverlay);
-                    alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
+                    alert('🛡️ Scan blocked: ' + (data.error || 'Your security settings may be blocking the scan. Contact support for help.'));
                     button.disabled = false;
                     button.textContent = originalText;
                 }
@@ -1372,9 +1806,208 @@
                 button.textContent = originalText;
             }
         }
+
+        // Toggle comparison table
+        function toggleComparison() {
+            const table = document.getElementById('comparisonTable');
+            const button = document.getElementById('compareBtn');
+
+            table.classList.toggle('active');
+            button.classList.toggle('active');
+
+            if (table.classList.contains('active')) {
+                button.textContent = 'Hide Features';
+                // Smooth scroll to table
+                setTimeout(() => {
+                    table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            } else {
+                button.textContent = 'Compare All Features';
+            }
+        }
     </script>
 
     <!-- AI Support Chat Widget -->
     <script src="support-chat.js"></script>
+
+    <!-- CMS Content Loader -->
+    <script>
+        // Load CMS content dynamically
+        (async function loadCMSContent() {
+            try {
+                const cmsApiUrl = API_BASE_URL.replace('/api', '') + '/api/admin/cms/public/content';
+                const response = await fetch(cmsApiUrl);
+                const data = await response.json();
+
+                if (!data.success) return; // Fallback to HTML content
+
+                const sections = data.sections;
+
+                // Update Hero Section
+                if (sections.hero) {
+                    const hero = sections.hero;
+                    document.querySelector('.alert-badge').textContent = hero.alertBadge;
+                    document.querySelector('.hero h1').textContent = hero.heading;
+                    document.querySelector('.hero-subtitle').textContent = hero.subtitle;
+
+                    // Update trust badges
+                    const trustBadgesContainer = document.querySelector('.trust-badges');
+                    trustBadgesContainer.innerHTML = hero.trustBadges.map(badge => `
+                        <div class="trust-badge">
+                            <span class="trust-badge-icon">${badge.icon}</span>
+                            <span>${badge.text}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Update Stats
+                if (sections.stats) {
+                    const statItems = document.querySelectorAll('.stat-item');
+                    sections.stats.stats.forEach((stat, i) => {
+                        if (statItems[i]) {
+                            statItems[i].querySelector('.stat-number').textContent = stat.number;
+                            statItems[i].querySelector('.stat-label').textContent = stat.label;
+                        }
+                    });
+                }
+
+                // Update Problem Section
+                if (sections.problem) {
+                    const problem = sections.problem;
+                    const problemSection = document.querySelector('.problem-section');
+                    problemSection.querySelector('.section-badge').textContent = problem.badge;
+                    problemSection.querySelector('.section-title').textContent = problem.title;
+                    problemSection.querySelector('.section-subtitle').textContent = problem.subtitle;
+
+                    const problemCards = problemSection.querySelectorAll('.problem-card');
+                    problem.problems.forEach((prob, i) => {
+                        if (problemCards[i]) {
+                            problemCards[i].querySelector('.problem-icon').textContent = prob.icon;
+                            problemCards[i].querySelector('.problem-title').textContent = prob.title;
+                            problemCards[i].querySelector('.problem-old').textContent = prob.oldWay;
+                            problemCards[i].querySelector('.problem-new').textContent = prob.newWay;
+                        }
+                    });
+                }
+
+                // Update Pillars Section
+                if (sections.pillars) {
+                    const pillars = sections.pillars;
+                    const pillarsSection = document.querySelector('.pillars-section');
+                    const badges = pillarsSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = pillars.badge;
+                    pillarsSection.querySelector('.section-title').textContent = pillars.title;
+                    pillarsSection.querySelector('.section-subtitle').textContent = pillars.subtitle;
+
+                    const pillarCards = pillarsSection.querySelectorAll('.pillar-card');
+                    pillars.pillars.forEach((pillar, i) => {
+                        if (pillarCards[i]) {
+                            pillarCards[i].querySelector('.pillar-icon').textContent = pillar.icon;
+                            pillarCards[i].querySelector('.pillar-title').textContent = pillar.title;
+                            pillarCards[i].querySelector('.pillar-boost').textContent = pillar.boost;
+                            pillarCards[i].querySelector('.pillar-desc').textContent = pillar.description;
+                        }
+                    });
+                }
+
+                // Update How It Works
+                if (sections.how_it_works) {
+                    const how = sections.how_it_works;
+                    const howSection = document.querySelector('.how-it-works');
+                    const badges = howSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = how.badge;
+                    howSection.querySelector('.section-title').textContent = how.title;
+                    howSection.querySelector('.section-subtitle').textContent = how.subtitle;
+
+                    const stepCards = howSection.querySelectorAll('.step-card');
+                    how.steps.forEach((step, i) => {
+                        if (stepCards[i]) {
+                            stepCards[i].querySelector('.step-icon').textContent = step.icon;
+                            stepCards[i].querySelector('.step-title').textContent = step.title;
+                            stepCards[i].querySelector('.step-desc').textContent = step.description;
+                        }
+                    });
+                }
+
+                // Update Testimonials
+                if (sections.testimonials) {
+                    const testimonials = sections.testimonials;
+                    const socialSection = document.querySelector('.social-proof');
+                    const badges = socialSection.querySelectorAll('.section-badge');
+                    if (badges.length > 0) badges[0].textContent = testimonials.badge;
+                    socialSection.querySelector('.section-title').textContent = testimonials.title;
+
+                    const testimonialCards = socialSection.querySelectorAll('.testimonial-card');
+                    testimonials.testimonials.forEach((testimonial, i) => {
+                        if (testimonialCards[i]) {
+                            const stars = '★'.repeat(testimonial.stars);
+                            testimonialCards[i].querySelector('.testimonial-stars').textContent = stars;
+                            testimonialCards[i].querySelector('.testimonial-text').textContent = testimonial.text;
+                            testimonialCards[i].querySelector('.author-avatar').textContent = testimonial.authorInitials;
+                            testimonialCards[i].querySelector('.author-name').textContent = testimonial.authorName;
+
+                            // Handle author title with optional URL
+                            const authorTitleEl = testimonialCards[i].querySelector('.author-title');
+                            if (testimonial.authorUrl) {
+                                // Parse the title to find company name and wrap it in a link
+                                const titleParts = testimonial.authorTitle.split(', ');
+                                if (titleParts.length === 2) {
+                                    authorTitleEl.innerHTML = `${titleParts[0]}, <a href="${testimonial.authorUrl}" target="_blank" rel="noopener noreferrer" style="color: #00B9DA; text-decoration: none;">${titleParts[1]}</a>`;
+                                } else {
+                                    authorTitleEl.textContent = testimonial.authorTitle;
+                                }
+                            } else {
+                                authorTitleEl.textContent = testimonial.authorTitle;
+                            }
+                        }
+                    });
+
+                    // Update results showcase
+                    if (testimonials.resultsShowcase) {
+                        const showcase = testimonials.resultsShowcase;
+                        const showcaseEl = document.querySelector('.results-showcase');
+                        showcaseEl.querySelector('h3').textContent = showcase.heading;
+                        showcaseEl.querySelector('p').textContent = showcase.subtitle;
+
+                        const resultItems = showcaseEl.querySelectorAll('.result-item');
+                        showcase.results.forEach((result, i) => {
+                            if (resultItems[i]) {
+                                resultItems[i].querySelector('.result-number').textContent = result.number;
+                                resultItems[i].querySelector('.result-label').textContent = result.label;
+                            }
+                        });
+                    }
+                }
+
+                // Update Final CTA
+                if (sections.final_cta) {
+                    const cta = sections.final_cta;
+                    const ctaSection = document.querySelector('.final-cta');
+                    ctaSection.querySelector('h2').textContent = cta.heading;
+                    ctaSection.querySelector('p').textContent = cta.subtitle;
+
+                    const checkItems = ctaSection.querySelectorAll('.cta-check-item span:last-child');
+                    cta.checklist.forEach((item, i) => {
+                        if (checkItems[i]) {
+                            checkItems[i].textContent = item;
+                        }
+                    });
+                }
+
+                // Update Footer
+                if (sections.footer) {
+                    const footer = sections.footer;
+                    const footerTextEl = document.querySelector('.footer-text');
+                    footerTextEl.innerHTML = `${footer.text.split('&')[0]} & <a href="${footer.xeoMarketingUrl}" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: underline;">${footer.text.split('&')[1] || 'Xeo Marketing'}</a>`;
+                    document.querySelector('.footer-copyright').textContent = footer.copyright;
+                }
+
+                console.log('✅ CMS content loaded successfully');
+            } catch (error) {
+                console.error('Failed to load CMS content, using default HTML:', error);
+                // Page falls back to default HTML content
+            }
+        })();
+    </script>
 </body>
 </html>

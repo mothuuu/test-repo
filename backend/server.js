@@ -24,6 +24,8 @@ const PORT = process.env.PORT || 3001;
 // This is required for rate limiting and IP-based features to work correctly
 app.set('trust proxy', 1);
 
+// Stripe webhook needs raw body - must be before express.json()
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -34,12 +36,17 @@ app.use(helmet());
 app.use(compression());
 
 // CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [
+  'https://www.visible2ai.com',
+  'https://visible2ai.com',
+  'http://localhost:3000',
+  'http://localhost:8000'
+];
+
+console.log('🌐 Allowed CORS origins:', allowedOrigins);
+
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
-    'https://aome.xeo.marketing',
-    'http://localhost:3000',
-    'http://localhost:8000'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -66,6 +73,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
+app.use('/api/webhooks', stripeWebhookRoutes); // Stripe webhooks (must be before other routes)
 app.use('/api/auth', authRoutes);
 app.use('/api', aiTestingRoutes);
 app.use('/api/subscription', subscriptionRoutes);

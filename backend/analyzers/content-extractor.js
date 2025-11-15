@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { URL } = require('url');
+const EntityAnalyzer = require('./entity-analyzer');
 
 /**
  * Content Extractor for V5 Rubric Analysis
@@ -24,19 +25,28 @@ class ContentExtractor {
       const fetchResult = await this.fetchHTML();
 const html = fetchResult.html; // Extract the HTML string from the object
 const $ = cheerio.load(html);
-      
-      return {
+
+      // Extract technical data first (includes JSON-LD parsing)
+      const technical = this.extractTechnical($, html);
+
+      const evidence = {
         url: this.url,
         html: html, // Store HTML for analysis
         metadata: this.extractMetadata($),
-        technical: this.extractTechnical($, html), // MUST run BEFORE extractContent removes <script> tags!
-        content: this.extractContent($),
+        technical: technical, // Already extracted
+        content: this.extractContent($, technical.structuredData), // Pass structuredData to extractContent
         structure: this.extractStructure($),
         media: this.extractMedia($),
         performance: await this.checkPerformance(),
         accessibility: this.extractAccessibility($),
         timestamp: new Date().toISOString()
       };
+
+      // Run entity analysis
+      const entityAnalyzer = new EntityAnalyzer(evidence);
+      evidence.entities = entityAnalyzer.analyze();
+
+      return evidence;
     } catch (error) {
       throw new Error(`Content extraction failed: ${error.message}`);
     }
@@ -62,7 +72,14 @@ const $ = cheerio.load(html);
     for (let i = 0; i < userAgents.length; i++) {
       try {
         const startTime = Date.now();
-        const response = await axios.get(this.url, {
+
+        // Add cache-busting query parameter to force fresh content
+        // This bypasses CDN/proxy caches that might serve stale content
+        const cacheBustUrl = this.url.includes('?')
+          ? `${this.url}&_cb=${Date.now()}`
+          : `${this.url}?_cb=${Date.now()}`;
+
+        const response = await axios.get(cacheBustUrl, {
           timeout: this.timeout,
           maxContentLength: this.maxContentLength,
           maxRedirects: 5, // Follow up to 5 redirects
@@ -77,8 +94,9 @@ const $ = cheerio.load(html);
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           validateStatus: (status) => status >= 200 && status < 400 // Accept 2xx and 3xx
         });
@@ -203,10 +221,13 @@ const $ = cheerio.load(html);
   /**
    * Extract main content - text, headings, paragraphs
    */
-  extractContent($) {
+  extractContent($, structuredData = []) {
+    // IMPORTANT: Extract FAQs BEFORE removing footer (FAQs are often in footer!)
+    const faqs = this.extractFAQs($, structuredData);
+
     // Remove script, style, and navigation elements
     $('script, style, nav, header, footer, aside').remove();
-    
+
     const headings = {
       h1: [],
       h2: [],
@@ -341,28 +362,152 @@ const $ = cheerio.load(html);
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
     const wordCount = bodyText.split(/\s+/).length;
 
-    // Extract FAQs if present (common patterns)
-    const faqs = [];
-    $('[itemtype*="FAQPage"], [itemtype*="Question"]').each((idx, el) => {
-      const question = $(el).find('[itemprop="name"]').text().trim() || 
-                       $(el).find('h2, h3, h4, strong').first().text().trim();
-      const answer = $(el).find('[itemprop="acceptedAnswer"]').text().trim() ||
-                     $(el).find('p').first().text().trim();
-      if (question && answer) {
-        faqs.push({ question, answer });
-      }
-    });
-
     return {
       headings,
       paragraphs: paragraphs.slice(0, 50), // First 50 paragraphs
       lists,
       tables,
-      faqs,
+      faqs: faqs, // FAQs extracted before footer removal
       wordCount,
       textLength: bodyText.length,
       bodyText: bodyText.substring(0, 10000) // First 10K chars for analysis
     };
+  }
+
+  /**
+   * Extract FAQs with enhanced 3-tier detection
+   * IMPORTANT: Call this BEFORE removing footer/nav elements
+   */
+  extractFAQs($, structuredData = []) {
+    const faqs = [];
+
+    // Method 0: Extract FAQs from JSON-LD FAQPage schema (NEW!)
+    const faqSchemas = structuredData.filter(sd => sd.type === 'FAQPage');
+    if (faqSchemas.length > 0) {
+      console.log(`[ContentExtractor] Found ${faqSchemas.length} FAQPage schemas in JSON-LD`);
+      faqSchemas.forEach((schema, schemaIdx) => {
+        const mainEntity = schema.raw.mainEntity || [];
+        if (Array.isArray(mainEntity)) {
+          mainEntity.forEach((entity, idx) => {
+            const question = entity.name || '';
+            const answer = entity.acceptedAnswer?.text || entity.acceptedAnswer || '';
+            if (question && answer) {
+              faqs.push({ question, answer, source: 'schema' });
+              console.log(`[ContentExtractor] Extracted FAQ from JSON-LD schema #${schemaIdx + 1}, question #${idx + 1}: ${question.substring(0, 60)}...`);
+            }
+          });
+        }
+      });
+    }
+
+    // Method 1: Detect FAQs with microdata schema markup
+    $('[itemtype*="FAQPage"], [itemtype*="Question"]').each((idx, el) => {
+      const question = $(el).find('[itemprop="name"]').text().trim() ||
+                       $(el).find('h2, h3, h4, strong').first().text().trim();
+      const answer = $(el).find('[itemprop="acceptedAnswer"]').text().trim() ||
+                     $(el).find('p').first().text().trim();
+      if (question && answer) {
+        faqs.push({ question, answer, source: 'schema' });
+      }
+    });
+
+    // Method 2: Detect FAQ sections by class/id (common patterns)
+    const faqSelectors = [
+      '[class*="faq" i], [id*="faq" i]',
+      '[class*="question" i], [id*="question" i]',
+      '[class*="accordion" i]',
+      'details'
+    ].join(', ');
+
+    $(faqSelectors).each((idx, el) => {
+      const $el = $(el);
+
+      // For details/summary elements
+      if (el.name === 'details') {
+        const question = $el.find('summary').text().trim();
+        const answer = $el.contents().not('summary').text().trim();
+        if (question && answer && question.length > 10) {
+          faqs.push({ question, answer, source: 'details' });
+        }
+        return;
+      }
+
+      // For FAQ containers, look for Q&A patterns
+      const headings = $el.find('h2, h3, h4, h5, dt, [class*="question" i], [class*="title" i]');
+      headings.each((i, heading) => {
+        const $heading = $(heading);
+        const question = $heading.text().trim();
+
+        // Get the answer (next siblings until next heading)
+        let answer = '';
+        if (heading.name === 'dt') {
+          // Definition list pattern
+          answer = $heading.next('dd').text().trim();
+        } else {
+          // Get content until next heading
+          let $next = $heading.next();
+          while ($next.length && !$next.is('h1, h2, h3, h4, h5, h6, dt')) {
+            answer += ' ' + $next.text().trim();
+            $next = $next.next();
+          }
+        }
+
+        // Only add if it looks like a Q&A (question ends with ? or is in FAQ section)
+        if (question && answer &&
+            (question.includes('?') || question.length > 15) &&
+            answer.length > 20) {
+          faqs.push({ question, answer, source: 'html' });
+        }
+      });
+    });
+
+    // Method 3: Look for question-like headings followed by content
+    if (faqs.length === 0) {
+      $('h2, h3, h4').each((idx, heading) => {
+        const $heading = $(heading);
+        const question = $heading.text().trim();
+
+        // Check if heading looks like a question
+        if (question.includes('?') && question.length > 15) {
+          // Get the next paragraph(s) as answer
+          let answer = '';
+          let $next = $heading.next();
+
+          // If heading has no next sibling, check if parent's next sibling has content
+          // This handles cases where headings are wrapped in divs (e.g., theme containers)
+          if ($next.length === 0) {
+            const $parent = $heading.parent();
+            $next = $parent.next();
+          }
+
+          while ($next.length && !$next.is('h1, h2, h3, h4, h5, h6') && answer.length < 500) {
+            if ($next.is('p, div')) {
+              answer += ' ' + $next.text().trim();
+            }
+            $next = $next.next();
+          }
+
+          if (answer.length > 50) {
+            faqs.push({ question, answer, source: 'heading' });
+          }
+        }
+      });
+    }
+
+    // Deduplicate FAQs (keep first occurrence)
+    const uniqueFAQs = [];
+    const seen = new Set();
+    for (const faq of faqs) {
+      const key = faq.question.toLowerCase().substring(0, 50);
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueFAQs.push(faq);
+      }
+    }
+
+    console.log(`[ContentExtractor] Found ${uniqueFAQs.length} FAQs (schema: ${uniqueFAQs.filter(f => f.source === 'schema').length}, html: ${uniqueFAQs.filter(f => f.source === 'html').length}, details: ${uniqueFAQs.filter(f => f.source === 'details').length}, heading: ${uniqueFAQs.filter(f => f.source === 'heading').length})`);
+
+    return uniqueFAQs;
   }
 
   /**
@@ -459,11 +604,42 @@ const $ = cheerio.load(html);
   /**
    * Extract technical SEO elements
    */
+  /**
+   * Recursively extract all @type values from a schema object, including nested ones
+   */
+  extractAllSchemaTypes(obj, types = new Set()) {
+    if (!obj || typeof obj !== 'object') return types;
+
+    // Handle @type field (can be string or array)
+    if (obj['@type']) {
+      const typeValue = obj['@type'];
+      if (Array.isArray(typeValue)) {
+        typeValue.forEach(t => types.add(t));
+      } else {
+        types.add(typeValue);
+      }
+    }
+
+    // Recursively check all properties
+    for (const key in obj) {
+      if (key !== '@type' && obj[key] && typeof obj[key] === 'object') {
+        if (Array.isArray(obj[key])) {
+          obj[key].forEach(item => this.extractAllSchemaTypes(item, types));
+        } else {
+          this.extractAllSchemaTypes(obj[key], types);
+        }
+      }
+    }
+
+    return types;
+  }
+
   extractTechnical($, htmlData) {
     const html = typeof htmlData === 'string' ? htmlData : htmlData.html;
-    
+
     // Structured data detection (JSON-LD)
     const structuredData = [];
+    const allSchemaTypes = new Set(); // Track all schema types including nested ones
     const jsonLdScripts = $('script[type="application/ld+json"]');
     console.log(`[ContentExtractor] Found ${jsonLdScripts.length} JSON-LD script tags`);
 
@@ -472,31 +648,45 @@ const $ = cheerio.load(html);
         const scriptContent = $(el).html();
         console.log(`[ContentExtractor] Parsing JSON-LD #${idx + 1}, length: ${scriptContent?.length || 0} chars`);
         const data = JSON.parse(scriptContent);
-        const schemaType = data['@type'] || 'Unknown';
-        console.log(`[ContentExtractor] Successfully parsed: ${schemaType}`);
+
+        // Extract top-level type (can be string or array)
+        let topLevelType = data['@type'] || 'Unknown';
+        if (Array.isArray(topLevelType)) {
+          topLevelType = topLevelType[0]; // Use first type as primary
+        }
+        console.log(`[ContentExtractor] Successfully parsed: ${topLevelType}`);
+
         structuredData.push({
-          type: schemaType,
+          type: topLevelType,
           context: data['@context'] || '',
           raw: data
         });
+
+        // Extract all types including nested ones
+        const typesInThisSchema = this.extractAllSchemaTypes(data);
+        typesInThisSchema.forEach(type => allSchemaTypes.add(type));
+
       } catch (e) {
         console.log(`[ContentExtractor] Failed to parse JSON-LD #${idx + 1}:`, e.message);
       }
     });
 
     console.log(`[ContentExtractor] Total structured data found: ${structuredData.length}`);
-    console.log(`[ContentExtractor] Has Organization: ${structuredData.some(sd => sd.type === 'Organization')}`);
-    console.log(`[ContentExtractor] Has FAQPage: ${structuredData.some(sd => sd.type === 'FAQPage')}`);
-    console.log(`[ContentExtractor] Has LocalBusiness: ${structuredData.some(sd => sd.type === 'LocalBusiness')}`);
+    console.log(`[ContentExtractor] All schema types (including nested): ${Array.from(allSchemaTypes).join(', ')}`);
+    console.log(`[ContentExtractor] Has Organization: ${allSchemaTypes.has('Organization')}`);
+    console.log(`[ContentExtractor] Has FAQPage: ${allSchemaTypes.has('FAQPage')}`);
+    console.log(`[ContentExtractor] Has LocalBusiness: ${allSchemaTypes.has('LocalBusiness')}`);
+    console.log(`[ContentExtractor] Has Place: ${allSchemaTypes.has('Place')}`);
+    console.log(`[ContentExtractor] Has GeoCoordinates: ${allSchemaTypes.has('GeoCoordinates')}`);
 
     return {
       // Structured Data
       structuredData,
-      hasOrganizationSchema: structuredData.some(sd => sd.type === 'Organization'),
-      hasLocalBusinessSchema: structuredData.some(sd => sd.type === 'LocalBusiness'),
-      hasFAQSchema: structuredData.some(sd => sd.type === 'FAQPage'),
-      hasArticleSchema: structuredData.some(sd => sd.type === 'Article' || sd.type === 'BlogPosting'),
-      hasBreadcrumbSchema: structuredData.some(sd => sd.type === 'BreadcrumbList'),
+      hasOrganizationSchema: allSchemaTypes.has('Organization'),
+      hasLocalBusinessSchema: allSchemaTypes.has('LocalBusiness'),
+      hasFAQSchema: allSchemaTypes.has('FAQPage'),
+      hasArticleSchema: allSchemaTypes.has('Article') || allSchemaTypes.has('BlogPosting'),
+      hasBreadcrumbSchema: allSchemaTypes.has('BreadcrumbList'),
       
       // Hreflang
       hreflangTags: $('link[rel="alternate"][hreflang]').length,
@@ -537,9 +727,22 @@ const $ = cheerio.load(html);
   async checkPerformance() {
     try {
       const startTime = Date.now();
-      const response = await axios.head(this.url, { timeout: 5000 });
+
+      // Add cache-busting query parameter to get fresh performance metrics
+      const cacheBustUrl = this.url.includes('?')
+        ? `${this.url}&_cb=${Date.now()}`
+        : `${this.url}?_cb=${Date.now()}`;
+
+      const response = await axios.head(cacheBustUrl, {
+        timeout: 5000,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       const ttfb = Date.now() - startTime; // Time to First Byte
-      
+
       return {
         ttfb,
         responseTime: ttfb,
@@ -599,15 +802,30 @@ const $ = cheerio.load(html);
    */
   static detectIndustry(content, metadata) {
     const keywords = {
+      // Specialized Tech Industries (matched to FAQ libraries)
+      'UCaaS': ['ucaas', 'unified communications', 'voip', 'cloud communications', 'cloud phone', 'business phone'],
+      'Cybersecurity': ['cybersecurity', 'cyber security', 'infosec', 'security solutions', 'threat detection', 'penetration testing', 'vulnerability'],
+      'Fintech': ['fintech', 'financial technology', 'payment processing', 'digital payments', 'blockchain', 'cryptocurrency', 'neobank'],
+      'AI Infrastructure': ['ai infrastructure', 'machine learning infrastructure', 'ml ops', 'gpu cloud', 'ai platform'],
+      'AI Startups': ['ai startup', 'artificial intelligence', 'machine learning', 'deep learning', 'neural network'],
+      'Data Center': ['data center', 'datacenter', 'colocation', 'colo', 'server hosting', 'infrastructure hosting'],
+      'Digital Infrastructure': ['digital infrastructure', 'cloud infrastructure', 'edge computing', 'content delivery'],
+      'ICT Hardware': ['ict hardware', 'networking equipment', 'routers', 'switches', 'hardware infrastructure', 'it hardware'],
+      'Managed Service Provider': ['msp', 'managed services', 'managed service provider', 'it services', 'outsourced it'],
+      'Telecom Service Provider': ['telecom', 'telecommunications', 'carrier', 'network operator', 'mobile network'],
+      'Telecom Software': ['telecom software', 'telecommunications software', 'oss', 'bss', 'network management'],
+      'Mobile Connectivity': ['esim', 'mobile connectivity', 'iot connectivity', 'cellular', 'mobile network'],
+
+      // General Industries (existing)
+      'SaaS': ['saas', 'software as a service', 'cloud software', 'subscription', 'platform', 'dashboard'],
+      'Agency': ['marketing agency', 'digital agency', 'creative agency', 'advertising', 'seo agency'],
       'Healthcare': ['health', 'medical', 'doctor', 'patient', 'hospital', 'clinic', 'treatment'],
       'Legal': ['law', 'legal', 'attorney', 'lawyer', 'court', 'litigation', 'contract'],
       'Real Estate': ['real estate', 'property', 'homes', 'listing', 'realtor', 'mls', 'mortgage'],
-      'E-commerce': ['shop', 'buy', 'cart', 'product', 'price', 'checkout', 'shipping'],
-      'SaaS': ['software', 'platform', 'subscription', 'api', 'integration', 'dashboard'],
+      'E-commerce': ['shop', 'buy', 'cart', 'product', 'price', 'checkout', 'shipping', 'ecommerce'],
       'Financial': ['finance', 'investment', 'banking', 'insurance', 'loan', 'credit'],
       'Education': ['education', 'learning', 'course', 'student', 'training', 'university'],
-      'Restaurant': ['restaurant', 'menu', 'food', 'dining', 'reservation', 'cuisine'],
-      'Agency': ['agency', 'services', 'marketing', 'design', 'consulting', 'solutions']
+      'Restaurant': ['restaurant', 'menu', 'food', 'dining', 'reservation', 'cuisine']
     };
 
     const text = `${metadata.title} ${metadata.description} ${content.bodyText}`.toLowerCase();

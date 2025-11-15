@@ -4,11 +4,13 @@ const db = require('../db/database');
 
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
+const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
 // ============================================
-const V5RubricEngine = require('../analyzers/v5-rubric-engine'); // Import the class
+const V5EnhancedRubricEngine = require('../analyzers/v5-enhanced-rubric-engine'); // Import the ENHANCED class
+const V5RubricEngine = V5EnhancedRubricEngine; // Alias for compatibility
 const { generateCompleteRecommendations } = require('../analyzers/recommendation-generator');
 
 // Middleware to verify JWT token
@@ -34,7 +36,9 @@ const authenticateToken = (req, res, next) => {
 const PLAN_LIMITS = {
   free: { scansPerMonth: 2, pagesPerScan: 1, competitorScans: 0 },
   diy: { scansPerMonth: 25, pagesPerScan: 5, competitorScans: 2 },
-  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 }
+  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 },
+  enterprise: { scansPerMonth: 500, pagesPerScan: 25, competitorScans: 25 },
+  agency: { scansPerMonth: -1, pagesPerScan: 50, competitorScans: 50 } // -1 = unlimited
 };
 
 // V5 Rubric Category Weights
@@ -75,17 +79,55 @@ router.post('/guest', async (req, res) => {
 
     console.log('🔍 Guest scan requested for:', url);
 
-    // Perform V5 rubric scan (results NOT saved)
+    // Perform V5 rubric scan
     // Use 'guest' tier - NO recommendations shown to anonymous users
     const scanResult = await performV5Scan(url, 'guest');
 
-    // Return results immediately without saving
+    // Save guest scan to database for analytics (with user_id = NULL)
+    // NOTE: Round scores to integers since DB columns are INTEGER type
+    try {
+      await db.query(
+        `INSERT INTO scans (
+          user_id, url, status, page_count, rubric_version,
+          total_score, ai_readability_score, ai_search_readiness_score,
+          content_freshness_score, content_structure_score, speed_ux_score,
+          technical_setup_score, trust_authority_score, voice_optimization_score,
+          industry, completed_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)`,
+        [
+          null, // user_id is NULL for guest scans
+          url,
+          'completed',
+          1, // page_count
+          'V5',
+          Math.round(scanResult.totalScore),  // Round to integer
+          Math.round(scanResult.categories.aiReadability),
+          Math.round(scanResult.categories.aiSearchReadiness),
+          Math.round(scanResult.categories.contentFreshness),
+          Math.round(scanResult.categories.contentStructure),
+          Math.round(scanResult.categories.speedUX),
+          Math.round(scanResult.categories.technicalSetup),
+          Math.round(scanResult.categories.trustAuthority),
+          Math.round(scanResult.categories.voiceOptimization),
+          scanResult.industry
+        ]
+      );
+      console.log('✅ Guest scan saved to database for analytics');
+    } catch (dbError) {
+      console.error('⚠️  Failed to save guest scan to database:', dbError.message);
+      console.error('⚠️  DB Error details:', dbError);
+      // Continue anyway - don't fail the response if DB save fails
+    }
+
+    // Return results
     res.json({
       success: true,
       total_score: scanResult.totalScore,
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
+      categoryBreakdown: scanResult.categories,
+      categoryWeights: V5_WEIGHTS, // Include weights for display
       recommendations: scanResult.recommendations, // Will be empty array for guest tier
       faq: null, // No FAQ for guest
       upgrade: scanResult.upgrade || null, // CTA to sign up
@@ -95,9 +137,9 @@ router.post('/guest', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Guest scan error:', error);
-    res.status(500).json({ 
-      error: 'Scan failed',
-      details: error.message 
+    res.status(500).json({
+      error: 'Scan blocked',
+      details: error.message
     });
   }
 });
@@ -218,10 +260,10 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain, domain
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain]
+      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain, scanDomain]
     );
 
     const scan = scanRecord.rows[0];
@@ -247,6 +289,29 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
     }
 
+    // Validate scan result structure
+    if (!scanResult || !scanResult.categories) {
+      console.error('❌ CRITICAL: performV5Scan returned invalid structure');
+      console.error('   scanResult:', JSON.stringify(scanResult, null, 2));
+      throw new Error('Scan analyzer returned incomplete data');
+    }
+
+    // Validate category structure (categories should be numbers 0-100, not objects)
+    const requiredCategories = ['aiReadability', 'aiSearchReadiness', 'contentFreshness',
+                                 'contentStructure', 'speedUX', 'technicalSetup',
+                                 'trustAuthority', 'voiceOptimization'];
+
+    for (const cat of requiredCategories) {
+      const value = scanResult.categories[cat];
+      if (typeof value !== 'number' || isNaN(value)) {
+        console.error(`❌ CRITICAL: Missing or invalid category: ${cat}`);
+        console.error(`   Expected number, got:`, typeof value, value);
+        throw new Error(`Invalid category data: ${cat} - expected number, got ${typeof value}`);
+      }
+    }
+
+    console.log('✅ Scan result validation passed');
+
     // Increment appropriate scan count AFTER successful scan
     if (isCompetitorScan) {
       await db.query(
@@ -261,8 +326,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     }
 
     // Update scan record with results
+    // NOTE: Round scores to integers since DB columns are INTEGER type
     await db.query(
-      `UPDATE scans SET 
+      `UPDATE scans SET
         status = $1,
         total_score = $2,
         ai_readability_score = $3,
@@ -279,15 +345,15 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       WHERE id = $13`,
       [
         'completed',
-        scanResult.totalScore,
-        scanResult.categories.aiReadability,
-        scanResult.categories.aiSearchReadiness,
-        scanResult.categories.contentFreshness,
-        scanResult.categories.contentStructure,
-        scanResult.categories.speedUX,
-        scanResult.categories.technicalSetup,
-        scanResult.categories.trustAuthority,
-        scanResult.categories.voiceOptimization,
+        Math.round(scanResult.totalScore),  // Round to integer
+        Math.round(scanResult.categories.aiReadability),
+        Math.round(scanResult.categories.aiSearchReadiness),
+        Math.round(scanResult.categories.contentFreshness),
+        Math.round(scanResult.categories.contentStructure),
+        Math.round(scanResult.categories.speedUX),
+        Math.round(scanResult.categories.technicalSetup),
+        Math.round(scanResult.categories.trustAuthority),
+        Math.round(scanResult.categories.voiceOptimization),
         scanResult.industry,
         JSON.stringify(scanResult.detailedAnalysis),
         scan.id
@@ -348,6 +414,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         primary_domain: user.primary_domain,
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
@@ -382,7 +449,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     }
 
     res.status(500).json({
-      error: 'Scan failed',
+      error: 'Scan blocked',
       details: error.message
     });
   }
@@ -397,15 +464,16 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const userId = req.userId;
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         id, user_id, url, status, total_score, rubric_version,
         ai_readability_score, ai_search_readiness_score,
         content_freshness_score, content_structure_score,
         speed_ux_score, technical_setup_score,
         trust_authority_score, voice_optimization_score,
         industry, page_count, pages_analyzed,
-        detailed_analysis, faq_schema, created_at, completed_at
-       FROM scans 
+        detailed_analysis, faq_schema, created_at, completed_at,
+        domain, extracted_domain, domain_type
+       FROM scans
        WHERE id = $1 AND user_id = $2`,
       [scanId, userId]
     );
@@ -565,17 +633,80 @@ router.get('/:id', authenticateToken, async (req, res) => {
       voiceOptimization: scan.voice_optimization_score
     };
 
+    // ============================================
+    // HISTORIC COMPARISON LOGIC
+    // ============================================
+    let comparisonData = null;
+    let historicalTimeline = null;
+
+    try {
+      // Check if scan has domain field for comparison
+      if (scan.domain) {
+        // Fetch previous scan for the same domain by this user
+        const previousScanResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND id < $3
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 1`,
+          [userId, scan.domain, scanId]
+        );
+
+        if (previousScanResult.rows.length > 0) {
+          const previousScan = previousScanResult.rows[0];
+          comparisonData = calculateScanComparison(scan, previousScan);
+          console.log(`📊 Comparison calculated for scan ${scanId} vs ${previousScan.id}`);
+        }
+
+        // Fetch all scans for this domain for timeline visualization (last 10)
+        const historicalScansResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 10`,
+          [userId, scan.domain]
+        );
+
+        if (historicalScansResult.rows.length > 1) {
+          historicalTimeline = getHistoricalTimeline(historicalScansResult.rows);
+          console.log(`📈 Historical timeline generated with ${historicalScansResult.rows.length} data points`);
+        }
+      }
+    } catch (comparisonError) {
+      console.error('⚠️  Error calculating comparison (non-fatal):', comparisonError);
+      // Continue without comparison data - it's optional
+    }
+
     res.json({
       success: true,
       scan: {
         ...scan,
         categories: categoryScores,
         categoryBreakdown: categoryScores, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
         nextBatchUnlock: nextBatchUnlock, // Next batch unlock info
-        batchesUnlocked: batchesUnlocked // How many batches were just unlocked
+        batchesUnlocked: batchesUnlocked, // How many batches were just unlocked
+        comparison: comparisonData, // Historic comparison data
+        historicalTimeline: historicalTimeline // Timeline data for visualization
       }
     });
 
@@ -658,7 +789,7 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
       return res.status(403).json({
         error: 'Progressive unlock is only available for DIY and Pro tiers',
         upgrade: {
-          message: 'Upgrade to DIY Starter to unlock 5 recommendations per day',
+          message: 'Upgrade to DIY Starter to unlock 5 recommendations every 5 days',
           cta: 'Upgrade to DIY - $29/month',
           ctaUrl: '/checkout.html?plan=diy'
         }
@@ -686,21 +817,26 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
     }
 
     const progress = progressResult.rows[0];
-    const today = new Date().toDateString();
-    const lastUnlock = progress.last_unlock_date ? new Date(progress.last_unlock_date).toDateString() : null;
+    const now = new Date();
+    const lastUnlock = progress.last_unlock_date ? new Date(progress.last_unlock_date) : null;
 
-    // Check if we need to reset daily counter
-    let unlocksToday = progress.unlocks_today || 0;
-    if (lastUnlock !== today) {
-      unlocksToday = 0; // Reset counter for new day
+    // Calculate days since last unlock
+    let daysSinceLastUnlock = 0;
+    if (lastUnlock) {
+      daysSinceLastUnlock = Math.floor((now - lastUnlock) / (1000 * 60 * 60 * 24));
     }
 
-    // Check daily limit (5 unlocks per day)
-    if (unlocksToday >= 5) {
+    // Check 5-day interval requirement (DIY tier only)
+    if (user.plan === 'diy' && lastUnlock && daysSinceLastUnlock < 5) {
+      const daysRemaining = 5 - daysSinceLastUnlock;
+      const nextUnlockDate = new Date(lastUnlock);
+      nextUnlockDate.setDate(nextUnlockDate.getDate() + 5);
+
       return res.status(429).json({
-        error: 'Daily unlock limit reached',
-        message: 'You can unlock 5 new recommendations per day. Come back tomorrow for more!',
-        canUnlockAgainAt: new Date(new Date().setHours(24, 0, 0, 0)).toISOString()
+        error: 'Unlock interval not met',
+        message: `You can unlock 5 new recommendations every 5 days. Come back in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}!`,
+        canUnlockAgainAt: nextUnlockDate.toISOString(),
+        daysRemaining: daysRemaining
       });
     }
 
@@ -716,25 +852,30 @@ router.post('/:id/unlock', authenticateToken, async (req, res) => {
     const remaining = progress.total_recommendations - progress.active_recommendations;
     const toUnlock = Math.min(5, remaining);
 
-    // Update user progress
+    // Update user progress (remove unlocks_today since we're using 5-day intervals)
     const updated = await db.query(
       `UPDATE user_progress
        SET active_recommendations = active_recommendations + $1,
-           unlocks_today = $2,
            last_unlock_date = CURRENT_DATE
-       WHERE user_id = $3 AND scan_id = $4
+       WHERE user_id = $2 AND scan_id = $3
        RETURNING *`,
-      [toUnlock, unlocksToday + 1, userId, scanId]
+      [toUnlock, userId, scanId]
     );
 
     console.log(`🔓 User ${userId} unlocked ${toUnlock} recommendations for scan ${scanId}`);
+
+    // Calculate next unlock date (5 days from now for DIY)
+    const nextUnlockDate = new Date();
+    nextUnlockDate.setDate(nextUnlockDate.getDate() + 5);
 
     res.json({
       success: true,
       message: `Unlocked ${toUnlock} new recommendation${toUnlock > 1 ? 's' : ''}!`,
       progress: updated.rows[0],
       unlocked: toUnlock,
-      canUnlockMore: (unlocksToday + 1) < 5 && (progress.active_recommendations + toUnlock) < progress.total_recommendations
+      canUnlockMore: user.plan === 'pro' && (progress.active_recommendations + toUnlock) < progress.total_recommendations,
+      nextUnlockDate: user.plan === 'diy' ? nextUnlockDate.toISOString() : null,
+      daysUntilNextUnlock: user.plan === 'diy' ? 5 : 0
     });
 
   } catch (error) {
@@ -957,7 +1098,10 @@ async function performCompetitorScan(url) {
   try {
     // Run V5 Rubric Engine for scoring only
     console.log('📊 Running V5 Rubric Engine (scores only)...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 25,  // Set to 25 pages per user request
+      timeout: 10000
+    });
     const v5Results = await engine.analyze();
 
     // Extract scores from category results
@@ -1000,14 +1144,154 @@ async function performCompetitorScan(url) {
   }
 }
 
+/**
+ * Transform V5 categories structure to flat subfactor scores
+ * The new V5 engine returns nested objects and different key names
+ * This function flattens and renames to match what the issue detector expects
+ */
+function transformV5ToSubfactors(v5Categories) {
+  const subfactors = {};
+
+  // AI Readability - Scale from 0-2/0-10 to 0-100 and rename keys
+  if (v5Categories.aiReadability) {
+    const ar = v5Categories.aiReadability;
+    subfactors.aiReadability = {
+      altTextScore: (ar.altText || 0) * 50,  // 0-2 scale → 0-100
+      captionsTranscriptsScore: (ar.transcription || 0) * 10,  // 0-10 scale → 0-100
+      interactiveAccessScore: (ar.interactive || 0) * 50,  // 0-2 scale → 0-100
+      crossMediaScore: (ar.crossMedia || 0) * 50  // 0-2 scale → 0-100
+    };
+  }
+
+  // AI Search Readiness - Extract from nested structure and scale
+  if (v5Categories.aiSearchReadiness) {
+    const asr = v5Categories.aiSearchReadiness;
+    const directAnswer = asr.subfactors?.directAnswerStructure || {};  // CRITICAL FIX: Added .subfactors
+    const topical = asr.subfactors?.topicalAuthority || {};  // CRITICAL FIX: Added .subfactors
+
+    subfactors.aiSearchReadiness = {
+      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 50,  // 0-2 → 0-100 (hybrid scoring)
+      scannabilityScore: (directAnswer.factors?.scannability || 0) * 50,  // 0-2 → 0-100
+      readabilityScore: (directAnswer.factors?.readability || 0) * 50,  // 0-2 → 0-100 (factor max is 2.0)
+      faqScore: (directAnswer.factors?.icpQA || 0) * 50,  // 0-2 → 0-100 (FIXED: was * 33, now * 50)
+      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 50,  // 0-2 → 0-100
+      pillarPagesScore: (topical.factors?.pillarPages || 0) * 50,  // 0-2 → 0-100 (max is 2.0, not 3.0)
+      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
+      painPointsScore: (topical.factors?.contentDepth || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
+      geoContentScore: 50  // Default middle value if not available
+    };
+  }
+
+  // Content Freshness - Scale from 0-2 to 0-100
+  if (v5Categories.contentFreshness) {
+    const cf = v5Categories.contentFreshness;
+    subfactors.contentFreshness = {
+      lastUpdatedScore: (cf.lastModified || 0) * 50,  // 0-2 → 0-100
+      versioningScore: (cf.versioning || 0) * 50,  // 0-2 → 0-100
+      timeSensitiveScore: (cf.timeSensitive || 0) * 50,  // 0-2 → 0-100
+      auditProcessScore: (cf.auditProcess || 0) * 50,  // 0-2 → 0-100
+      liveDataScore: (cf.realTimeInfo || 0) * 50,  // 0-2 → 0-100
+      httpFreshnessScore: 50,  // Not in new structure, use default
+      editorialCalendarScore: 50  // Not in new structure, use default
+    };
+  }
+
+  // Content Structure - Extract from nested structure and scale
+  if (v5Categories.contentStructure) {
+    const cs = v5Categories.contentStructure;
+    const semantic = cs.subfactors?.semanticHTML || {};  // CRITICAL FIX: Added .subfactors
+    const entity = cs.subfactors?.entityRecognition || {};  // CRITICAL FIX: Added .subfactors
+
+    subfactors.contentStructure = {
+      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 66.7,  // 0-1.5 → 0-100
+      navigationScore: (semantic.factors?.contentSectioning || 0) * 66.7,  // 0-1.5 → 0-100
+      entityCuesScore: (entity.factors?.namedEntities || 0) * 66.7,  // 0-1.5 → 0-100
+      accessibilityScore: (semantic.factors?.accessibility || 0) * 66.7,  // 0-1.5 → 0-100
+      geoMetaScore: (entity.factors?.geoEntities || 0) * 66.7  // 0-1.5 → 0-100
+    };
+  }
+
+  // Speed & UX - Scale from 0-1 to 0-100
+  if (v5Categories.speedUX) {
+    const su = v5Categories.speedUX;
+    subfactors.speedUX = {
+      lcpScore: (su.lcp || 0) * 100,  // 0-1 → 0-100
+      clsScore: (su.cls || 0) * 100,  // 0-1 → 0-100
+      inpScore: (su.inp || 0) * 100,  // 0-1 → 0-100
+      mobileScore: (su.mobile || 0) * 100,  // 0-1 → 0-100
+      crawlerResponseScore: (su.crawlerResponse || 0) * 100  // 0-1 → 0-100
+    };
+  }
+
+  // Technical Setup - Extract from nested structure and scale
+  if (v5Categories.technicalSetup) {
+    const ts = v5Categories.technicalSetup;
+    const crawler = ts.subfactors?.crawlerAccess || {};  // CRITICAL FIX: Added .subfactors
+    const structured = ts.subfactors?.structuredData || {};  // CRITICAL FIX: Added .subfactors
+
+    subfactors.technicalSetup = {
+      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 55.6,  // 0-1.8 → 0-100
+      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 55.6,  // 0-1.8 → 0-100
+      canonicalHreflangScore: 50,  // Not in new structure, use default
+      openGraphScore: 50,  // Not in new structure, use default
+      sitemapScore: (crawler.factors?.sitemap || 0) * 55.6,  // 0-1.8 → 0-100 (FIXED: was reading serverResponse!)
+      indexNowScore: 50,  // Not in new structure, use default
+      rssFeedScore: 50  // Not in new structure, use default
+    };
+  }
+
+  // Trust & Authority - Extract from nested structure and scale
+  if (v5Categories.trustAuthority) {
+    const ta = v5Categories.trustAuthority;
+    const eeat = ta.subfactors?.eeat || {};  // CRITICAL FIX: Added .subfactors
+    const authority = ta.subfactors?.authorityNetwork || {};  // CRITICAL FIX: Added .subfactors
+
+    subfactors.trustAuthority = {
+      authorBiosScore: (eeat.factors?.authorProfiles || 0) * 50,  // 0-2 → 0-100
+      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100 (legacy)
+      professionalCertifications: (eeat.factors?.professionalCertifications || 0) * 83.3,  // 0-1.2 → 0-100
+      teamCredentials: (eeat.factors?.teamCredentials || 0) * 83.3,  // 0-1.2 → 0-100
+      industryMemberships: (authority.factors?.industryMemberships || 0) * 83.3,  // 0-1.2 → 0-100
+      domainAuthorityScore: (authority.factors?.domainAuthority || 0) * 33,  // 0-3 → 0-100
+      thoughtLeadershipScore: (authority.factors?.thoughtLeadership || 0) * 33,  // 0-3 → 0-100
+      thirdPartyProfilesScore: (authority.factors?.socialAuthority || 0) * 50  // 0-2 → 0-100
+    };
+  }
+
+  // Voice Optimization - Extract from nested structure and scale
+  if (v5Categories.voiceOptimization) {
+    const vo = v5Categories.voiceOptimization;
+    const conversational = vo.subfactors?.conversationalKeywords || {};  // CRITICAL FIX: Added .subfactors
+    const voice = vo.subfactors?.voiceSearch || {};  // CRITICAL FIX: Added .subfactors
+
+    subfactors.voiceOptimization = {
+      longTailScore: (conversational.factors?.longTail || 0) * 83,  // 0-1.2 → 0-100
+      localIntentScore: (conversational.factors?.localIntent || 0) * 83,  // 0-1.2 → 0-100
+      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 83,  // 0-1.2 → 0-100
+      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 83,  // 0-1.2 → 0-100 (hybrid scoring)
+      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 83  // 0-1.2 → 0-100
+    };
+  }
+
+  return subfactors;
+}
+
 async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
 
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 25,  // Set to 25 pages per user request
+      timeout: 10000,
+      industry: userIndustry  // Pass industry for certification detection
+    });
     const v5Results = await engine.analyze();
+
+    // Debug: Log sitemap detection from crawler
+    console.log('[DEBUG] Sitemap detected:', engine.evidence?.technical?.sitemapDetected || engine.evidence?.technical?.hasSitemap);
+    console.log('[DEBUG] Technical Setup category:', JSON.stringify(v5Results.categories.technicalSetup, null, 2));
 
     // Extract scores from category results
     const categories = {
@@ -1024,11 +1308,21 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     const totalScore = v5Results.totalScore;
     const scanEvidence = engine.evidence;
 
-    // Extract subfactors from each category for issue detection
-    const subfactorScores = {};
-    for (const [category, data] of Object.entries(v5Results.categories)) {
-      subfactorScores[category] = data.subfactors;
+    // Add certification data to scanEvidence for recommendation generation
+    if (v5Results.certificationData) {
+      scanEvidence.certificationData = v5Results.certificationData;
+      console.log(`🏆 Certification data added to scanEvidence:`, {
+        detected: v5Results.certificationData.detected?.length || 0,
+        missing: v5Results.certificationData.missing?.length || 0,
+        coverage: v5Results.certificationData.overallCoverage || 0
+      });
     }
+
+    // Transform V5 categories structure to flat subfactor scores for issue detection
+    // The V5 engine returns nested structures, but issue detector expects flat key-value pairs
+    const subfactorScores = transformV5ToSubfactors(v5Results.categories);
+    console.log('[V5Transform] Transformed subfactor scores for issue detection');
+    console.log('[V5Transform] Technical Setup subfactors:', JSON.stringify(subfactorScores.technicalSetup, null, 2));
 
     // Determine industry: Prioritize user-selected > auto-detected > fallback
     const finalIndustry = userIndustry || v5Results.industry || 'General';

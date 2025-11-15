@@ -9,6 +9,11 @@ const { authenticateAdmin } = require('../../middleware/adminAuth');
  */
 router.get('/', authenticateAdmin, async (req, res) => {
   try {
+    // Prevent caching of admin dashboard data
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const { timeframe = '30' } = req.query; // days
     const days = parseInt(timeframe);
 
@@ -245,6 +250,11 @@ router.get('/', authenticateAdmin, async (req, res) => {
  */
 router.get('/alerts', authenticateAdmin, async (req, res) => {
   try {
+    // Prevent caching of admin alerts
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const alerts = [];
 
     // 1. Payment Failures

@@ -147,7 +147,7 @@ function displayResults(scan, quota) {
 
     // Display category scores
     if (scan.categoryBreakdown) {
-        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
+        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || [], scan.categoryWeights || {});
     }
 
     // Update recommendations count
@@ -186,17 +186,24 @@ function displayResults(scan, quota) {
             exportSection.style.display = 'flex';
         }
     }
+
+    // Display historic comparison if available
+    if (scan.comparison || scan.historicalTimeline) {
+        displayHistoricComparison(scan.comparison, scan.historicalTimeline);
+    }
 }
 
-function displayCategoryScores(categories, recommendations) {
+function displayCategoryScores(categories, recommendations, weights = {}) {
     const container = document.getElementById('categoryScores');
     container.innerHTML = '';
 
-    // Prepare category data with scores
+    // Prepare category data with scores and weights
     const categoryData = Object.entries(categories).map(([categoryKey, score]) => {
         const displayScore = Math.round(score * 10); // Convert to 0-1000
         const categoryName = categoryNames[categoryKey] || formatCategoryName(categoryKey);
-        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore };
+        const weight = weights[categoryKey] || 0;
+        const weightPercent = Math.round(weight * 100); // Convert to percentage
+        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore, weight: weight, weightPercent: weightPercent };
     });
 
     // Calculate and display metrics
@@ -234,6 +241,7 @@ function displayCategoryScores(categories, recommendations) {
         item.innerHTML = `
             <div class="category-info">
                 <div class="category-name">${cat.name}</div>
+                ${cat.weightPercent > 0 ? `<div class="category-weight" style="font-size: 12px; color: #718096; margin-top: 4px;">Weight: ${cat.weightPercent}% of total score</div>` : ''}
             </div>
             <div class="category-score-section">
                 <div class="${scoreColor}">${displayScore}</div>
@@ -527,6 +535,9 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         displayRecs.forEach((rec, index) => {
             const recCard = createRecommendationCard(rec, index, userTier);
             activeContainer.appendChild(recCard);
+
+            // Attach copy button listeners immediately after adding to DOM
+            attachCopyButtonListeners(recCard);
         });
     } else if (activeRecs.length === 0) {
         activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
@@ -537,6 +548,9 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         skippedRecs.forEach((rec, index) => {
             const recCard = createRecommendationCard(rec, index + displayRecs.length, userTier, true);
             skippedContainer.appendChild(recCard);
+
+            // Attach copy button listeners immediately after adding to DOM
+            attachCopyButtonListeners(recCard);
         });
     }
 
@@ -565,6 +579,52 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         `;
         activeContainer.appendChild(upgradeMsg);
     }
+
+}
+
+// Attach copy button listeners directly to buttons within a card
+function attachCopyButtonListeners(cardElement) {
+    console.log('📋 Attaching copy button listeners to card');
+
+    // Find all copy buttons within this card
+    const copyButtons = cardElement.querySelectorAll('.copy-btn');
+    console.log(`   Found ${copyButtons.length} copy buttons in card`);
+
+    copyButtons.forEach((button, idx) => {
+        const targetId = button.getAttribute('data-target');
+        console.log(`   Button ${idx}: target=${targetId}`);
+
+        // Remove any existing listener to avoid duplicates
+        button.removeEventListener('click', button._copyHandler);
+
+        // Create and store the handler
+        button._copyHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Copy button clicked! Target:', targetId);
+            await copyCode(targetId);
+        };
+
+        // Attach the listener
+        button.addEventListener('click', button._copyHandler);
+    });
+
+    // Also handle schema copy buttons
+    const schemaButtons = cardElement.querySelectorAll('.copy-schema-btn');
+    console.log(`   Found ${schemaButtons.length} schema copy buttons in card`);
+
+    schemaButtons.forEach((button) => {
+        button.removeEventListener('click', button._schemaHandler);
+
+        button._schemaHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Schema copy button clicked!');
+            await copySchemaCode();
+        };
+
+        button.addEventListener('click', button._schemaHandler);
+    });
 }
 
 // Tab switching function
@@ -654,15 +714,19 @@ async function unlockMoreRecommendations() {
 
         if (data.success) {
             // Show success message
-            alert(`✅ ${data.message}\nYou now have ${data.progress.active_recommendations} recommendations unlocked!`);
+            await showAlertModal(
+                'Success!',
+                `${data.message}\n\nYou now have ${data.progress.active_recommendations} recommendations unlocked!`,
+                'success'
+            );
             // Reload page to show new recommendations
             window.location.reload();
         } else {
-            alert(`❌ ${data.error || 'Failed to unlock recommendations'}`);
+            await showAlertModal('Error', data.error || 'Failed to unlock recommendations', 'error');
         }
     } catch (error) {
         console.error('Unlock error:', error);
-        alert('❌ Failed to unlock recommendations. Please try again.');
+        await showAlertModal('Error', 'Failed to unlock recommendations. Please try again.', 'error');
     }
 }
 
@@ -805,7 +869,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                     <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">📝 Ready-to-Use Content</h4>
                     <div style="position: relative;">
                         <pre style="background: white; border: 1px solid #a7f3d0; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px; white-space: pre-wrap; font-family: -apple-system, system-ui; color: #2d3748;"><code id="ready-content-${index}">${escapeHtml(readyToUseContent)}</code></pre>
-                        <button onclick="copyCode('ready-content-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #10b981; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                        <button class="copy-btn" data-target="ready-content-${index}" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #10b981; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
                             Copy
                         </button>
                     </div>
@@ -817,7 +881,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                     <h4 style="font-size: 16px; font-weight: 700; color: white; margin-bottom: 12px;">💻 Implementation Code</h4>
                     <div style="position: relative;">
                         <pre style="background: #111827; color: #e5e7eb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px;"><code id="code-${index}">${escapeHtml(codeSnippet)}</code></pre>
-                        <button onclick="copyCode('code-${index}')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3b82f6; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
+                        <button class="copy-btn" data-target="code-${index}" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3b82f6; color: white; border-radius: 6px; font-size: 11px; border: none; cursor: pointer;">
                             Copy
                         </button>
                     </div>
@@ -936,12 +1000,11 @@ function displayFAQSection(faqData) {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="font-bold text-lg">📋 Complete FAQ Schema Code</h4>
-                    <button onclick="copySchemaCode()" 
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    <button class="copy-schema-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
                         Copy Schema
                     </button>
                 </div>
-                <textarea id="schemaCodeText" readonly 
+                <textarea id="schemaCodeText" readonly
                           class="w-full h-64 p-4 bg-gray-900 text-gray-100 rounded-lg font-mono text-sm resize-none">${escapeHtml(faqData.fullSchemaCode)}</textarea>
                 <div class="mt-4 p-4 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-700">
@@ -951,6 +1014,21 @@ function displayFAQSection(faqData) {
                 </div>
             </div>
         `;
+
+        // Attach copy button listener for FAQ schema
+        console.log('📋 Setting up FAQ schema copy button');
+        const schemaButton = schemaContainer.querySelector('.copy-schema-btn');
+        if (schemaButton) {
+            schemaButton.removeEventListener('click', schemaButton._schemaHandler);
+            schemaButton._schemaHandler = async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🖱️ FAQ Schema copy button clicked!');
+                await copySchemaCode();
+            };
+            schemaButton.addEventListener('click', schemaButton._schemaHandler);
+            console.log('✅ FAQ schema button listener attached');
+        }
     }
 }
 
@@ -1076,26 +1154,80 @@ function toggleRecommendation(index) {
     }
 }
 
-function copyCode(elementId) {
+async function copyCode(elementId) {
+    console.log('🔍 copyCode called with elementId:', elementId);
+
     const codeElement = document.getElementById(elementId);
-    if (codeElement) {
-        navigator.clipboard.writeText(codeElement.textContent);
-        alert('Code copied to clipboard!');
+    if (!codeElement) {
+        console.error('❌ Code element not found:', elementId);
+        showNotification('Failed to copy code - element not found', 'error');
+        return;
+    }
+
+    console.log('✅ Code element found:', codeElement);
+
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(codeElement.textContent);
+            showNotification('Code copied to clipboard!', 'success');
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = codeElement.textContent;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            if (successful) {
+                showNotification('Code copied to clipboard!', 'success');
+            } else {
+                throw new Error('Copy command failed');
+            }
+        }
 
         // Track code copy interaction
         const recIndex = elementId.match(/\d+/)?.[0];
         if (recIndex && typeof trackCodeCopy === 'function') {
             trackCodeCopy(`rec-${recIndex}`, scanId);
         }
+    } catch (error) {
+        console.error('Copy failed:', error);
+        showNotification('Failed to copy code. Please try selecting and copying manually.', 'error');
     }
 }
 
-function copySchemaCode() {
+async function copySchemaCode() {
     const schemaText = document.getElementById('schemaCodeText');
-    if (schemaText) {
-        schemaText.select();
-        document.execCommand('copy');
-        alert('Schema code copied to clipboard!');
+    if (!schemaText) {
+        console.error('Schema code element not found');
+        showNotification('Failed to copy schema - element not found', 'error');
+        return;
+    }
+
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(schemaText.textContent || schemaText.value);
+            showNotification('Schema code copied to clipboard!', 'success');
+        } else {
+            // Fallback for older browsers
+            schemaText.select();
+            const successful = document.execCommand('copy');
+
+            if (successful) {
+                showNotification('Schema code copied to clipboard!', 'success');
+            } else {
+                throw new Error('Copy command failed');
+            }
+        }
+    } catch (error) {
+        console.error('Copy schema failed:', error);
+        showNotification('Failed to copy schema. Please try selecting and copying manually.', 'error');
     }
 }
 
@@ -1119,6 +1251,71 @@ function showNotification(message, type = 'info') {
     `;
     document.body.appendChild(notificationDiv);
     setTimeout(() => notificationDiv.remove(), 5000);
+}
+
+// Show Xeo-branded alert modal helper (for success/info/error messages)
+function showAlertModal(title, message, type = 'info') {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+
+        // Icon based on type
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+
+        const icon = icons[type] || icons.info;
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: slideDown 0.3s ease-out;">
+                <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                    <span style="font-size: 28px; line-height: 1;">${icon}</span>
+                    <div style="flex: 1;">
+                        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #2d3748;">${title}</h3>
+                        <p style="color: #4a5568; line-height: 1.6; white-space: pre-line;">${message}</p>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
+                        OK
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const okBtn = modal.querySelector('#okBtn');
+        okBtn.onclick = () => {
+            modal.remove();
+            resolve(true);
+        };
+
+        // Hover effect for OK button
+        okBtn.onmouseenter = () => okBtn.style.transform = 'scale(1.05)';
+        okBtn.onmouseleave = () => okBtn.style.transform = 'scale(1)';
+
+        // Close on backdrop click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(true);
+            }
+        };
+
+        // Close on Enter key
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                modal.remove();
+                resolve(true);
+                document.removeEventListener('keydown', handleEnter);
+            }
+        };
+        document.addEventListener('keydown', handleEnter);
+    });
 }
 
 // Show confirm modal helper
@@ -1164,6 +1361,9 @@ function showConfirmModal(title, message) {
 }
 
 // Make functions globally accessible
+window.copyCode = copyCode;
+window.copySchemaCode = copySchemaCode;
+
 window.markImplemented = async function(recId) {
     console.log('Marking recommendation as implemented:', recId);
 
@@ -1212,7 +1412,7 @@ window.skipRecommendation = async function(recId) {
     console.log('Skipping recommendation:', recId);
 
     if (!authToken) {
-        showNotification('You must be logged in to skip recommendations.', 'info');
+        await showAlertModal('Login Required', 'You must be logged in to skip recommendations.', 'info');
         return;
     }
 
@@ -1241,11 +1441,11 @@ window.skipRecommendation = async function(recId) {
             setTimeout(() => window.location.reload(), 2000);
         } else {
             const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
-            showNotification(errorMsg, 'error');
+            await showAlertModal('Cannot Skip Yet', errorMsg, 'warning');
         }
     } catch (error) {
         console.error('Skip error:', error);
-        showNotification('Failed to skip recommendation. Please try again.', 'error');
+        await showAlertModal('Error', 'Failed to skip recommendation. Please try again.', 'error');
     }
 }
 
@@ -1696,6 +1896,287 @@ window.collapseAll = function() {
     cards.forEach(card => {
         card.classList.remove('expanded');
     });
+}
+
+// ============================================
+// HISTORIC COMPARISON FUNCTIONS
+// ============================================
+
+// Global variable to store timeline chart
+let timelineChart = null;
+
+// Toggle comparison section visibility
+window.toggleComparison = function() {
+    const content = document.getElementById('comparisonContent');
+    const toggle = document.getElementById('comparisonToggle');
+
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        toggle.classList.remove('expanded');
+    } else {
+        content.classList.add('active');
+        toggle.classList.add('expanded');
+    }
+}
+
+// Display historic comparison data
+function displayHistoricComparison(comparison, historicalTimeline) {
+    if (!comparison || !comparison.hasPreviousScan) {
+        // No comparison data available
+        return;
+    }
+
+    console.log('📊 Displaying historic comparison:', comparison);
+
+    // Show comparison section
+    const comparisonSection = document.getElementById('comparisonSection');
+    if (comparisonSection) {
+        comparisonSection.style.display = 'block';
+    }
+
+    // Update subtitle with date info
+    const subtitle = document.getElementById('comparisonSubtitle');
+    if (subtitle && comparison.previousScanDate) {
+        const prevDate = new Date(comparison.previousScanDate).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        subtitle.textContent = `Compared with scan from ${prevDate} (${comparison.daysBetweenScans} days ago)`;
+    }
+
+    // Display score change summary
+    displayScoreChangeSummary(comparison);
+
+    // Display category comparison table
+    displayCategoryComparisonTable(comparison);
+
+    // Display timeline if available
+    if (historicalTimeline && historicalTimeline.dataPoints && historicalTimeline.dataPoints.length > 1) {
+        displayTimeline(historicalTimeline);
+    }
+}
+
+// Display score change summary cards
+function displayScoreChangeSummary(comparison) {
+    const container = document.getElementById('scoreChangeSummary');
+    if (!container) return;
+
+    const scoreChange = comparison.scoreChange;
+    const improved = comparison.summary.improved;
+    const declined = comparison.summary.declined;
+
+    let scoreChangeClass = 'neutral';
+    let scoreChangeSign = '';
+    if (scoreChange.total > 0) {
+        scoreChangeClass = 'positive';
+        scoreChangeSign = '+';
+    } else if (scoreChange.total < 0) {
+        scoreChangeClass = 'negative';
+    }
+
+    container.innerHTML = `
+        <div class="score-change-card ${scoreChangeClass}">
+            <div class="score-change-label">Overall Score Change</div>
+            <div class="score-change-value ${scoreChangeClass}">
+                ${scoreChangeSign}${Math.round(scoreChange.total * 10)}
+            </div>
+            <div class="score-change-delta">
+                ${Math.round(scoreChange.previous * 10)} → ${Math.round(scoreChange.current * 10)}
+            </div>
+        </div>
+
+        <div class="score-change-card positive">
+            <div class="score-change-label">Categories Improved</div>
+            <div class="score-change-value positive">${improved}</div>
+            <div class="score-change-delta">
+                ${improved === 1 ? 'category' : 'categories'} got better
+            </div>
+        </div>
+
+        <div class="score-change-card ${declined > 0 ? 'negative' : 'neutral'}">
+            <div class="score-change-label">Categories Declined</div>
+            <div class="score-change-value ${declined > 0 ? 'negative' : 'neutral'}">${declined}</div>
+            <div class="score-change-delta">
+                ${declined === 1 ? 'category' : 'categories'} need attention
+            </div>
+        </div>
+    `;
+}
+
+// Display category comparison table
+function displayCategoryComparisonTable(comparison) {
+    const container = document.getElementById('categoryComparisonTable');
+    if (!container) return;
+
+    const allCategories = [...comparison.categoriesImproved, ...comparison.categoriesDeclined];
+
+    // Sort by absolute change (biggest changes first)
+    allCategories.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+
+    if (allCategories.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #718096;">
+                <p style="font-size: 16px; margin-bottom: 10px;">✨ No significant changes detected</p>
+                <p style="font-size: 14px;">All categories remained stable (±5 points)</p>
+            </div>
+        `;
+        return;
+    }
+
+    let tableHTML = `
+        <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 15px; margin-top: 20px;">
+            Category Changes
+        </h3>
+        <table class="category-comparison-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Previous Score</th>
+                    <th>Current Score</th>
+                    <th>Change</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    allCategories.forEach(cat => {
+        const changeClass = cat.change > 0 ? 'positive' : 'negative';
+        const changeSign = cat.change > 0 ? '+' : '';
+        const statusClass = cat.change > 0 ? 'improved' : 'declined';
+        const statusText = cat.change > 0 ? 'Improved' : 'Declined';
+        const arrow = cat.change > 0 ? '↑' : '↓';
+
+        tableHTML += `
+            <tr>
+                <td class="category-name-cell">${cat.name}</td>
+                <td>${Math.round(cat.previousScore * 10)}</td>
+                <td>${Math.round(cat.currentScore * 10)}</td>
+                <td>
+                    <div class="change-indicator ${changeClass}">
+                        <span class="change-arrow">${arrow}</span>
+                        <span>${changeSign}${Math.round(cat.change * 10)}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="score-badge ${statusClass}">${statusText}</span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = tableHTML;
+}
+
+// Display timeline chart
+function displayTimeline(historicalTimeline) {
+    const timelineSection = document.getElementById('timelineSection');
+    if (timelineSection) {
+        timelineSection.style.display = 'block';
+    }
+
+    const ctx = document.getElementById('timelineChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+
+    // Prepare data
+    const dataPoints = historicalTimeline.dataPoints;
+    const labels = dataPoints.map(dp => {
+        const date = new Date(dp.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const scores = dataPoints.map(dp => Math.round(dp.totalScore * 10));
+
+    // Create gradient
+    const canvas = ctx.getContext('2d');
+    const gradient = canvas.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(0, 185, 218, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 185, 218, 0.0)');
+
+    timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Score',
+                data: scores,
+                borderColor: '#00B9DA',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#00B9DA',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#f31c7e',
+                pointHoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.parsed.y}/1000`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1000,
+                    ticks: {
+                        stepSize: 200,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    console.log('📈 Timeline chart created with', dataPoints.length, 'data points');
 }
 
 // Initialize on page load

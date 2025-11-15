@@ -94,9 +94,15 @@ function updateUserInfo() {
     };
     document.getElementById('planInfo').textContent = planInfo[user.plan];
 
-    // Show manage subscription button for paid users
-    if (user.plan === 'diy' || user.plan === 'pro') {
-        document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
+    // Show manage subscription button for ALL users (free can upgrade, paid can manage/downgrade)
+    const manageBtn = document.getElementById('manageSubscriptionBtn');
+    manageBtn.style.display = 'inline-block';
+
+    // Update button text based on plan
+    if (user.plan === 'free') {
+        manageBtn.innerHTML = '⬆️ Upgrade Plan';
+    } else {
+        manageBtn.innerHTML = '💳 Manage Subscription';
     }
 
     // Show waitlist banner for DIY users
@@ -646,7 +652,7 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
             
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || 'Scan failed');
+                throw new Error(error.error || 'Scan blocked');
             }
             
             const data = await response.json();
@@ -671,20 +677,29 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
         console.error('Scan error:', error);
 
         const content = `
-            <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
-                <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
-                    ❌ Scan Failed
+            <div style="text-align: center; background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%); padding: 30px; border-radius: 12px; margin-bottom: 20px; color: white;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🛡️</div>
+                <p style="margin: 0; font-size: 1.3rem; font-weight: 700; margin-bottom: 10px;">
+                    Scan Blocked
                 </p>
-                <p style="margin: 15px 0 0 0; color: #7f1d1d; font-size: 0.95rem; font-family: monospace; background: white; padding: 10px; border-radius: 6px;">
-                    ${error.message}
+                <p style="margin: 0; font-size: 1rem; opacity: 0.95; line-height: 1.6;">
+                    Your website's security settings are blocking our AI scan from crawling your site.
                 </p>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: left;">
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
-                    Please try again or contact support if the issue persists.
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; text-align: left;">
+                <p style="margin: 0 0 15px 0; color: #2d3748; font-weight: 600; font-size: 1.05rem;">
+                    This usually means:
                 </p>
-                <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">
-                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none;">aivisibility@xeo.marketing</a>
+                <div style="color: #4a5568; font-size: 0.95rem; line-height: 1.8; margin-bottom: 20px;">
+                    <p style="margin: 0 0 8px 0;">• Your firewall or security plugin is blocking our crawler</p>
+                    <p style="margin: 0 0 8px 0;">• Your robots.txt file restricts automated scans</p>
+                    <p style="margin: 0 0 8px 0;">• Your hosting provider has aggressive bot protection</p>
+                </div>
+                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
+                    Need help? Contact our support team:
+                </p>
+                <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">
+                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none; font-weight: 600;">aivisibility@xeo.marketing</a>
                 </p>
             </div>
         `;
@@ -706,9 +721,13 @@ async function manageSubscription() {
     const authToken = localStorage.getItem('authToken');
 
     if (!authToken) {
-        alert('Please log in to manage your subscription');
+        await showAlertModal('Login Required', 'Please log in to manage your subscription', 'info');
         return;
     }
+
+    // Get current user plan from stored user object
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentPlan = storedUser.plan || 'free';
 
     try {
         // Show loading state
@@ -717,7 +736,13 @@ async function manageSubscription() {
         btn.disabled = true;
         btn.innerHTML = '⏳ Loading...';
 
-        // Get Stripe Customer Portal URL
+        // For FREE users: redirect to checkout page for upgrade
+        if (currentPlan === 'free') {
+            window.location.href = 'checkout.html';
+            return;
+        }
+
+        // For PAID users: redirect to Stripe Customer Portal (manage/downgrade/cancel)
         const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
             method: 'GET',
             headers: {
@@ -741,19 +766,19 @@ async function manageSubscription() {
 
     } catch (error) {
         console.error('Subscription management error:', error);
-        alert(error.message || 'Failed to open subscription portal. Please try again or contact support.');
+        await showAlertModal('Error', error.message || 'Failed to open subscription portal. Please try again or contact support.', 'error');
 
         // Restore button
         const btn = document.getElementById('manageSubscriptionBtn');
         btn.disabled = false;
-        btn.innerHTML = '⚙️ Manage Subscription';
+        btn.innerHTML = originalText;
     }
 }
 
 // Change Primary Domain Modal Functions
-function openDomainModal() {
+async function openDomainModal() {
     if (!user || !user.primary_domain) {
-        alert('No primary domain set yet. Your primary domain will be set automatically on your first scan.');
+        await showAlertModal('No Domain Set', 'No primary domain set yet. Your primary domain will be set automatically on your first scan.', 'info');
         return;
     }
 
@@ -809,7 +834,7 @@ async function confirmDomainChange() {
         }
 
         // Success!
-        alert(`✅ Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`);
+        await showAlertModal('Success!', `Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`, 'success');
 
         // Close modal and reload page to reflect changes
         closeDomainModal();
@@ -898,6 +923,67 @@ document.addEventListener('click', function(event) {
         closeCompetitorModal(false);
     }
 });
+
+// Xeo-branded modal helpers
+function showAlertModal(title, message, type = 'info') {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+
+        const icon = icons[type] || icons.info;
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                    <span style="font-size: 28px; line-height: 1;">${icon}</span>
+                    <div style="flex: 1;">
+                        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #2d3748;">${title}</h3>
+                        <p style="color: #4a5568; line-height: 1.6; white-space: pre-line;">${message}</p>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
+                        OK
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const okBtn = modal.querySelector('#okBtn');
+        okBtn.onclick = () => {
+            modal.remove();
+            resolve(true);
+        };
+
+        okBtn.onmouseenter = () => okBtn.style.transform = 'scale(1.05)';
+        okBtn.onmouseleave = () => okBtn.style.transform = 'scale(1)';
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(true);
+            }
+        };
+
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                modal.remove();
+                resolve(true);
+                document.removeEventListener('keydown', handleEnter);
+            }
+        };
+        document.addEventListener('keydown', handleEnter);
+    });
+}
 
 // Loading helpers
 function showLoading() {

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page CMS - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            padding: 30px 0;
+            color: white;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            padding: 0 25px;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .nav-item.active {
+            border-left: 4px solid white;
+            padding-left: 21px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2d3748;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            border-color: #00B9DA;
+            color: #00B9DA;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #718096;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: #00B9DA;
+        }
+
+        .tab.active {
+            color: #00B9DA;
+            border-bottom-color: #00B9DA;
+        }
+
+        /* Content Sections */
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00B9DA;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Array Items */
+        .array-items {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+
+        .array-item {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .array-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        .btn-add {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .btn-add:hover {
+            background: #059669;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        /* Section Actions */
+        .section-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">AI Visibility</div>
+            <nav>
+                <a href="overview.html" class="nav-item">
+                    <span>📊</span>
+                    <span>Overview</span>
+                </a>
+                <a href="users.html" class="nav-item">
+                    <span>👥</span>
+                    <span>Users</span>
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <span>📈</span>
+                    <span>Source Analytics</span>
+                </a>
+                <a href="scans.html" class="nav-item">
+                    <span>🔍</span>
+                    <span>Scans</span>
+                </a>
+                <a href="curation.html" class="nav-item">
+                    <span>⭐</span>
+                    <span>Curation</span>
+                </a>
+                <a href="cms.html" class="nav-item active">
+                    <span>📝</span>
+                    <span>Landing Page CMS</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <h1>Landing Page CMS</h1>
+                <div>
+                    <a href="../index.html" target="_blank" class="btn btn-secondary">Preview Landing Page</a>
+                </div>
+            </div>
+
+            <div id="alert" class="alert"></div>
+            <div id="loading" class="loading">Loading content...</div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-section="hero">Hero Section</button>
+                <button class="tab" data-section="stats">Stats Bar</button>
+                <button class="tab" data-section="problem">Problem Section</button>
+                <button class="tab" data-section="pillars">8 Pillars</button>
+                <button class="tab" data-section="how_it_works">How It Works</button>
+                <button class="tab" data-section="testimonials">Testimonials</button>
+                <button class="tab" data-section="final_cta">Final CTA</button>
+                <button class="tab" data-section="footer">Footer</button>
+            </div>
+
+            <!-- Tab Contents (dynamically generated) -->
+            <div id="tabContents"></div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+
+        let allContent = {};
+        let currentSection = 'hero';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadAllContent();
+            setupTabs();
+        });
+
+        // Load all content from API
+        async function loadAllContent() {
+            const loading = document.getElementById('loading');
+            loading.classList.add('show');
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/admin/cms/content`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    allContent = data.sections;
+                    renderSection(currentSection);
+                } else {
+                    showAlert('Failed to load content', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading content:', error);
+                showAlert('Failed to load content', 'error');
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        // Setup tab navigation
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentSection = tab.dataset.section;
+                    renderSection(currentSection);
+                });
+            });
+        }
+
+        // Render section content
+        function renderSection(section) {
+            const content = allContent[section]?.content || {};
+            const container = document.getElementById('tabContents');
+
+            let html = `<div class="tab-content active" id="content-${section}">`;
+
+            switch(section) {
+                case 'hero':
+                    html += renderHeroSection(content);
+                    break;
+                case 'stats':
+                    html += renderStatsSection(content);
+                    break;
+                case 'problem':
+                    html += renderProblemSection(content);
+                    break;
+                case 'pillars':
+                    html += renderPillarsSection(content);
+                    break;
+                case 'how_it_works':
+                    html += renderHowItWorksSection(content);
+                    break;
+                case 'testimonials':
+                    html += renderTestimonialsSection(content);
+                    break;
+                case 'final_cta':
+                    html += renderFinalCTASection(content);
+                    break;
+                case 'footer':
+                    html += renderFooterSection(content);
+                    break;
+            }
+
+            html += `
+                <div class="section-actions">
+                    <button class="btn btn-primary" onclick="saveSection('${section}')">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="loadAllContent()">Reset</button>
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        // Render individual sections
+        function renderHeroSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Alert Badge Text</label>
+                    <input type="text" id="hero-alertBadge" value="${content.alertBadge || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Main Heading</label>
+                    <input type="text" id="hero-heading" value="${content.heading || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Subtitle</label>
+                    <textarea id="hero-subtitle">${content.subtitle || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Trust Badges</label>
+                    <div class="array-items" id="hero-trustBadges">
+                        ${(content.trustBadges || []).map((badge, i) => `
+                            <div class="array-item">
+                                <div class="array-item-header">
+                                    <strong>Badge ${i + 1}</strong>
+                                    <button class="btn-remove" onclick="removeTrustBadge(${i})">Remove</button>
+                                </div>
+                                <div class="form-group">
+                                    <label>Icon</label>
+                                    <input type="text" id="hero-trustBadge-${i}-icon" value="${badge.icon || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Text</label>
+                                    <input type="text" id="hero-trustBadge-${i}-text" value="${badge.text || ''}" />
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn-add" onclick="addTrustBadge()">+ Add Badge</button>
+                </div>
+            `;
+        }
+
+        function renderStatsSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Stats</label>
+                    <div class="array-items">
+                        ${(content.stats || []).map((stat, i) => `
+                            <div class="array-item">
+                                <strong>Stat ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Number</label>
+                                    <input type="text" id="stats-${i}-number" value="${stat.number || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Label</label>
+                                    <input type="text" id="stats-${i}-label" value="${stat.label || ''}" />
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProblemSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Section Badge</label>
+                    <input type="text" id="problem-badge" value="${content.badge || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Title</label>
+                    <input type="text" id="problem-title" value="${content.title || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Subtitle</label>
+                    <textarea id="problem-subtitle">${content.subtitle || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Problem Cards</label>
+                    <div class="array-items">
+                        ${(content.problems || []).map((problem, i) => `
+                            <div class="array-item">
+                                <strong>Problem ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Icon (emoji)</label>
+                                    <input type="text" id="problem-${i}-icon" value="${problem.icon || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Title</label>
+                                    <input type="text" id="problem-${i}-title" value="${problem.title || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Old Way (with ❌)</label>
+                                    <input type="text" id="problem-${i}-oldWay" value="${problem.oldWay || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>New Way (with ✓)</label>
+                                    <input type="text" id="problem-${i}-newWay" value="${problem.newWay || ''}" />
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPillarsSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Section Badge</label>
+                    <input type="text" id="pillars-badge" value="${content.badge || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Title</label>
+                    <input type="text" id="pillars-title" value="${content.title || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Subtitle</label>
+                    <textarea id="pillars-subtitle">${content.subtitle || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Pillar Cards</label>
+                    <div class="array-items">
+                        ${(content.pillars || []).map((pillar, i) => `
+                            <div class="array-item">
+                                <strong>Pillar ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Icon (emoji)</label>
+                                    <input type="text" id="pillar-${i}-icon" value="${pillar.icon || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Title</label>
+                                    <input type="text" id="pillar-${i}-title" value="${pillar.title || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Boost Points (e.g., +125 pts)</label>
+                                    <input type="text" id="pillar-${i}-boost" value="${pillar.boost || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea id="pillar-${i}-description">${pillar.description || ''}</textarea>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHowItWorksSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Section Badge</label>
+                    <input type="text" id="how_it_works-badge" value="${content.badge || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Title</label>
+                    <input type="text" id="how_it_works-title" value="${content.title || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Subtitle</label>
+                    <textarea id="how_it_works-subtitle">${content.subtitle || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Steps</label>
+                    <div class="array-items">
+                        ${(content.steps || []).map((step, i) => `
+                            <div class="array-item">
+                                <strong>Step ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Icon (emoji)</label>
+                                    <input type="text" id="step-${i}-icon" value="${step.icon || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Title</label>
+                                    <input type="text" id="step-${i}-title" value="${step.title || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea id="step-${i}-description">${step.description || ''}</textarea>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTestimonialsSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Section Badge</label>
+                    <input type="text" id="testimonials-badge" value="${content.badge || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Section Title</label>
+                    <input type="text" id="testimonials-title" value="${content.title || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Testimonials</label>
+                    <div class="array-items">
+                        ${(content.testimonials || []).map((testimonial, i) => `
+                            <div class="array-item">
+                                <strong>Testimonial ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Stars (1-5)</label>
+                                    <input type="number" min="1" max="5" id="testimonial-${i}-stars" value="${testimonial.stars || 5}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Text</label>
+                                    <textarea id="testimonial-${i}-text">${testimonial.text || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Author Initials</label>
+                                    <input type="text" id="testimonial-${i}-authorInitials" value="${testimonial.authorInitials || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Author Name</label>
+                                    <input type="text" id="testimonial-${i}-authorName" value="${testimonial.authorName || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Author Title</label>
+                                    <input type="text" id="testimonial-${i}-authorTitle" value="${testimonial.authorTitle || ''}" />
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">Results Showcase</h3>
+                <div class="form-group">
+                    <label>Heading</label>
+                    <input type="text" id="testimonials-resultsShowcase-heading" value="${content.resultsShowcase?.heading || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Subtitle</label>
+                    <input type="text" id="testimonials-resultsShowcase-subtitle" value="${content.resultsShowcase?.subtitle || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Results</label>
+                    <div class="array-items">
+                        ${(content.resultsShowcase?.results || []).map((result, i) => `
+                            <div class="array-item">
+                                <strong>Result ${i + 1}</strong>
+                                <div class="form-group">
+                                    <label>Number</label>
+                                    <input type="text" id="result-${i}-number" value="${result.number || ''}" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Label</label>
+                                    <input type="text" id="result-${i}-label" value="${result.label || ''}" />
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFinalCTASection(content) {
+            return `
+                <div class="form-group">
+                    <label>Heading</label>
+                    <input type="text" id="final_cta-heading" value="${content.heading || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Subtitle</label>
+                    <textarea id="final_cta-subtitle">${content.subtitle || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Checklist Items</label>
+                    <div class="array-items">
+                        ${(content.checklist || []).map((item, i) => `
+                            <div class="array-item">
+                                <strong>Item ${i + 1}</strong>
+                                <input type="text" id="checklist-${i}" value="${item || ''}" />
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFooterSection(content) {
+            return `
+                <div class="form-group">
+                    <label>Footer Text</label>
+                    <input type="text" id="footer-text" value="${content.text || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Xeo Marketing URL</label>
+                    <input type="url" id="footer-xeoMarketingUrl" value="${content.xeoMarketingUrl || ''}" />
+                </div>
+                <div class="form-group">
+                    <label>Copyright Text</label>
+                    <input type="text" id="footer-copyright" value="${content.copyright || ''}" />
+                </div>
+            `;
+        }
+
+        // Save section
+        async function saveSection(section) {
+            const content = extractSectionData(section);
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/admin/cms/content/${section}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Changes saved successfully!', 'success');
+                    await loadAllContent();
+                } else {
+                    showAlert('Failed to save changes', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving content:', error);
+                showAlert('Failed to save changes', 'error');
+            }
+        }
+
+        // Extract form data for section
+        function extractSectionData(section) {
+            const content = allContent[section]?.content || {};
+
+            switch(section) {
+                case 'hero':
+                    return {
+                        alertBadge: document.getElementById('hero-alertBadge').value,
+                        heading: document.getElementById('hero-heading').value,
+                        subtitle: document.getElementById('hero-subtitle').value,
+                        trustBadges: (content.trustBadges || []).map((_, i) => ({
+                            icon: document.getElementById(`hero-trustBadge-${i}-icon`)?.value || '',
+                            text: document.getElementById(`hero-trustBadge-${i}-text`)?.value || ''
+                        }))
+                    };
+                case 'stats':
+                    return {
+                        stats: (content.stats || []).map((_, i) => ({
+                            number: document.getElementById(`stats-${i}-number`).value,
+                            label: document.getElementById(`stats-${i}-label`).value
+                        }))
+                    };
+                case 'problem':
+                    return {
+                        badge: document.getElementById('problem-badge').value,
+                        title: document.getElementById('problem-title').value,
+                        subtitle: document.getElementById('problem-subtitle').value,
+                        problems: (content.problems || []).map((_, i) => ({
+                            icon: document.getElementById(`problem-${i}-icon`).value,
+                            title: document.getElementById(`problem-${i}-title`).value,
+                            oldWay: document.getElementById(`problem-${i}-oldWay`).value,
+                            newWay: document.getElementById(`problem-${i}-newWay`).value
+                        }))
+                    };
+                case 'pillars':
+                    return {
+                        badge: document.getElementById('pillars-badge').value,
+                        title: document.getElementById('pillars-title').value,
+                        subtitle: document.getElementById('pillars-subtitle').value,
+                        pillars: (content.pillars || []).map((_, i) => ({
+                            icon: document.getElementById(`pillar-${i}-icon`).value,
+                            title: document.getElementById(`pillar-${i}-title`).value,
+                            boost: document.getElementById(`pillar-${i}-boost`).value,
+                            description: document.getElementById(`pillar-${i}-description`).value
+                        }))
+                    };
+                case 'how_it_works':
+                    return {
+                        badge: document.getElementById('how_it_works-badge').value,
+                        title: document.getElementById('how_it_works-title').value,
+                        subtitle: document.getElementById('how_it_works-subtitle').value,
+                        steps: (content.steps || []).map((_, i) => ({
+                            icon: document.getElementById(`step-${i}-icon`).value,
+                            title: document.getElementById(`step-${i}-title`).value,
+                            description: document.getElementById(`step-${i}-description`).value
+                        }))
+                    };
+                case 'testimonials':
+                    return {
+                        badge: document.getElementById('testimonials-badge').value,
+                        title: document.getElementById('testimonials-title').value,
+                        testimonials: (content.testimonials || []).map((_, i) => ({
+                            stars: parseInt(document.getElementById(`testimonial-${i}-stars`).value),
+                            text: document.getElementById(`testimonial-${i}-text`).value,
+                            authorInitials: document.getElementById(`testimonial-${i}-authorInitials`).value,
+                            authorName: document.getElementById(`testimonial-${i}-authorName`).value,
+                            authorTitle: document.getElementById(`testimonial-${i}-authorTitle`).value
+                        })),
+                        resultsShowcase: {
+                            heading: document.getElementById('testimonials-resultsShowcase-heading').value,
+                            subtitle: document.getElementById('testimonials-resultsShowcase-subtitle').value,
+                            results: (content.resultsShowcase?.results || []).map((_, i) => ({
+                                number: document.getElementById(`result-${i}-number`).value,
+                                label: document.getElementById(`result-${i}-label`).value
+                            }))
+                        }
+                    };
+                case 'final_cta':
+                    return {
+                        heading: document.getElementById('final_cta-heading').value,
+                        subtitle: document.getElementById('final_cta-subtitle').value,
+                        checklist: (content.checklist || []).map((_, i) =>
+                            document.getElementById(`checklist-${i}`).value
+                        )
+                    };
+                case 'footer':
+                    return {
+                        text: document.getElementById('footer-text').value,
+                        xeoMarketingUrl: document.getElementById('footer-xeoMarketingUrl').value,
+                        copyright: document.getElementById('footer-copyright').value
+                    };
+            }
+        }
+
+        // Helper functions for dynamic items
+        function addTrustBadge() {
+            const content = allContent.hero?.content || {};
+            if (!content.trustBadges) content.trustBadges = [];
+            content.trustBadges.push({ icon: '✓', text: '' });
+            allContent.hero.content = content;
+            renderSection('hero');
+        }
+
+        function removeTrustBadge(index) {
+            const content = allContent.hero?.content || {};
+            content.trustBadges.splice(index, 1);
+            allContent.hero.content = content;
+            renderSection('hero');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

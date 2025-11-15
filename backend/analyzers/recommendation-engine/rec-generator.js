@@ -14,10 +14,16 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
-// ✅ FAQ library + customizer (present but optional right now)
-// (You can wire these into faqScore later to make it fully programmatic)
-const { loadFaqsByIndustry, loadGenericFaqs } = require('./faq-library-loader');
-const { customizeFaqItem } = require('./faq-customizer');
+// ✅ FAQ library + customizer - NOW FULLY INTEGRATED
+const { loadLibrary, hasLibrary } = require('./faq-library-loader');
+const { generateCustomizedFAQ } = require('./faq-customizer');
+
+// ✅ Certification recommendation generators
+const {
+  makeProgrammaticCertificationRecommendation,
+  makeProgrammaticTeamCredentialsRecommendation,
+  makeProgrammaticMembershipsRecommendation
+} = require('./certification-recommendation-generators');
 
 // -----------------------------------------
 // Inline helpers (no external file imports)
@@ -178,6 +184,30 @@ const RECOMMENDATION_TEMPLATES = {
     typicalTimeToFix: "15–30 minutes",
     difficulty: "Easy",
     estimatedGain: 8
+  },
+  professionalCertifications: {
+    title: "Display Industry Certifications",
+    impactArea: "Trust & Authority (E-E-A-T)",
+    whyItMatters: "Professional certifications demonstrate expertise, compliance, and industry standards. AI systems heavily weight these trust signals when citing sources.",
+    typicalTimeToFix: "20–30 minutes",
+    difficulty: "Easy",
+    estimatedGain: 22
+  },
+  teamCredentials: {
+    title: "Add Team Member Credentials",
+    impactArea: "Expertise & Authority (E-E-A-T)",
+    whyItMatters: "Documenting team expertise with Person schema and credentials boosts E-E-A-T signals. AI systems look for verifiable expertise when determining source authority.",
+    typicalTimeToFix: "1–2 hours",
+    difficulty: "Medium",
+    estimatedGain: 18
+  },
+  industryMemberships: {
+    title: "Display Industry Memberships & Associations",
+    impactArea: "Authority Network & Trust",
+    whyItMatters: "Industry memberships demonstrate active participation in professional communities. These network signals strengthen your authority and credibility with AI systems.",
+    typicalTimeToFix: "15–20 minutes",
+    difficulty: "Easy",
+    estimatedGain: 14
   }
 };
 
@@ -379,6 +409,39 @@ async function generateRecommendations(issues, scanEvidence, tier = 'free', indu
         const rec = makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, industry);
         if (rec) {
           console.log(`✅ Crawl accessibility recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2o) Professional Certifications - Industry credentials and trust signals
+      if (issue.subfactor === 'professionalCertifications') {
+        console.log(`✅ Detected professionalCertifications issue - calling programmatic certification generator`);
+        const rec = makeProgrammaticCertificationRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Professional certification recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2p) Team Credentials - Team member expertise documentation
+      if (issue.subfactor === 'teamCredentials') {
+        console.log(`✅ Detected teamCredentials issue - calling programmatic team credentials generator`);
+        const rec = makeProgrammaticTeamCredentialsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Team credentials recommendation generated successfully`);
+          out.push(rec);
+          continue;
+        }
+      }
+
+      // 2q) Industry Memberships - Professional associations and network signals
+      if (issue.subfactor === 'industryMemberships') {
+        console.log(`✅ Detected industryMemberships issue - calling programmatic memberships generator`);
+        const rec = makeProgrammaticMembershipsRecommendation(issue, scanEvidence, industry);
+        if (rec) {
+          console.log(`✅ Industry memberships recommendation generated successfully`);
           out.push(rec);
           continue;
         }
@@ -735,6 +798,79 @@ const FAQ_LIBRARIES = {
   }
 };
 
+/**
+ * Load and transform rich FAQ library to match expected structure
+ * Falls back to hardcoded FAQs if rich library doesn't exist
+ */
+function loadFAQLibrary(industry) {
+  // Map detected industry names to library filenames
+  const industryMappings = {
+    // Exact matches from content-extractor.js to library filenames
+    'UCaaS': 'ucaas',
+    'Cybersecurity': 'cybersecurity',
+    'Fintech': 'fintech',
+    'AI Infrastructure': 'ai-infrastructure',
+    'AI Startups': 'ai-startups',
+    'Data Center': 'data-center',
+    'Digital Infrastructure': 'digital-infrastructure',
+    'ICT Hardware': 'ict-hardware',
+    'Managed Service Provider': 'managed-service-providers',
+    'Telecom Service Provider': 'telecom-service-providers',
+    'Telecom Software': 'telecom-software',
+    'Mobile Connectivity': 'mobile-connectivity-esim',
+    'SaaS': 'saas-b2b',
+    'Agency': 'marketing-agencies',
+
+    // Fallback mapping for Financial → Fintech
+    'Financial': 'fintech',
+
+    // No library for these, will use hardcoded
+    'General': null,
+    'Healthcare': null,
+    'Legal': null,
+    'Real Estate': null,
+    'E-commerce': null,
+    'Education': null,
+    'Restaurant': null
+  };
+
+  // Get the mapped library filename
+  const mappedIndustry = industryMappings[industry] !== undefined
+    ? industryMappings[industry]
+    : industry;
+
+  // Try to load rich library first
+  if (mappedIndustry && hasLibrary(mappedIndustry)) {
+    console.log(`✅ Found rich FAQ library for ${industry} (mapped to ${mappedIndustry})`);
+    const richLib = loadLibrary(mappedIndustry);
+
+    if (richLib && richLib.faqs && richLib.faqs.length > 0) {
+      // Transform rich library structure to match hardcoded structure
+      const transformedLib = {
+        title: `AI Search Readiness: FAQ Section`,
+        questions: richLib.faqs.map(faq => ({
+          q: faq.question,
+          pageAnswer: faq.answer_human_friendly?.text || faq.answer_factual_backend?.text || '',
+          schemaAnswer: faq.answer_factual_backend?.text || faq.answer_human_friendly?.text || ''
+        })),
+        impact: richLib.faqs.map(f => f.expected_impact).filter(Boolean).join(', ') ||
+                "FAQs help AI assistants extract clear answers about your offerings, improving discoverability.",
+        quickWins: [
+          "Link FAQs from your main navigation and footer for easy access",
+          "Include FAQ schema in your homepage and key landing pages",
+          "Update FAQs quarterly based on actual customer questions from support tickets"
+        ]
+      };
+
+      console.log(`✅ Transformed rich library: ${transformedLib.questions.length} FAQs`);
+      return transformedLib;
+    }
+  }
+
+  console.log(`⚠️  No rich library for ${industry}, checking hardcoded fallback`);
+  return null;
+}
+
 function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   console.log('🎯 Starting FAQ recommendation generation...');
   const domain = extractDomain(scanEvidence.url);
@@ -743,12 +879,39 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
   // Use provided industry or default to General
   // Industry is passed from V5 analysis (detected from content/metadata)
   const detectedIndustry = industry || 'General';
-  const faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
-  console.log(`📚 Using FAQ library for industry: ${detectedIndustry}`);
 
   // Check if FAQ schema exists (but content might be missing)
   const hasFAQSchema = scanEvidence.technical?.hasFAQSchema;
-  const faqCount = scanEvidence.content?.faqs?.length || 0;
+  const actualFAQs = scanEvidence.content?.faqs || [];
+  const faqCount = actualFAQs.length;
+
+  console.log(`📊 FAQ Analysis: Found ${faqCount} FAQs on site, Schema: ${hasFAQSchema ? 'Yes' : 'No'}`);
+
+  // CRITICAL: Use ACTUAL FAQs from site if they exist, otherwise use templates
+  let faqsToUse = [];
+  let usingActualContent = false;
+
+  if (faqCount > 0) {
+    // ✅ USER HAS REAL FAQs - Use them!
+    usingActualContent = true;
+    faqsToUse = actualFAQs.map(faq => ({
+      q: faq.question,
+      pageAnswer: faq.answer,
+      schemaAnswer: faq.answer.substring(0, 300) // Truncate for schema (300 char limit)
+    }));
+    console.log(`✅ Using ${faqCount} ACTUAL FAQs from website (not templates)`);
+  } else {
+    // ❌ USER HAS NO FAQs - Provide templates
+    let faqLib = loadFAQLibrary(detectedIndustry);
+    if (!faqLib) {
+      faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+      console.log(`📚 Using hardcoded FAQ library for: ${detectedIndustry}`);
+    } else {
+      console.log(`📚 Using rich FAQ library for: ${detectedIndustry}`);
+    }
+    faqsToUse = faqLib.questions;
+    console.log(`📋 Using ${faqsToUse.length} template FAQs (no FAQs found on site)`);
+  }
 
   // Build the finding based on what exists
   let finding;
@@ -759,26 +922,43 @@ function makeProgrammaticFAQRecommendation(issue, scanEvidence, industry) {
 FAQPage schema detected in JSON-LD, but no visible FAQ content found on ${domain}. Search engines and AI assistants need BOTH schema markup AND on-page Q&A pairs to surface your answers in rich results.
 
 Your schema exists but is disconnected from actual user-facing FAQ content.`;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // BOTH schema and content exist - good progress!
+    // Check if they're well-distributed across pages
+    if (faqCount >= 5) {
+      finding = `Status: Excellent! ✅
+
+${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. Your FAQ implementation is strong! The system has analyzed your actual FAQs and they cover relevant topics for your audience.
+
+Next steps: Ensure FAQs are distributed across multiple pages (About, Services, Contact) for maximum AI visibility.`;
+    } else {
+      finding = `Status: Good Progress
+
+${faqCount} FAQ pairs detected on-page WITH FAQPage schema markup. You're on the right track! Consider adding more FAQs (aim for 5-10 total) across different pages to cover ROI, implementation, pricing, and common objections.`;
+    }
   } else if (!hasFAQSchema && faqCount > 0) {
     // Content exists but no schema
     finding = `Status: Missing Schema
 
-${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Adding schema will help AI assistants extract and cite your answers in voice search and rich results.`;
+${faqCount} FAQ pairs detected on-page, but no FAQPage schema markup. Your content is good, but adding schema will help AI assistants extract and cite your answers in voice search and rich results.
+
+The system has extracted your actual FAQs and generated schema for you below - just copy and paste!`;
   } else {
     // Neither exists
     finding = `Status: Missing
 
 No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how AI assistants and search engines extract clear answers about your services, ROI, timelines, pricing, and terms.`;
   }
-  const faqPageCopy = faqLib.questions.map((faq, idx) =>
+  // Use ACTUAL FAQs if available, otherwise templates
+  const faqPageCopy = faqsToUse.map((faq, idx) =>
     `Q${idx + 1}. ${faq.q}\n${faq.pageAnswer}`
   ).join('\n\n');
 
-  // Build JSON-LD schema
+  // Build JSON-LD schema from ACTUAL FAQs
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqLib.questions.map(faq => ({
+    "mainEntity": faqsToUse.map(faq => ({
       "@type": "Question",
       "name": faq.q,
       "acceptedAnswer": {
@@ -794,10 +974,27 @@ No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how 
   const categoryName = CATEGORY_NAMES[issue.category] || issue.category;
   const title = `${categoryName}: FAQ Section`;
 
-  // Impact is consistent regardless of scenario
+  // Impact varies based on what exists
+  let impactText;
+  if (usingActualContent) {
+    // User has FAQs, impact is about optimization
+    if (!hasFAQSchema) {
+      impactText = `Adding FAQPage schema to your existing ${faqCount} FAQs will help AI assistants cite your content in voice search results and answer engines like ChatGPT and Perplexity. This structured data markup makes your expertise machine-readable.`;
+    } else {
+      impactText = `Your FAQ implementation is complete. Continue monitoring and updating FAQs based on actual customer questions from support tickets and sales calls. Consider distributing FAQs across multiple pages for broader topic coverage.`;
+    }
+  } else {
+    // User has no FAQs, use template impact
+    let faqLib = loadFAQLibrary(detectedIndustry);
+    if (!faqLib) {
+      faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
+    }
+    impactText = faqLib.impact;
+  }
+
   const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
 
-${faqLib.impact}`;
+${impactText}`;
 
   // Action steps vary based on what exists
   let actionSteps;
@@ -810,13 +1007,19 @@ ${faqLib.impact}`;
 5. Validate in Google Rich Results Test to ensure schema matches visible content
 6. Re-scan in the AI Visibility Tool to confirm lift in "FAQ Score"`;
   } else if (!hasFAQSchema && faqCount > 0) {
-    // Content exists but schema missing - just add schema
-    actionSteps = `1. Review your existing on-page FAQ content
-2. Copy the FAQ Schema JSON-LD from the "FAQ Schema" section below
-3. Customize the Q&A pairs in the schema to match your actual on-page FAQs
-4. Paste the JSON-LD into your page <head> (or via tag manager)
-5. Validate in Google Rich Results Test
-6. Re-scan in the AI Visibility Tool to confirm lift`;
+    // Content exists but schema missing - just add schema (THE SYSTEM HAS EXTRACTED YOUR REAL FAQs!)
+    actionSteps = `1. The system has detected your ${faqCount} existing FAQs and generated schema for you
+2. Copy the FAQ Schema JSON-LD below (it contains YOUR actual questions and answers)
+3. Paste the JSON-LD into your page <head> tag or via Google Tag Manager
+4. Validate in Google Rich Results Test (search.google.com/test/rich-results)
+5. Re-scan in the AI Visibility Tool - your FAQ score should improve significantly!`;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // Both exist - optimization mode
+    actionSteps = `1. Your implementation is complete! No urgent action needed.
+2. Optional: Review the FAQ schema below (generated from your actual FAQs) to ensure it matches your on-page content
+3. Consider adding more FAQs on other pages (About, Services, Pricing) to increase coverage
+4. Update FAQs quarterly based on real customer questions from support/sales
+5. Monitor Google Search Console for "FAQ rich result" appearances`;
   } else {
     // Neither exists - full implementation
     actionSteps = `1. Add a dedicated FAQ section to your page (below your primary CTA or above the footer)
@@ -850,22 +1053,28 @@ ${faqLib.impact}`;
   let backendCode = '';
 
   if (hasFAQSchema && faqCount === 0) {
-    // Schema exists, just need on-page content
-    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
+    // Schema exists, just need on-page content (use templates)
+    customizedImplementation = `### Your Customized FAQ Implementation\n\nYou already have FAQ schema in place, but you're missing visible FAQ content on your page. Here's what you need to add:\n\n**Industry-Specific Questions for ${detectedIndustry}:**\n\n${faqsToUse.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\nThese questions target common search queries in the ${detectedIndustry} industry and will help AI understand your business expertise.`;
     readyToUseContent = faqPageCopy;
-    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqsToUse.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = `**Note:** You already have FAQ schema. Update it to match the new on-page content above.`;
   } else if (!hasFAQSchema && faqCount > 0) {
-    // Content exists, just need schema
-    customizedImplementation = `### Your Customized FAQ Schema Implementation\n\nYou already have FAQ content on your page (${faqCount} question${faqCount > 1 ? 's' : ''} detected). Now you need to add structured data schema so AI systems like ChatGPT, Perplexity, and Google can understand and reference your FAQs.\n\n**What's Missing:** FAQPage schema in JSON-LD format\n\n**Impact:** Without schema, AI can see your FAQ text but can't reliably extract and cite specific Q&A pairs. Adding schema makes your expertise directly quotable by AI.`;
-    readyToUseContent = '**Note:** You already have FAQ content on your page. Just add the schema below to your page <head>.';
-    frontendCode = '<!-- Your existing FAQ content is good. No changes needed. -->';
+    // Content exists, just need schema - USE ACTUAL FAQs!
+    customizedImplementation = `### ✅ Your FAQs Have Been Extracted!\n\n**Great news!** The system detected ${faqCount} FAQ pairs on your site and has generated structured data schema for you.\n\n**Your Actual FAQs:**\n\n${faqsToUse.slice(0, 5).map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}${faqCount > 5 ? `\n\n*...and ${faqCount - 5} more questions*` : ''}\n\n**What You Need to Do:**\n\nThe system has already extracted your FAQs and generated the schema below. Simply copy the JSON-LD code and paste it into your page <head> tag. This will make your expertise machine-readable for AI assistants.`;
+    readyToUseContent = `✅ **Your ${faqCount} existing FAQs are already on the page.** Just add the schema below!`;
+    frontendCode = '<!-- ✅ Your existing FAQ content is good. No changes needed. -->';
     backendCode = schemaCode;
+  } else if (hasFAQSchema && faqCount > 0) {
+    // Both exist - show what was detected
+    customizedImplementation = `### ✅ Implementation Complete!\n\n**Congratulations!** Your FAQ section is fully optimized:\n\n✓ ${faqCount} FAQ pairs detected on-page\n✓ FAQPage schema markup present\n✓ Content is machine-readable for AI\n\n**Your Detected FAQs:**\n\n${faqsToUse.slice(0, 5).map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}${faqCount > 5 ? `\n\n*...and ${faqCount - 5} more questions*` : ''}\n\n**Next Steps:**\n\n1. Verify schema matches your on-page content (see generated schema below)\n2. Consider adding FAQs to additional pages (About, Services, Pricing)\n3. Update quarterly with new customer questions`;
+    readyToUseContent = `✅ **You already have ${faqCount} FAQs with schema!** See below for what was detected.`;
+    frontendCode = '<!-- ✅ Your FAQ content and schema are both implemented! -->';
+    backendCode = `<!-- Below is the schema generated from your actual FAQs -->\n${schemaCode}`;
   } else {
-    // Need both - full implementation
-    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqLib.questions.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
+    // Need both - full implementation (use templates)
+    customizedImplementation = `### Your Complete FAQ Implementation for ${detectedIndustry}\n\nYou currently have no FAQ section. Implementing this will significantly boost your AI visibility.\n\n**Industry-Tailored Questions:**\n\n${faqsToUse.map((faq, idx) => `**Q${idx + 1}: ${faq.q}**\n\n${faq.pageAnswer}`).join('\n\n---\n\n')}\n\n**Why These Questions Matter:**\n- Targets actual search queries in ${detectedIndustry}\n- Helps AI systems understand your expertise\n- Increases chances of being cited by ChatGPT, Perplexity, and other AI assistants\n- Improves traditional SEO rankings for question-based searches`;
     readyToUseContent = faqPageCopy;
-    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqLib.questions.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
+    frontendCode = `<!-- Add this FAQ section to your page HTML -->\n<section class="faq-section">\n  <h2>Frequently Asked Questions</h2>\n  \n${faqsToUse.map((faq, idx) => `  <div class="faq-item">\n    <h3>${faq.q}</h3>\n    <p>${faq.pageAnswer}</p>\n  </div>`).join('\n\n')}\n</section>`;
     backendCode = schemaCode;
   }
 
@@ -886,15 +1095,21 @@ ${faqLib.impact}`;
     customizedImplementation: customizedImplementation,  // ✅ ADDED: Customized implementation for blue box
     readyToUseContent: readyToUseContent,
     implementationNotes: implementationNotes,
-    quickWins: faqLib.quickWins,
+    quickWins: usingActualContent ? [`${faqCount} FAQs already detected - schema implementation is quick!`, 'Your actual Q&As are ready to be structured', 'Simple copy-paste of generated schema'] : (FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General).quickWins,
     validationChecklist: validationChecklist,
     estimatedTime: "1-2 hours",
     difficulty: "Easy",
     estimatedScoreGain: Math.max(12, Math.round(issue.gap * 0.8)),
     currentScore: issue.currentScore,
     targetScore: issue.threshold,
-    evidence: { faqDetected: false, industry: detectedIndustry },
-    generatedBy: 'programmatic_faq_library'
+    evidence: {
+      faqDetected: faqCount > 0,
+      faqCount: faqCount,
+      hasFAQSchema: hasFAQSchema,
+      usingActualContent: usingActualContent,
+      industry: detectedIndustry
+    },
+    generatedBy: usingActualContent ? 'actual_faq_extraction' : 'programmatic_faq_library'
   };
 }
 
@@ -907,13 +1122,17 @@ function makeProgrammaticAltTextRecommendation(issue, scanEvidence, industry) {
   const detectedIndustry = industry || 'General';
 
   // Extract image data
-  const images = scanEvidence.content?.images || [];
+  const images = scanEvidence.media?.images || [];
+  console.log(`[AltText] Found ${images.length} images in scanEvidence.media.images`);
+
   const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
   const imagesWithAlt = images.filter(img => img.alt && img.alt.trim() !== '');
 
   const totalImages = images.length;
   const missingAltCount = imagesWithoutAlt.length;
   const altCoverage = totalImages > 0 ? Math.round((imagesWithAlt.length / totalImages) * 100) : 0;
+
+  console.log(`[AltText] Images with alt: ${imagesWithAlt.length}, without alt: ${missingAltCount}, coverage: ${altCoverage}%`);
 
   // Build Finding
   const finding = `Status: ${missingAltCount === 0 ? 'Good' : 'Needs Improvement'}
@@ -3396,15 +3615,27 @@ function makeProgrammaticSitemapRecommendation(issue, scanEvidence, industry) {
   const { profile, facts } = normalizeEvidence(scanEvidence);
   const domain = extractDomain(scanEvidence.url);
 
-  // Check for sitemap
-  const hasSitemap = scanEvidence.technical?.hasSitemap || false;
-  const sitemapUrl = scanEvidence.technical?.sitemapUrl || `${domain}/sitemap.xml`;
+  // Check for sitemap (try multiple properties for backward compatibility)
+  const hasSitemap = scanEvidence.technical?.hasSitemap ||
+                     scanEvidence.technical?.sitemapDetected ||
+                     false;
+
+  console.log(`[Sitemap Rec] Checking sitemap status: hasSitemap=${scanEvidence.technical?.hasSitemap}, sitemapDetected=${scanEvidence.technical?.sitemapDetected}, final=${hasSitemap}`);
+
+  // Use the actual detected sitemap location if available
+  const sitemapLocation = scanEvidence.technical?.sitemapLocation || 'sitemap.xml';
+  const sitemapUrl = `${domain}/${sitemapLocation}`;
   const pageCount = scanEvidence.technical?.sitemapPageCount || 0;
   const lastModified = scanEvidence.technical?.sitemapLastModified || 'Unknown';
 
   // Build finding text
   const finding = hasSitemap
-    ? `Your sitemap exists at ${sitemapUrl} with ${pageCount} URLs (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). However, it may need optimization or proper submission to search engines and AI crawlers. Last modified: ${lastModified}.`
+    ? `✅ **Sitemap Detected!** Your sitemap was found at **${sitemapLocation}** with ${pageCount} pages crawled (Score: ${issue.currentScore}/100, Target: ${issue.threshold}).
+
+The tool successfully detected your sitemap and is using it to analyze your site. To maximize AI visibility, ensure:
+- All important pages are included in the sitemap
+- The sitemap is submitted to Google Search Console and Bing Webmaster Tools
+- The sitemap is updated automatically when you add/remove pages`
     : `Your site is missing an XML sitemap (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Without a sitemap, search engines and AI crawlers have difficulty discovering all your pages, reducing visibility in answer engines like ChatGPT, Perplexity, and Google AI Overviews.`;
 
   // Build impact description
@@ -5255,6 +5486,17 @@ function buildSmartFinding(issue, scanEvidence) {
     const withAlt = evidence.imagesWithAlt || scanEvidence.media?.imagesWithAlt || 0;
     const missing = evidence.imagesWithoutAlt || scanEvidence.media?.imagesWithoutAlt || 0;
     const coverage = total > 0 ? Math.round((withAlt/total) * 100) : 0;
+
+    // Debug logging
+    console.log('[DEBUG] Alt Text Recommendation Data:', {
+      total,
+      withAlt,
+      missing,
+      coverage,
+      evidenceImages: evidence.totalImages,
+      scanEvidenceImages: scanEvidence.media?.imageCount
+    });
+
     return `Alt text coverage: ${coverage}% (${withAlt}/${total} images). ${missing} images missing alt text, making them invisible to multimodal AI search.`;
   }
 
@@ -5887,6 +6129,57 @@ function buildCurrentState(issue, scanEvidence) {
       return `- Videos detected: ${videoCount}\n- Transcripts: Not detected\n- Adding transcripts makes ${videoCount} videos searchable and quotable by AI`;
     }
     return `- No video content detected\n- If you have videos, ensure they have captions and full transcripts`;
+  }
+
+  // Professional Certifications
+  if (sub === 'professionalCertifications') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const detectedNames = certData.detected.map(c => c.name).join(', ') || 'None';
+      const missingCritical = certData.missing.filter(c => c.priority === 'critical').map(c => c.name);
+      const missingImportant = certData.missing.filter(c => c.priority === 'important').map(c => c.name);
+
+      let state = `- Industry: ${certData.industry}\n`;
+      state += `- Certifications detected: ${certData.detected.length > 0 ? detectedNames : 'None'}\n`;
+      state += `- Coverage: ${certData.overallCoverage}%\n`;
+
+      if (missingCritical.length > 0) {
+        state += `- Missing CRITICAL certifications (${missingCritical.length}): ${missingCritical.slice(0, 3).join(', ')}${missingCritical.length > 3 ? ` and ${missingCritical.length - 3} more` : ''}\n`;
+      }
+      if (missingImportant.length > 0) {
+        state += `- Missing IMPORTANT certifications (${missingImportant.length}): ${missingImportant.slice(0, 3).join(', ')}${missingImportant.length > 3 ? ` and ${missingImportant.length - 3} more` : ''}\n`;
+      }
+
+      state += `\n**CRITICAL INSTRUCTION**: Use the ACTUAL missing certifications listed above in your recommendation. DO NOT use generic placeholders like "Certified Digital Marketing Professional". Focus on the top 1-2 missing certifications from the lists above.`;
+      return state;
+    }
+    return `- No certification schema detected\n- No industry-specific certification data available\n- Add certification badges and schema markup to establish trust`;
+  }
+
+  // Team Credentials
+  if (sub === 'teamCredentials') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const teamCerts = certData.missing.filter(c => c.recommendation?.impact_areas?.includes('Team Expertise'));
+      if (teamCerts.length > 0) {
+        const certNames = teamCerts.slice(0, 5).map(c => c.name).join(', ');
+        return `- Industry: ${certData.industry}\n- Recommended team certifications: ${certNames}\n- No Person schema detected for team members\n\n**CRITICAL INSTRUCTION**: Use the actual certifications listed above (${certNames}) in your recommendation, not generic placeholders.`;
+      }
+    }
+    return `- No Person schema detected for team members\n- No team credentials documented\n- Add Person schema with hasCredential properties`;
+  }
+
+  // Industry Memberships
+  if (sub === 'industryMemberships') {
+    const certData = scanEvidence.certificationData;
+    if (certData && certData.libraryLoaded) {
+      const memberships = certData.missing.filter(c => c.recommendation?.category === 'association');
+      if (memberships.length > 0) {
+        const membershipNames = memberships.slice(0, 5).map(c => c.name).join(', ');
+        return `- Industry: ${certData.industry}\n- Recommended memberships: ${membershipNames}\n- No Organization.memberOf schema detected\n\n**CRITICAL INSTRUCTION**: Use the actual industry memberships listed above (${membershipNames}) in your recommendation, not generic placeholders.`;
+      }
+    }
+    return `- No Organization.memberOf schema detected\n- No industry memberships documented\n- Add memberOf properties to Organization schema`;
   }
 
   // Generic fallback with more context
