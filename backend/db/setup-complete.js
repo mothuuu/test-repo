@@ -118,6 +118,9 @@ async function runSetup() {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='industry_custom') THEN
           ALTER TABLE users ADD COLUMN industry_custom VARCHAR(255);
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_login') THEN
+          ALTER TABLE users ADD COLUMN last_login TIMESTAMP;
+        END IF;
       END $$;
     `);
     console.log('   ✅ Authentication fields added\n');
