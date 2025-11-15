@@ -15,6 +15,7 @@ const supportChatRoutes = require('./routes/support-chat');
 const waitlistRoutes = require('./routes/waitlist');
 const adminRoutes = require('./routes/admin');
 const competitiveAnalysisRoutes = require('./routes/competitive-analysis');
+const stripeWebhookRoutes = require('./routes/stripe-webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
