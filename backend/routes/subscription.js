@@ -8,7 +8,9 @@ const { authenticateToken } = require('../middleware/auth');
 // Price IDs from your Stripe dashboard
 const PRICE_IDS = {
   diy: process.env.STRIPE_PRICE_DIY || 'price_diy_monthly',
-  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly'
+  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly',
+  enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE || 'price_enterprise_monthly',
+  agency: process.env.STRIPE_PRICE_ID_AGENCY || 'price_agency_monthly'
 };
 
 // Test endpoint to verify routes are loaded
@@ -36,7 +38,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Domain required' });
     }
 
-    if (!['diy', 'pro'].includes(plan)) {
+    if (!['diy', 'pro', 'enterprise', 'agency'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 

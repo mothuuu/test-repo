@@ -36,7 +36,9 @@ const authenticateToken = (req, res, next) => {
 const PLAN_LIMITS = {
   free: { scansPerMonth: 2, pagesPerScan: 1, competitorScans: 0 },
   diy: { scansPerMonth: 25, pagesPerScan: 5, competitorScans: 2 },
-  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 }
+  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 },
+  enterprise: { scansPerMonth: 500, pagesPerScan: 25, competitorScans: 25 },
+  agency: { scansPerMonth: -1, pagesPerScan: 50, competitorScans: 50 } // -1 = unlimited
 };
 
 // V5 Rubric Category Weights
