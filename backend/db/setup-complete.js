@@ -115,19 +115,73 @@ async function runSetup() {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='industry') THEN
           ALTER TABLE users ADD COLUMN industry VARCHAR(255);
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='industry_custom') THEN
+          ALTER TABLE users ADD COLUMN industry_custom VARCHAR(255);
+        END IF;
       END $$;
     `);
     console.log('   ✅ Authentication fields added\n');
 
-    // Step 3: Allow Guest Scans
-    console.log('3️⃣  Enabling guest scans...');
+    // Step 3: Tracking & Analytics Fields
+    console.log('3️⃣  Adding tracking and analytics fields...');
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='signup_source') THEN
+          ALTER TABLE users ADD COLUMN signup_source VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='signup_medium') THEN
+          ALTER TABLE users ADD COLUMN signup_medium VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='signup_campaign') THEN
+          ALTER TABLE users ADD COLUMN signup_campaign VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='signup_content') THEN
+          ALTER TABLE users ADD COLUMN signup_content VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='signup_term') THEN
+          ALTER TABLE users ADD COLUMN signup_term VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='referrer_url') THEN
+          ALTER TABLE users ADD COLUMN referrer_url TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='landing_page') THEN
+          ALTER TABLE users ADD COLUMN landing_page TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='affiliate_id') THEN
+          ALTER TABLE users ADD COLUMN affiliate_id VARCHAR(255);
+        END IF;
+      END $$;
+    `);
+    console.log('   ✅ Tracking fields added\n');
+
+    // Step 4: Competitive Analysis & Primary Domain
+    console.log('4️⃣  Adding competitive analysis fields...');
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='competitor_scans_used_this_month') THEN
+          ALTER TABLE users ADD COLUMN competitor_scans_used_this_month INTEGER DEFAULT 0;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='primary_domain') THEN
+          ALTER TABLE users ADD COLUMN primary_domain VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='primary_domain_changed_at') THEN
+          ALTER TABLE users ADD COLUMN primary_domain_changed_at TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+    console.log('   ✅ Competitive analysis fields added\n');
+
+    // Step 5: Allow Guest Scans
+    console.log('5️⃣  Enabling guest scans...');
     await pool.query(`
       ALTER TABLE scans ALTER COLUMN user_id DROP NOT NULL;
     `);
     console.log('   ✅ Guest scans enabled\n');
 
-    // Step 4: Admin System
-    console.log('4️⃣  Setting up admin system...');
+    // Step 6: Admin System
+    console.log('6️⃣  Setting up admin system...');
     await pool.query(`
       DO $$
       BEGIN
@@ -153,8 +207,8 @@ async function runSetup() {
     `);
     console.log('   ✅ Admin system ready\n');
 
-    // Step 5: Stripe Events
-    console.log('5️⃣  Setting up Stripe webhooks...');
+    // Step 7: Stripe Events
+    console.log('7️⃣  Setting up Stripe webhooks...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS stripe_events (
         id SERIAL PRIMARY KEY,
@@ -171,8 +225,8 @@ async function runSetup() {
     `);
     console.log('   ✅ Stripe webhooks table created\n');
 
-    // Step 6: Waitlist
-    console.log('6️⃣  Creating waitlist table...');
+    // Step 8: Waitlist
+    console.log('8️⃣  Creating waitlist table...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS waitlist (
         id SERIAL PRIMARY KEY,
@@ -183,8 +237,8 @@ async function runSetup() {
     `);
     console.log('   ✅ Waitlist table created\n');
 
-    // Step 7: Subscription Management
-    console.log('7️⃣  Adding subscription fields...');
+    // Step 9: Subscription Management
+    console.log('9️⃣  Adding subscription fields...');
     await pool.query(`
       DO $$
       BEGIN
@@ -198,8 +252,8 @@ async function runSetup() {
     `);
     console.log('   ✅ Subscription fields added\n');
 
-    // Step 8: Indexes
-    console.log('8️⃣  Creating indexes for performance...');
+    // Step 10: Indexes
+    console.log('🔟 Creating indexes for performance...');
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_scans_user ON scans(user_id);
