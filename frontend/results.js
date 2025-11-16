@@ -145,6 +145,20 @@ function displayResults(scan, quota) {
         document.getElementById('userPlan').textContent = userData.plan.toUpperCase();
     }
 
+    // Display user mode indicator and notifications (if data available)
+    if (scan.userMode) {
+        displayModeIndicator(scan.userMode, scan.total_score);
+    }
+    if (scan.notifications) {
+        displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
+    }
+    if (scan.currentCycle) {
+        displayRefreshCycle(scan.currentCycle);
+    }
+    if (scan.recentDetections && scan.recentDetections.length > 0) {
+        displayAutoDetections(scan.recentDetections);
+    }
+
     // Display category scores
     if (scan.categoryBreakdown) {
         displayCategoryScores(scan.categoryBreakdown, scan.recommendations || [], scan.categoryWeights || {});
@@ -805,6 +819,15 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     else if (priority === 'medium') priorityBadgeClass += 'medium';
     else priorityBadgeClass += 'low';
 
+    // Delivery System fields
+    const impactScore = rec.impact_score || null;
+    const implementationDifficulty = rec.implementation_difficulty || null;
+    const compoundingEffect = rec.compounding_effect_score || 0;
+    const industryRelevance = rec.industry_relevance_score || 0;
+    const isPartialImplementation = rec.is_partial_implementation || false;
+    const implementationProgress = rec.implementation_progress || 0;
+    const validationStatus = rec.validation_status || null;
+
     const showCodeSnippet = userPlan !== 'free' && codeSnippet;
 
     card.innerHTML = `
@@ -817,16 +840,32 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                 <div class="rec-category">${formatCategoryName(rec.category)}${subcategory ? ` → ${subcategory}` : ''}</div>
             </div>
             <div class="rec-metrics-section">
-                ${estimatedImpact ? `
+                ${impactScore ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value score-gain" style="font-size: 18px; font-weight: bold; color: #10b981;">★ ${Math.round(impactScore)}</div>
+                        <div class="rec-metric-label">Impact Score</div>
+                    </div>
+                ` : estimatedImpact ? `
                     <div class="rec-metric">
                         <div class="rec-metric-value score-gain">+${Math.round(estimatedImpact * 10)}</div>
                         <div class="rec-metric-label">Score Gain</div>
                     </div>
                 ` : ''}
-                ${effort ? `
+                ${implementationDifficulty ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value effort">${implementationDifficulty}</div>
+                        <div class="rec-metric-label">Difficulty</div>
+                    </div>
+                ` : effort ? `
                     <div class="rec-metric">
                         <div class="rec-metric-value effort">${effort}</div>
                         <div class="rec-metric-label">Effort</div>
+                    </div>
+                ` : ''}
+                ${compoundingEffect > 0 ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value" style="color: #8b5cf6;">🔄 ${Math.round(compoundingEffect)}</div>
+                        <div class="rec-metric-label">Compound</div>
                     </div>
                 ` : ''}
             </div>
@@ -927,6 +966,28 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                             </li>
                         `).join('')}
                     </ul>
+                </div>
+            ` : ''}
+
+            ${isPartialImplementation && implementationProgress > 0 ? `
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #78350f; margin-bottom: 8px;">⚙️ Partial Implementation Detected</h4>
+                    <p style="font-size: 13px; color: #92400e; margin-bottom: 10px;">This recommendation is ${Math.round(implementationProgress)}% complete</p>
+                    <div style="width: 100%; background: #fde68a; border-radius: 9999px; height: 10px;">
+                        <div style="background: #d97706; height: 10px; border-radius: 9999px; width: ${implementationProgress}%"></div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${validationStatus === 'validation_failed' ? `
+                <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #7f1d1d; margin-bottom: 8px;">⚠️ Validation Issues Detected</h4>
+                    <p style="font-size: 13px; color: #991b1b;">The implementation needs attention. Please review and fix any errors.</p>
+                </div>
+            ` : validationStatus === 'validated' ? `
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #065f46;">✓ Implementation Validated</h4>
+                    <p style="font-size: 13px; color: #047857;">This implementation has been verified and is working correctly.</p>
                 </div>
             ` : ''}
 
@@ -2178,6 +2239,277 @@ function displayTimeline(historicalTimeline) {
 
     console.log('📈 Timeline chart created with', dataPoints.length, 'data points');
 }
+
+// ============================================
+// RECOMMENDATION DELIVERY SYSTEM UI COMPONENTS
+// ============================================
+
+/**
+ * Display user mode indicator (Optimization vs Elite)
+ */
+function displayModeIndicator(userMode, currentScore) {
+    const container = document.createElement('div');
+    container.id = 'mode-indicator';
+    container.className = 'mb-6';
+
+    const isElite = userMode.current_mode === 'elite';
+    const modeColor = isElite ? 'from-purple-600 to-indigo-600' : 'from-blue-600 to-cyan-600';
+    const modeIcon = isElite ? '👑' : '🚀';
+    const modeTitle = isElite ? 'Elite Maintenance Mode' : 'Optimization Mode';
+    const modeDescription = isElite
+        ? 'You\'ve achieved elite status! Focus on maintaining your high score and staying ahead of competitors.'
+        : 'Keep improving! Reach 850+ to unlock Elite mode with competitive tracking.';
+
+    // Calculate progress to Elite mode (if in optimization)
+    let progressBar = '';
+    if (!isElite && currentScore) {
+        const progress = Math.min((currentScore / 850) * 100, 100);
+        const remaining = Math.max(850 - currentScore, 0);
+        progressBar = `
+            <div class="mt-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-white/80">Progress to Elite Mode</span>
+                    <span class="font-semibold text-white">${Math.round(progress)}%</span>
+                </div>
+                <div class="w-full bg-white/20 rounded-full h-2.5">
+                    <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                </div>
+                ${remaining > 0 ? `<p class="text-xs text-white/70 mt-1">${remaining} points to Elite mode</p>` : ''}
+            </div>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="bg-gradient-to-r ${modeColor} text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl">${modeIcon}</span>
+                    <div>
+                        <h3 class="text-xl font-bold">${modeTitle}</h3>
+                        <p class="text-white/90 text-sm mt-1">${modeDescription}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold">${currentScore}</div>
+                    <div class="text-sm text-white/80">Current Score</div>
+                </div>
+            </div>
+            ${progressBar}
+        </div>
+    `;
+
+    // Insert after the scan header
+    const recCountEl = document.getElementById('recCount');
+    if (recCountEl && recCountEl.parentElement) {
+        recCountEl.parentElement.insertBefore(container, recCountEl);
+    }
+}
+
+/**
+ * Display notification center
+ */
+function displayNotificationCenter(notifications, unreadCount) {
+    const container = document.createElement('div');
+    container.id = 'notification-center';
+    container.className = 'mb-6';
+
+    if (notifications.length === 0) {
+        return; // Don't show if no notifications
+    }
+
+    const unreadBadge = unreadCount > 0
+        ? `<span class="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">${unreadCount}</span>`
+        : '';
+
+    const notificationItems = notifications.slice(0, 5).map(notif => {
+        const priorityColor = {
+            high: 'border-red-400 bg-red-50',
+            medium: 'border-yellow-400 bg-yellow-50',
+            low: 'border-blue-400 bg-blue-50'
+        }[notif.priority] || 'border-gray-300 bg-gray-50';
+
+        const isRead = notif.is_read;
+        const opacity = isRead ? 'opacity-60' : '';
+
+        return `
+            <div class="border-l-4 ${priorityColor} ${opacity} p-4 mb-3 rounded">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900">${notif.title}</h4>
+                        <p class="text-sm text-gray-700 mt-1">${notif.message}</p>
+                        <p class="text-xs text-gray-500 mt-2">${new Date(notif.created_at).toLocaleString()}</p>
+                    </div>
+                    ${!isRead ? `
+                        <button onclick="markNotificationRead(${notif.id})" class="ml-4 text-blue-600 hover:text-blue-800 text-sm">
+                            Mark Read
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="bg-white border-2 border-blue-200 rounded-lg p-6 shadow-md">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                    🔔 Notifications
+                    ${unreadBadge}
+                </h3>
+                <button onclick="toggleNotifications()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                    View All
+                </button>
+            </div>
+            <div id="notification-list" class="max-h-96 overflow-y-auto">
+                ${notificationItems}
+            </div>
+        </div>
+    `;
+
+    const modeIndicator = document.getElementById('mode-indicator');
+    if (modeIndicator) {
+        modeIndicator.after(container);
+    }
+}
+
+/**
+ * Display refresh cycle countdown
+ */
+function displayRefreshCycle(cycle) {
+    const container = document.createElement('div');
+    container.id = 'refresh-cycle';
+    container.className = 'mb-6';
+
+    const nextDate = new Date(cycle.next_cycle_date);
+    const now = new Date();
+    const daysRemaining = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+
+    container.innerHTML = `
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold text-gray-900">📅 Refresh Cycle ${cycle.cycle_number}</h4>
+                    <p class="text-sm text-gray-700 mt-1">
+                        ${cycle.implemented_count} implemented • ${cycle.skipped_count} skipped • ${cycle.auto_detected_count} auto-detected
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600">${daysRemaining}</div>
+                    <div class="text-xs text-gray-600">days until refresh</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const notifCenter = document.getElementById('notification-center');
+    const modeIndicator = document.getElementById('mode-indicator');
+    const insertAfter = notifCenter || modeIndicator;
+    if (insertAfter) {
+        insertAfter.after(container);
+    }
+}
+
+/**
+ * Display auto-detection confirmations
+ */
+function displayAutoDetections(detections) {
+    const container = document.createElement('div');
+    container.id = 'auto-detections';
+    container.className = 'mb-6';
+
+    const detectionItems = detections.map(detection => `
+        <div class="border-l-4 border-green-400 bg-green-50 p-4 mb-3 rounded">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">✅ ${detection.recommendation_text || 'Recommendation'}</h4>
+                    <p class="text-sm text-gray-700 mt-1">
+                        We detected this might be implemented. Confidence: ${detection.confidence_score}%
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">${new Date(detection.detected_at).toLocaleString()}</p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <button onclick="confirmDetection(${detection.id}, true)"
+                            class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                        Confirm
+                    </button>
+                    <button onclick="confirmDetection(${detection.id}, false)"
+                            class="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400">
+                        Not Yet
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="bg-white border-2 border-green-200 rounded-lg p-6 shadow-md">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">🎯 Implementation Detected</h3>
+            <div>${detectionItems}</div>
+        </div>
+    `;
+
+    const refreshCycle = document.getElementById('refresh-cycle');
+    const notifCenter = document.getElementById('notification-center');
+    const modeIndicator = document.getElementById('mode-indicator');
+    const insertAfter = refreshCycle || notifCenter || modeIndicator;
+    if (insertAfter) {
+        insertAfter.after(container);
+    }
+}
+
+/**
+ * Mark notification as read
+ */
+window.markNotificationRead = async function(notificationId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            location.reload(); // Refresh to update UI
+        }
+    } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+    }
+};
+
+/**
+ * Confirm auto-detection
+ */
+window.confirmDetection = async function(detectionId, confirmed) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/detection/${detectionId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ confirmed, feedback: null })
+        });
+
+        if (response.ok) {
+            showNotification(
+                confirmed ? 'Implementation confirmed!' : 'Detection dismissed',
+                confirmed ? 'success' : 'info'
+            );
+            setTimeout(() => location.reload(), 1500);
+        }
+    } catch (error) {
+        console.error('Failed to confirm detection:', error);
+    }
+};
+
+/**
+ * Toggle notifications view
+ */
+window.toggleNotifications = function() {
+    // You could implement a modal or expand/collapse here
+    alert('Full notification center coming soon!');
+};
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', loadScanResults);
