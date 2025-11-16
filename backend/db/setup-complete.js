@@ -90,7 +90,55 @@ async function runSetup() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('   ✅ usage_logs table\n');
+    console.log('   ✅ usage_logs table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS scan_recommendations (
+        id SERIAL PRIMARY KEY,
+        scan_id INTEGER REFERENCES scans(id) ON DELETE CASCADE,
+        recommendation_text TEXT,
+        recommendation_type VARCHAR(20) DEFAULT 'site-wide',
+        category VARCHAR(100),
+        priority VARCHAR(20),
+        impact_level VARCHAR(20),
+        implementation_difficulty VARCHAR(20),
+        status VARCHAR(50) DEFAULT 'pending',
+        page_url TEXT,
+        page_priority INTEGER,
+        unlock_state VARCHAR(20) DEFAULT 'locked',
+        batch_number INTEGER DEFAULT 1,
+        unlocked_at TIMESTAMP,
+        skip_enabled_at TIMESTAMP,
+        skipped_at TIMESTAMP,
+        marked_complete_at TIMESTAMP,
+        verified_at TIMESTAMP,
+        skip_verification BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('   ✅ scan_recommendations table');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        scan_id INTEGER REFERENCES scans(id) ON DELETE CASCADE,
+        total_recommendations INTEGER DEFAULT 0,
+        active_recommendations INTEGER DEFAULT 0,
+        completed_recommendations INTEGER DEFAULT 0,
+        verified_recommendations INTEGER DEFAULT 0,
+        current_batch INTEGER DEFAULT 1,
+        last_unlock_date DATE,
+        unlocks_today INTEGER DEFAULT 0,
+        next_unlock_available_at TIMESTAMP,
+        completion_streak INTEGER DEFAULT 0,
+        last_activity_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, scan_id)
+      );
+    `);
+    console.log('   ✅ user_progress table\n');
 
     // Step 2: Auth Fields
     console.log('2️⃣  Adding authentication fields...');
@@ -264,6 +312,10 @@ async function runSetup() {
       CREATE INDEX IF NOT EXISTS idx_page_analysis_scan ON page_analysis(scan_id);
       CREATE INDEX IF NOT EXISTS idx_stripe_events_event_id ON stripe_events(event_id);
       CREATE INDEX IF NOT EXISTS idx_stripe_events_customer ON stripe_events(customer_id);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_scan ON scan_recommendations(scan_id);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_unlock ON scan_recommendations(unlock_state);
+      CREATE INDEX IF NOT EXISTS idx_user_progress_user ON user_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_progress_scan ON user_progress(scan_id);
     `);
     console.log('   ✅ Indexes created\n');
 
