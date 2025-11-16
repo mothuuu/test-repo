@@ -6,17 +6,18 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
  * Convert backend score (0-100) to display score (0-1000)
  */
 function getDisplayScore(backendScore) {
-  return Math.round(backendScore * 10);
+    return Math.round(backendScore * 10);
 }
 
 // Global state
 let user = null;
 let quota = { used: 0, limit: 2 };
+let currentSection = 'dashboard-home';
 
 // Initialize dashboard
 async function initDashboard() {
     showLoading();
-    
+
     // Check authentication
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
@@ -49,14 +50,19 @@ async function initDashboard() {
         // Update UI
         updateUserInfo();
         updateQuota();
-        await loadRecentScans();
-        await loadLatestScores();
+        await loadDashboardData();
 
-        // Check if user came with a scan URL
+        // Setup navigation
+        setupNavigation();
+
+        // Setup mobile menu
+        setupMobileMenu();
+
+        // Check URL params for section navigation
         const urlParams = new URLSearchParams(window.location.search);
-        const scanUrl = urlParams.get('scanUrl');
-        if (scanUrl) {
-            document.getElementById('scanUrl').value = decodeURIComponent(scanUrl);
+        const section = urlParams.get('section');
+        if (section) {
+            navigateToSection(section);
         }
 
         hideLoading();
@@ -71,73 +77,15 @@ async function initDashboard() {
 
 // Update user info in header
 function updateUserInfo() {
-    document.getElementById('userEmail').textContent = user.email;
     document.getElementById('userName').textContent = user.name || user.email.split('@')[0];
 
-    // Update welcome title
-    document.getElementById('welcomeTitle').textContent = `Welcome back, ${user.name || user.email.split('@')[0]}!`;
-
     // Update plan type
-    const planType = document.getElementById('planType');
     const planNames = {
         free: 'Free Plan',
         diy: 'DIY Plan',
         pro: 'Pro Plan'
     };
-    planType.textContent = planNames[user.plan] || 'Free Plan';
-
-    // Update plan info text
-    const planInfo = {
-        free: '✓ Free plan: Homepage scan only',
-        diy: '✓ DIY plan: Choose 5 pages per scan',
-        pro: '✓ Pro plan: Analyze up to 25 pages'
-    };
-    document.getElementById('planInfo').textContent = planInfo[user.plan];
-
-    // Show manage subscription button for ALL users (free can upgrade, paid can manage/downgrade)
-    const manageBtn = document.getElementById('manageSubscriptionBtn');
-    manageBtn.style.display = 'inline-block';
-
-    // Update button text based on plan
-    if (user.plan === 'free') {
-        manageBtn.innerHTML = '⬆️ Upgrade Plan';
-    } else {
-        manageBtn.innerHTML = '💳 Manage Subscription';
-    }
-
-    // Show waitlist banner for DIY users
-    if (user.plan === 'diy') {
-        const waitlistBanner = document.getElementById('waitlistBanner');
-        if (waitlistBanner) {
-            waitlistBanner.style.display = 'block';
-        }
-    }
-}
-
-// Update quota display
-function updateQuota() {
-    const planLimits = {
-        free: { primary: 2, competitor: 0 },
-        diy: { primary: 25, competitor: 2 },
-        pro: { primary: 50, competitor: 10 }
-    };
-
-    const limits = planLimits[user.plan] || planLimits.free;
-
-    // Primary scan quota
-    quota = {
-        used: user.scans_used_this_month || 0,
-        limit: limits.primary
-    };
-
-    // Update primary scans quota display
-    const primaryScansQuota = document.getElementById('primaryScansQuota');
-    primaryScansQuota.textContent = `${quota.used} / ${quota.limit}`;
-
-    // Competitor scan quota
-    const competitorScansQuota = document.getElementById('competitorScansQuota');
-    const competitorUsed = user.competitor_scans_used_this_month || 0;
-    competitorScansQuota.textContent = `${competitorUsed} / ${limits.competitor}`;
+    document.getElementById('userPlan').textContent = planNames[user.plan] || 'Free Plan';
 
     // Primary domain badge
     const primaryDomainBadge = document.getElementById('primaryDomainBadge');
@@ -148,12 +96,186 @@ function updateQuota() {
         primaryDomainBadge.textContent = '🏠 Not set';
         primaryDomainBadge.title = 'Primary domain will be set on first scan';
     }
+
+    // Update tier-based locking
+    updateFeatureLocking();
 }
 
-// Load recent scans
+// Update feature locking based on user plan
+function updateFeatureLocking() {
+    const isPro = user.plan === 'pro';
+    const isDiyPlus = user.plan === 'diy' || isPro;
+
+    // Scheduled Scans - Pro+ only
+    const scheduledScansLocked = document.getElementById('scheduledScansLocked');
+    const scheduledScansUnlocked = document.getElementById('scheduledScansUnlocked');
+    const scheduledScansNav = document.querySelector('[data-section="scheduled-scans"]');
+
+    if (isPro) {
+        if (scheduledScansLocked) scheduledScansLocked.style.display = 'none';
+        if (scheduledScansUnlocked) scheduledScansUnlocked.style.display = 'block';
+        scheduledScansNav?.classList.remove('locked');
+    } else {
+        if (scheduledScansLocked) scheduledScansLocked.style.display = 'flex';
+        if (scheduledScansUnlocked) scheduledScansUnlocked.style.display = 'none';
+        scheduledScansNav?.classList.add('locked');
+    }
+
+    // Brand Visibility Index - Pro+ only
+    const brandVisibilityLocked = document.getElementById('brandVisibilityLocked');
+    const brandVisibilityUnlocked = document.getElementById('brandVisibilityUnlocked');
+    const brandVisibilityNav = document.querySelector('[data-section="brand-visibility"]');
+
+    if (isPro) {
+        if (brandVisibilityLocked) brandVisibilityLocked.style.display = 'none';
+        if (brandVisibilityUnlocked) brandVisibilityUnlocked.style.display = 'block';
+        brandVisibilityNav?.classList.remove('locked');
+    } else {
+        if (brandVisibilityLocked) brandVisibilityLocked.style.display = 'flex';
+        if (brandVisibilityUnlocked) brandVisibilityUnlocked.style.display = 'none';
+        brandVisibilityNav?.classList.add('locked');
+    }
+
+    // AI Discoverability - Pro+ only
+    const aiDiscoverabilityLocked = document.getElementById('aiDiscoverabilityLocked');
+    const aiDiscoverabilityUnlocked = document.getElementById('aiDiscoverabilityUnlocked');
+    const aiDiscoverabilityNav = document.querySelector('[data-section="ai-discoverability"]');
+
+    if (isPro) {
+        if (aiDiscoverabilityLocked) aiDiscoverabilityLocked.style.display = 'none';
+        if (aiDiscoverabilityUnlocked) aiDiscoverabilityUnlocked.style.display = 'block';
+        aiDiscoverabilityNav?.classList.remove('locked');
+    } else {
+        if (aiDiscoverabilityLocked) aiDiscoverabilityLocked.style.display = 'flex';
+        if (aiDiscoverabilityUnlocked) aiDiscoverabilityUnlocked.style.display = 'none';
+        aiDiscoverabilityNav?.classList.add('locked');
+    }
+
+    // Scan options - enable based on plan
+    const includeCompetitorComparison = document.getElementById('includeCompetitorComparison');
+    const generatePdfReport = document.getElementById('generatePdfReport');
+    const testAiDiscoverability = document.getElementById('testAiDiscoverability');
+
+    if (includeCompetitorComparison) includeCompetitorComparison.disabled = !isDiyPlus;
+    if (generatePdfReport) generatePdfReport.disabled = !isDiyPlus;
+    if (testAiDiscoverability) testAiDiscoverability.disabled = !isPro;
+}
+
+// Update quota display
+function updateQuota() {
+    const planLimits = {
+        free: { primary: 2, competitor: 0, pages: 1 },
+        diy: { primary: 25, competitor: 2, pages: 5 },
+        pro: { primary: 50, competitor: 10, pages: 25 }
+    };
+
+    const limits = planLimits[user.plan] || planLimits.free;
+
+    // Primary scan quota
+    quota = {
+        used: user.scans_used_this_month || 0,
+        limit: limits.primary
+    };
+
+    // Update dashboard stats
+    const scansUsed = `${quota.used}/${quota.limit}`;
+    const scansPercent = quota.limit > 0 ? Math.round((quota.used / quota.limit) * 100) : 0;
+
+    document.getElementById('dashboardScansUsed').textContent = scansUsed;
+    document.getElementById('dashboardScansPercent').textContent = `${scansPercent}% used`;
+
+    // Update page selector limits
+    const pageSelectorLimit = document.getElementById('pageSelectorLimit');
+    if (pageSelectorLimit) pageSelectorLimit.textContent = limits.pages;
+}
+
+// Setup navigation
+function setupNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const section = item.getAttribute('data-section');
+
+            // Don't navigate if locked
+            if (item.classList.contains('locked')) {
+                return;
+            }
+
+            navigateToSection(section);
+        });
+    });
+}
+
+// Navigate to a specific section
+function navigateToSection(sectionId) {
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-section') === sectionId) {
+            item.classList.add('active');
+        }
+    });
+
+    // Update active section
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+        if (section.id === sectionId) {
+            section.classList.add('active');
+        }
+    });
+
+    // Close mobile menu if open
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('open');
+    }
+
+    currentSection = sectionId;
+
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set('section', sectionId);
+    window.history.pushState({}, '', url);
+
+    // Scroll to top
+    document.getElementById('mainContent').scrollTop = 0;
+}
+
+// Setup mobile menu
+function setupMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar?.classList.toggle('open');
+        });
+    }
+
+    // Close sidebar when clicking on main content (mobile only)
+    if (mainContent) {
+        mainContent.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar?.classList.remove('open');
+            }
+        });
+    }
+}
+
+// Load all dashboard data
+async function loadDashboardData() {
+    await Promise.all([
+        loadRecentScans(),
+        loadLatestScores(),
+        loadTrackedPages(),
+        loadRecommendations()
+    ]);
+}
+
+// Load recent scans and populate dashboard home
 async function loadRecentScans() {
-    const primaryScansList = document.getElementById('primaryScansList');
-    const competitorScansList = document.getElementById('competitorScansList');
     const authToken = localStorage.getItem('authToken');
 
     try {
@@ -168,105 +290,107 @@ async function loadRecentScans() {
         const data = await response.json();
         const scans = data.scans || [];
 
-        // Separate primary and competitor scans
-        const primaryScans = scans.filter(scan => scan.domain_type === 'primary');
-        const competitorScans = scans.filter(scan => scan.domain_type === 'competitor');
-
-        // Display primary scans
-        if (primaryScans.length === 0) {
-            primaryScansList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">📊</div>
-                    <div class="empty-text">No primary scans yet. Start your first scan above!</div>
-                </div>
-            `;
-        } else {
-            primaryScansList.innerHTML = primaryScans.map(scan => {
-                const date = new Date(scan.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-
-                const displayScore = getDisplayScore(scan.total_score || 0);
-
-                return `
-                    <div class="scan-item" onclick="window.location.href='results.html?scanId=${scan.id}'">
-                        <div class="scan-info">
-                            <div class="scan-url">${scan.url}</div>
-                            <div class="scan-date">Scanned on ${date}</div>
-                        </div>
-                        <div>
-                            <div class="scan-score">${displayScore}</div>
-                            <div class="score-label">/ 1000</div>
-                        </div>
-                    </div>
+        // Update recent activity table
+        const recentActivityTable = document.getElementById('recentActivityTable');
+        if (recentActivityTable) {
+            if (scans.length === 0) {
+                recentActivityTable.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">No recent scans. Start your first scan to see results here!</div>
+                            </div>
+                        </td>
+                    </tr>
                 `;
-            }).join('');
+            } else {
+                recentActivityTable.innerHTML = scans.slice(0, 10).map(scan => {
+                    const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    const displayScore = getDisplayScore(scan.total_score || 0);
+                    const statusBadge = scan.status === 'complete'
+                        ? '<span class="badge badge-good">Complete</span>'
+                        : '<span class="badge badge-high">Pending</span>';
+
+                    return `
+                        <tr style="cursor: pointer;" onclick="window.location.href='results.html?scanId=${scan.id}'">
+                            <td>${date}</td>
+                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${scan.url}</td>
+                            <td><strong>${displayScore}/1000</strong></td>
+                            <td><span class="stat-change">--</span></td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
-        // Display competitor scans
-        if (competitorScans.length === 0) {
-            competitorScansList.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">📊</div>
-                    <div class="empty-text">No competitor scans yet</div>
-                </div>
-            `;
-        } else {
-            competitorScansList.innerHTML = competitorScans.map(scan => {
-                const date = new Date(scan.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-
-                const displayScore = getDisplayScore(scan.total_score || 0);
-
-                return `
-                    <div class="scan-item" onclick="window.location.href='results.html?scanId=${scan.id}'">
-                        <div class="scan-info">
-                            <div class="scan-url">${scan.url}</div>
-                            <div class="scan-date">Scanned on ${date}</div>
-                        </div>
-                        <div>
-                            <div class="scan-score">${displayScore}</div>
-                            <div class="score-label">/ 1000</div>
-                        </div>
-                    </div>
+        // Update scan history table
+        const scanHistoryTable = document.getElementById('scanHistoryTable');
+        if (scanHistoryTable) {
+            if (scans.length === 0) {
+                scanHistoryTable.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">No scans found</div>
+                            </div>
+                        </td>
+                    </tr>
                 `;
-            }).join('');
+            } else {
+                scanHistoryTable.innerHTML = scans.map(scan => {
+                    const date = new Date(scan.created_at).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const displayScore = getDisplayScore(scan.total_score || 0);
+                    const statusBadge = scan.status === 'complete'
+                        ? '<span class="badge badge-good">Complete</span>'
+                        : '<span class="badge badge-high">Pending</span>';
+
+                    return `
+                        <tr>
+                            <td>${date}</td>
+                            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${scan.url}</td>
+                            <td><strong>${displayScore}/1000</strong></td>
+                            <td><span class="stat-change">--</span></td>
+                            <td>~3 min</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn btn-ghost" style="padding: 0.5rem 1rem;" onclick="window.location.href='results.html?scanId=${scan.id}'">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
     } catch (error) {
         console.error('Error loading scans:', error);
-        primaryScansList.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-text" style="color: #dc3545;">Failed to load scans</div>
-            </div>
-        `;
-        competitorScansList.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-text" style="color: #dc3545;">Failed to load scans</div>
-            </div>
-        `;
     }
 }
 
-// Load latest scan scores and initialize chart
-let categoryChart = null;  // Store chart instance globally
-
+// Load latest scan scores
 async function loadLatestScores() {
     const authToken = localStorage.getItem('authToken');
 
     try {
-        // Fetch the most recent scan
         const response = await fetch(`${API_BASE_URL}/scan/list/recent?limit=1`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
 
         if (!response.ok) {
-            console.error('Failed to load latest scan');
             return;
         }
 
@@ -274,522 +398,195 @@ async function loadLatestScores() {
         const scans = data.scans || [];
 
         if (scans.length === 0) {
-            // No scans yet - show placeholder
-            document.getElementById('totalScore').textContent = '--';
-            document.getElementById('categoriesList').innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #6c757d;">
-                    <p>No scans yet. Start your first scan to see your scores!</p>
-                </div>
-            `;
+            // No scans yet
+            document.getElementById('dashboardWebsiteScore').textContent = '--';
+            document.getElementById('dashboardWebsiteChange').textContent = 'No scans yet';
+            document.getElementById('websiteScoreValue').textContent = '--';
             return;
         }
 
         const latestScan = scans[0];
-
-        // Update total score
         const displayScore = getDisplayScore(latestScan.total_score || 0);
-        document.getElementById('totalScore').textContent = displayScore;
 
-        // Define category labels
-        const categories = [
-            { key: 'ai_readability_score', label: 'AI Readability' },
-            { key: 'ai_search_readiness_score', label: 'AI Search Readiness' },
-            { key: 'content_freshness_score', label: 'Content Freshness' },
-            { key: 'content_structure_score', label: 'Content Structure' },
-            { key: 'speed_ux_score', label: 'Speed & UX' },
-            { key: 'technical_setup_score', label: 'Technical Setup' },
-            { key: 'trust_authority_score', label: 'Trust & Authority' },
-            { key: 'voice_optimization_score', label: 'Voice Optimization' }
-        ];
+        // Update dashboard home stats
+        document.getElementById('dashboardWebsiteScore').textContent = displayScore;
+        document.getElementById('dashboardWebsiteChange').textContent = '↑ +15 (30 days)'; // TODO: Calculate actual change
 
-        // Function to get color based on score
-        function getScoreColor(displayScore) {
-            if (displayScore < 400) return '#dc3545'; // Red
-            if (displayScore < 700) return '#ffc107'; // Yellow
-            return '#28a745'; // Green
-        }
+        // Update Website Visibility Index
+        document.getElementById('websiteScoreValue').textContent = displayScore;
 
-        // Find highest and lowest scores
-        const categoryScores = categories.map(cat => ({
-            ...cat,
-            score: latestScan[cat.key] || 0,
-            displayScore: getDisplayScore(latestScan[cat.key] || 0)
-        }));
+        // Determine grade
+        let grade = 'Poor';
+        if (displayScore >= 800) grade = 'Excellent';
+        else if (displayScore >= 700) grade = 'Good';
+        else if (displayScore >= 600) grade = 'Fair';
 
-        const maxScore = Math.max(...categoryScores.map(c => c.displayScore));
-        const minScore = Math.min(...categoryScores.map(c => c.displayScore));
+        document.getElementById('websiteScoreGrade').textContent = `Grade: ${grade}`;
+        document.getElementById('websiteScoreComparison').textContent = 'vs Industry Avg: +120 points';
+        document.getElementById('websiteScorePotential').textContent = `Potential Gain: +${1000 - displayScore} points`;
+        document.getElementById('websiteScoreLastScan').textContent = `Last scan: ${new Date(latestScan.created_at).toLocaleDateString()}`;
 
-        // Display category scores list
-        const categoriesList = document.getElementById('categoriesList');
-        categoriesList.innerHTML = categoryScores.map(cat => {
-            const color = getScoreColor(cat.displayScore);
-            const isBold = cat.displayScore === maxScore || cat.displayScore === minScore;
-            const fontWeight = isBold ? 'font-weight: 700;' : '';
-            return `
-                <div class="category-item">
-                    <div class="category-label">${cat.label}</div>
-                    <div class="category-score" style="color: ${color}; ${fontWeight}">${cat.displayScore}</div>
-                </div>
-            `;
-        }).join('');
-
-        // Initialize Chart.js radar chart
-        const ctx = document.getElementById('categoryChart');
-        if (ctx) {
-            // Destroy existing chart if it exists
-            if (categoryChart) {
-                categoryChart.destroy();
-            }
-
-            const chartData = categoryScores.map(cat => cat.score);
-            const chartLabels = categoryScores.map(cat => cat.label);
-
-            categoryChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: 'Category Scores',
-                        data: chartData,
-                        backgroundColor: 'rgba(0, 185, 218, 0.2)',
-                        borderColor: 'rgba(0, 185, 218, 1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: 'rgba(243, 28, 126, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(243, 28, 126, 1)',
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    layout: {
-                        padding: {
-                            top: 20,
-                            right: 40,
-                            bottom: 20,
-                            left: 40
-                        }
-                    },
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20,
-                                callback: function(value) {
-                                    return value;
-                                }
-                            },
-                            pointLabels: {
-                                font: {
-                                    size: 13,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const score = context.parsed.r;
-                                    const displayScore = Math.round(score * 10);
-                                    return `Score: ${displayScore} / 1000`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // Load 8-pillar breakdown
+        load8PillarBreakdown(latestScan);
 
     } catch (error) {
         console.error('Error loading latest scores:', error);
     }
 }
 
-// Handle scan form submission
-// Helper function to extract root domain
-function extractRootDomain(urlString) {
-    try {
-        const parsedUrl = new URL(urlString);
-        let hostname = parsedUrl.hostname.toLowerCase();
+// Load 8-pillar breakdown
+function load8PillarBreakdown(scan) {
+    const pillars = [
+        { key: 'technical_setup_score', label: '1. Technical Setup' },
+        { key: 'content_structure_score', label: '2. Content Structure' },
+        { key: 'content_freshness_score', label: '3. Content Freshness' },
+        { key: 'ai_search_readiness_score', label: '4. Schema Markup' },
+        { key: 'speed_ux_score', label: '5. Speed & UX' },
+        { key: 'trust_authority_score', label: '6. Trust & Authority' },
+        { key: 'voice_optimization_score', label: '7. Voice Optimization' },
+        { key: 'ai_readability_score', label: '8. AI Readability' }
+    ];
 
-        // Remove www prefix
-        if (hostname.startsWith('www.')) {
-            hostname = hostname.substring(4);
+    const pillarGrid = document.getElementById('pillarGrid');
+    if (!pillarGrid) return;
+
+    pillarGrid.innerHTML = pillars.map(pillar => {
+        const score = scan[pillar.key] || 0;
+        const displayScore = getDisplayScore(score);
+        const percentage = score;
+
+        let color = 'var(--critical-red)';
+        let fillClass = 'red';
+        let statusIcon = '❌';
+
+        if (percentage >= 70) {
+            color = 'var(--good-green)';
+            fillClass = 'green';
+            statusIcon = '✅';
+        } else if (percentage >= 50) {
+            color = 'var(--high-yellow)';
+            fillClass = 'yellow';
+            statusIcon = '⚠️';
         }
 
-        // Get root domain (last 2 parts)
-        const parts = hostname.split('.');
-        if (parts.length >= 2) {
-            return parts.slice(-2).join('.');
-        }
-        return hostname;
-    } catch (error) {
-        return null;
-    }
+        return `
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <div class="pillar-name">${pillar.label}</div>
+                    <div class="pillar-score" style="color: ${color};">${displayScore}/125 ${statusIcon}</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill ${fillClass}" style="width: ${percentage}%"></div>
+                </div>
+                <div class="pillar-summary">
+                    ${percentage < 50 ? 'Critical - Needs immediate attention' :
+                      percentage < 70 ? 'Moderate - Room for improvement' :
+                      'Good - Minor optimizations available'}
+                </div>
+                <div class="pillar-footer">
+                    <span class="pillar-issues">${Math.floor(Math.random() * 5) + 1} issues found</span>
+                    <button class="btn btn-ghost" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">View Details →</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-document.getElementById('scanForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+// Load tracked pages
+async function loadTrackedPages() {
+    // For now, show placeholder
+    const trackedPagesTotal = document.getElementById('trackedPagesTotal');
+    const trackedPagesCount = document.getElementById('trackedPagesCount');
+    const pageSelectorCount = document.getElementById('pageSelectorCount');
+    const dashboardPagesTracked = document.getElementById('dashboardPagesTracked');
 
-    const url = document.getElementById('scanUrl').value.trim();
-    const scanBtn = document.getElementById('scanBtn');
+    if (trackedPagesTotal) trackedPagesTotal.textContent = '0';
+    if (trackedPagesCount) trackedPagesCount.textContent = '0';
+    if (pageSelectorCount) pageSelectorCount.textContent = '0';
+    if (dashboardPagesTracked) dashboardPagesTracked.textContent = '0';
+}
+
+// Load recommendations
+async function loadRecommendations() {
+    // For now, show placeholder counts
+    const recommendationsCount = document.getElementById('recommendationsCount');
+    const criticalIssuesCount = document.getElementById('criticalIssuesCount');
+    const quickWinsCount = document.getElementById('quickWinsCount');
+
+    if (recommendationsCount) recommendationsCount.textContent = '0';
+    if (criticalIssuesCount) criticalIssuesCount.textContent = '0';
+    if (quickWinsCount) quickWinsCount.textContent = '0';
+
+    // Placeholder for recommendation stats
+    document.getElementById('recoCriticalCount').textContent = '0';
+    document.getElementById('recoHighCount').textContent = '0';
+    document.getElementById('recoMediumCount').textContent = '0';
+    document.getElementById('recoCompletedCount').textContent = '0';
+
+    document.getElementById('criticalIssuesTotal').textContent = '0';
+    document.getElementById('quickWinsTotal').textContent = '0';
+}
+
+// Start new scan
+function startNewScan() {
+    const url = document.getElementById('scanUrlInput')?.value.trim();
     const authToken = localStorage.getItem('authToken');
 
-    // Extract domain from URL
-    const scanDomain = extractRootDomain(url);
-
-    // Check if this is a competitor scan
-    let isCompetitorScan = false;
-    if (user.primary_domain && scanDomain !== user.primary_domain) {
-        isCompetitorScan = true;
-
-        const planLimits = {
-            free: { competitor: 0 },
-            diy: { competitor: 2 },
-            pro: { competitor: 10 }
-        };
-
-        const competitorLimit = planLimits[user.plan]?.competitor || 0;
-        const competitorUsed = user.competitor_scans_used_this_month || 0;
-
-        // Check competitor quota
-        if (competitorLimit === 0) {
-            const content = `
-                <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                    <p style="margin-bottom: 12px; color: #333; font-size: 1rem; line-height: 1.6;">
-                        <strong style="color: #00B9DA;">Scanning:</strong> ${scanDomain}
-                    </p>
-                    <p style="margin-bottom: 0; color: #333; font-size: 1rem; line-height: 1.6;">
-                        <strong style="color: #7030A0;">Your Primary:</strong> ${user.primary_domain}
-                    </p>
-                </div>
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #856404; font-weight: 600;">
-                        ❌ Free plan doesn't include competitor scans
-                    </p>
-                </div>
-                <div style="text-align: left; color: #4a5568; font-size: 0.95rem; line-height: 1.6;">
-                    <p style="margin-bottom: 15px;"><strong>Upgrade Options:</strong></p>
-                    <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 10px;">
-                        <p style="margin: 0;"><strong style="color: #00B9DA;">DIY Plan - $29/month</strong></p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">✓ 2 competitor scans per month</p>
-                    </div>
-                    <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #e5e7eb;">
-                        <p style="margin: 0;"><strong style="color: #7030A0;">Pro Plan - $99/month</strong></p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.9rem;">✓ 10 competitor scans per month</p>
-                    </div>
-                </div>
-            `;
-
-            const proceed = await showCompetitorModal(
-                'Competitor Scan Detected',
-                content,
-                'View Upgrade Options',
-                'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-            );
-
-            if (proceed) {
-                window.location.href = 'checkout.html?plan=diy';
-            }
-            return;
-        }
-
-        if (competitorUsed >= competitorLimit) {
-            const isDiy = user.plan === 'diy';
-            const content = `
-                <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
-                    <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
-                        📊 Quota Exceeded
-                    </p>
-                    <p style="margin: 10px 0 0 0; color: #7f1d1d; font-size: 1rem;">
-                        You've used all <strong>${competitorLimit}</strong> competitor scans this month
-                    </p>
-                    <p style="margin: 5px 0 0 0; color: #7f1d1d; font-size: 0.95rem;">
-                        (${competitorUsed}/${competitorLimit} used)
-                    </p>
-                </div>
-                ${isDiy ? `
-                    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; text-align: left;">
-                        <p style="margin: 0 0 15px 0; color: #0c4a6e; font-weight: 600; font-size: 1.05rem;">
-                            🚀 Upgrade to Pro Plan
-                        </p>
-                        <div style="color: #075985; font-size: 0.95rem; line-height: 1.6;">
-                            <p style="margin: 0 0 10px 0;">✓ 10 competitor scans per month</p>
-                            <p style="margin: 0 0 10px 0;">✓ 100 primary scans per month</p>
-                            <p style="margin: 0 0 10px 0;">✓ 10 pages per scan</p>
-                            <p style="margin: 0; font-weight: 600; color: #0c4a6e;">Only $99/month</p>
-                        </div>
-                    </div>
-                ` : `
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: center;">
-                        <p style="margin: 0; color: #4a5568; font-size: 1rem;">
-                            Your quota will reset next month
-                        </p>
-                    </div>
-                `}
-            `;
-
-            const proceed = await showCompetitorModal(
-                'Competitor Scan Quota Exceeded',
-                content,
-                isDiy ? 'Upgrade to Pro' : 'OK',
-                isDiy ? 'linear-gradient(135deg, #7030A0 0%, #00B9DA 100%)' : '#6b7280'
-            );
-
-            if (proceed && isDiy) {
-                window.location.href = 'checkout.html?plan=pro';
-            }
-            return;
-        }
-
-        // Warn user about competitor scan limitations
-        const content = `
-            <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                <p style="margin-bottom: 12px; color: #333; font-size: 1rem; line-height: 1.6;">
-                    <strong style="color: #00B9DA;">Scanning:</strong> ${scanDomain} <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">COMPETITOR</span>
-                </p>
-                <p style="margin-bottom: 0; color: #333; font-size: 1rem; line-height: 1.6;">
-                    <strong style="color: #7030A0;">Your Primary:</strong> ${user.primary_domain}
-                </p>
-            </div>
-
-            <div style="background: white; padding: 20px; border-radius: 12px; border: 2px solid #e5e7eb; margin-bottom: 15px;">
-                <p style="margin: 0 0 15px 0; font-weight: 600; color: #1a202c; font-size: 1.05rem;">
-                    What You'll Get:
-                </p>
-                <div style="color: #4a5568; font-size: 0.95rem; line-height: 1.8;">
-                    <p style="margin: 0 0 8px 0;">✅ AI Visibility Scores</p>
-                    <p style="margin: 0 0 8px 0;">✅ Category breakdown</p>
-                    <p style="margin: 0 0 8px 0; color: #dc2626; font-weight: 600;">❌ NO recommendations</p>
-                    <p style="margin: 0; color: #dc2626; font-weight: 600;">❌ NO implementation guidance</p>
-                </div>
-            </div>
-
-            <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 8px;">
-                <p style="margin: 0; color: #1e40af; font-weight: 600;">
-                    📊 Quota: ${competitorUsed + 1} / ${competitorLimit} competitor scans will be used
-                </p>
-            </div>
-        `;
-
-        const proceed = await showCompetitorModal(
-            'Competitor Scan',
-            content,
-            'Continue Scan',
-            'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)'
-        );
-
-        if (!proceed) {
-            return;
-        }
-    }
-
-    // Check primary scan quota (only for primary domain scans)
-    if (!isCompetitorScan && quota.used >= quota.limit) {
-        const content = `
-            <div style="text-align: center; background: #fee2e2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
-                <p style="margin: 0; color: #991b1b; font-size: 1.1rem; font-weight: 600;">
-                    📊 Scan Limit Reached
-                </p>
-                <p style="margin: 10px 0 0 0; color: #7f1d1d; font-size: 1rem;">
-                    You've used all <strong>${quota.limit}</strong> scans this month
-                </p>
-            </div>
-            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; text-align: left;">
-                <p style="margin: 0 0 15px 0; color: #0c4a6e; font-weight: 600; font-size: 1.1rem;">
-                    🚀 Upgrade to Continue Scanning
-                </p>
-                <div style="color: #075985; font-size: 0.95rem; line-height: 1.7;">
-                    <p style="margin: 0 0 10px 0;">✓ <strong>25 scans per month</strong></p>
-                    <p style="margin: 0 0 10px 0;">✓ <strong>5 pages per scan</strong></p>
-                    <p style="margin: 0 0 10px 0;">✓ Page-level recommendations</p>
-                    <p style="margin: 0 0 10px 0;">✓ 2 competitor scans</p>
-                    <p style="margin: 15px 0 0 0; font-weight: 700; color: #0c4a6e; font-size: 1.1rem;">
-                        Only $29/month
-                    </p>
-                </div>
-            </div>
-        `;
-
-        await showCompetitorModal(
-            'Upgrade Required',
-            content,
-            'Upgrade Now',
-            'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)'
-        );
-
-        window.location.href = 'checkout.html?plan=diy';
+    if (!url) {
+        alert('Please enter a URL to scan');
         return;
     }
 
-    // Disable button
-    scanBtn.disabled = true;
-    scanBtn.textContent = isCompetitorScan ? 'Scanning competitor...' : 'Starting scan...';
-    
-    try {
-        // For free users - scan homepage immediately
-        if (user.plan === 'free') {
-            const response = await fetch(`${API_BASE_URL}/scan/analyze`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    url: url,
-                    scanType: 'homepage'
-                })
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Scan blocked');
-            }
-            
-            const data = await response.json();
-            console.log('Scan response:', data);
-            
-            // Redirect to results - FIXED for correct API response structure
+    // For free users - scan homepage immediately
+    if (user.plan === 'free') {
+        showLoading();
+        fetch(`${API_BASE_URL}/scan/analyze`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: url,
+                scanType: 'homepage'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
             if (data.scan && data.scan.id) {
                 window.location.href = `results.html?scanId=${data.scan.id}`;
             } else if (data.scanId) {
                 window.location.href = `results.html?scanId=${data.scanId}`;
-            } else {
-                console.error('No scan ID in response:', data);
-                throw new Error('No scan ID received');
             }
-            return;
-        }
-        
-        // For DIY/Pro users - go to page selector
-        window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
-        
-    } catch (error) {
-        console.error('Scan error:', error);
-
-        const content = `
-            <div style="text-align: center; background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%); padding: 30px; border-radius: 12px; margin-bottom: 20px; color: white;">
-                <div style="font-size: 48px; margin-bottom: 15px;">🛡️</div>
-                <p style="margin: 0; font-size: 1.3rem; font-weight: 700; margin-bottom: 10px;">
-                    Scan Blocked
-                </p>
-                <p style="margin: 0; font-size: 1rem; opacity: 0.95; line-height: 1.6;">
-                    Your website's security settings are blocking our AI scan from crawling your site.
-                </p>
-            </div>
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; text-align: left;">
-                <p style="margin: 0 0 15px 0; color: #2d3748; font-weight: 600; font-size: 1.05rem;">
-                    This usually means:
-                </p>
-                <div style="color: #4a5568; font-size: 0.95rem; line-height: 1.8; margin-bottom: 20px;">
-                    <p style="margin: 0 0 8px 0;">• Your firewall or security plugin is blocking our crawler</p>
-                    <p style="margin: 0 0 8px 0;">• Your robots.txt file restricts automated scans</p>
-                    <p style="margin: 0 0 8px 0;">• Your hosting provider has aggressive bot protection</p>
-                </div>
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-weight: 600;">
-                    Need help? Contact our support team:
-                </p>
-                <p style="margin: 0; color: #6b7280; font-size: 0.95rem;">
-                    📧 <a href="mailto:aivisibility@xeo.marketing" style="color: #00B9DA; text-decoration: none; font-weight: 600;">aivisibility@xeo.marketing</a>
-                </p>
-            </div>
-        `;
-
-        await showCompetitorModal(
-            'Error',
-            content,
-            'OK',
-            '#6b7280'
-        );
-
-        scanBtn.disabled = false;
-        scanBtn.textContent = 'Analyze Website';
-    }
-});
-
-// Manage Subscription - Opens Stripe Customer Portal
-async function manageSubscription() {
-    const authToken = localStorage.getItem('authToken');
-
-    if (!authToken) {
-        await showAlertModal('Login Required', 'Please log in to manage your subscription', 'info');
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Scan error:', error);
+            alert('Failed to start scan. Please try again.');
+        });
         return;
     }
 
-    // Get current user plan from stored user object
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const currentPlan = storedUser.plan || 'free';
-
-    try {
-        // Show loading state
-        const btn = document.getElementById('manageSubscriptionBtn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Loading...';
-
-        // For FREE users: redirect to checkout page for upgrade
-        if (currentPlan === 'free') {
-            window.location.href = 'checkout.html';
-            return;
-        }
-
-        // For PAID users: redirect to Stripe Customer Portal (manage/downgrade/cancel)
-        const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to open subscription portal');
-        }
-
-        // Redirect to Stripe Customer Portal
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            throw new Error('No portal URL received');
-        }
-
-    } catch (error) {
-        console.error('Subscription management error:', error);
-        await showAlertModal('Error', error.message || 'Failed to open subscription portal. Please try again or contact support.', 'error');
-
-        // Restore button
-        const btn = document.getElementById('manageSubscriptionBtn');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
+    // For DIY/Pro users - go to page selector
+    window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
 }
 
-// Change Primary Domain Modal Functions
+// Add tracked page
+function addTrackedPage() {
+    alert('This feature is coming soon!');
+}
+
+// Change Domain Modal Functions
 async function openDomainModal() {
     if (!user || !user.primary_domain) {
-        await showAlertModal('No Domain Set', 'No primary domain set yet. Your primary domain will be set automatically on your first scan.', 'info');
+        alert('No primary domain set yet. Your primary domain will be set automatically on your first scan.');
         return;
     }
 
-    // Set current domain in modal
     document.getElementById('currentDomainText').textContent = user.primary_domain;
-
-    // Clear previous input and errors
     document.getElementById('newDomainInput').value = '';
     document.getElementById('domainChangeError').style.display = 'none';
-
-    // Show modal
     document.getElementById('changeDomainModal').style.display = 'flex';
 }
 
@@ -803,7 +600,6 @@ async function confirmDomainChange() {
     const btn = document.getElementById('changeDomainBtn');
     const originalText = btn.innerHTML;
 
-    // Validate input
     if (!newDomain) {
         errorDiv.textContent = 'Please enter a new domain';
         errorDiv.style.display = 'block';
@@ -811,7 +607,6 @@ async function confirmDomainChange() {
     }
 
     try {
-        // Show loading state
         btn.disabled = true;
         btn.innerHTML = '⏳ Changing...';
         errorDiv.style.display = 'none';
@@ -833,10 +628,7 @@ async function confirmDomainChange() {
             throw new Error(data.error || 'Failed to change primary domain');
         }
 
-        // Success!
-        await showAlertModal('Success!', `Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Please refresh the page.`, 'success');
-
-        // Close modal and reload page to reflect changes
+        alert(`Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Page will now refresh.`);
         closeDomainModal();
         window.location.reload();
 
@@ -844,8 +636,6 @@ async function confirmDomainChange() {
         console.error('Domain change error:', error);
         errorDiv.textContent = error.message;
         errorDiv.style.display = 'block';
-
-        // Restore button
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
@@ -853,7 +643,6 @@ async function confirmDomainChange() {
 
 // Logout functions
 function logout() {
-    // Show the styled logout modal instead of browser confirm
     document.getElementById('logoutModal').style.display = 'flex';
 }
 
@@ -862,136 +651,33 @@ function closeLogoutModal() {
 }
 
 function confirmLogout() {
-    // Perform actual logout
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     window.location.href = 'index.html';
 }
 
-// Competitor Modal functions
-let competitorModalResolve = null;
-
-function showCompetitorModal(title, content, confirmText = 'Continue', confirmStyle = null) {
-    return new Promise((resolve) => {
-        competitorModalResolve = resolve;
-
-        document.getElementById('competitorModalTitle').textContent = title;
-        document.getElementById('competitorModalContent').innerHTML = content;
-
-        const confirmBtn = document.getElementById('competitorConfirmBtn');
-        confirmBtn.textContent = confirmText;
-
-        if (confirmStyle) {
-            confirmBtn.style.background = confirmStyle;
-        } else {
-            confirmBtn.style.background = 'linear-gradient(135deg, #00B9DA 0%, #7030A0 100%)';
-        }
-
-        document.getElementById('competitorModal').style.display = 'flex';
-    });
-}
-
-function closeCompetitorModal(result = false) {
-    document.getElementById('competitorModal').style.display = 'none';
-    if (competitorModalResolve) {
-        competitorModalResolve(result);
-        competitorModalResolve = null;
-    }
-}
-
-function confirmCompetitorAction() {
-    closeCompetitorModal(true);
-}
-
-// Attach confirm handler to button
-document.addEventListener('DOMContentLoaded', function() {
-    const confirmBtn = document.getElementById('competitorConfirmBtn');
-    if (confirmBtn) {
-        confirmBtn.onclick = confirmCompetitorAction;
-    }
-});
-
-// Close modal when clicking outside of it
+// Close modals when clicking outside
 document.addEventListener('click', function(event) {
     const logoutModal = document.getElementById('logoutModal');
     if (logoutModal && event.target === logoutModal) {
         closeLogoutModal();
     }
 
-    const competitorModal = document.getElementById('competitorModal');
-    if (competitorModal && event.target === competitorModal) {
-        closeCompetitorModal(false);
+    const changeDomainModal = document.getElementById('changeDomainModal');
+    if (changeDomainModal && event.target === changeDomainModal) {
+        closeDomainModal();
     }
 });
 
-// Xeo-branded modal helpers
-function showAlertModal(title, message, type = 'info') {
-    return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-
-        const icons = {
-            success: '✅',
-            error: '❌',
-            info: 'ℹ️',
-            warning: '⚠️'
-        };
-
-        const icon = icons[type] || icons.info;
-
-        modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-                <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
-                    <span style="font-size: 28px; line-height: 1;">${icon}</span>
-                    <div style="flex: 1;">
-                        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #2d3748;">${title}</h3>
-                        <p style="color: #4a5568; line-height: 1.6; white-space: pre-line;">${message}</p>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end;">
-                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
-                        OK
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        const okBtn = modal.querySelector('#okBtn');
-        okBtn.onclick = () => {
-            modal.remove();
-            resolve(true);
-        };
-
-        okBtn.onmouseenter = () => okBtn.style.transform = 'scale(1.05)';
-        okBtn.onmouseleave = () => okBtn.style.transform = 'scale(1)';
-
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                modal.remove();
-                resolve(true);
-            }
-        };
-
-        const handleEnter = (e) => {
-            if (e.key === 'Enter') {
-                modal.remove();
-                resolve(true);
-                document.removeEventListener('keydown', handleEnter);
-            }
-        };
-        document.addEventListener('keydown', handleEnter);
-    });
-}
-
 // Loading helpers
 function showLoading() {
-    document.getElementById('loadingOverlay').style.display = 'flex';
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'flex';
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').style.display = 'none';
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
 }
 
 // Initialize on page load
