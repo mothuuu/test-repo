@@ -147,7 +147,7 @@ function displayResults(scan, quota) {
 
     // Display user mode indicator and notifications (if data available)
     if (scan.userMode) {
-        displayModeIndicator(scan.userMode, scan.total_score);
+        displayModeIndicator(scan.userMode, displayScore);
     }
     if (scan.notifications) {
         displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
@@ -2261,40 +2261,46 @@ function displayModeIndicator(userMode, currentScore) {
         : 'Keep improving! Reach 850+ to unlock Elite mode with competitive tracking.';
 
     // Calculate progress to Elite mode (if in optimization)
-    let progressBar = '';
+    let progressSection = '';
     if (!isElite && currentScore) {
         const progress = Math.min((currentScore / 850) * 100, 100);
         const remaining = Math.max(850 - currentScore, 0);
-        progressBar = `
-            <div class="mt-3">
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="text-white/80">Progress to Elite Mode</span>
-                    <span class="font-semibold text-white">${Math.round(progress)}%</span>
+        progressSection = `
+            <div class="mt-4 pt-4 border-t border-white/20">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-white">Progress to Elite Mode</span>
+                    <span class="text-lg font-bold text-white">${Math.round(progress)}%</span>
                 </div>
-                <div class="w-full bg-white/20 rounded-full h-2.5">
-                    <div class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                <div class="w-full bg-white/20 rounded-full h-3 mb-2">
+                    <div class="bg-white h-3 rounded-full transition-all duration-500 shadow-lg" style="width: ${progress}%"></div>
                 </div>
-                ${remaining > 0 ? `<p class="text-xs text-white/70 mt-1">${remaining} points to Elite mode</p>` : ''}
+                ${remaining > 0 ? `
+                    <p class="text-sm text-white/90">
+                        <span class="font-semibold">${remaining}</span> points needed to reach Elite Mode (850+)
+                    </p>
+                ` : ''}
             </div>
         `;
     }
 
     container.innerHTML = `
-        <div class="bg-gradient-to-r ${modeColor} text-white p-6 rounded-lg shadow-lg">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="text-4xl">${modeIcon}</span>
-                    <div>
-                        <h3 class="text-xl font-bold">${modeTitle}</h3>
-                        <p class="text-white/90 text-sm mt-1">${modeDescription}</p>
+        <div class="bg-gradient-to-r ${modeColor} text-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-4 flex-1">
+                        <span class="text-5xl" style="line-height: 1;">${modeIcon}</span>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-2">${modeTitle}</h3>
+                            <p class="text-white/90 text-base leading-relaxed">${modeDescription}</p>
+                        </div>
+                    </div>
+                    <div class="text-right bg-white/10 rounded-lg px-6 py-4 min-w-[140px]">
+                        <div class="text-4xl font-bold mb-1">${currentScore}</div>
+                        <div class="text-sm text-white/90 font-medium">Current Score</div>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-3xl font-bold">${currentScore}</div>
-                    <div class="text-sm text-white/80">Current Score</div>
-                </div>
+                ${progressSection}
             </div>
-            ${progressBar}
         </div>
     `;
 
