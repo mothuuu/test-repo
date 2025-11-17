@@ -7,7 +7,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8edf2 100%);
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
   min-height: 100vh;
 }
 
@@ -18,7 +18,7 @@ body {
   top: 0;
   bottom: 0;
   width: 260px;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  background: linear-gradient(180deg, var(--violet-deep) 0%, var(--violet-rich) 100%);
   padding: 30px 20px;
   overflow-y: auto;
   z-index: 1000;
@@ -33,7 +33,7 @@ body {
 .logo {
   font-size: 22px;
   font-weight: 800;
-  background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -83,8 +83,8 @@ body {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
-  color: white;
+  background: linear-gradient(90deg, rgba(0, 185, 218, 0.3) 0%, rgba(243, 28, 126, 0.3) 100%);
+  color: var(--white);
   font-weight: 600;
 }
 
@@ -96,8 +96,8 @@ body {
 
 .nav-badge {
   margin-left: auto;
-  background: #ef4444;
-  color: white;
+  background: var(--error);
+  color: var(--white);
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
@@ -113,10 +113,10 @@ body {
 
 /* Top Header */
 .top-header {
-  background: white;
+  background: var(--white);
   padding: 25px 35px;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
   margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
@@ -126,13 +126,13 @@ body {
 .header-left h1 {
   font-size: 28px;
   font-weight: 800;
-  color: #2d3748;
+  color: var(--gray-800);
   margin-bottom: 5px;
 }
 
 .header-subtitle {
   font-size: 14px;
-  color: #718096;
+  color: var(--gray-500);
 }
 
 .header-actions {
@@ -155,24 +155,24 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+  color: var(--white);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 185, 218, 0.3);
+  box-shadow: 0 6px 20px rgba(125, 65, 165, 0.4);
 }
 
 .btn-secondary {
-  background: white;
-  color: #4a5568;
-  border: 2px solid #e2e8f0;
+  background: var(--white);
+  color: var(--gray-600);
+  border: 2px solid var(--gray-200);
 }
 
 .btn-secondary:hover {
-  border-color: #cbd5e0;
-  background: #f7fafc;
+  border-color: var(--gray-300);
+  background: var(--gray-50);
 }
 
 /* Hero Metrics */
@@ -184,10 +184,10 @@ body {
 }
 
 .metric-card {
-  background: white;
+  background: var(--white);
   padding: 25px;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
   transition: all 0.3s;
@@ -195,7 +195,7 @@ body {
 
 .metric-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .metric-card::before {
@@ -205,7 +205,7 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #00B9DA 0%, #f31c7e 100%);
+  background: linear-gradient(90deg, var(--cyan) 0%, var(--pink) 100%);
 }
 
 .metric-header {
@@ -243,7 +243,7 @@ body {
 .metric-value {
   font-size: 36px;
   font-weight: 800;
-  background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%);
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -252,16 +252,16 @@ body {
 
 .metric-label {
   font-size: 14px;
-  color: #718096;
+  color: var(--gray-500);
   font-weight: 600;
 }
 
 /* Section Cards */
 .section-card {
-  background: white;
+  background: var(--white);
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow);
   margin-bottom: 30px;
 }
 
@@ -275,7 +275,7 @@ body {
 .section-title {
   font-size: 20px;
   font-weight: 800;
-  color: #2d3748;
+  color: var(--gray-800);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -289,7 +289,7 @@ body {
 }
 
 .data-table thead {
-  background: #f7fafc;
+  background: var(--gray-50);
 }
 
 .data-table th {
@@ -297,21 +297,21 @@ body {
   text-align: left;
   font-size: 13px;
   font-weight: 700;
-  color: #4a5568;
+  color: var(--gray-600);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--gray-200);
 }
 
 .data-table td {
   padding: 18px 20px;
   font-size: 14px;
-  color: #2d3748;
-  border-bottom: 1px solid #f1f5f9;
+  color: var(--gray-800);
+  border-bottom: 1px solid var(--gray-100);
 }
 
 .data-table tbody tr:hover {
-  background: #f7fafc;
+  background: var(--gray-50);
 }
 
 /* Badges */
@@ -358,12 +358,12 @@ body {
 .loading {
   text-align: center;
   padding: 60px 20px;
-  color: #718096;
+  color: var(--gray-500);
 }
 
 .spinner {
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #00B9DA;
+  border: 3px solid var(--gray-100);
+  border-top: 3px solid var(--cyan);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -383,7 +383,7 @@ body {
   padding: 20px;
   border-radius: 12px;
   margin: 20px 0;
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--error);
 }
 
 /* Responsive */
