@@ -534,7 +534,7 @@ function startNewScan() {
     const authToken = localStorage.getItem('authToken');
 
     if (!url) {
-        alert('Please enter a URL to scan');
+        showXeoAlert('URL Required', 'Please enter a URL to scan');
         return;
     }
 
@@ -564,7 +564,7 @@ function startNewScan() {
         .catch(error => {
             hideLoading();
             console.error('Scan error:', error);
-            alert('Failed to start scan. Please try again.');
+            showXeoAlert('Scan Failed', 'Failed to start scan. Please try again.');
         });
         return;
     }
@@ -575,13 +575,13 @@ function startNewScan() {
 
 // Add tracked page
 function addTrackedPage() {
-    alert('This feature is coming soon!');
+    showXeoAlert('Coming Soon', 'This feature is coming soon!');
 }
 
 // Change Domain Modal Functions
 async function openDomainModal() {
     if (!user || !user.primary_domain) {
-        alert('No primary domain set yet. Your primary domain will be set automatically on your first scan.');
+        showXeoAlert('No Primary Domain', 'No primary domain set yet. Your primary domain will be set automatically on your first scan.');
         return;
     }
 
@@ -629,9 +629,11 @@ async function confirmDomainChange() {
             throw new Error(data.error || 'Failed to change primary domain');
         }
 
-        alert(`Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Page will now refresh.`);
-        closeDomainModal();
-        window.location.reload();
+        showXeoAlert('Success', `Primary domain changed successfully to: ${data.newDomain}\n\nYour scan quotas have been reset. Page will now refresh.`);
+        setTimeout(() => {
+            closeDomainModal();
+            window.location.reload();
+        }, 2000);
 
     } catch (error) {
         console.error('Domain change error:', error);
@@ -681,53 +683,69 @@ function hideLoading() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Subscription Management Functions
-function changePlan() {
-    alert('This feature is coming soon! You will be able to upgrade or downgrade your plan here.');
+// Xeo Branded Modal Functions
+let xeoConfirmCallback = null;
+
+function showXeoAlert(title, message) {
+    document.getElementById('xeoAlertTitle').textContent = title;
+    document.getElementById('xeoAlertMessage').textContent = message;
+    document.getElementById('xeoAlertModal').style.display = 'flex';
 }
 
-function cancelSubscription() {
-    if (confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing cycle.')) {
-        alert('Subscription cancellation is coming soon. Please contact support@aivisibilitytool.com to cancel your subscription.');
+function closeXeoAlert() {
+    document.getElementById('xeoAlertModal').style.display = 'none';
+}
+
+function showXeoConfirm(title, message) {
+    return new Promise((resolve) => {
+        document.getElementById('xeoConfirmTitle').textContent = title;
+        document.getElementById('xeoConfirmMessage').textContent = message;
+        document.getElementById('xeoConfirmModal').style.display = 'flex';
+        xeoConfirmCallback = resolve;
+    });
+}
+
+function closeXeoConfirm(result) {
+    document.getElementById('xeoConfirmModal').style.display = 'none';
+    if (xeoConfirmCallback) {
+        xeoConfirmCallback(result);
+        xeoConfirmCallback = null;
     }
 }
 
-function updatePaymentMethod() {
-    alert('This feature is coming soon! You will be redirected to Stripe to update your payment method.');
-}
-
-function openStripePortal() {
+// Subscription Management Functions
+async function openStripePortal() {
     const authToken = localStorage.getItem('authToken');
 
-    // In production, this would fetch the Stripe portal URL from the backend
-    alert('Opening Stripe Customer Portal...\n\nThis feature will redirect you to Stripe where you can:\n• Update payment methods\n• View invoices\n• Manage billing details\n• Update subscription');
+    if (!authToken) {
+        showXeoAlert('Authentication Required', 'Please log in to access the billing portal.');
+        return;
+    }
 
-    // Example implementation:
-    // fetch(`${API_BASE_URL}/stripe/create-portal-session`, {
-    //     method: 'POST',
-    //     headers: { 'Authorization': `Bearer ${authToken}` }
-    // })
-    // .then(res => res.json())
-    // .then(data => {
-    //     window.location.href = data.url;
-    // });
-}
+    try {
+        showLoading();
 
-function downloadInvoice(invoiceId) {
-    alert(`Downloading invoice: ${invoiceId}\n\nThis feature is coming soon!`);
-}
+        const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-function viewAllInvoices() {
-    alert('This feature is coming soon! You will be able to view all your invoices here.');
-}
+        const data = await response.json();
 
-function compareAllPlans() {
-    window.location.href = 'checkout.html';
-}
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to open billing portal');
+        }
 
-function upgradeToEnterprise() {
-    if (confirm('Upgrade to Enterprise Plan for $499/month?\n\nYou will get:\n• 200 scans per month\n• Track 100 pages per domain\n• Monitor 10 competitors\n• White-label reports\n• API access\n• Team members (up to 5)\n• And much more!')) {
-        window.location.href = 'checkout.html?plan=enterprise';
+        // Redirect to Stripe Customer Portal
+        window.location.href = data.url;
+
+    } catch (error) {
+        hideLoading();
+        console.error('Portal error:', error);
+        showXeoAlert('Error', `Unable to open billing portal: ${error.message}\n\nPlease try again or contact support.`);
     }
 }
 
