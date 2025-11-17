@@ -270,7 +270,8 @@ async function loadDashboardData() {
         loadRecentScans(),
         loadLatestScores(),
         loadTrackedPages(),
-        loadRecommendations()
+        loadRecommendations(),
+        loadSubscriptionData()
     ]);
 }
 
@@ -678,6 +679,176 @@ function showLoading() {
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
+}
+
+// Subscription Management Functions
+function changePlan() {
+    alert('This feature is coming soon! You will be able to upgrade or downgrade your plan here.');
+}
+
+function cancelSubscription() {
+    if (confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing cycle.')) {
+        alert('Subscription cancellation is coming soon. Please contact support@aivisibilitytool.com to cancel your subscription.');
+    }
+}
+
+function updatePaymentMethod() {
+    alert('This feature is coming soon! You will be redirected to Stripe to update your payment method.');
+}
+
+function openStripePortal() {
+    const authToken = localStorage.getItem('authToken');
+
+    // In production, this would fetch the Stripe portal URL from the backend
+    alert('Opening Stripe Customer Portal...\n\nThis feature will redirect you to Stripe where you can:\n• Update payment methods\n• View invoices\n• Manage billing details\n• Update subscription');
+
+    // Example implementation:
+    // fetch(`${API_BASE_URL}/stripe/create-portal-session`, {
+    //     method: 'POST',
+    //     headers: { 'Authorization': `Bearer ${authToken}` }
+    // })
+    // .then(res => res.json())
+    // .then(data => {
+    //     window.location.href = data.url;
+    // });
+}
+
+function downloadInvoice(invoiceId) {
+    alert(`Downloading invoice: ${invoiceId}\n\nThis feature is coming soon!`);
+}
+
+function viewAllInvoices() {
+    alert('This feature is coming soon! You will be able to view all your invoices here.');
+}
+
+function compareAllPlans() {
+    window.location.href = 'checkout.html';
+}
+
+function upgradeToEnterprise() {
+    if (confirm('Upgrade to Enterprise Plan for $499/month?\n\nYou will get:\n• 200 scans per month\n• Track 100 pages per domain\n• Monitor 10 competitors\n• White-label reports\n• API access\n• Team members (up to 5)\n• And much more!')) {
+        window.location.href = 'checkout.html?plan=enterprise';
+    }
+}
+
+// Load subscription data
+async function loadSubscriptionData() {
+    if (!user) return;
+
+    try {
+        // Set plan-based information
+        const planInfo = {
+            free: {
+                name: 'Free Plan',
+                price: '$0/month',
+                features: [
+                    '2 scans per month',
+                    'Track 1 page',
+                    'Basic visibility score',
+                    'Community support'
+                ],
+                scansLimit: 2,
+                pagesLimit: 1,
+                competitorsLimit: 0
+            },
+            diy: {
+                name: 'DIY Plan',
+                price: '$49/month',
+                features: [
+                    '25 scans per month',
+                    'Track up to 5 pages',
+                    'Competitor comparison (2)',
+                    'PDF exports',
+                    'Email support'
+                ],
+                scansLimit: 25,
+                pagesLimit: 5,
+                competitorsLimit: 2
+            },
+            pro: {
+                name: 'Pro Plan',
+                price: '$149/month',
+                features: [
+                    '50 scans per month',
+                    'Track up to 25 pages',
+                    'AI Discoverability tracking',
+                    'Brand Visibility Index',
+                    'Compare 3 competitors',
+                    'PDF & CSV exports',
+                    'Priority email support'
+                ],
+                scansLimit: 50,
+                pagesLimit: 25,
+                competitorsLimit: 3
+            }
+        };
+
+        const currentPlan = planInfo[user.plan] || planInfo.free;
+
+        // Update plan information
+        document.getElementById('subscriptionPlanName').textContent = currentPlan.name;
+        document.getElementById('subscriptionPrice').textContent = currentPlan.price;
+
+        // Update features
+        const featuresHtml = currentPlan.features.map(feature =>
+            `<div style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--good-green); margin-right: 0.5rem;"></i> ${feature}</div>`
+        ).join('');
+        document.getElementById('subscriptionFeatures').innerHTML = featuresHtml;
+
+        // Calculate renewal date (example: 30 days from now)
+        const renewalDate = new Date();
+        renewalDate.setDate(renewalDate.getDate() + 30);
+        document.getElementById('subscriptionRenews').textContent = `Renews: ${renewalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+        // Update usage statistics
+        const scansUsed = user.scans_used_this_month || 0;
+        const scansLimit = currentPlan.scansLimit;
+        const scansPercent = scansLimit > 0 ? Math.round((scansUsed / scansLimit) * 100) : 0;
+
+        document.getElementById('subscriptionScansUsed').textContent = scansUsed;
+        document.getElementById('subscriptionScansLimit').textContent = scansLimit;
+        document.getElementById('subscriptionScansPercent').textContent = scansPercent;
+        document.getElementById('subscriptionScansProgress').style.width = `${scansPercent}%`;
+
+        // Pages tracked (placeholder - would come from backend)
+        const pagesUsed = 0; // TODO: Get from backend
+        const pagesLimit = currentPlan.pagesLimit;
+        const pagesPercent = pagesLimit > 0 ? Math.round((pagesUsed / pagesLimit) * 100) : 0;
+
+        document.getElementById('subscriptionPagesUsed').textContent = pagesUsed;
+        document.getElementById('subscriptionPagesLimit').textContent = pagesLimit;
+        document.getElementById('subscriptionPagesPercent').textContent = pagesPercent;
+        document.getElementById('subscriptionPagesProgress').style.width = `${pagesPercent}%`;
+
+        // Competitors (placeholder - would come from backend)
+        const competitorsUsed = 0; // TODO: Get from backend
+        const competitorsLimit = currentPlan.competitorsLimit;
+        const competitorsPercent = competitorsLimit > 0 ? Math.round((competitorsUsed / competitorsLimit) * 100) : 0;
+
+        document.getElementById('subscriptionCompetitorsUsed').textContent = competitorsUsed;
+        document.getElementById('subscriptionCompetitorsLimit').textContent = competitorsLimit;
+        document.getElementById('subscriptionCompetitorsPercent').textContent = competitorsPercent;
+        document.getElementById('subscriptionCompetitorsProgress').style.width = `${competitorsPercent}%`;
+
+        // Calculate quota reset date
+        const resetDate = new Date();
+        resetDate.setDate(1); // First day of month
+        resetDate.setMonth(resetDate.getMonth() + 1); // Next month
+        const daysUntilReset = Math.ceil((resetDate - new Date()) / (1000 * 60 * 60 * 24));
+
+        document.getElementById('subscriptionQuotaResetDays').textContent = `${daysUntilReset} days`;
+        document.getElementById('subscriptionQuotaResetDate').textContent = `(${resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})`;
+
+        // For free plan users, show placeholder payment info
+        if (user.plan === 'free') {
+            document.getElementById('subscriptionCardInfo').textContent = 'No payment method on file';
+            document.getElementById('subscriptionCardExpiry').textContent = 'Upgrade to add payment method';
+            document.getElementById('subscriptionBillingAddress').textContent = 'No billing address';
+        }
+
+    } catch (error) {
+        console.error('Error loading subscription data:', error);
+    }
 }
 
 // Initialize on page load
