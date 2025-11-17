@@ -233,6 +233,11 @@ function navigateToSection(sectionId) {
 
     currentSection = sectionId;
 
+    // Load section-specific data
+    if (sectionId === 'billing-subscription') {
+        loadBillingData();
+    }
+
     // Update URL without reload
     const url = new URL(window.location);
     url.searchParams.set('section', sectionId);
@@ -866,6 +871,248 @@ async function loadSubscriptionData() {
 
     } catch (error) {
         console.error('Error loading subscription data:', error);
+    }
+}
+
+// Billing Page Functions
+let selectedPlanForChange = null;
+
+function openChangePlanModal() {
+    document.getElementById('changePlanModal').style.display = 'flex';
+
+    // Setup plan selection handlers
+    document.querySelectorAll('.plan-option').forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected from all
+            document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
+            // Add selected to clicked
+            this.classList.add('selected');
+            selectedPlanForChange = this.dataset.plan;
+        });
+    });
+}
+
+function closeChangePlanModal() {
+    document.getElementById('changePlanModal').style.display = 'none';
+    selectedPlanForChange = null;
+    // Remove all selected classes
+    document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
+}
+
+async function confirmPlanChange() {
+    if (!selectedPlanForChange) {
+        showXeoAlert('Select a Plan', 'Please select a plan before confirming.');
+        return;
+    }
+
+    if (selectedPlanForChange === user.plan) {
+        showXeoAlert('Same Plan', 'You are already on this plan.');
+        return;
+    }
+
+    const planNames = {
+        free: 'Free Plan',
+        diy: 'DIY Plan ($49/month)',
+        pro: 'Pro Plan ($149/month)'
+    };
+
+    const confirmed = await showXeoConfirm(
+        'Confirm Plan Change',
+        `Are you sure you want to change to ${planNames[selectedPlanForChange]}?\n\nChanges will be pro-rated and take effect immediately.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+
+        // In production, this would call the backend API
+        // For now, we'll show a message to use Stripe Portal
+        hideLoading();
+        closeChangePlanModal();
+        showXeoAlert('Plan Change', 'Please use the Stripe Portal to change your plan. This ensures secure payment processing and immediate activation.');
+
+        // Optionally open Stripe Portal
+        setTimeout(() => {
+            openStripePortal();
+        }, 2000);
+
+    } catch (error) {
+        hideLoading();
+        console.error('Plan change error:', error);
+        showXeoAlert('Error', `Unable to change plan: ${error.message}`);
+    }
+}
+
+function openCancelSubscriptionModal() {
+    // Update the access until date based on current billing cycle
+    const renewalDate = new Date();
+    renewalDate.setDate(renewalDate.getDate() + 30);
+    document.getElementById('cancelAccessUntilDate').textContent =
+        renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    document.getElementById('cancelSubscriptionModal').style.display = 'flex';
+}
+
+function closeCancelSubscriptionModal() {
+    document.getElementById('cancelSubscriptionModal').style.display = 'none';
+}
+
+async function confirmCancelSubscription() {
+    try {
+        showLoading();
+
+        // In production, this would call the backend API
+        // For now, we'll redirect to Stripe Portal for cancellation
+        hideLoading();
+        closeCancelSubscriptionModal();
+
+        const confirmed = await showXeoConfirm(
+            'Redirect to Stripe',
+            'To complete your cancellation, you will be redirected to the Stripe Customer Portal where you can securely cancel your subscription.\n\nWould you like to continue?'
+        );
+
+        if (confirmed) {
+            openStripePortal();
+        }
+
+    } catch (error) {
+        hideLoading();
+        console.error('Cancellation error:', error);
+        showXeoAlert('Error', `Unable to process cancellation: ${error.message}`);
+    }
+}
+
+async function downloadInvoice(invoiceId) {
+    try {
+        showLoading();
+
+        // In production, this would fetch the invoice from the backend
+        // For now, we'll show a message
+        hideLoading();
+        showXeoAlert('Download Invoice', 'Invoice downloads are available through the Stripe Customer Portal.\n\nClick "View All Invoices" or "Manage in Stripe Portal" to access your invoices.');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Download error:', error);
+        showXeoAlert('Error', `Unable to download invoice: ${error.message}`);
+    }
+}
+
+function viewAllInvoices() {
+    // Redirect to Stripe Portal for full invoice history
+    openStripePortal();
+}
+
+// Load billing page data
+async function loadBillingData() {
+    if (!user) return;
+
+    try {
+        const planInfo = {
+            free: {
+                name: 'Free Plan',
+                price: '$0/month',
+                features: [
+                    '2 scans per month',
+                    'Track 1 page',
+                    'Basic visibility score',
+                    'Community support'
+                ],
+                scansLimit: 2,
+                pagesLimit: 1,
+                competitorsLimit: 0
+            },
+            diy: {
+                name: 'DIY Plan',
+                price: '$49/month',
+                features: [
+                    '10 scans per month',
+                    'Track up to 5 pages',
+                    'Competitor comparison (2)',
+                    'PDF exports',
+                    'Email support'
+                ],
+                scansLimit: 10,
+                pagesLimit: 5,
+                competitorsLimit: 2
+            },
+            pro: {
+                name: 'Pro Plan',
+                price: '$149/month',
+                features: [
+                    '50 scans per month',
+                    'Track up to 25 pages',
+                    'AI Discoverability tracking',
+                    'Compare 3 competitors',
+                    'Priority support'
+                ],
+                scansLimit: 50,
+                pagesLimit: 25,
+                competitorsLimit: 3
+            }
+        };
+
+        const currentPlan = planInfo[user.plan] || planInfo.free;
+
+        // Update Current Plan section
+        document.getElementById('billingPlanName').textContent = currentPlan.name;
+        document.getElementById('billingPlanPrice').textContent = currentPlan.price;
+
+        // Update renewal date
+        const renewalDate = new Date();
+        renewalDate.setMonth(renewalDate.getMonth() + 1);
+        document.getElementById('billingRenewalDate').textContent =
+            `Renews on ${renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+        // Update plan features
+        const featuresHtml = currentPlan.features.map(feature =>
+            `<li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                ${feature}
+            </li>`
+        ).join('');
+        document.getElementById('billingPlanFeatures').innerHTML = featuresHtml;
+
+        // Update Usage Statistics
+        const scansUsed = user.scans_used_this_month || 23; // Demo data
+        const scansLimit = currentPlan.scansLimit;
+        const scansPercent = scansLimit > 0 ? Math.round((scansUsed / scansLimit) * 100) : 0;
+        const scansRemaining = Math.max(0, scansLimit - scansUsed);
+
+        document.getElementById('billingScansUsed').textContent = `${scansUsed}/${scansLimit}`;
+        document.getElementById('billingScansProgress').style.width = `${scansPercent}%`;
+        document.getElementById('billingScansRemaining').textContent = `${scansRemaining} scans remaining`;
+
+        // Pages tracked (demo data)
+        const pagesUsed = 25;
+        const pagesLimit = currentPlan.pagesLimit;
+        const pagesPercent = pagesLimit > 0 ? Math.round((pagesUsed / pagesLimit) * 100) : 0;
+        const pagesRemaining = Math.max(0, pagesLimit - pagesUsed);
+
+        document.getElementById('billingPagesTracked').textContent = `${pagesUsed}/${pagesLimit}`;
+        document.getElementById('billingPagesProgress').style.width = `${pagesPercent}%`;
+        document.getElementById('billingPagesRemaining').textContent =
+            pagesRemaining > 0 ? `${pagesRemaining} pages available` : 'At limit - upgrade for more';
+
+        // Competitors (demo data)
+        const competitorsUsed = 3;
+        const competitorsLimit = currentPlan.competitorsLimit;
+        const competitorsPercent = competitorsLimit > 0 ? Math.round((competitorsUsed / competitorsLimit) * 100) : 0;
+
+        document.getElementById('billingCompetitors').textContent = `${competitorsUsed}/${competitorsLimit}`;
+        document.getElementById('billingCompetitorsProgress').style.width = `${competitorsPercent}%`;
+        document.getElementById('billingCompetitorsRemaining').textContent = 'At limit';
+
+        // Quota reset date
+        const resetDate = new Date();
+        resetDate.setDate(1);
+        resetDate.setMonth(resetDate.getMonth() + 1);
+        document.getElementById('billingQuotaResetDate').textContent =
+            resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    } catch (error) {
+        console.error('Error loading billing data:', error);
     }
 }
 
