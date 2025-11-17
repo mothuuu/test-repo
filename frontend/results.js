@@ -864,7 +864,7 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                 ` : ''}
                 ${compoundingEffect > 0 ? `
                     <div class="rec-metric">
-                        <div class="rec-metric-value" style="color: #8b5cf6;">🔄 ${Math.round(compoundingEffect)}</div>
+                        <div class="rec-metric-value" style="color: var(--purple);">🔄 ${Math.round(compoundingEffect)}</div>
                         <div class="rec-metric-label">Compound</div>
                     </div>
                 ` : ''}
@@ -956,8 +956,8 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
             ` : ''}
 
             ${validationChecklist && validationChecklist.length > 0 && userPlan !== 'free' ? `
-                <div style="background: #e0e7ff; border-left: 4px solid #6366f1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">✓ Validation Checklist</h4>
+                <div style="background: var(--purple-light); border-left: 4px solid var(--purple); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 12px;">✓ Validation Checklist</h4>
                     <ul style="list-style: none; padding: 0;">
                         ${validationChecklist.map(item => `
                             <li style="margin-bottom: 10px; display: flex; align-items: start; color: #4a5568; line-height: 1.6;">
@@ -1340,7 +1340,7 @@ function showAlertModal(title, message, type = 'info') {
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end;">
-                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
+                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
                         OK
                     </button>
                 </div>
@@ -1393,7 +1393,7 @@ function showConfirmModal(title, message) {
                     <button id="cancelBtn" style="padding: 10px 20px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">
                         Cancel
                     </button>
-                    <button id="confirmBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                    <button id="confirmBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer;">
                         Confirm
                     </button>
                 </div>
@@ -1671,7 +1671,7 @@ function createFeedbackWidget(widgetId, category, scanId) {
                         Skip
                     </button>
                     <button onclick="submitFeedbackComment('${uniqueId}', '${category}', '${scanId}')"
-                            style="padding: 8px 16px; border-radius: 6px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                            style="padding: 8px 16px; border-radius: 6px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer;">
                         Submit Feedback
                     </button>
                 </div>
@@ -2171,14 +2171,14 @@ function displayTimeline(historicalTimeline) {
             datasets: [{
                 label: 'Total Score',
                 data: scores,
-                borderColor: '#00B9DA',
+                borderColor: '#7D41A5',
                 backgroundColor: gradient,
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 6,
                 pointHoverRadius: 8,
-                pointBackgroundColor: '#00B9DA',
+                pointBackgroundColor: '#7D41A5',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointHoverBackgroundColor: '#f31c7e',
