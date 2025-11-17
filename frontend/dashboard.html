@@ -1094,6 +1094,18 @@
             color: var(--gray-600);
             margin-bottom: 0.5rem;
         }
+
+        /* Plan Option Cards */
+        .plan-option:hover {
+            border-color: var(--brand-cyan) !important;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.2);
+        }
+
+        .plan-option.selected {
+            border-color: var(--brand-cyan) !important;
+            background: linear-gradient(135deg, #e6f7fb 0%, #f0e6ff 100%) !important;
+        }
     </style>
 </head>
 <body>
@@ -1858,10 +1870,136 @@
                     <p class="section-subtitle">Manage your subscription and billing</p>
                 </div>
 
-                <!-- Simplified Payment Section -->
-                <div class="card" style="text-align: center; padding: 3rem;">
-                    <div style="margin-bottom: 2rem;">
-                        <div style="font-size: 1.25rem; font-weight: 600; color: var(--gray-700); margin-bottom: 1rem;">
+                <!-- Two Column Layout for Plan & Usage -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <!-- 1. Current Plan Details Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Current Plan</h2>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem;" id="billingPlanName">
+                                Pro Plan
+                            </div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.25rem;" id="billingPlanPrice">
+                                $149/month
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--gray-500);" id="billingRenewalDate">
+                                Renews on January 15, 2026
+                            </div>
+                        </div>
+
+                        <!-- Plan Features -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 600; color: var(--gray-700); margin-bottom: 0.75rem; font-size: 0.875rem;">
+                                Plan Includes:
+                            </div>
+                            <ul style="list-style: none; padding: 0; margin: 0;" id="billingPlanFeatures">
+                                <li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                                    50 scans per month
+                                </li>
+                                <li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                                    25 tracked pages
+                                </li>
+                                <li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                                    3 competitors
+                                </li>
+                                <li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                                    AI Discoverability tracking
+                                </li>
+                                <li style="padding: 0.5rem 0; color: var(--gray-600); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--good-green);"></i>
+                                    Priority support
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <button class="btn btn-secondary" onclick="openChangePlanModal()">
+                                <i class="fas fa-exchange-alt"></i>
+                                Change Plan
+                            </button>
+                            <button class="btn btn-ghost" onclick="openCancelSubscriptionModal()" style="color: var(--critical-red);">
+                                <i class="fas fa-times-circle"></i>
+                                Cancel Subscription
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Usage Statistics Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Usage Statistics</h2>
+                        </div>
+
+                        <!-- Scans Used -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem;">Scans Used</span>
+                                <span style="font-weight: 700; color: var(--gray-900);" id="billingScansUsed">23/50</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="billingScansProgress" style="width: 46%;"></div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                <span id="billingScansRemaining">27 scans remaining</span>
+                            </div>
+                        </div>
+
+                        <!-- Pages Tracked -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem;">Pages Tracked</span>
+                                <span style="font-weight: 700; color: var(--gray-900);" id="billingPagesTracked">25/25</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="billingPagesProgress" style="width: 100%;"></div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                <span id="billingPagesRemaining">At limit - upgrade for more</span>
+                            </div>
+                        </div>
+
+                        <!-- Competitors -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem;">Competitors</span>
+                                <span style="font-weight: 700; color: var(--gray-900);" id="billingCompetitors">3/3</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="billingCompetitorsProgress" style="width: 100%;"></div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">
+                                <span id="billingCompetitorsRemaining">At limit</span>
+                            </div>
+                        </div>
+
+                        <!-- Quota Reset Date -->
+                        <div style="padding: 1rem; background: linear-gradient(135deg, #e6f7fb 0%, #f0e6ff 100%); border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--gray-600); margin-bottom: 0.25rem;">
+                                Quota resets on
+                            </div>
+                            <div style="font-weight: 700; color: var(--gray-900); font-size: 1rem;" id="billingQuotaResetDate">
+                                February 1, 2026
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Payment Method Section -->
+                <div class="card" style="text-align: center; padding: 2rem; margin-bottom: 1.5rem;">
+                    <div class="card-header" style="display: block; text-align: center; margin-bottom: 1rem;">
+                        <h2 class="card-title">Payment Method</h2>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem;">
                             Manage your subscription, billing, and payment methods securely through Stripe
                         </div>
                         <div style="font-size: 0.875rem; color: var(--gray-500);">
@@ -1874,8 +2012,89 @@
                         Manage in Stripe Portal
                     </button>
 
-                    <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <i class="fas fa-lock"></i> Secure payment portal powered by Stripe
+                    </div>
+                </div>
+
+                <!-- 4. Billing History Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Billing History</h2>
+                        <button class="btn btn-ghost" onclick="viewAllInvoices()">
+                            <i class="fas fa-external-link-alt"></i>
+                            View All Invoices
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Invoice</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billingHistoryTable">
+                                <tr>
+                                    <td>Dec 15, 2025</td>
+                                    <td>$149.00</td>
+                                    <td><span class="badge badge-good">Paid</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_001')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                            <i class="fas fa-download"></i>
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nov 15, 2025</td>
+                                    <td>$149.00</td>
+                                    <td><span class="badge badge-good">Paid</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_002')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                            <i class="fas fa-download"></i>
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Oct 15, 2025</td>
+                                    <td>$149.00</td>
+                                    <td><span class="badge badge-good">Paid</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_003')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                            <i class="fas fa-download"></i>
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Sep 15, 2025</td>
+                                    <td>$149.00</td>
+                                    <td><span class="badge badge-good">Paid</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_004')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                            <i class="fas fa-download"></i>
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Aug 15, 2025</td>
+                                    <td>$149.00</td>
+                                    <td><span class="badge badge-good">Paid</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_005')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                            <i class="fas fa-download"></i>
+                                            Download PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -1964,6 +2183,138 @@
                 </button>
                 <button class="btn btn-primary" style="flex: 1;" onclick="closeXeoConfirm(true)">
                     Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Plan Modal -->
+    <div id="changePlanModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Change Your Plan</h2>
+            </div>
+            <p style="color: var(--gray-600); margin-bottom: 1.5rem;">
+                Choose a plan that fits your needs. Changes take effect immediately with pro-rated billing.
+            </p>
+
+            <!-- Plan Selection Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <!-- Free Plan -->
+                <div class="plan-option" data-plan="free" style="border: 2px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.5rem;">Free</div>
+                    <div style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem;">
+                        $0<span style="font-size: 0.875rem; color: var(--gray-500);">/mo</span>
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--gray-600);">
+                        <li style="padding: 0.25rem 0;">✓ 2 scans/month</li>
+                        <li style="padding: 0.25rem 0;">✓ 1 page tracked</li>
+                        <li style="padding: 0.25rem 0;">✓ Basic reports</li>
+                    </ul>
+                </div>
+
+                <!-- DIY Plan -->
+                <div class="plan-option" data-plan="diy" style="border: 2px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.5rem;">DIY</div>
+                    <div style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem;">
+                        $49<span style="font-size: 0.875rem; color: var(--gray-500);">/mo</span>
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--gray-600);">
+                        <li style="padding: 0.25rem 0;">✓ 10 scans/month</li>
+                        <li style="padding: 0.25rem 0;">✓ 5 pages tracked</li>
+                        <li style="padding: 0.25rem 0;">✓ Competitor tracking</li>
+                    </ul>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="plan-option" data-plan="pro" style="border: 2px solid var(--brand-cyan); border-radius: 12px; padding: 1.5rem; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #e6f7fb 0%, #f0e6ff 100%);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.125rem; font-weight: 700; color: var(--gray-900);">Pro</div>
+                        <span style="font-size: 0.625rem; background: var(--brand-cyan); color: white; padding: 0.25rem 0.5rem; border-radius: 10px; font-weight: 700;">CURRENT</span>
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem;">
+                        $149<span style="font-size: 0.875rem; color: var(--gray-500);">/mo</span>
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--gray-600);">
+                        <li style="padding: 0.25rem 0;">✓ 50 scans/month</li>
+                        <li style="padding: 0.25rem 0;">✓ 25 pages tracked</li>
+                        <li style="padding: 0.25rem 0;">✓ AI Discoverability</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <p style="margin: 0; color: #856404; font-size: 0.875rem;">
+                    <i class="fas fa-info-circle"></i> <strong>Note:</strong> Plan changes are pro-rated. You'll be credited for unused time on your current plan.
+                </p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeChangePlanModal()">
+                    Cancel
+                </button>
+                <button class="btn btn-primary" style="flex: 1;" id="confirmPlanChangeBtn" onclick="confirmPlanChange()">
+                    Change Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Subscription Modal -->
+    <div id="cancelSubscriptionModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="color: var(--critical-red);">
+                    <i class="fas fa-exclamation-triangle"></i> Cancel Subscription
+                </h2>
+            </div>
+
+            <div style="background: #fee; border: 2px solid var(--critical-red); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--critical-red); margin-bottom: 0.75rem;">
+                    Wait! Here's what you'll lose:
+                </h3>
+                <ul style="list-style: none; padding: 0; margin: 0; color: var(--gray-700);">
+                    <li style="padding: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-times-circle" style="color: var(--critical-red);"></i>
+                        50 scans per month
+                    </li>
+                    <li style="padding: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-times-circle" style="color: var(--critical-red);"></i>
+                        25 tracked pages
+                    </li>
+                    <li style="padding: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-times-circle" style="color: var(--critical-red);"></i>
+                        AI Discoverability tracking
+                    </li>
+                    <li style="padding: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-times-circle" style="color: var(--critical-red);"></i>
+                        Priority support
+                    </li>
+                </ul>
+            </div>
+
+            <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem;">
+                    📅 Your access continues until:
+                </h4>
+                <p style="font-size: 1rem; font-weight: 700; color: var(--gray-900); margin: 0;" id="cancelAccessUntilDate">
+                    January 15, 2026
+                </p>
+                <p style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem;">
+                    You won't be charged again, and you can keep using Pro features until this date.
+                </p>
+            </div>
+
+            <p style="color: var(--gray-600); margin-bottom: 1.5rem; font-size: 0.875rem;">
+                Are you sure you want to cancel your subscription? We'd hate to see you go!
+            </p>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeCancelSubscriptionModal()">
+                    Keep My Plan
+                </button>
+                <button class="btn btn-danger" style="flex: 1;" onclick="confirmCancelSubscription()">
+                    Yes, Cancel
                 </button>
             </div>
         </div>
