@@ -809,49 +809,49 @@ async function loadSubscriptionData() {
         const currentPlan = planInfo[user.plan] || planInfo.free;
 
         // Update plan information
-        document.getElementById('subscriptionPlanName').textContent = currentPlan.name;
-        document.getElementById('subscriptionPrice').textContent = currentPlan.price;
+        document.getElementById('billingPlanName').textContent = currentPlan.name;
+        document.getElementById('billingPlanPrice').textContent = currentPlan.price;
 
         // Update features
         const featuresHtml = currentPlan.features.map(feature =>
-            `<div style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--good-green); margin-right: 0.5rem;"></i> ${feature}</div>`
+            `<li style="padding: 0.5rem 0; display: flex; align-items: center;"><i class="fas fa-check" style="color: var(--brand-cyan); margin-right: 0.75rem; font-size: 1rem;"></i><span style="color: var(--gray-700);">${feature}</span></li>`
         ).join('');
-        document.getElementById('subscriptionFeatures').innerHTML = featuresHtml;
+        document.getElementById('billingPlanFeatures').innerHTML = featuresHtml;
 
         // Calculate renewal date (example: 30 days from now)
         const renewalDate = new Date();
         renewalDate.setDate(renewalDate.getDate() + 30);
-        document.getElementById('subscriptionRenews').textContent = `Renews: ${renewalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        document.getElementById('billingRenewalDate').textContent = `Renews ${renewalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
         // Update usage statistics
         const scansUsed = user.scans_used_this_month || 0;
         const scansLimit = currentPlan.scansLimit;
         const scansPercent = scansLimit > 0 ? Math.round((scansUsed / scansLimit) * 100) : 0;
+        const scansRemaining = scansLimit - scansUsed;
 
-        document.getElementById('subscriptionScansUsed').textContent = scansUsed;
-        document.getElementById('subscriptionScansLimit').textContent = scansLimit;
-        document.getElementById('subscriptionScansPercent').textContent = scansPercent;
-        document.getElementById('subscriptionScansProgress').style.width = `${scansPercent}%`;
+        document.getElementById('billingScansUsed').textContent = `${scansUsed}/${scansLimit}`;
+        document.getElementById('billingScansProgress').style.width = `${scansPercent}%`;
+        document.getElementById('billingScansRemaining').textContent = scansRemaining > 0 ? `${scansRemaining} scans remaining` : 'At limit';
 
         // Pages tracked (placeholder - would come from backend)
         const pagesUsed = 0; // TODO: Get from backend
         const pagesLimit = currentPlan.pagesLimit;
         const pagesPercent = pagesLimit > 0 ? Math.round((pagesUsed / pagesLimit) * 100) : 0;
+        const pagesRemaining = pagesLimit - pagesUsed;
 
-        document.getElementById('subscriptionPagesUsed').textContent = pagesUsed;
-        document.getElementById('subscriptionPagesLimit').textContent = pagesLimit;
-        document.getElementById('subscriptionPagesPercent').textContent = pagesPercent;
-        document.getElementById('subscriptionPagesProgress').style.width = `${pagesPercent}%`;
+        document.getElementById('billingPagesTracked').textContent = `${pagesUsed}/${pagesLimit}`;
+        document.getElementById('billingPagesProgress').style.width = `${pagesPercent}%`;
+        document.getElementById('billingPagesRemaining').textContent = pagesRemaining > 0 ? `${pagesRemaining} pages remaining` : 'At limit - upgrade for more';
 
         // Competitors (placeholder - would come from backend)
         const competitorsUsed = 0; // TODO: Get from backend
         const competitorsLimit = currentPlan.competitorsLimit;
         const competitorsPercent = competitorsLimit > 0 ? Math.round((competitorsUsed / competitorsLimit) * 100) : 0;
+        const competitorsRemaining = competitorsLimit - competitorsUsed;
 
-        document.getElementById('subscriptionCompetitorsUsed').textContent = competitorsUsed;
-        document.getElementById('subscriptionCompetitorsLimit').textContent = competitorsLimit;
-        document.getElementById('subscriptionCompetitorsPercent').textContent = competitorsPercent;
-        document.getElementById('subscriptionCompetitorsProgress').style.width = `${competitorsPercent}%`;
+        document.getElementById('billingCompetitors').textContent = `${competitorsUsed}/${competitorsLimit}`;
+        document.getElementById('billingCompetitorsProgress').style.width = `${competitorsPercent}%`;
+        document.getElementById('billingCompetitorsRemaining').textContent = competitorsRemaining > 0 ? `${competitorsRemaining} remaining` : 'At limit';
 
         // Calculate quota reset date
         const resetDate = new Date();
@@ -859,14 +859,20 @@ async function loadSubscriptionData() {
         resetDate.setMonth(resetDate.getMonth() + 1); // Next month
         const daysUntilReset = Math.ceil((resetDate - new Date()) / (1000 * 60 * 60 * 24));
 
-        document.getElementById('subscriptionQuotaResetDays').textContent = `${daysUntilReset} days`;
-        document.getElementById('subscriptionQuotaResetDate').textContent = `(${resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})`;
+        const quotaResetElement = document.getElementById('billingQuotaResetDate');
+        if (quotaResetElement) {
+            quotaResetElement.textContent = `Resets in ${daysUntilReset} days (${resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})`;
+        }
 
-        // For free plan users, show placeholder payment info
+        // For free plan users, show placeholder payment info (if these elements exist)
+        const cardInfoElement = document.getElementById('billingCardInfo');
+        const cardExpiryElement = document.getElementById('billingCardExpiry');
+        const billingAddressElement = document.getElementById('billingBillingAddress');
+
         if (user.plan === 'free') {
-            document.getElementById('subscriptionCardInfo').textContent = 'No payment method on file';
-            document.getElementById('subscriptionCardExpiry').textContent = 'Upgrade to add payment method';
-            document.getElementById('subscriptionBillingAddress').textContent = 'No billing address';
+            if (cardInfoElement) cardInfoElement.textContent = 'No payment method on file';
+            if (cardExpiryElement) cardExpiryElement.textContent = 'Upgrade to add payment method';
+            if (billingAddressElement) billingAddressElement.textContent = 'No billing address';
         }
 
     } catch (error) {
