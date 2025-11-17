@@ -24,6 +24,17 @@
             --brand-pink: #f31c7e;
             --brand-purple: #7030A0;
 
+            /* Xeo Brand Colors - For consistency with main styles.css */
+            --cyan: #00B9DA;
+            --pink: #f31c7e;
+            --purple: #7D41A5;
+            --teal: #4DACA6;
+            --white: #FFFFFF;
+
+            /* Rich Marketing Purple - Sidebar */
+            --violet-deep: #4A1F5E;
+            --violet-rich: #5E2875;
+
             /* Neutral Colors */
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
@@ -188,11 +199,12 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: white;
-            border-right: 1px solid var(--gray-200);
+            background: linear-gradient(180deg, var(--violet-deep) 0%, var(--violet-rich) 100%);
+            color: var(--white);
             overflow-y: auto;
             flex-shrink: 0;
             transition: transform 0.3s ease;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar-nav {
@@ -206,7 +218,7 @@
         .nav-section-title {
             font-size: 0.75rem;
             font-weight: 700;
-            color: var(--gray-500);
+            color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             padding: 0.5rem 1.5rem;
@@ -218,24 +230,35 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.75rem 1.5rem;
-            color: var(--gray-700);
+            color: rgba(255, 255, 255, 0.8);
             cursor: pointer;
             transition: all 0.2s;
             border-left: 3px solid transparent;
             font-size: 0.875rem;
             font-weight: 500;
+            position: relative;
         }
 
         .nav-item:hover {
-            background: var(--gray-50);
-            color: var(--brand-cyan);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, #e6f7fb 0%, transparent 100%);
-            color: var(--brand-cyan);
-            border-left-color: var(--brand-cyan);
+            background: linear-gradient(90deg, rgba(0, 185, 218, 0.3) 0%, rgba(243, 28, 126, 0.3) 100%);
+            color: var(--white);
+            border-left-color: transparent;
             font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--cyan) 0%, var(--pink) 100%);
         }
 
         .nav-item i {
@@ -245,12 +268,16 @@
 
         .nav-item .badge {
             margin-left: auto;
-            background: var(--gray-200);
-            color: var(--gray-700);
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
             font-size: 0.625rem;
             padding: 0.125rem 0.5rem;
             border-radius: 10px;
             font-weight: 700;
+        }
+
+        .nav-item .badge.badge-critical {
+            background: var(--critical-red);
         }
 
         .nav-item.locked {
@@ -260,7 +287,7 @@
 
         .nav-item.locked:hover {
             background: transparent;
-            color: var(--gray-700);
+            color: rgba(255, 255, 255, 0.8);
         }
 
         /* Main Content */
