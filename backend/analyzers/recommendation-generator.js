@@ -7,12 +7,51 @@ const { detectPageIssues, detectMultiPageIssues } = require('./recommendation-en
 const { generateRecommendations } = require('./recommendation-engine/rec-generator');
 const { generateCustomizedFAQ } = require('./recommendation-engine/faq-customizer');
 const { filterByTier, formatForAPI } = require('./recommendation-engine/tier-filter');
+const { generateEliteRecommendations, prioritizeEliteRecommendations } = require('../utils/elite-recommendation-generator');
 
-async function generateCompleteRecommendations(scanResults, tier = 'free', industry = null, userProgress = null) {
+async function generateCompleteRecommendations(scanResults, tier = 'free', industry = null, userProgress = null, mode = 'optimization') {
   try {
-    console.log(`🎯 Generating recommendations for tier: ${tier}`);
+    console.log(`🎯 Generating recommendations for tier: ${tier}, mode: ${mode}`);
 
     const { v5Scores, scanEvidence, scannedPages } = scanResults;
+
+    // ELITE MODE: Use different recommendation strategy
+    if (mode === 'elite') {
+      console.log('🌟 Elite mode: Generating competitive positioning recommendations...');
+
+      const eliteRecs = await generateEliteRecommendations(
+        null, // scanId not needed at generation time
+        scanEvidence,
+        v5Scores,
+        null // totalScore calculated later
+      );
+
+      const prioritizedEliteRecs = prioritizeEliteRecommendations(eliteRecs);
+
+      console.log(`   Generated ${prioritizedEliteRecs.length} elite recommendations`);
+
+      // Skip FAQ generation for elite mode (focus on competitive positioning)
+      const eliteResults = {
+        recommendations: prioritizedEliteRecs,
+        faq: null,
+        summary: {
+          totalRecommendations: prioritizedEliteRecs.length,
+          mode: 'elite',
+          highPriorityCount: prioritizedEliteRecs.filter(r => r.priority >= 85).length,
+          categories: {
+            competitive_intelligence: prioritizedEliteRecs.filter(r => r.category === 'Competitive Intelligence').length,
+            content_opportunities: prioritizedEliteRecs.filter(r => r.category === 'Content Opportunities').length,
+            advanced_optimization: prioritizedEliteRecs.filter(r => r.category === 'Advanced Optimization').length,
+            maintenance: prioritizedEliteRecs.filter(r => r.category === 'Maintenance & Monitoring').length
+          }
+        }
+      };
+
+      return formatForAPI(eliteResults);
+    }
+
+    // OPTIMIZATION MODE: Standard issue-based recommendations
+    console.log('🔧 Optimization mode: Generating foundation-building recommendations...');
 
     // STEP 1: Detect all issues
     console.log('🔍 Step 1: Detecting issues...');

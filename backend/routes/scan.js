@@ -276,6 +276,15 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       userProgress = existingProgressResult.rows.length > 0 ? existingProgressResult.rows[0] : null;
     }
 
+    // Get current mode for user (before generating recommendations) - only for primary domain scans
+    let currentMode = 'optimization'; // Default
+    if (!isCompetitorScan) {
+      const { getCurrentMode } = require('../utils/mode-manager');
+      const modeData = await getCurrentMode(userId);
+      currentMode = modeData?.current_mode || 'optimization';
+      console.log(`🎯 User recommendation mode: ${currentMode}`);
+    }
+
     // Perform appropriate scan type
     let scanResult;
     if (isCompetitorScan) {
@@ -283,8 +292,8 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       console.log(`🔍 Performing lightweight competitor scan (scores only)`);
       scanResult = await performCompetitorScan(url);
     } else {
-      // Full V5 rubric scan with recommendations
-      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry);
+      // Full V5 rubric scan with recommendations (mode-aware)
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode);
     }
 
     // Validate scan result structure
@@ -390,6 +399,95 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
       );
     }
 
+    // 🔍 Validate previous recommendations (Phase 3: Partial Implementation Detection)
+    if (!isCompetitorScan && scanResult.detailedAnalysis) {
+      try {
+        const { validatePreviousRecommendations } = require('../utils/validation-engine');
+        const validationResults = await validatePreviousRecommendations(
+          userId,
+          scan.id,
+          scanResult.detailedAnalysis.scanEvidence || {}
+        );
+
+        if (validationResults.validated) {
+          console.log(`🔍 Validation complete: ${validationResults.verified_complete} verified, ${validationResults.partial_progress} partial, ${validationResults.not_implemented} not implemented`);
+        }
+      } catch (validationError) {
+        console.error('⚠️  Validation failed (non-critical):', validationError.message);
+        // Don't fail the scan if validation fails
+      }
+    }
+
+    // 🎯 Check and update recommendation mode (Phase 4: Score-Based Mode Transition)
+    let modeInfo = null;
+    if (!isCompetitorScan) {
+      try {
+        const { checkAndUpdateMode } = require('../utils/mode-manager');
+        modeInfo = await checkAndUpdateMode(userId, scan.id, scanResult.totalScore);
+
+        if (modeInfo.modeChanged) {
+          console.log(`🎯 Mode changed: ${modeInfo.previousMode} → ${modeInfo.currentMode} (score: ${modeInfo.currentScore})`);
+        } else {
+          console.log(`🎯 Mode check: ${modeInfo.currentMode} (score: ${modeInfo.currentScore})`);
+        }
+      } catch (modeError) {
+        console.error('⚠️  Mode check failed (non-critical):', modeError.message);
+        // Don't fail the scan if mode check fails
+      }
+    }
+
+    // 🏆 Update competitive tracking if this is a tracked competitor (Phase 5: Elite Mode)
+    if (isCompetitorScan) {
+      try {
+        // Check if this competitor is being tracked
+        const competitorResult = await db.query(
+          `SELECT id, score_history FROM competitive_tracking
+           WHERE user_id = $1 AND competitor_url = $2 AND is_active = true`,
+          [userId, url]
+        );
+
+        if (competitorResult.rows.length > 0) {
+          const competitor = competitorResult.rows[0];
+          const scoreHistory = competitor.score_history || [];
+
+          // Add new score to history
+          const newHistoryEntry = {
+            date: new Date().toISOString(),
+            score: Math.round(scanResult.totalScore),
+            categories: {
+              aiReadability: Math.round(scanResult.categories.aiReadability),
+              aiSearchReadiness: Math.round(scanResult.categories.aiSearchReadiness),
+              contentFreshness: Math.round(scanResult.categories.contentFreshness),
+              contentStructure: Math.round(scanResult.categories.contentStructure),
+              speedUX: Math.round(scanResult.categories.speedUX),
+              technicalSetup: Math.round(scanResult.categories.technicalSetup),
+              trustAuthority: Math.round(scanResult.categories.trustAuthority),
+              voiceOptimization: Math.round(scanResult.categories.voiceOptimization)
+            }
+          };
+
+          scoreHistory.push(newHistoryEntry);
+
+          // Update competitor tracking record
+          await db.query(
+            `UPDATE competitive_tracking
+             SET latest_total_score = $1,
+                 latest_scan_date = CURRENT_TIMESTAMP,
+                 last_scanned_at = CURRENT_TIMESTAMP,
+                 score_history = $2,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $3`,
+            [Math.round(scanResult.totalScore), JSON.stringify(scoreHistory), competitor.id]
+          );
+
+          console.log(`🏆 Updated competitive tracking for competitor ${competitor.id}`);
+        }
+      } catch (competitorError) {
+        console.error('⚠️  Competitive tracking update failed (non-critical):', competitorError.message);
+        // Don't fail the scan if competitive tracking fails
+      }
+    }
+
     // Log usage
     await db.query(
       'INSERT INTO usage_logs (user_id, action, metadata) VALUES ($1, $2, $3)',
@@ -429,6 +527,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
           limit: planLimits.competitorScans
         }
       },
+      mode: !isCompetitorScan ? modeInfo : null, // Mode information for primary domain scans
       message: isCompetitorScan
         ? `Competitor scan complete. Scores only - recommendations not available for competitor domains.`
         : null
@@ -517,9 +616,38 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
 
-    // Check if any batches should be auto-unlocked based on date
+    // Check if replacement cycle is due (replaces old batch unlock logic)
+    const { checkAndExecuteReplacement } = require('../utils/replacement-engine');
+    let replacementResult = null;
+
+    if (userProgress) {
+      try {
+        replacementResult = await checkAndExecuteReplacement(userId, scanId);
+
+        if (replacementResult.replaced) {
+          console.log(`🔄 Replacement executed: ${replacementResult.replacedCount} recommendations unlocked`);
+          console.log(`   Next replacement: ${replacementResult.nextReplacementDate}`);
+
+          // Refresh user progress after replacement
+          const updatedProgressResult = await db.query(
+            `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+            [userId, scanId]
+          );
+          if (updatedProgressResult.rows.length > 0) {
+            userProgress = updatedProgressResult.rows[0];
+          }
+        } else {
+          console.log(`🔄 Replacement check: ${replacementResult.reason || 'not due yet'}`);
+        }
+      } catch (replacementError) {
+        console.error('⚠️  Replacement check failed:', replacementError.message);
+        // Continue without failing the scan retrieval
+      }
+    }
+
+    // Legacy: Keep old batch unlock logic for backward compatibility (deprecated)
     let batchesUnlocked = 0;
-    if (userProgress && userProgress.total_batches > 0) {
+    if (false && userProgress && userProgress.total_batches > 0) { // Disabled - using replacement engine now
       const now = new Date();
       const batchDates = [
         userProgress.batch_1_unlock_date,
@@ -528,7 +656,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
         userProgress.batch_4_unlock_date
       ];
 
-      // Find which batch should be unlocked based on current date
       let targetBatch = 1;
       for (let i = 0; i < 4; i++) {
         if (batchDates[i] && new Date(batchDates[i]) <= now) {
@@ -536,11 +663,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
         }
       }
 
-      // If we should unlock more batches than currently unlocked
       if (targetBatch > userProgress.current_batch) {
-        console.log(`🔓 Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
+        console.log(`🔓 [DEPRECATED] Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
 
-        // Calculate how many recommendations to unlock
         const recsPerBatch = 5;
         const currentlyActive = userProgress.active_recommendations || 0;
         const shouldBeActive = Math.min(targetBatch * recsPerBatch, userProgress.total_recommendations);
@@ -1376,8 +1501,9 @@ function transformV5ToSubfactors(v5Categories) {
   return subfactors;
 }
 
-async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null) {
+async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null, mode = 'optimization') {
   console.log('🔬 Starting V5 rubric analysis for:', url);
+  console.log(`🎯 Recommendation mode: ${mode}`);
 
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
@@ -1430,7 +1556,7 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
 
     console.log(`🏢 Industry for recommendations: ${finalIndustry} (${industrySource})`);
 
-    // Step 2: Generate recommendations with user progress for DIY tier
+    // Step 2: Generate recommendations based on mode
     console.log('🤖 Generating recommendations...');
 
     const recommendationResults = await generateCompleteRecommendations(
@@ -1440,7 +1566,8 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
       },
       plan,
       finalIndustry,
-      userProgress // Pass userProgress for progressive unlock
+      userProgress, // Pass userProgress for progressive unlock
+      mode // Pass mode for strategy selection
     );
 
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
@@ -1459,7 +1586,8 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
         rubricVersion: 'V5',
         categoryBreakdown: categories,
         summary: recommendationResults.summary,
-        metadata: v5Results.metadata
+        metadata: v5Results.metadata,
+        scanEvidence: scanEvidence // Add evidence for validation
       }
     };
 
