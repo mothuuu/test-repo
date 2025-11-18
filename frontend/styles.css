@@ -1434,3 +1434,308 @@ body {
         width: 100%;
     }
 }
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+
+/* Modal Overlay */
+.xeo-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Modal Container */
+.xeo-modal {
+    background: var(--white);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+.xeo-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem 2rem;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.xeo-modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--gray-400);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+/* Modal Body */
+.xeo-modal-body {
+    padding: 2rem;
+}
+
+.modal-item-info {
+    background: var(--purple-light);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--purple-pastel);
+}
+
+.modal-item-info h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin: 0 0 0.5rem 0;
+}
+
+.modal-impact {
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.modal-impact span {
+    font-weight: 700;
+    color: var(--purple);
+}
+
+.modal-description {
+    color: var(--gray-700);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.modal-section {
+    margin-bottom: 1.5rem;
+}
+
+.modal-label {
+    display: block;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.75rem;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.checkbox-label:hover {
+    background: var(--gray-50);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--purple);
+}
+
+.checkbox-label span {
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+/* Textarea */
+.modal-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--gray-900);
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.modal-textarea:focus {
+    outline: none;
+    border-color: var(--purple);
+}
+
+.modal-textarea::placeholder {
+    color: var(--gray-400);
+}
+
+/* Reminder Options */
+.reminder-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.reminder-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--gray-300);
+    background: var(--white);
+    color: var(--gray-700);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reminder-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+}
+
+.reminder-btn.active {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    color: var(--white);
+    border-color: transparent;
+}
+
+.reminder-preview {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.reminder-preview strong {
+    color: var(--purple);
+}
+
+/* Modal Footer */
+.xeo-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1rem 2rem 2rem 2rem;
+    border-top: 2px solid var(--gray-100);
+}
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(125, 65, 165, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: var(--white);
+    color: var(--gray-700);
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+    .xeo-modal {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .xeo-modal-header,
+    .xeo-modal-body,
+    .xeo-modal-footer {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .reminder-options {
+        flex-direction: column;
+    }
+
+    .reminder-btn {
+        width: 100%;
+    }
+
+    .xeo-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .xeo-modal-footer button {
+        width: 100%;
+    }
+}

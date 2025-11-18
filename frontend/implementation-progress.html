@@ -934,10 +934,79 @@
 
     <!-- Modals -->
     <div id="skip-modal" class="xeo-modal-overlay" style="display: none;">
-        <!-- Skip modal content - See PART 5 -->
-        <div class="modal-content">
-            <h2>Skip Recommendation</h2>
-            <p>Modal content will be added in PART 5</p>
+        <div class="xeo-modal">
+            <div class="xeo-modal-header">
+                <h3>⏸️ Skip This Recommendation?</h3>
+                <button class="modal-close" onclick="closeSkipModal()">×</button>
+            </div>
+
+            <div class="xeo-modal-body">
+                <div class="modal-item-info">
+                    <h4 id="skip-modal-title">Recommendation Title</h4>
+                    <p class="modal-impact">Expected impact: <span id="skip-modal-impact">+14 points</span></p>
+                </div>
+
+                <p class="modal-description">
+                    This recommendation will be moved to your "Skipped" list where you can resume it anytime or set a reminder.
+                </p>
+
+                <div class="modal-section">
+                    <label class="modal-label">Why are you skipping this? (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="not-relevant">
+                            <span>Not relevant to my site</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="too-complex">
+                            <span>Too complex right now</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="later">
+                            <span>Will do later</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="need-dev">
+                            <span>Need developer help</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="dependencies">
+                            <span>Waiting for other dependencies</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="budget">
+                            <span>Budget constraints</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="other">
+                            <span>Other</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <label class="modal-label">Add notes (optional):</label>
+                    <textarea id="skip-notes" class="modal-textarea" rows="3" placeholder="Will implement after redesigning contact page in Q1 2026"></textarea>
+                </div>
+
+                <div class="modal-section">
+                    <label class="modal-label">⏰ Set a reminder to revisit this:</label>
+                    <div class="reminder-options">
+                        <button class="reminder-btn" data-days="7">1 week</button>
+                        <button class="reminder-btn" data-days="14">2 weeks</button>
+                        <button class="reminder-btn active" data-days="30">1 month</button>
+                        <button class="reminder-btn" data-days="90">3 months</button>
+                        <button class="reminder-btn" data-days="custom">Custom date</button>
+                        <button class="reminder-btn" data-days="never">Never</button>
+                    </div>
+                    <p class="reminder-preview">Selected: <strong>1 month</strong></p>
+                </div>
+            </div>
+
+            <div class="xeo-modal-footer">
+                <button class="btn-secondary" onclick="closeSkipModal()">Cancel</button>
+                <button class="btn-primary" onclick="confirmSkip()">Skip Recommendation</button>
+            </div>
         </div>
     </div>
 
@@ -1004,6 +1073,75 @@
         function showAnalytics() {
             document.getElementById('analytics-modal').style.display = 'flex';
         }
+
+        // Skip Modal Functions
+        let currentSkipRecommendation = null;
+
+        function openSkipModal(recommendationId, title, impact) {
+            currentSkipRecommendation = recommendationId;
+            document.getElementById('skip-modal-title').textContent = title;
+            document.getElementById('skip-modal-impact').textContent = impact;
+            document.getElementById('skip-modal').style.display = 'flex';
+        }
+
+        function closeSkipModal() {
+            document.getElementById('skip-modal').style.display = 'none';
+            currentSkipRecommendation = null;
+            // Reset form
+            document.querySelectorAll('#skip-modal input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('skip-notes').value = '';
+        }
+
+        function confirmSkip() {
+            const reasons = [];
+            document.querySelectorAll('#skip-modal input[type="checkbox"]:checked').forEach(cb => {
+                reasons.push(cb.value);
+            });
+
+            const notes = document.getElementById('skip-notes').value;
+            const activeReminder = document.querySelector('.reminder-btn.active');
+            const reminderDays = activeReminder ? activeReminder.dataset.days : '30';
+
+            // TODO: Send to API
+            console.log('Skipping recommendation:', {
+                id: currentSkipRecommendation,
+                reasons: reasons,
+                notes: notes,
+                reminderDays: reminderDays
+            });
+
+            // Close modal and update UI
+            closeSkipModal();
+            // TODO: Refresh recommendations list
+        }
+
+        // Reminder button selection
+        document.addEventListener('DOMContentLoaded', () => {
+            const reminderButtons = document.querySelectorAll('.reminder-btn');
+            reminderButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    reminderButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update preview text
+                    const days = this.dataset.days;
+                    let previewText = '';
+
+                    if (days === 'never') {
+                        previewText = 'Never';
+                    } else if (days === 'custom') {
+                        previewText = 'Custom date (please select)';
+                    } else {
+                        const reminderDate = new Date();
+                        reminderDate.setDate(reminderDate.getDate() + parseInt(days));
+                        const timeText = days === '7' ? '1 week' : days === '14' ? '2 weeks' : days === '30' ? '1 month' : '3 months';
+                        previewText = `${timeText}`;
+                    }
+
+                    document.querySelector('.reminder-preview strong').textContent = previewText;
+                });
+            });
+        });
 
         // Close modal
         function closeModal(modalId) {
