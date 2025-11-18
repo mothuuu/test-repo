@@ -7,6 +7,7 @@ const usersRoutes = require('./users');
 const curationRoutes = require('./curation');
 const analyticsRoutes = require('./analytics');
 const cmsRoutes = require('./cms');
+const migrationsRoutes = require('./migrations');
 
 // Middleware to prevent caching of admin data
 // This ensures admins always see the latest real-time data
@@ -23,5 +24,6 @@ router.use('/users', usersRoutes);
 router.use('/curation', curationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/cms', cmsRoutes);
+router.use('/migrations', migrationsRoutes);
 
 module.exports = router;
