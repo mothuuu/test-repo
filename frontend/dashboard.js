@@ -13,6 +13,7 @@ function getDisplayScore(backendScore) {
 let user = null;
 let quota = { used: 0, limit: 2 };
 let currentSection = 'dashboard-home';
+let selectedScanType = 'single-page'; // Track selected scan type (single-page or multi-page)
 
 // Initialize dashboard
 async function initDashboard() {
@@ -57,6 +58,9 @@ async function initDashboard() {
 
         // Setup mobile menu
         setupMobileMenu();
+
+        // Setup scan type card selection
+        setupScanTypeCards();
 
         // Check URL params for section navigation
         const urlParams = new URLSearchParams(window.location.search);
@@ -267,6 +271,36 @@ function setupMobileMenu() {
             }
         });
     }
+}
+
+// Setup scan type card selection
+function setupScanTypeCards() {
+    const singlePageCard = document.getElementById('singlePageScanCard');
+    const multiPageCard = document.getElementById('multiPageScanCard');
+
+    if (!singlePageCard || !multiPageCard) {
+        return; // Cards not found, exit gracefully
+    }
+
+    // Set initial selection to single-page
+    singlePageCard.classList.add('selected');
+    selectedScanType = 'single-page';
+
+    // Single-page card click handler
+    singlePageCard.addEventListener('click', function() {
+        singlePageCard.classList.add('selected');
+        multiPageCard.classList.remove('selected');
+        selectedScanType = 'single-page';
+        console.log('Selected scan type: single-page');
+    });
+
+    // Multi-page card click handler
+    multiPageCard.addEventListener('click', function() {
+        multiPageCard.classList.add('selected');
+        singlePageCard.classList.remove('selected');
+        selectedScanType = 'multi-page';
+        console.log('Selected scan type: multi-page');
+    });
 }
 
 // Load all dashboard data
@@ -574,8 +608,41 @@ function startNewScan() {
         return;
     }
 
-    // For DIY/Pro users - go to page selector
-    window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
+    // For DIY/Pro users - check scan type selection
+    if (selectedScanType === 'multi-page') {
+        // Multi-page scan: redirect to page selector
+        window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
+    } else {
+        // Single-page scan: perform inline scan
+        showLoading();
+        fetch(`${API_BASE_URL}/scan/analyze`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: url,
+                scanType: 'single-page'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.scan && data.scan.id) {
+                window.location.href = `results.html?scanId=${data.scan.id}`;
+            } else if (data.scanId) {
+                window.location.href = `results.html?scanId=${data.scanId}`;
+            } else {
+                throw new Error('No scan ID in response');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Scan error:', error);
+            showXeoAlert('Scan Failed', error.message || 'Failed to start scan. Please try again.');
+        });
+    }
 }
 
 // Add tracked page
