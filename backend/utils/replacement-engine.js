@@ -35,6 +35,16 @@ async function checkAndExecuteReplacement(userId, scanId) {
     }
 
     const progress = progressResult.rows[0];
+
+    // Check if new columns exist (migration has been run)
+    if (!progress.hasOwnProperty('next_replacement_date')) {
+      console.log(`[Replacement] Migration not run yet - next_replacement_date column missing`);
+      return {
+        replaced: false,
+        reason: 'migration_not_run'
+      };
+    }
+
     const now = new Date();
     const nextReplacementDate = progress.next_replacement_date
       ? new Date(progress.next_replacement_date)
@@ -80,8 +90,18 @@ async function checkAndExecuteReplacement(userId, scanId) {
     };
 
   } catch (error) {
+    // Handle database errors gracefully
+    if (error.code === '42703') { // Column does not exist
+      console.log(`[Replacement] ⚠️  Column missing (migration not run) - skipping replacement check`);
+      return {
+        replaced: false,
+        reason: 'migration_not_run',
+        error: error.message
+      };
+    }
+
     console.error('[Replacement] Error:', error);
-    throw error;
+    throw error; // Re-throw other errors
   }
 }
 
