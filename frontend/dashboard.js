@@ -569,12 +569,17 @@ async function loadRecommendations() {
 
 // Start new scan
 function startNewScan() {
-    const url = document.getElementById('scanUrlInput')?.value.trim();
+    let url = document.getElementById('scanUrlInput')?.value.trim();
     const authToken = localStorage.getItem('authToken');
 
     if (!url) {
         showXeoAlert('URL Required', 'Please enter a URL to scan');
         return;
+    }
+
+    // Normalize URL (add https:// if missing)
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
     }
 
     // For free users - scan homepage immediately
