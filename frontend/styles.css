@@ -1462,7 +1462,9 @@ body {
     max-width: 600px;
     width: 100%;
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 /* Modal Header */
@@ -1474,6 +1476,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .xeo-modal-header h3 {
@@ -1504,6 +1507,8 @@ body {
 /* Modal Body */
 .xeo-modal-body {
     padding: 2rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
 }
 
 .modal-item-info {
@@ -1659,6 +1664,7 @@ body {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
 .btn-primary {
