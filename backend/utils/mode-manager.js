@@ -150,6 +150,20 @@ async function checkAndUpdateMode(userId, scanId, totalScore) {
     };
 
   } catch (error) {
+    // If table doesn't exist yet (migration not run), return default optimization mode
+    if (error.code === '42P01') { // PostgreSQL error code for "relation does not exist"
+      console.log('⚠️  user_recommendation_mode table not found - returning default optimization mode');
+      return {
+        currentMode: 'optimization',
+        previousMode: null,
+        modeChanged: false,
+        transitionReason: null,
+        currentScore: totalScore,
+        previousScore: 0,
+        notification: null,
+        thresholds: MODE_THRESHOLDS
+      };
+    }
     console.error('[Mode] Error:', error);
     throw error;
   }
@@ -162,12 +176,22 @@ async function checkAndUpdateMode(userId, scanId, totalScore) {
  * @returns {Object|null} Mode information
  */
 async function getCurrentMode(userId) {
-  const result = await db.query(
-    `SELECT * FROM user_recommendation_mode WHERE user_id = $1`,
-    [userId]
-  );
+  try {
+    const result = await db.query(
+      `SELECT * FROM user_recommendation_mode WHERE user_id = $1`,
+      [userId]
+    );
 
-  return result.rows.length > 0 ? result.rows[0] : null;
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    // If table doesn't exist yet (migration not run), return null
+    // This allows the system to function with default 'optimization' mode
+    if (error.code === '42P01') { // PostgreSQL error code for "relation does not exist"
+      console.log('⚠️  user_recommendation_mode table not found - defaulting to optimization mode');
+      return null;
+    }
+    throw error; // Re-throw other errors
+  }
 }
 
 /**

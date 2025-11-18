@@ -140,28 +140,37 @@ async function validateSingleRecommendation(recommendation, newScanId, newEviden
       break;
   }
 
-  // Save validation result to history
-  await db.query(
-    `INSERT INTO recommendation_validation_history (
-      recommendation_id, scan_id, user_id,
-      was_implemented, is_partial, completion_percentage,
-      checked_elements, found_elements, missing_elements,
-      outcome, notes
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-    [
-      recommendation.id,
-      newScanId,
-      previousScan.user_id || null,
-      validationResult.wasImplemented,
-      validationResult.isPartial,
-      validationResult.completionPercentage,
-      JSON.stringify(validationResult.checkedElements || {}),
-      JSON.stringify(validationResult.foundElements || {}),
-      JSON.stringify(validationResult.missingElements || {}),
-      validationResult.outcome,
-      validationResult.notes
-    ]
-  );
+  // Save validation result to history (skip if table doesn't exist yet)
+  try {
+    await db.query(
+      `INSERT INTO recommendation_validation_history (
+        recommendation_id, scan_id, user_id,
+        was_implemented, is_partial, completion_percentage,
+        checked_elements, found_elements, missing_elements,
+        outcome, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        recommendation.id,
+        newScanId,
+        previousScan.user_id || null,
+        validationResult.wasImplemented,
+        validationResult.isPartial,
+        validationResult.completionPercentage,
+        JSON.stringify(validationResult.checkedElements || {}),
+        JSON.stringify(validationResult.foundElements || {}),
+        JSON.stringify(validationResult.missingElements || {}),
+        validationResult.outcome,
+        validationResult.notes
+      ]
+    );
+  } catch (historyError) {
+    // If table doesn't exist yet (migration not run), skip history tracking
+    if (historyError.code === '42P01') {
+      console.log('⚠️  recommendation_validation_history table not found - skipping history tracking');
+    } else {
+      throw historyError; // Re-throw other errors
+    }
+  }
 
   // If partial implementation, create new "in progress" recommendation
   if (validationResult.outcome === 'partial_progress' && validationResult.shouldRequeue) {
