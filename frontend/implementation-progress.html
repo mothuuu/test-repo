@@ -1011,10 +1011,53 @@
     </div>
 
     <div id="complete-modal" class="xeo-modal-overlay" style="display: none;">
-        <!-- Complete modal content - See PART 5 -->
-        <div class="modal-content">
-            <h2>Mark as Complete</h2>
-            <p>Modal content will be added in PART 5</p>
+        <div class="xeo-modal">
+            <div class="xeo-modal-header">
+                <h3>✅ Mark as Complete?</h3>
+                <button class="modal-close" onclick="closeCompleteModal()">×</button>
+            </div>
+
+            <div class="xeo-modal-body">
+                <div class="modal-item-info">
+                    <h4 id="complete-modal-title">Recommendation Title</h4>
+                    <p class="modal-impact">Expected impact: <span id="complete-modal-impact">+14 points</span></p>
+                </div>
+
+                <div class="modal-section">
+                    <label class="modal-label">Before marking as complete, please confirm:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="confirm-implemented" required>
+                            <span>I've implemented this recommendation on my site</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="confirm-tested" required>
+                            <span>I've tested it and verified it's working correctly</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="confirm-validated">
+                            <span>I've validated it using the recommended tools (Optional but recommended)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <label class="modal-label">Add implementation notes:</label>
+                    <textarea id="complete-notes" class="modal-textarea" rows="4" placeholder="Added ContactPoint schema to contact page with phone, email, and support hours. Validated with Schema.org validator and Google Rich Results Test. All checks passed."></textarea>
+                </div>
+
+                <div class="modal-alert">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p><strong>Note:</strong> We'll automatically verify this implementation in your next scan. If not detected, we'll notify you.</p>
+                </div>
+            </div>
+
+            <div class="xeo-modal-footer">
+                <button class="btn-secondary" onclick="closeCompleteModal()">Cancel</button>
+                <button class="btn-primary" onclick="confirmComplete()">Mark as Complete</button>
+            </div>
         </div>
     </div>
 
@@ -1142,6 +1185,54 @@
                 });
             });
         });
+
+        // Complete Modal Functions
+        let currentCompleteRecommendation = null;
+
+        function openCompleteModal(recommendationId, title, impact) {
+            currentCompleteRecommendation = recommendationId;
+            document.getElementById('complete-modal-title').textContent = title;
+            document.getElementById('complete-modal-impact').textContent = impact;
+            document.getElementById('complete-modal').style.display = 'flex';
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('complete-modal').style.display = 'none';
+            currentCompleteRecommendation = null;
+            // Reset form
+            document.getElementById('confirm-implemented').checked = false;
+            document.getElementById('confirm-tested').checked = false;
+            document.getElementById('confirm-validated').checked = false;
+            document.getElementById('complete-notes').value = '';
+        }
+
+        function confirmComplete() {
+            // Validate required checkboxes
+            const implemented = document.getElementById('confirm-implemented').checked;
+            const tested = document.getElementById('confirm-tested').checked;
+
+            if (!implemented || !tested) {
+                alert('Please confirm you have implemented and tested this recommendation before marking it as complete.');
+                return;
+            }
+
+            const validated = document.getElementById('confirm-validated').checked;
+            const notes = document.getElementById('complete-notes').value;
+
+            // TODO: Send to API
+            console.log('Marking recommendation as complete:', {
+                id: currentCompleteRecommendation,
+                implemented: implemented,
+                tested: tested,
+                validated: validated,
+                notes: notes,
+                completedAt: new Date().toISOString()
+            });
+
+            // Close modal and update UI
+            closeCompleteModal();
+            // TODO: Refresh recommendations list and update stats
+        }
 
         // Close modal
         function closeModal(modalId) {
