@@ -23,7 +23,8 @@ const PLANS = {
       'Page-level TODO lists',
       'Progress tracking',
       'Basic JSON-LD export',
-      'Combined recommendations'
+      'Combined recommendations',
+      'Email support'
     ]
   },
   pro: {
@@ -40,7 +41,45 @@ const PLANS = {
       'Advanced JSON-LD pack',
       'Knowledge Graph fields',
       'Live dashboard & analytics',
-      'PDF export'
+      'PDF export',
+      'Priority email support'
+    ]
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price: 24900, // $249.00
+    interval: 'month',
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE,
+    features: [
+      '200 scans per month',
+      'Track 100 pages per domain',
+      'Monitor 10 competitors',
+      'Media & social monitoring',
+      'Thought leadership tracking',
+      'White-label reports',
+      'API access',
+      'Team members (up to 5)',
+      'Dedicated account manager',
+      'Priority phone support'
+    ]
+  },
+  agency: {
+    name: 'Agency',
+    price: 49900, // $499.00
+    interval: 'month',
+    priceId: process.env.STRIPE_PRICE_AGENCY,
+    features: [
+      'Unlimited scans',
+      'Unlimited pages tracked',
+      'Unlimited competitors',
+      'Multi-client dashboard',
+      'White-label everything',
+      'Custom branding',
+      'Full API access',
+      'Team members (unlimited)',
+      'Reseller pricing',
+      'Dedicated support team',
+      'Custom integrations'
     ]
   }
 };

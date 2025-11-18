@@ -4,6 +4,7 @@ const db = require('../db/database');
 
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
+const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -123,6 +124,8 @@ router.post('/guest', async (req, res) => {
       rubric_version: 'V5',
       url: url,
       categories: scanResult.categories,
+      categoryBreakdown: scanResult.categories,
+      categoryWeights: V5_WEIGHTS, // Include weights for display
       recommendations: scanResult.recommendations, // Will be empty array for guest tier
       faq: null, // No FAQ for guest
       upgrade: scanResult.upgrade || null, // CTA to sign up
@@ -132,9 +135,9 @@ router.post('/guest', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Guest scan error:', error);
-    res.status(500).json({ 
-      error: 'Scan failed',
-      details: error.message 
+    res.status(500).json({
+      error: 'Scan blocked',
+      details: error.message
     });
   }
 });
@@ -255,10 +258,10 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain, domain
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain]
+      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain, scanDomain]
     );
 
     const scan = scanRecord.rows[0];
@@ -507,6 +510,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         primary_domain: user.primary_domain,
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
@@ -542,7 +546,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     }
 
     res.status(500).json({
-      error: 'Scan failed',
+      error: 'Scan blocked',
       details: error.message
     });
   }
@@ -557,15 +561,16 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const userId = req.userId;
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         id, user_id, url, status, total_score, rubric_version,
         ai_readability_score, ai_search_readiness_score,
         content_freshness_score, content_structure_score,
         speed_ux_score, technical_setup_score,
         trust_authority_score, voice_optimization_score,
         industry, page_count, pages_analyzed,
-        detailed_analysis, faq_schema, created_at, completed_at
-       FROM scans 
+        detailed_analysis, faq_schema, created_at, completed_at,
+        domain, extracted_domain, domain_type
+       FROM scans
        WHERE id = $1 AND user_id = $2`,
       [scanId, userId]
     );
@@ -703,7 +708,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       }
     }
 
-    // Get updated recommendations after potential unlock
+    // Get updated recommendations after potential unlock (with new delivery system fields)
     const updatedRecResult = await db.query(
       `SELECT
         id, category, recommendation_text, priority,
@@ -714,10 +719,18 @@ router.get('/:id', authenticateToken, async (req, res) => {
         implementation_notes, quick_wins, validation_checklist,
         user_rating, user_feedback, implemented_at,
         unlock_state, batch_number, unlocked_at, skipped_at,
-        recommendation_type, page_url
+        recommendation_type, page_url,
+        -- New delivery system fields
+        recommendation_mode, elite_category, impact_score,
+        implementation_difficulty, compounding_effect_score,
+        industry_relevance_score, last_refresh_date, next_refresh_date,
+        refresh_cycle_number, implementation_progress, previous_findings,
+        is_partial_implementation, validation_status, validation_errors,
+        last_validated_at, affected_pages, pages_implemented,
+        auto_detected_at, archived_at, archived_reason, skip_enabled_at
        FROM scan_recommendations
        WHERE scan_id = $1
-       ORDER BY batch_number, priority DESC, estimated_impact DESC`,
+       ORDER BY batch_number, priority DESC, impact_score DESC NULLS LAST, estimated_impact DESC`,
       [scanId]
     );
 
@@ -751,17 +764,174 @@ router.get('/:id', authenticateToken, async (req, res) => {
       voiceOptimization: scan.voice_optimization_score
     };
 
+    // ============================================
+    // RECOMMENDATION DELIVERY SYSTEM DATA
+    // ============================================
+
+    // Get or create user mode
+    let userMode = null;
+    try {
+      const modeResult = await db.query(
+        `SELECT * FROM user_modes WHERE user_id = $1`,
+        [userId]
+      );
+
+      if (modeResult.rows.length > 0) {
+        userMode = modeResult.rows[0];
+      } else {
+        // Create initial mode for user (Optimization mode by default)
+        const insertMode = await db.query(
+          `INSERT INTO user_modes (user_id, current_mode, current_score, score_at_mode_entry, highest_score_achieved)
+           VALUES ($1, 'optimization', $2, $2, $2)
+           RETURNING *`,
+          [userId, scan.total_score]
+        );
+        userMode = insertMode.rows[0];
+      }
+
+      // Update current score
+      await db.query(
+        `UPDATE user_modes SET current_score = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2`,
+        [scan.total_score, userId]
+      );
+      userMode.current_score = scan.total_score;
+
+    } catch (modeError) {
+      console.error('⚠️  Error fetching user mode:', modeError);
+    }
+
+    // Get unread notifications
+    let notifications = [];
+    try {
+      const notifResult = await db.query(
+        `SELECT id, notification_type, category, priority, title, message,
+                action_label, action_url, scan_id, recommendation_id,
+                is_read, created_at, expires_at
+         FROM user_notifications
+         WHERE user_id = $1 AND is_dismissed = false
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [userId]
+      );
+      notifications = notifResult.rows;
+    } catch (notifError) {
+      console.error('⚠️  Error fetching notifications:', notifError);
+    }
+
+    // Get current refresh cycle
+    let currentCycle = null;
+    try {
+      const cycleResult = await db.query(
+        `SELECT * FROM recommendation_refresh_cycles
+         WHERE user_id = $1 AND scan_id = $2
+         ORDER BY cycle_number DESC
+         LIMIT 1`,
+        [userId, scanId]
+      );
+      if (cycleResult.rows.length > 0) {
+        currentCycle = cycleResult.rows[0];
+      }
+    } catch (cycleError) {
+      console.error('⚠️  Error fetching refresh cycle:', cycleError);
+    }
+
+    // Get implementation detections (for auto-detected recommendations)
+    let recentDetections = [];
+    try {
+      const detectionResult = await db.query(
+        `SELECT d.*, r.recommendation_text, r.category
+         FROM implementation_detections d
+         JOIN scan_recommendations r ON d.recommendation_id = r.id
+         WHERE d.user_id = $1 AND d.current_scan_id = $2
+         ORDER BY d.detected_at DESC
+         LIMIT 10`,
+        [userId, scanId]
+      );
+      recentDetections = detectionResult.rows;
+    } catch (detectionError) {
+      console.error('⚠️  Error fetching detections:', detectionError);
+    }
+
+    // ============================================
+    // HISTORIC COMPARISON LOGIC
+    // ============================================
+    let comparisonData = null;
+    let historicalTimeline = null;
+
+    try {
+      // Check if scan has domain field for comparison
+      if (scan.domain) {
+        // Fetch previous scan for the same domain by this user
+        const previousScanResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND id < $3
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 1`,
+          [userId, scan.domain, scanId]
+        );
+
+        if (previousScanResult.rows.length > 0) {
+          const previousScan = previousScanResult.rows[0];
+          comparisonData = calculateScanComparison(scan, previousScan);
+          console.log(`📊 Comparison calculated for scan ${scanId} vs ${previousScan.id}`);
+        }
+
+        // Fetch all scans for this domain for timeline visualization (last 10)
+        const historicalScansResult = await db.query(
+          `SELECT
+            id, url, total_score, created_at,
+            ai_readability_score, ai_search_readiness_score,
+            content_freshness_score, content_structure_score,
+            speed_ux_score, technical_setup_score,
+            trust_authority_score, voice_optimization_score
+          FROM scans
+          WHERE user_id = $1
+            AND domain = $2
+            AND status = 'completed'
+          ORDER BY created_at DESC
+          LIMIT 10`,
+          [userId, scan.domain]
+        );
+
+        if (historicalScansResult.rows.length > 1) {
+          historicalTimeline = getHistoricalTimeline(historicalScansResult.rows);
+          console.log(`📈 Historical timeline generated with ${historicalScansResult.rows.length} data points`);
+        }
+      }
+    } catch (comparisonError) {
+      console.error('⚠️  Error calculating comparison (non-fatal):', comparisonError);
+      // Continue without comparison data - it's optional
+    }
+
     res.json({
       success: true,
       scan: {
         ...scan,
         categories: categoryScores,
         categoryBreakdown: categoryScores, // Frontend expects this field name
+        categoryWeights: V5_WEIGHTS, // Include weights for display
         recommendations: updatedRecResult.rows,
         faq: scan.faq_schema ? JSON.parse(scan.faq_schema) : null,
         userProgress: userProgress, // Include progress for DIY tier
         nextBatchUnlock: nextBatchUnlock, // Next batch unlock info
-        batchesUnlocked: batchesUnlocked // How many batches were just unlocked
+        batchesUnlocked: batchesUnlocked, // How many batches were just unlocked
+        comparison: comparisonData, // Historic comparison data
+        historicalTimeline: historicalTimeline, // Timeline data for visualization
+        // Recommendation Delivery System data
+        userMode: userMode, // User mode (optimization/elite)
+        notifications: notifications, // User notifications
+        currentCycle: currentCycle, // Current refresh cycle
+        recentDetections: recentDetections, // Auto-detected implementations
+        unreadNotificationCount: notifications.filter(n => !n.is_read).length
       }
     });
 
@@ -1153,7 +1323,10 @@ async function performCompetitorScan(url) {
   try {
     // Run V5 Rubric Engine for scoring only
     console.log('📊 Running V5 Rubric Engine (scores only)...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 25,  // Set to 25 pages per user request
+      timeout: 10000
+    });
     const v5Results = await engine.analyze();
 
     // Extract scores from category results
@@ -1218,18 +1391,18 @@ function transformV5ToSubfactors(v5Categories) {
   // AI Search Readiness - Extract from nested structure and scale
   if (v5Categories.aiSearchReadiness) {
     const asr = v5Categories.aiSearchReadiness;
-    const directAnswer = asr.directAnswerStructure || {};
-    const topical = asr.topicalAuthority || {};
+    const directAnswer = asr.subfactors?.directAnswerStructure || {};  // CRITICAL FIX: Added .subfactors
+    const topical = asr.subfactors?.topicalAuthority || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.aiSearchReadiness = {
-      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 33,  // 0-3 → 0-100
+      questionHeadingsScore: (directAnswer.factors?.questionDensity || 0) * 50,  // 0-2 → 0-100 (hybrid scoring)
       scannabilityScore: (directAnswer.factors?.scannability || 0) * 50,  // 0-2 → 0-100
-      readabilityScore: (directAnswer.factors?.readability || 0) * 33,  // 0-3 → 0-100
-      faqScore: (directAnswer.factors?.icpQA || 0) * 33,  // 0-3 → 0-100
-      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 33,  // 0-3 → 0-100
-      pillarPagesScore: (topical.factors?.pillarPages || 0) * 33,  // 0-3 → 0-100
-      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 33,  // 0-3 → 0-100
-      painPointsScore: (topical.factors?.contentDepth || 0) * 33,  // 0-3 → 0-100
+      readabilityScore: (directAnswer.factors?.readability || 0) * 50,  // 0-2 → 0-100 (factor max is 2.0)
+      faqScore: (directAnswer.factors?.icpQA || 0) * 50,  // 0-2 → 0-100 (FIXED: was * 33, now * 50)
+      snippetEligibleScore: (directAnswer.factors?.answerCompleteness || 0) * 50,  // 0-2 → 0-100
+      pillarPagesScore: (topical.factors?.pillarPages || 0) * 50,  // 0-2 → 0-100 (max is 2.0, not 3.0)
+      linkedSubpagesScore: (topical.factors?.semanticLinking || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
+      painPointsScore: (topical.factors?.contentDepth || 0) * 50,  // 0-2 → 0-100 (max is 2.0)
       geoContentScore: 50  // Default middle value if not available
     };
   }
@@ -1251,15 +1424,15 @@ function transformV5ToSubfactors(v5Categories) {
   // Content Structure - Extract from nested structure and scale
   if (v5Categories.contentStructure) {
     const cs = v5Categories.contentStructure;
-    const semantic = cs.semanticHTML || {};
-    const entity = cs.entityRecognition || {};
+    const semantic = cs.subfactors?.semanticHTML || {};  // CRITICAL FIX: Added .subfactors
+    const entity = cs.subfactors?.entityRecognition || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.contentStructure = {
-      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 33,  // 0-3 → 0-100
-      navigationScore: (semantic.factors?.contentSectioning || 0) * 33,  // 0-3 → 0-100
-      entityCuesScore: (entity.factors?.namedEntities || 0) * 33,  // 0-3 → 0-100
-      accessibilityScore: (semantic.factors?.accessibility || 0) * 33,  // 0-3 → 0-100
-      geoMetaScore: (entity.factors?.geoEntities || 0) * 33  // 0-3 → 0-100
+      headingHierarchyScore: (semantic.factors?.headingHierarchy || 0) * 66.7,  // 0-1.5 → 0-100
+      navigationScore: (semantic.factors?.contentSectioning || 0) * 66.7,  // 0-1.5 → 0-100
+      entityCuesScore: (entity.factors?.namedEntities || 0) * 66.7,  // 0-1.5 → 0-100
+      accessibilityScore: (semantic.factors?.accessibility || 0) * 66.7,  // 0-1.5 → 0-100
+      geoMetaScore: (entity.factors?.geoEntities || 0) * 66.7  // 0-1.5 → 0-100
     };
   }
 
@@ -1278,15 +1451,15 @@ function transformV5ToSubfactors(v5Categories) {
   // Technical Setup - Extract from nested structure and scale
   if (v5Categories.technicalSetup) {
     const ts = v5Categories.technicalSetup;
-    const crawler = ts.crawlerAccess || {};
-    const structured = ts.structuredData || {};
+    const crawler = ts.subfactors?.crawlerAccess || {};  // CRITICAL FIX: Added .subfactors
+    const structured = ts.subfactors?.structuredData || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.technicalSetup = {
-      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 33,  // 0-3 → 0-100
-      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 33,  // 0-3 → 0-100
+      crawlerAccessScore: (crawler.factors?.robotsTxt || 0) * 55.6,  // 0-1.8 → 0-100
+      structuredDataScore: (structured.factors?.schemaMarkup || 0) * 55.6,  // 0-1.8 → 0-100
       canonicalHreflangScore: 50,  // Not in new structure, use default
       openGraphScore: 50,  // Not in new structure, use default
-      sitemapScore: (crawler.factors?.serverResponse || 0) * 33,  // 0-3 → 0-100
+      sitemapScore: (crawler.factors?.sitemap || 0) * 55.6,  // 0-1.8 → 0-100 (FIXED: was reading serverResponse!)
       indexNowScore: 50,  // Not in new structure, use default
       rssFeedScore: 50  // Not in new structure, use default
     };
@@ -1295,12 +1468,15 @@ function transformV5ToSubfactors(v5Categories) {
   // Trust & Authority - Extract from nested structure and scale
   if (v5Categories.trustAuthority) {
     const ta = v5Categories.trustAuthority;
-    const eeat = ta.eeat || {};
-    const authority = ta.authorityNetwork || {};
+    const eeat = ta.subfactors?.eeat || {};  // CRITICAL FIX: Added .subfactors
+    const authority = ta.subfactors?.authorityNetwork || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.trustAuthority = {
       authorBiosScore: (eeat.factors?.authorProfiles || 0) * 50,  // 0-2 → 0-100
-      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100
+      certificationsScore: (eeat.factors?.credentials || 0) * 50,  // 0-2 → 0-100 (legacy)
+      professionalCertifications: (eeat.factors?.professionalCertifications || 0) * 83.3,  // 0-1.2 → 0-100
+      teamCredentials: (eeat.factors?.teamCredentials || 0) * 83.3,  // 0-1.2 → 0-100
+      industryMemberships: (authority.factors?.industryMemberships || 0) * 83.3,  // 0-1.2 → 0-100
       domainAuthorityScore: (authority.factors?.domainAuthority || 0) * 33,  // 0-3 → 0-100
       thoughtLeadershipScore: (authority.factors?.thoughtLeadership || 0) * 33,  // 0-3 → 0-100
       thirdPartyProfilesScore: (authority.factors?.socialAuthority || 0) * 50  // 0-2 → 0-100
@@ -1310,15 +1486,15 @@ function transformV5ToSubfactors(v5Categories) {
   // Voice Optimization - Extract from nested structure and scale
   if (v5Categories.voiceOptimization) {
     const vo = v5Categories.voiceOptimization;
-    const conversational = vo.conversationalKeywords || {};
-    const voice = vo.voiceSearch || {};
+    const conversational = vo.subfactors?.conversationalKeywords || {};  // CRITICAL FIX: Added .subfactors
+    const voice = vo.subfactors?.voiceSearch || {};  // CRITICAL FIX: Added .subfactors
 
     subfactors.voiceOptimization = {
-      longTailScore: (conversational.factors?.longTail || 0) * 33,  // 0-3 → 0-100
-      localIntentScore: (conversational.factors?.localIntent || 0) * 33,  // 0-3 → 0-100
-      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 33,  // 0-3 → 0-100
-      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 33,  // 0-3 → 0-100
-      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 33  // 0-3 → 0-100
+      longTailScore: (conversational.factors?.longTail || 0) * 83,  // 0-1.2 → 0-100
+      localIntentScore: (conversational.factors?.localIntent || 0) * 83,  // 0-1.2 → 0-100
+      conversationalTermsScore: (voice.factors?.conversationalFlow || 0) * 83,  // 0-1.2 → 0-100
+      snippetFormatScore: (conversational.factors?.snippetOptimization || 0) * 83,  // 0-1.2 → 0-100 (hybrid scoring)
+      multiTurnScore: (conversational.factors?.followUpQuestions || 0) * 83  // 0-1.2 → 0-100
     };
   }
 
@@ -1332,8 +1508,16 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
     console.log('📊 Running V5 Rubric Engine...');
-    const engine = new V5RubricEngine(url, {});
+    const engine = new V5RubricEngine(url, {
+      maxPages: 25,  // Set to 25 pages per user request
+      timeout: 10000,
+      industry: userIndustry  // Pass industry for certification detection
+    });
     const v5Results = await engine.analyze();
+
+    // Debug: Log sitemap detection from crawler
+    console.log('[DEBUG] Sitemap detected:', engine.evidence?.technical?.sitemapDetected || engine.evidence?.technical?.hasSitemap);
+    console.log('[DEBUG] Technical Setup category:', JSON.stringify(v5Results.categories.technicalSetup, null, 2));
 
     // Extract scores from category results
     const categories = {
@@ -1350,10 +1534,21 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     const totalScore = v5Results.totalScore;
     const scanEvidence = engine.evidence;
 
+    // Add certification data to scanEvidence for recommendation generation
+    if (v5Results.certificationData) {
+      scanEvidence.certificationData = v5Results.certificationData;
+      console.log(`🏆 Certification data added to scanEvidence:`, {
+        detected: v5Results.certificationData.detected?.length || 0,
+        missing: v5Results.certificationData.missing?.length || 0,
+        coverage: v5Results.certificationData.overallCoverage || 0
+      });
+    }
+
     // Transform V5 categories structure to flat subfactor scores for issue detection
     // The V5 engine returns nested structures, but issue detector expects flat key-value pairs
     const subfactorScores = transformV5ToSubfactors(v5Results.categories);
     console.log('[V5Transform] Transformed subfactor scores for issue detection');
+    console.log('[V5Transform] Technical Setup subfactors:', JSON.stringify(subfactorScores.technicalSetup, null, 2));
 
     // Determine industry: Prioritize user-selected > auto-detected > fallback
     const finalIndustry = userIndustry || v5Results.industry || 'General';
@@ -1401,5 +1596,305 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     throw new Error(`V5 scan failed: ${error.message}`);
   }
 }
+
+// ============================================
+// RECOMMENDATION DELIVERY SYSTEM ENDPOINTS
+// ============================================
+
+// ============================================
+// GET /api/scan/notifications - Get user notifications
+// ============================================
+router.get('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { unreadOnly } = req.query;
+
+    let query = `
+      SELECT id, notification_type, category, priority, title, message,
+             action_label, action_url, scan_id, recommendation_id,
+             is_read, read_at, created_at, expires_at
+      FROM user_notifications
+      WHERE user_id = $1 AND is_dismissed = false
+    `;
+
+    if (unreadOnly === 'true') {
+      query += ` AND is_read = false`;
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT 100`;
+
+    const result = await db.query(query, [userId]);
+
+    res.json({
+      success: true,
+      notifications: result.rows,
+      unreadCount: result.rows.filter(n => !n.is_read).length
+    });
+
+  } catch (error) {
+    console.error('❌ Get notifications error:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// ============================================
+// POST /api/scan/notifications/:id/read - Mark notification as read
+// ============================================
+router.post('/notifications/:id/read', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const notificationId = req.params.id;
+
+    await db.query(
+      `UPDATE user_notifications
+       SET is_read = true, read_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2`,
+      [notificationId, userId]
+    );
+
+    res.json({ success: true, message: 'Notification marked as read' });
+
+  } catch (error) {
+    console.error('❌ Mark notification read error:', error);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// ============================================
+// POST /api/scan/notifications/:id/dismiss - Dismiss notification
+// ============================================
+router.post('/notifications/:id/dismiss', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const notificationId = req.params.id;
+
+    await db.query(
+      `UPDATE user_notifications
+       SET is_dismissed = true, dismissed_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2`,
+      [notificationId, userId]
+    );
+
+    res.json({ success: true, message: 'Notification dismissed' });
+
+  } catch (error) {
+    console.error('❌ Dismiss notification error:', error);
+    res.status(500).json({ error: 'Failed to dismiss notification' });
+  }
+});
+
+// ============================================
+// GET /api/scan/mode - Get user mode details
+// ============================================
+router.get('/mode', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT * FROM user_modes WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      // Create default mode for user
+      const insertResult = await db.query(
+        `INSERT INTO user_modes (user_id, current_mode, current_score, score_at_mode_entry, highest_score_achieved)
+         VALUES ($1, 'optimization', 0, 0, 0)
+         RETURNING *`,
+        [userId]
+      );
+      return res.json({ success: true, userMode: insertResult.rows[0] });
+    }
+
+    res.json({ success: true, userMode: result.rows[0] });
+
+  } catch (error) {
+    console.error('❌ Get mode error:', error);
+    res.status(500).json({ error: 'Failed to fetch user mode' });
+  }
+});
+
+// ============================================
+// GET /api/scan/mode/history - Get mode transition history
+// ============================================
+router.get('/mode/history', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT * FROM mode_transition_history
+       WHERE user_id = $1
+       ORDER BY transitioned_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    res.json({ success: true, transitions: result.rows });
+
+  } catch (error) {
+    console.error('❌ Get mode history error:', error);
+    res.status(500).json({ error: 'Failed to fetch mode history' });
+  }
+});
+
+// ============================================
+// GET /api/scan/competitive - Get competitive tracking data
+// ============================================
+router.get('/competitive', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT * FROM competitive_tracking
+       WHERE user_id = $1 AND is_active = true
+       ORDER BY tracking_since DESC`,
+      [userId]
+    );
+
+    res.json({ success: true, competitors: result.rows });
+
+  } catch (error) {
+    console.error('❌ Get competitive tracking error:', error);
+    res.status(500).json({ error: 'Failed to fetch competitive tracking data' });
+  }
+});
+
+// ============================================
+// POST /api/scan/competitive - Add competitor to track
+// ============================================
+router.post('/competitive', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { competitorName, competitorDomain, scanId } = req.body;
+
+    if (!competitorName || !competitorDomain) {
+      return res.status(400).json({ error: 'Competitor name and domain are required' });
+    }
+
+    // Check user mode - competitive tracking is Elite only
+    const modeResult = await db.query(
+      `SELECT current_mode FROM user_modes WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (modeResult.rows.length === 0 || modeResult.rows[0].current_mode !== 'elite') {
+      return res.status(403).json({ error: 'Competitive tracking is only available in Elite mode' });
+    }
+
+    // Check if already tracking
+    const existingResult = await db.query(
+      `SELECT id FROM competitive_tracking WHERE user_id = $1 AND competitor_domain = $2`,
+      [userId, competitorDomain]
+    );
+
+    if (existingResult.rows.length > 0) {
+      return res.status(400).json({ error: 'Already tracking this competitor' });
+    }
+
+    // Add competitor
+    const insertResult = await db.query(
+      `INSERT INTO competitive_tracking
+       (user_id, competitor_name, competitor_domain, competitor_scan_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [userId, competitorName, competitorDomain, scanId]
+    );
+
+    res.json({ success: true, competitor: insertResult.rows[0] });
+
+  } catch (error) {
+    console.error('❌ Add competitor error:', error);
+    res.status(500).json({ error: 'Failed to add competitor' });
+  }
+});
+
+// ============================================
+// DELETE /api/scan/competitive/:id - Remove competitor tracking
+// ============================================
+router.delete('/competitive/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const competitorId = req.params.id;
+
+    await db.query(
+      `UPDATE competitive_tracking
+       SET is_active = false
+       WHERE id = $1 AND user_id = $2`,
+      [competitorId, userId]
+    );
+
+    res.json({ success: true, message: 'Competitor tracking removed' });
+
+  } catch (error) {
+    console.error('❌ Remove competitor error:', error);
+    res.status(500).json({ error: 'Failed to remove competitor' });
+  }
+});
+
+// ============================================
+// GET /api/scan/competitive/alerts - Get competitive alerts
+// ============================================
+router.get('/competitive/alerts', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await db.query(
+      `SELECT * FROM competitive_alerts
+       WHERE user_id = $1 AND is_dismissed = false
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    res.json({ success: true, alerts: result.rows });
+
+  } catch (error) {
+    console.error('❌ Get competitive alerts error:', error);
+    res.status(500).json({ error: 'Failed to fetch competitive alerts' });
+  }
+});
+
+// ============================================
+// POST /api/scan/:id/detection/:detectionId/confirm - Confirm auto-detection
+// ============================================
+router.post('/:id/detection/:detectionId/confirm', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { id: scanId, detectionId } = req.params;
+    const { confirmed, feedback } = req.body;
+
+    // Update detection
+    await db.query(
+      `UPDATE implementation_detections
+       SET user_confirmed = $1, user_feedback = $2, user_notified = true
+       WHERE id = $3 AND user_id = $4`,
+      [confirmed, feedback, detectionId, userId]
+    );
+
+    // If confirmed, mark recommendation as implemented
+    if (confirmed) {
+      const detectionResult = await db.query(
+        `SELECT recommendation_id FROM implementation_detections WHERE id = $1`,
+        [detectionId]
+      );
+
+      if (detectionResult.rows.length > 0) {
+        const recommendationId = detectionResult.rows[0].recommendation_id;
+        await db.query(
+          `UPDATE scan_recommendations
+           SET status = 'implemented', implemented_at = CURRENT_TIMESTAMP, auto_detected_at = CURRENT_TIMESTAMP
+           WHERE id = $1`,
+          [recommendationId]
+        );
+      }
+    }
+
+    res.json({ success: true, message: 'Detection confirmed' });
+
+  } catch (error) {
+    console.error('❌ Confirm detection error:', error);
+    res.status(500).json({ error: 'Failed to confirm detection' });
+  }
+});
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const SiteCrawler = require('./site-crawler');
 const ContentExtractor = require('./content-extractor');
+const { detectCertifications, calculateCertificationScore } = require('./recommendation-engine/certification-detector');
 
 /**
  * V5 Enhanced Rubric Scoring Engine
@@ -23,6 +24,8 @@ class V5EnhancedRubricEngine {
     this.url = url;
     this.options = options;
     this.siteData = null;
+    this.industry = options.industry || null;
+    this.certificationData = null;
 
     // Category weights (from PDF v3.0)
     this.weights = {
@@ -79,16 +82,37 @@ class V5EnhancedRubricEngine {
           },
           technical: {
             ...firstPageEvidence.technical,
-            hasFAQSchema: hasFAQSchema  // True if ANY page has FAQ schema
+            hasFAQSchema: hasFAQSchema,  // True if ANY page has FAQ schema
+            hasSitemap: this.siteData.sitemapDetected || false,  // CRITICAL FIX: Pass sitemap detection
+            sitemapDetected: this.siteData.sitemapDetected || false,  // Alternative property name
+            sitemapLocation: this.siteData.sitemapLocation || null,  // Which sitemap file was detected
+            sitemapPageCount: this.siteData.pageCount || 0  // How many pages were crawled from sitemap
           }
         };
 
         console.log(`[V5-Enhanced] Aggregated ${allFAQs.length} FAQs from ${this.siteData.pages.length} pages`);
+        console.log(`[V5-Enhanced] Sitemap detected: ${this.siteData.sitemapDetected ? 'YES' : 'NO'}`);
       } else {
         this.evidence = null;
       }
 
       console.log(`[V5-Enhanced] Crawled ${this.siteData.pageCount} pages`);
+
+      // Step 1.5: Detect certifications if industry is provided
+      // Wrapped in try-catch to prevent certification detection errors from crashing scans
+      if (this.industry) {
+        try {
+          console.log(`[V5-Enhanced] Detecting certifications for industry: ${this.industry}`);
+          this.certificationData = detectCertifications(this.siteData, this.industry);
+        } catch (certError) {
+          console.error(`[V5-Enhanced] ⚠️  Certification detection failed (non-fatal):`, certError.message);
+          console.error(`[V5-Enhanced] Stack:`, certError.stack);
+          this.certificationData = null; // Continue scan without certification data
+        }
+      } else {
+        console.log(`[V5-Enhanced] No industry specified, skipping certification detection`);
+        this.certificationData = null;
+      }
 
       // Step 2: Analyze each category using site-wide data
       const categoryScores = {
@@ -117,9 +141,11 @@ class V5EnhancedRubricEngine {
         categories: categoryScores,
         siteMetrics: this.siteData.siteMetrics,
         pageCount: this.siteData.pageCount,
+        sitemapDetected: this.siteData.sitemapDetected || false,
+        certificationData: this.certificationData, // Include certification analysis
         metadata: {
           analyzedAt: new Date().toISOString(),
-          version: '5.0-enhanced'
+          version: '5.0-enhanced-hybrid'
         }
       };
 
@@ -162,12 +188,21 @@ class V5EnhancedRubricEngine {
 
     // Factor 1: Question-Based Content Density
     // PDF: ≥60% → 2.0, 35-59% → 1.2, 15-34% → 0.6, else 0
+    // HYBRID SCORING: Reward both percentage AND absolute count
     const questionPercent = this.siteData.siteMetrics.pagesWithQuestionHeadings * 100;
-    factors.questionDensity = this.scoreTier(questionPercent, [
+    const questionCount = this.siteData.pages.filter(p => this.hasQuestionHeadings(p.evidence)).length;
+
+    const questionPercentScore = this.scoreTier(questionPercent, [
       { threshold: 60, score: 2.0 },
       { threshold: 35, score: 1.2 },
       { threshold: 15, score: 0.6 }
     ]);
+    const questionAbsoluteScore = this.scoreTier(questionCount, [
+      { threshold: 8, score: 2.0 },   // 8+ pages with questions = excellent
+      { threshold: 5, score: 1.2 },   // 5+ pages with questions = good
+      { threshold: 2, score: 0.6 }    // 2+ pages with questions = decent
+    ]);
+    factors.questionDensity = Math.max(questionPercentScore, questionAbsoluteScore);
 
     // Factor 2: Scannability Enhancement
     // PDF: ≥70% → 2.0, 40-69% → 1.2, 20-39% → 0.6, else 0
@@ -192,11 +227,34 @@ class V5EnhancedRubricEngine {
 
     // Factor 4: ICP-Specific Q&A Coverage
     // PDF: ≥5 ICP-specific Q&A → 2.0, 2-4 → 1.2, else 0
+    // HYBRID SCORING: Reward both percentage AND absolute count to prevent dilution
     const faqPercent = this.siteData.siteMetrics.pagesWithFAQs * 100;
-    factors.icpQA = this.scoreTier(faqPercent, [
+    const faqCount = this.siteData.pages.filter(p => p.evidence.content.faqs.length > 0).length;
+    const totalFAQs = this.siteData.pages.reduce((sum, p) => sum + p.evidence.content.faqs.length, 0);
+
+    // Log FAQ distribution across pages for debugging
+    console.log(`[V5-Enhanced] ===== FAQ DISTRIBUTION ANALYSIS =====`);
+    console.log(`[V5-Enhanced] Total FAQs across all pages: ${totalFAQs}`);
+    console.log(`[V5-Enhanced] Pages with FAQs: ${faqCount}/${this.siteData.pageCount}`);
+    this.siteData.pages.forEach((page, idx) => {
+      if (page.evidence.content.faqs.length > 0) {
+        console.log(`[V5-Enhanced]   Page ${idx + 1} (${page.url}): ${page.evidence.content.faqs.length} FAQs`);
+      }
+    });
+
+    // Score based on EITHER percentage OR absolute count (whichever is better)
+    const faqPercentScore = this.scoreTier(faqPercent, [
       { threshold: 40, score: 2.0 },  // At least 40% of pages have FAQs = good coverage
       { threshold: 20, score: 1.2 }
     ]);
+    const faqAbsoluteScore = this.scoreTier(faqCount, [
+      { threshold: 5, score: 2.0 },   // At least 5 pages with FAQs = good absolute coverage
+      { threshold: 3, score: 1.8 },   // At least 3 pages with FAQs = decent coverage
+      { threshold: 1, score: 1.2 }    // At least 1 page with FAQs = some coverage
+    ]);
+    factors.icpQA = Math.max(faqPercentScore, faqAbsoluteScore);  // Use the better of the two scores
+
+    console.log(`[V5-Enhanced] FAQ Scoring - Pages: ${faqCount}/${this.siteData.pageCount} (${Math.round(faqPercent)}%) | Percent Score: ${faqPercentScore} | Absolute Score: ${faqAbsoluteScore} | Final: ${factors.icpQA}`);
 
     // Factor 5: Answer Completeness
     // PDF: 50-150 words with clear structure → 2.0, partial → 1.2, else 0
@@ -461,12 +519,20 @@ class V5EnhancedRubricEngine {
     ]);
 
     // Factor 4: Featured Snippet Optimization
+    // HYBRID SCORING: Reward both percentage AND absolute count
     const faqSchemaPercent = this.siteData.siteMetrics.pagesWithFAQSchema * 100;
-    factors.snippetOptimization = this.scoreTier(faqSchemaPercent, [
+    const faqSchemaCount = this.siteData.pages.filter(p => p.evidence.technical.hasFAQSchema).length;
+
+    const schemaPercentScore = this.scoreTier(faqSchemaPercent, [
       { threshold: 30, score: 1.2 },
       { threshold: 15, score: 0.8 },
       { threshold: 5, score: 0.4 }
     ]);
+    const schemaAbsoluteScore = this.scoreTier(faqSchemaCount, [
+      { threshold: 3, score: 1.2 },   // 3+ pages with FAQ schema = excellent
+      { threshold: 1, score: 0.8 }    // 1+ page with FAQ schema = good
+    ]);
+    factors.snippetOptimization = Math.max(schemaPercentScore, schemaAbsoluteScore);
 
     // Factor 5: Follow-up Question Anticipation
     const listPercent = this.siteData.siteMetrics.pagesWithLists * 100;
@@ -575,15 +641,24 @@ class V5EnhancedRubricEngine {
       { threshold: 500, score: 1.2, reverse: true }
     ], 0.6);
 
-    // Factor 4: API Endpoint Accessibility
-    // (Check for API indicators)
-    factors.apiEndpoints = 0; // Would need API discovery
+    // Factor 4: XML Sitemap Availability (CRITICAL FIX!)
+    // Sitemap helps crawlers discover all pages efficiently
+    if (this.siteData.sitemapDetected) {
+      factors.sitemap = 1.8;  // Sitemap found = excellent
+      console.log(`[V5-Enhanced] Sitemap scoring: 1.8 (detected at ${this.siteData.sitemapLocation})`);
+    } else {
+      factors.sitemap = 0;  // No sitemap = 0 points
+      console.log(`[V5-Enhanced] Sitemap scoring: 0 (not detected)`);
+    }
 
     // Factor 5: CDN & Global Accessibility
     // (Check for CDN headers)
     factors.cdn = firstPage.technical.cacheControl ? 1.2 : 0.6;
 
     const totalScore = Object.values(factors).reduce((a, b) => a + b, 0);
+
+    console.log(`[V5-Enhanced] Crawler Access Factors:`, factors);
+    console.log(`[V5-Enhanced] Crawler Access Total: ${totalScore}/9.0 = ${(totalScore / 9.0) * 100}%`);
 
     return {
       score: (totalScore / 9.0) * 100,
@@ -666,8 +741,20 @@ class V5EnhancedRubricEngine {
     const hasAuthor = firstPage.metadata.author ? 1 : 0;
     factors.authorProfiles = hasAuthor ? 1.2 : 0.4;
 
-    // Factor 2: Professional Credential Documentation
-    factors.credentials = this.detectCredentials(firstPage) ? 1.2 : 0;
+    // Factor 2: Professional Credential Documentation (Enhanced with Certification Library)
+    if (this.certificationData) {
+      // Use certification detection results
+      const certScore = calculateCertificationScore(this.certificationData);
+      // Map 0-100 score to 0-1.2 scale for factor scoring
+      factors.professionalCertifications = (certScore / 100) * 1.2;
+
+      // Additional factor for team credentials (Person schema with credentials)
+      const teamCredScore = this.detectTeamCredentials();
+      factors.teamCredentials = teamCredScore;
+    } else {
+      // Fallback to basic detection
+      factors.credentials = this.detectCredentials(firstPage) ? 1.2 : 0;
+    }
 
     // Factor 3: Content Attribution & Byline Consistency
     factors.attribution = hasAuthor ? 1.2 : 0.4;
@@ -683,9 +770,10 @@ class V5EnhancedRubricEngine {
     ]);
 
     const totalScore = Object.values(factors).reduce((a, b) => a + b, 0);
+    const maxScore = this.certificationData ? 7.2 : 6.0; // 6 factors with cert data, 5 without
 
     return {
-      score: (totalScore / 6.0) * 100,
+      score: (totalScore / maxScore) * 100,
       factors
     };
   }
@@ -706,8 +794,12 @@ class V5EnhancedRubricEngine {
       { threshold: 40, score: 0.8 }
     ], 0.4);
 
-    // Factor 2: Industry-Specific Citation Network
-    factors.industryCitations = 0.8; // Base score
+    // Factor 2: Industry Memberships & Associations (Enhanced)
+    if (this.certificationData) {
+      factors.industryMemberships = this.detectIndustryMemberships();
+    } else {
+      factors.industryCitations = 0.8; // Fallback base score
+    }
 
     // Factor 3: Content Citation & Reference Quality
     factors.outboundLinks = 0.8; // Would need link analysis
@@ -937,6 +1029,104 @@ class V5EnhancedRubricEngine {
     const text = evidence.content.bodyText.toLowerCase();
     const credentialKeywords = ['certified', 'certification', 'license', 'accredited', 'phd', 'mba', 'degree'];
     return credentialKeywords.some(k => text.includes(k));
+  }
+
+  /**
+   * Detect team member credentials (Person schema with hasCredential)
+   * @returns {number} - Score from 0 to 1.2
+   */
+  detectTeamCredentials() {
+    let teamMembersWithCredentials = 0;
+    let totalTeamMembers = 0;
+
+    // Scan all pages for Person schemas
+    this.siteData.pages.forEach(page => {
+      if (!page.evidence.technical || !page.evidence.technical.schemas) return;
+
+      page.evidence.technical.schemas.forEach(schema => {
+        if (schema['@type'] === 'Person') {
+          totalTeamMembers++;
+          if (schema.hasCredential || schema.credential || schema.award || schema.honorificSuffix) {
+            teamMembersWithCredentials++;
+          }
+        }
+      });
+    });
+
+    if (totalTeamMembers === 0) {
+      // No Person schemas found, check for basic team mentions
+      const firstPage = this.siteData.pages[0].evidence;
+      const hasTeamPage = firstPage.content.bodyText.toLowerCase().includes('team') ||
+                          firstPage.content.bodyText.toLowerCase().includes('about us');
+      return hasTeamPage ? 0.4 : 0;
+    }
+
+    // Calculate score based on percentage with credentials
+    const credentialPercentage = (teamMembersWithCredentials / totalTeamMembers) * 100;
+
+    return this.scoreTier(credentialPercentage, [
+      { threshold: 75, score: 1.2 },
+      { threshold: 50, score: 0.8 },
+      { threshold: 25, score: 0.4 }
+    ], 0);
+  }
+
+  /**
+   * Detect industry memberships (Organization.memberOf)
+   * @returns {number} - Score from 0 to 1.2
+   */
+  detectIndustryMemberships() {
+    let hasMemberships = false;
+    const memberships = [];
+
+    // Scan all pages for Organization schemas with memberOf
+    this.siteData.pages.forEach(page => {
+      if (!page.evidence.technical || !page.evidence.technical.schemas) return;
+
+      page.evidence.technical.schemas.forEach(schema => {
+        if (schema['@type'] === 'Organization' && schema.memberOf) {
+          hasMemberships = true;
+          if (Array.isArray(schema.memberOf)) {
+            memberships.push(...schema.memberOf);
+          } else {
+            memberships.push(schema.memberOf);
+          }
+        }
+      });
+    });
+
+    if (!hasMemberships) {
+      // Check for membership keywords in text
+      const firstPage = this.siteData.pages[0].evidence;
+      const text = firstPage.content.bodyText.toLowerCase();
+      const membershipKeywords = ['member of', 'association', 'partner', 'certified partner', 'industry member'];
+      const hasKeyword = membershipKeywords.some(k => text.includes(k));
+      return hasKeyword ? 0.6 : 0;
+    }
+
+    // Score based on number of memberships
+    const membershipCount = memberships.length;
+    return this.scoreTier(membershipCount, [
+      { threshold: 3, score: 1.2 },
+      { threshold: 1, score: 0.8 }
+    ], 0);
+  }
+
+  /**
+   * Check if evidence has question-based headings
+   */
+  hasQuestionHeadings(evidence) {
+    const allHeadings = [
+      ...evidence.content.headings.h1,
+      ...evidence.content.headings.h2,
+      ...evidence.content.headings.h3
+    ];
+
+    const questionWords = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can', 'should', 'does'];
+    return allHeadings.some(h => {
+      const lower = h.toLowerCase();
+      return questionWords.some(q => lower.startsWith(q)) || lower.includes('?');
+    });
   }
 }
 

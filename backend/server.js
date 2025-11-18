@@ -38,7 +38,8 @@ app.use(compression());
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [
-  'https://aome.xeo.marketing',
+  'https://www.visible2ai.com',
+  'https://visible2ai.com',
   'http://localhost:3000',
   'http://localhost:8000'
 ];

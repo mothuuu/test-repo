@@ -145,9 +145,23 @@ function displayResults(scan, quota) {
         document.getElementById('userPlan').textContent = userData.plan.toUpperCase();
     }
 
+    // Display user mode indicator and notifications (if data available)
+    if (scan.userMode) {
+        displayModeIndicator(scan.userMode, displayScore);
+    }
+    if (scan.notifications) {
+        displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
+    }
+    if (scan.currentCycle) {
+        displayRefreshCycle(scan.currentCycle);
+    }
+    if (scan.recentDetections && scan.recentDetections.length > 0) {
+        displayAutoDetections(scan.recentDetections);
+    }
+
     // Display category scores
     if (scan.categoryBreakdown) {
-        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || []);
+        displayCategoryScores(scan.categoryBreakdown, scan.recommendations || [], scan.categoryWeights || {});
     }
 
     // Update recommendations count
@@ -186,17 +200,24 @@ function displayResults(scan, quota) {
             exportSection.style.display = 'flex';
         }
     }
+
+    // Display historic comparison if available
+    if (scan.comparison || scan.historicalTimeline) {
+        displayHistoricComparison(scan.comparison, scan.historicalTimeline);
+    }
 }
 
-function displayCategoryScores(categories, recommendations) {
+function displayCategoryScores(categories, recommendations, weights = {}) {
     const container = document.getElementById('categoryScores');
     container.innerHTML = '';
 
-    // Prepare category data with scores
+    // Prepare category data with scores and weights
     const categoryData = Object.entries(categories).map(([categoryKey, score]) => {
         const displayScore = Math.round(score * 10); // Convert to 0-1000
         const categoryName = categoryNames[categoryKey] || formatCategoryName(categoryKey);
-        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore };
+        const weight = weights[categoryKey] || 0;
+        const weightPercent = Math.round(weight * 100); // Convert to percentage
+        return { key: categoryKey, name: categoryName, score: score, displayScore: displayScore, weight: weight, weightPercent: weightPercent };
     });
 
     // Calculate and display metrics
@@ -234,6 +255,7 @@ function displayCategoryScores(categories, recommendations) {
         item.innerHTML = `
             <div class="category-info">
                 <div class="category-name">${cat.name}</div>
+                ${cat.weightPercent > 0 ? `<div class="category-weight" style="font-size: 12px; color: #718096; margin-top: 4px;">Weight: ${cat.weightPercent}% of total score</div>` : ''}
             </div>
             <div class="category-score-section">
                 <div class="${scoreColor}">${displayScore}</div>
@@ -797,6 +819,15 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
     else if (priority === 'medium') priorityBadgeClass += 'medium';
     else priorityBadgeClass += 'low';
 
+    // Delivery System fields
+    const impactScore = rec.impact_score || null;
+    const implementationDifficulty = rec.implementation_difficulty || null;
+    const compoundingEffect = rec.compounding_effect_score || 0;
+    const industryRelevance = rec.industry_relevance_score || 0;
+    const isPartialImplementation = rec.is_partial_implementation || false;
+    const implementationProgress = rec.implementation_progress || 0;
+    const validationStatus = rec.validation_status || null;
+
     const showCodeSnippet = userPlan !== 'free' && codeSnippet;
 
     card.innerHTML = `
@@ -809,16 +840,32 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                 <div class="rec-category">${formatCategoryName(rec.category)}${subcategory ? ` → ${subcategory}` : ''}</div>
             </div>
             <div class="rec-metrics-section">
-                ${estimatedImpact ? `
+                ${impactScore ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value score-gain" style="font-size: 18px; font-weight: bold; color: #10b981;">★ ${Math.round(impactScore)}</div>
+                        <div class="rec-metric-label">Impact Score</div>
+                    </div>
+                ` : estimatedImpact ? `
                     <div class="rec-metric">
                         <div class="rec-metric-value score-gain">+${Math.round(estimatedImpact * 10)}</div>
                         <div class="rec-metric-label">Score Gain</div>
                     </div>
                 ` : ''}
-                ${effort ? `
+                ${implementationDifficulty ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value effort">${implementationDifficulty}</div>
+                        <div class="rec-metric-label">Difficulty</div>
+                    </div>
+                ` : effort ? `
                     <div class="rec-metric">
                         <div class="rec-metric-value effort">${effort}</div>
                         <div class="rec-metric-label">Effort</div>
+                    </div>
+                ` : ''}
+                ${compoundingEffect > 0 ? `
+                    <div class="rec-metric">
+                        <div class="rec-metric-value" style="color: var(--purple);">🔄 ${Math.round(compoundingEffect)}</div>
+                        <div class="rec-metric-label">Compound</div>
                     </div>
                 ` : ''}
             </div>
@@ -909,8 +956,8 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
             ` : ''}
 
             ${validationChecklist && validationChecklist.length > 0 && userPlan !== 'free' ? `
-                <div style="background: #e0e7ff; border-left: 4px solid #6366f1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4 style="font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">✓ Validation Checklist</h4>
+                <div style="background: var(--purple-light); border-left: 4px solid var(--purple); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 12px;">✓ Validation Checklist</h4>
                     <ul style="list-style: none; padding: 0;">
                         ${validationChecklist.map(item => `
                             <li style="margin-bottom: 10px; display: flex; align-items: start; color: #4a5568; line-height: 1.6;">
@@ -919,6 +966,28 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                             </li>
                         `).join('')}
                     </ul>
+                </div>
+            ` : ''}
+
+            ${isPartialImplementation && implementationProgress > 0 ? `
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #78350f; margin-bottom: 8px;">⚙️ Partial Implementation Detected</h4>
+                    <p style="font-size: 13px; color: #92400e; margin-bottom: 10px;">This recommendation is ${Math.round(implementationProgress)}% complete</p>
+                    <div style="width: 100%; background: #fde68a; border-radius: 9999px; height: 10px;">
+                        <div style="background: #d97706; height: 10px; border-radius: 9999px; width: ${implementationProgress}%"></div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${validationStatus === 'validation_failed' ? `
+                <div style="background: #fee2e2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #7f1d1d; margin-bottom: 8px;">⚠️ Validation Issues Detected</h4>
+                    <p style="font-size: 13px; color: #991b1b;">The implementation needs attention. Please review and fix any errors.</p>
+                </div>
+            ` : validationStatus === 'validated' ? `
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #065f46;">✓ Implementation Validated</h4>
+                    <p style="font-size: 13px; color: #047857;">This implementation has been verified and is working correctly.</p>
                 </div>
             ` : ''}
 
@@ -1271,7 +1340,7 @@ function showAlertModal(title, message, type = 'info') {
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end;">
-                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
+                    <button id="okBtn" style="padding: 12px 30px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s;">
                         OK
                     </button>
                 </div>
@@ -1324,7 +1393,7 @@ function showConfirmModal(title, message) {
                     <button id="cancelBtn" style="padding: 10px 20px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">
                         Cancel
                     </button>
-                    <button id="confirmBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                    <button id="confirmBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer;">
                         Confirm
                     </button>
                 </div>
@@ -1602,7 +1671,7 @@ function createFeedbackWidget(widgetId, category, scanId) {
                         Skip
                     </button>
                     <button onclick="submitFeedbackComment('${uniqueId}', '${category}', '${scanId}')"
-                            style="padding: 8px 16px; border-radius: 6px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer;">
+                            style="padding: 8px 16px; border-radius: 6px; border: none; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); color: white; font-weight: 600; cursor: pointer;">
                         Submit Feedback
                     </button>
                 </div>
@@ -1889,6 +1958,564 @@ window.collapseAll = function() {
         card.classList.remove('expanded');
     });
 }
+
+// ============================================
+// HISTORIC COMPARISON FUNCTIONS
+// ============================================
+
+// Global variable to store timeline chart
+let timelineChart = null;
+
+// Toggle comparison section visibility
+window.toggleComparison = function() {
+    const content = document.getElementById('comparisonContent');
+    const toggle = document.getElementById('comparisonToggle');
+
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        toggle.classList.remove('expanded');
+    } else {
+        content.classList.add('active');
+        toggle.classList.add('expanded');
+    }
+}
+
+// Display historic comparison data
+function displayHistoricComparison(comparison, historicalTimeline) {
+    if (!comparison || !comparison.hasPreviousScan) {
+        // No comparison data available
+        return;
+    }
+
+    console.log('📊 Displaying historic comparison:', comparison);
+
+    // Show comparison section
+    const comparisonSection = document.getElementById('comparisonSection');
+    if (comparisonSection) {
+        comparisonSection.style.display = 'block';
+    }
+
+    // Update subtitle with date info
+    const subtitle = document.getElementById('comparisonSubtitle');
+    if (subtitle && comparison.previousScanDate) {
+        const prevDate = new Date(comparison.previousScanDate).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        subtitle.textContent = `Compared with scan from ${prevDate} (${comparison.daysBetweenScans} days ago)`;
+    }
+
+    // Display score change summary
+    displayScoreChangeSummary(comparison);
+
+    // Display category comparison table
+    displayCategoryComparisonTable(comparison);
+
+    // Display timeline if available
+    if (historicalTimeline && historicalTimeline.dataPoints && historicalTimeline.dataPoints.length > 1) {
+        displayTimeline(historicalTimeline);
+    }
+}
+
+// Display score change summary cards
+function displayScoreChangeSummary(comparison) {
+    const container = document.getElementById('scoreChangeSummary');
+    if (!container) return;
+
+    const scoreChange = comparison.scoreChange;
+    const improved = comparison.summary.improved;
+    const declined = comparison.summary.declined;
+
+    let scoreChangeClass = 'neutral';
+    let scoreChangeSign = '';
+    if (scoreChange.total > 0) {
+        scoreChangeClass = 'positive';
+        scoreChangeSign = '+';
+    } else if (scoreChange.total < 0) {
+        scoreChangeClass = 'negative';
+    }
+
+    container.innerHTML = `
+        <div class="score-change-card ${scoreChangeClass}">
+            <div class="score-change-label">Overall Score Change</div>
+            <div class="score-change-value ${scoreChangeClass}">
+                ${scoreChangeSign}${Math.round(scoreChange.total * 10)}
+            </div>
+            <div class="score-change-delta">
+                ${Math.round(scoreChange.previous * 10)} → ${Math.round(scoreChange.current * 10)}
+            </div>
+        </div>
+
+        <div class="score-change-card positive">
+            <div class="score-change-label">Categories Improved</div>
+            <div class="score-change-value positive">${improved}</div>
+            <div class="score-change-delta">
+                ${improved === 1 ? 'category' : 'categories'} got better
+            </div>
+        </div>
+
+        <div class="score-change-card ${declined > 0 ? 'negative' : 'neutral'}">
+            <div class="score-change-label">Categories Declined</div>
+            <div class="score-change-value ${declined > 0 ? 'negative' : 'neutral'}">${declined}</div>
+            <div class="score-change-delta">
+                ${declined === 1 ? 'category' : 'categories'} need attention
+            </div>
+        </div>
+    `;
+}
+
+// Display category comparison table
+function displayCategoryComparisonTable(comparison) {
+    const container = document.getElementById('categoryComparisonTable');
+    if (!container) return;
+
+    const allCategories = [...comparison.categoriesImproved, ...comparison.categoriesDeclined];
+
+    // Sort by absolute change (biggest changes first)
+    allCategories.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+
+    if (allCategories.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #718096;">
+                <p style="font-size: 16px; margin-bottom: 10px;">✨ No significant changes detected</p>
+                <p style="font-size: 14px;">All categories remained stable (±5 points)</p>
+            </div>
+        `;
+        return;
+    }
+
+    let tableHTML = `
+        <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 15px; margin-top: 20px;">
+            Category Changes
+        </h3>
+        <table class="category-comparison-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Previous Score</th>
+                    <th>Current Score</th>
+                    <th>Change</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    allCategories.forEach(cat => {
+        const changeClass = cat.change > 0 ? 'positive' : 'negative';
+        const changeSign = cat.change > 0 ? '+' : '';
+        const statusClass = cat.change > 0 ? 'improved' : 'declined';
+        const statusText = cat.change > 0 ? 'Improved' : 'Declined';
+        const arrow = cat.change > 0 ? '↑' : '↓';
+
+        tableHTML += `
+            <tr>
+                <td class="category-name-cell">${cat.name}</td>
+                <td>${Math.round(cat.previousScore * 10)}</td>
+                <td>${Math.round(cat.currentScore * 10)}</td>
+                <td>
+                    <div class="change-indicator ${changeClass}">
+                        <span class="change-arrow">${arrow}</span>
+                        <span>${changeSign}${Math.round(cat.change * 10)}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="score-badge ${statusClass}">${statusText}</span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+
+    container.innerHTML = tableHTML;
+}
+
+// Display timeline chart
+function displayTimeline(historicalTimeline) {
+    const timelineSection = document.getElementById('timelineSection');
+    if (timelineSection) {
+        timelineSection.style.display = 'block';
+    }
+
+    const ctx = document.getElementById('timelineChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+
+    // Prepare data
+    const dataPoints = historicalTimeline.dataPoints;
+    const labels = dataPoints.map(dp => {
+        const date = new Date(dp.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const scores = dataPoints.map(dp => Math.round(dp.totalScore * 10));
+
+    // Create gradient
+    const canvas = ctx.getContext('2d');
+    const gradient = canvas.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(0, 185, 218, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 185, 218, 0.0)');
+
+    timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Score',
+                data: scores,
+                borderColor: '#7D41A5',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#7D41A5',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#f31c7e',
+                pointHoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.parsed.y}/1000`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1000,
+                    ticks: {
+                        stepSize: 200,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    console.log('📈 Timeline chart created with', dataPoints.length, 'data points');
+}
+
+// ============================================
+// RECOMMENDATION DELIVERY SYSTEM UI COMPONENTS
+// ============================================
+
+/**
+ * Display user mode indicator (Optimization vs Elite)
+ */
+function displayModeIndicator(userMode, currentScore) {
+    const container = document.createElement('div');
+    container.id = 'mode-indicator';
+    container.className = 'mb-6';
+
+    const isElite = userMode.current_mode === 'elite';
+    const modeColor = isElite ? 'from-purple-600 to-indigo-600' : 'from-blue-600 to-cyan-600';
+    const modeIcon = isElite ? '👑' : '🚀';
+    const modeTitle = isElite ? 'Elite Maintenance Mode' : 'Optimization Mode';
+    const modeDescription = isElite
+        ? 'You\'ve achieved elite status! Focus on maintaining your high score and staying ahead of competitors.'
+        : 'Keep improving! Reach 850+ to unlock Elite mode with competitive tracking.';
+
+    // Calculate progress to Elite mode (if in optimization)
+    let progressSection = '';
+    if (!isElite && currentScore) {
+        const progress = Math.min((currentScore / 850) * 100, 100);
+        const remaining = Math.max(850 - currentScore, 0);
+        progressSection = `
+            <div class="mt-4 pt-4 border-t border-white/20">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-white">Progress to Elite Mode</span>
+                    <span class="text-lg font-bold text-white">${Math.round(progress)}%</span>
+                </div>
+                <div class="w-full bg-white/20 rounded-full h-3 mb-2">
+                    <div class="bg-white h-3 rounded-full transition-all duration-500 shadow-lg" style="width: ${progress}%"></div>
+                </div>
+                ${remaining > 0 ? `
+                    <p class="text-sm text-white/90">
+                        <span class="font-semibold">${remaining}</span> points needed to reach Elite Mode (850+)
+                    </p>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="bg-gradient-to-r ${modeColor} text-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-4 flex-1">
+                        <span class="text-5xl" style="line-height: 1;">${modeIcon}</span>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-2">${modeTitle}</h3>
+                            <p class="text-white/90 text-base leading-relaxed">${modeDescription}</p>
+                        </div>
+                    </div>
+                    <div class="text-right bg-white/10 rounded-lg px-6 py-4 min-w-[140px]">
+                        <div class="text-4xl font-bold mb-1">${currentScore}</div>
+                        <div class="text-sm text-white/90 font-medium">Current Score</div>
+                    </div>
+                </div>
+                ${progressSection}
+            </div>
+        </div>
+    `;
+
+    // Insert after the scan header
+    const recCountEl = document.getElementById('recCount');
+    if (recCountEl && recCountEl.parentElement) {
+        recCountEl.parentElement.insertBefore(container, recCountEl);
+    }
+}
+
+/**
+ * Display notification center
+ */
+function displayNotificationCenter(notifications, unreadCount) {
+    const container = document.createElement('div');
+    container.id = 'notification-center';
+    container.className = 'mb-6';
+
+    if (notifications.length === 0) {
+        return; // Don't show if no notifications
+    }
+
+    const unreadBadge = unreadCount > 0
+        ? `<span class="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">${unreadCount}</span>`
+        : '';
+
+    const notificationItems = notifications.slice(0, 5).map(notif => {
+        const priorityColor = {
+            high: 'border-red-400 bg-red-50',
+            medium: 'border-yellow-400 bg-yellow-50',
+            low: 'border-blue-400 bg-blue-50'
+        }[notif.priority] || 'border-gray-300 bg-gray-50';
+
+        const isRead = notif.is_read;
+        const opacity = isRead ? 'opacity-60' : '';
+
+        return `
+            <div class="border-l-4 ${priorityColor} ${opacity} p-4 mb-3 rounded">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900">${notif.title}</h4>
+                        <p class="text-sm text-gray-700 mt-1">${notif.message}</p>
+                        <p class="text-xs text-gray-500 mt-2">${new Date(notif.created_at).toLocaleString()}</p>
+                    </div>
+                    ${!isRead ? `
+                        <button onclick="markNotificationRead(${notif.id})" class="ml-4 text-blue-600 hover:text-blue-800 text-sm">
+                            Mark Read
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="bg-white border-2 border-blue-200 rounded-lg p-6 shadow-md">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                    🔔 Notifications
+                    ${unreadBadge}
+                </h3>
+                <button onclick="toggleNotifications()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                    View All
+                </button>
+            </div>
+            <div id="notification-list" class="max-h-96 overflow-y-auto">
+                ${notificationItems}
+            </div>
+        </div>
+    `;
+
+    const modeIndicator = document.getElementById('mode-indicator');
+    if (modeIndicator) {
+        modeIndicator.after(container);
+    }
+}
+
+/**
+ * Display refresh cycle countdown
+ */
+function displayRefreshCycle(cycle) {
+    const container = document.createElement('div');
+    container.id = 'refresh-cycle';
+    container.className = 'mb-6';
+
+    const nextDate = new Date(cycle.next_cycle_date);
+    const now = new Date();
+    const daysRemaining = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+
+    container.innerHTML = `
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold text-gray-900">📅 Refresh Cycle ${cycle.cycle_number}</h4>
+                    <p class="text-sm text-gray-700 mt-1">
+                        ${cycle.implemented_count} implemented • ${cycle.skipped_count} skipped • ${cycle.auto_detected_count} auto-detected
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600">${daysRemaining}</div>
+                    <div class="text-xs text-gray-600">days until refresh</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const notifCenter = document.getElementById('notification-center');
+    const modeIndicator = document.getElementById('mode-indicator');
+    const insertAfter = notifCenter || modeIndicator;
+    if (insertAfter) {
+        insertAfter.after(container);
+    }
+}
+
+/**
+ * Display auto-detection confirmations
+ */
+function displayAutoDetections(detections) {
+    const container = document.createElement('div');
+    container.id = 'auto-detections';
+    container.className = 'mb-6';
+
+    const detectionItems = detections.map(detection => `
+        <div class="border-l-4 border-green-400 bg-green-50 p-4 mb-3 rounded">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">✅ ${detection.recommendation_text || 'Recommendation'}</h4>
+                    <p class="text-sm text-gray-700 mt-1">
+                        We detected this might be implemented. Confidence: ${detection.confidence_score}%
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">${new Date(detection.detected_at).toLocaleString()}</p>
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <button onclick="confirmDetection(${detection.id}, true)"
+                            class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                        Confirm
+                    </button>
+                    <button onclick="confirmDetection(${detection.id}, false)"
+                            class="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400">
+                        Not Yet
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="bg-white border-2 border-green-200 rounded-lg p-6 shadow-md">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">🎯 Implementation Detected</h3>
+            <div>${detectionItems}</div>
+        </div>
+    `;
+
+    const refreshCycle = document.getElementById('refresh-cycle');
+    const notifCenter = document.getElementById('notification-center');
+    const modeIndicator = document.getElementById('mode-indicator');
+    const insertAfter = refreshCycle || notifCenter || modeIndicator;
+    if (insertAfter) {
+        insertAfter.after(container);
+    }
+}
+
+/**
+ * Mark notification as read
+ */
+window.markNotificationRead = async function(notificationId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            location.reload(); // Refresh to update UI
+        }
+    } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+    }
+};
+
+/**
+ * Confirm auto-detection
+ */
+window.confirmDetection = async function(detectionId, confirmed) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/detection/${detectionId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ confirmed, feedback: null })
+        });
+
+        if (response.ok) {
+            showNotification(
+                confirmed ? 'Implementation confirmed!' : 'Detection dismissed',
+                confirmed ? 'success' : 'info'
+            );
+            setTimeout(() => location.reload(), 1500);
+        }
+    } catch (error) {
+        console.error('Failed to confirm detection:', error);
+    }
+};
+
+/**
+ * Toggle notifications view
+ */
+window.toggleNotifications = function() {
+    // You could implement a modal or expand/collapse here
+    alert('Full notification center coming soon!');
+};
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', loadScanResults);

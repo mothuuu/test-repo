@@ -2,7 +2,7 @@
 
 ## Required Environment Variables for Render Backend
 
-To ensure your backend works correctly with the frontend deployed at `https://aome.xeo.marketing/`, you need to configure the following environment variables in your Render dashboard.
+To ensure your backend works correctly with the frontend deployed at `https://www.visible2ai.com/`, you need to configure the following environment variables in your Render dashboard.
 
 ### Setting Environment Variables on Render
 
@@ -17,11 +17,11 @@ To ensure your backend works correctly with the frontend deployed at `https://ao
 **Description**: Comma-separated list of allowed frontend origins for CORS
 **Value**:
 ```
-https://aome.xeo.marketing,http://localhost:3000,http://localhost:8000
+https://www.visible2ai.com,http://localhost:3000,http://localhost:8000
 ```
 
 This allows the backend to accept requests from:
-- Production frontend: `https://aome.xeo.marketing`
+- Production frontend: `https://www.visible2ai.com`
 - Local development: `http://localhost:3000` and `http://localhost:8000`
 
 #### Other Important Variables
@@ -35,7 +35,7 @@ Make sure these are also configured (if not already):
 - `EMAIL_USER` - Email service username
 - `EMAIL_PASS` - Email service password
 - `NODE_ENV` - Set to `production`
-- `FRONTEND_URL` - Frontend URL (e.g., `https://aome.xeo.marketing`)
+- `FRONTEND_URL` - Frontend URL (e.g., `https://www.visible2ai.com`)
 
 #### Stripe Payment Variables (Required for Payments)
 

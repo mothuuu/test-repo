@@ -8,7 +8,9 @@ const { authenticateToken } = require('../middleware/auth');
 // Price IDs from your Stripe dashboard
 const PRICE_IDS = {
   diy: process.env.STRIPE_PRICE_DIY || 'price_diy_monthly',
-  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly'
+  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly',
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE || 'price_enterprise_monthly',
+  agency: process.env.STRIPE_PRICE_AGENCY || 'price_agency_monthly'
 };
 
 // Test endpoint to verify routes are loaded
@@ -36,7 +38,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Domain required' });
     }
 
-    if (!['diy', 'pro'].includes(plan)) {
+    if (!['diy', 'pro', 'enterprise', 'agency'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
@@ -202,9 +204,9 @@ async function handleSubscriptionChange(subscription) {
   console.log('🔄 Processing subscription change');
   console.log('Subscription ID:', subscription.id);
   console.log('Status:', subscription.status);
-  
+
   const customerId = subscription.customer;
-  
+
   const userResult = await db.query(
     'SELECT id, email FROM users WHERE stripe_customer_id = $1',
     [customerId]
@@ -218,12 +220,35 @@ async function handleSubscriptionChange(subscription) {
   const userId = userResult.rows[0].id;
   const userEmail = userResult.rows[0].email;
   const isActive = subscription.status === 'active';
-  const plan = isActive ? (subscription.metadata.plan || 'free') : 'free';
+
+  // Determine plan from price ID (handles upgrades/downgrades via Customer Portal)
+  let plan = 'free';
+  if (isActive && subscription.items && subscription.items.data && subscription.items.data.length > 0) {
+    const priceId = subscription.items.data[0].price.id;
+    console.log('📋 Price ID from subscription:', priceId);
+
+    // Match price ID to plan
+    if (priceId === PRICE_IDS.pro || priceId === process.env.STRIPE_PRICE_PRO) {
+      plan = 'pro';
+    } else if (priceId === PRICE_IDS.diy || priceId === process.env.STRIPE_PRICE_DIY) {
+      plan = 'diy';
+    } else if (priceId === PRICE_IDS.enterprise || priceId === process.env.STRIPE_PRICE_ENTERPRISE) {
+      plan = 'enterprise';
+    } else if (priceId === PRICE_IDS.agency || priceId === process.env.STRIPE_PRICE_AGENCY) {
+      plan = 'agency';
+    } else {
+      // Fallback to metadata if price ID doesn't match
+      plan = subscription.metadata.plan || 'free';
+      console.warn('⚠️ Unknown price ID, using metadata fallback:', plan);
+    }
+  }
+
+  console.log(`📊 Determined plan: ${plan} (active: ${isActive})`);
 
   try {
     const result = await db.query(
-      `UPDATE users 
-       SET plan = $1, 
+      `UPDATE users
+       SET plan = $1,
            stripe_subscription_id = $2,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
@@ -464,10 +489,14 @@ router.get('/portal', authenticateToken, async (req, res) => {
     console.log('✅ Found Stripe customer ID:', customerId);
 
     // Create Stripe Customer Portal session
+    // NOTE: To enable plan upgrades/downgrades in the portal:
+    // 1. Go to Stripe Dashboard > Settings > Billing > Customer Portal
+    // 2. Enable "Allow customers to switch plans"
+    // 3. Select which plans customers can switch to
     console.log('🔄 Creating portal session...');
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.FRONTEND_URL}/index.html`,
+      return_url: `${process.env.FRONTEND_URL}/dashboard.html`,
     });
 
     console.log('✅ Portal session created:', session.id);

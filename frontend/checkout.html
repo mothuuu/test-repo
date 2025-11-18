@@ -3,193 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upgrade Plan - AI Visibility Score</title>
+    <title>Choose Your Plan - AI Visibility Score</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .checkout-container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .plan-header {
+
+        :root {
+            --brand-cyan: #00B9DA;
+            --brand-pink: #f31c7e;
+            --brand-purple: #7030A0;
+            --complete-teal: #4DACA6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
             text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 3rem;
         }
-        
-        .plan-header h2 {
+
+        .header h1 {
             font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .plan-price {
-            font-size: 3rem;
-            font-weight: bold;
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 20px 0;
+            background-clip: text;
+            margin-bottom: 1rem;
         }
-        
-        .plan-price span {
+
+        .header p {
+            font-size: 1.25rem;
+            color: var(--gray-600);
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .plan-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .plan-card.featured {
+            border: 3px solid var(--brand-cyan);
+            transform: scale(1.05);
+        }
+
+        .plan-card.featured::before {
+            content: "MOST POPULAR";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .plan-name {
             font-size: 1.5rem;
-            color: #666;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
         }
-        
+
+        .plan-tagline {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price span {
+            font-size: 1.25rem;
+            color: var(--gray-500);
+        }
+
+        .plan-billing {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+
         .plan-features {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .plan-features h3 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 1.3rem;
-        }
-        
-        .plan-features ul {
             list-style: none;
-            padding: 0;
+            margin-bottom: 2rem;
+            flex: 1;
         }
-        
+
         .plan-features li {
-            padding: 12px 0;
-            color: #666;
-            font-size: 1.1rem;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 0.75rem 0;
+            color: var(--gray-700);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
-        
-        .plan-features li:last-child {
+
+        .plan-features li i {
+            color: var(--complete-teal);
+            font-size: 1.1rem;
+            margin-top: 0.1rem;
+        }
+
+        .plan-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+
+        .plan-btn-primary {
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            color: white;
+        }
+
+        .plan-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .plan-btn-secondary {
+            background: white;
+            color: var(--brand-cyan);
+            border: 2px solid var(--brand-cyan);
+        }
+
+        .plan-btn-secondary:hover {
+            background: var(--brand-cyan);
+            color: white;
+        }
+
+        .faq-section {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 3rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .faq-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .faq-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .faq-item:last-child {
             border-bottom: none;
         }
-        
-        .plan-features li:before {
-            content: "✓ ";
-            color: #4DACA6;
-            font-weight: bold;
-            margin-right: 10px;
-            font-size: 1.3rem;
-        }
-        
-        .form-section {
-            margin-bottom: 30px;
-        }
-        
-        .form-section h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+
+        .faq-question {
             font-weight: 600;
-            color: #333;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
         }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
+
+        .faq-answer {
+            color: var(--gray-600);
+            line-height: 1.6;
         }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #00B9DA;
-        }
-        
-        .form-group small {
-            display: block;
-            margin-top: 5px;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .checkout-btn {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #00B9DA 0%, #7030A0 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .checkout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(112, 48, 160, 0.3);
-        }
-        
-        .checkout-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .security-note {
-            text-align: center;
-            margin-top: 20px;
-            color: #999;
-            font-size: 0.9rem;
-        }
-        
-        .security-note svg {
-            display: inline;
-            margin-right: 5px;
-        }
-        
+
         .back-link {
             display: block;
             text-align: center;
-            margin-top: 20px;
-            color: #666;
+            margin-top: 2rem;
+            color: var(--gray-600);
             text-decoration: none;
+            font-weight: 600;
         }
-        
+
         .back-link:hover {
-            color: #00B9DA;
+            color: var(--brand-cyan);
         }
-        
-        .error-message {
-            padding: 12px;
-            background: #fee;
-            color: #c33;
-            border: 2px solid #fcc;
-            border-radius: 8px;
-            margin-bottom: 20px;
+
+        @media (max-width: 768px) {
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .plan-card.featured {
+                transform: scale(1);
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
             display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
-        
+
         .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #7030A0;
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--gray-200);
+            border-top: 4px solid var(--brand-cyan);
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
             animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 10px;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -197,60 +294,212 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header" style="padding-bottom: 20px;">
-            <h1>AI Visibility Score</h1>
-        </div>
-
-        <div class="checkout-container">
-            <div class="plan-header">
-                <h2 id="planName">DIY Plan</h2>
-                <div class="plan-price">
-                    $<span id="planPrice">29</span><span>/month</span>
-                </div>
-                <p style="color: #666; font-size: 1.1rem;">
-                    Cancel anytime • Secure payment via Stripe
-                </p>
-            </div>
-            
-            <div class="plan-features">
-                <h3>What's Included:</h3>
-                <ul id="planFeaturesList">
-                    <!-- Will be populated by JavaScript -->
-                </ul>
-            </div>
-            
-            <div id="errorMessage" class="error-message"></div>
-            
-            <form id="checkoutForm">
-                <div class="form-section">
-                    <h3>Domain to Analyze</h3>
-                    <div class="form-group">
-                        <label>Website URL</label>
-                        <input 
-                            type="text" 
-                            id="domain" 
-                            required 
-                            placeholder="example.com or https://example.com"
-                        >
-                        <small>Enter the domain you want to analyze for AI visibility</small>
-                    </div>
-                </div>
-                
-                <button type="submit" class="checkout-btn" id="checkoutBtn">
-                    Continue to Payment
-                </button>
-            </form>
-            
-            <div class="security-note">
-                🔒 Secure checkout powered by Stripe • Your payment info is never stored on our servers
-            </div>
-
-            <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
-        </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
     </div>
-    
-    <script src="checkout.js" defer></script>
+
+    <div class="container">
+        <div class="header">
+            <h1>Choose Your Plan</h1>
+            <p>Select the plan that best fits your AI visibility needs</p>
+        </div>
+
+        <div class="plans-grid">
+            <!-- DIY Plan -->
+            <div class="plan-card">
+                <div class="plan-name">DIY</div>
+                <div class="plan-tagline">Perfect for getting started</div>
+                <div class="plan-price">$29<span>/mo</span></div>
+                <div class="plan-billing">Billed monthly • Cancel anytime</div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check-circle"></i><span>10 scans per month</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Homepage + 4 pages (5 total)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Page-level TODO lists</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Progress tracking</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Basic JSON-LD export</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Combined recommendations</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Email support</span></li>
+                </ul>
+                <button class="plan-btn plan-btn-secondary" onclick="selectPlan('diy')">
+                    Get Started
+                </button>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="plan-card featured">
+                <div class="plan-name">Pro</div>
+                <div class="plan-tagline">Most popular for businesses</div>
+                <div class="plan-price">$99<span>/mo</span></div>
+                <div class="plan-billing">Billed monthly • Cancel anytime</div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check-circle"></i><span>50 scans per month</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Up to 25 pages per scan</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Brand Visibility Index</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Competitor benchmarking (3 domains)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Outside-in crawl (PR, reviews, social)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Advanced JSON-LD pack</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Knowledge Graph fields</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Live dashboard & analytics</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>PDF export</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Priority email support</span></li>
+                </ul>
+                <button class="plan-btn plan-btn-primary" onclick="selectPlan('pro')">
+                    Get Started
+                </button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="plan-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-tagline">For growing companies</div>
+                <div class="plan-price">$249<span>/mo</span></div>
+                <div class="plan-billing">Billed monthly • Cancel anytime</div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check-circle"></i><span>200 scans per month</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Track 100 pages per domain</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Monitor 10 competitors</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Media & social monitoring</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Thought leadership tracking</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>White-label reports</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>API access</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Team members (up to 5)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Dedicated account manager</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Priority phone support</span></li>
+                </ul>
+                <button class="plan-btn plan-btn-secondary" onclick="selectPlan('enterprise')">
+                    Get Started
+                </button>
+            </div>
+
+            <!-- Agency Plan -->
+            <div class="plan-card">
+                <div class="plan-name">Agency</div>
+                <div class="plan-tagline">For agencies & resellers</div>
+                <div class="plan-price">$499<span>/mo</span></div>
+                <div class="plan-billing">Billed monthly • Cancel anytime</div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check-circle"></i><span>Unlimited scans</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Unlimited pages tracked</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Unlimited competitors</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Multi-client dashboard</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>White-label everything</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Custom branding</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Full API access</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Team members (unlimited)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Reseller pricing</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Dedicated support team</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Custom integrations</span></li>
+                </ul>
+                <button class="plan-btn plan-btn-secondary" onclick="selectPlan('agency')">
+                    Get Started
+                </button>
+            </div>
+        </div>
+
+        <div class="faq-section">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">Can I change plans later?</div>
+                <div class="faq-answer">Yes! You can upgrade or downgrade your plan at any time through the Stripe Customer Portal. Changes take effect immediately and you'll be charged or credited on a prorated basis.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What payment methods do you accept?</div>
+                <div class="faq-answer">We accept all major credit cards (Visa, Mastercard, American Express, Discover) through our secure payment processor, Stripe.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is there a free trial?</div>
+                <div class="faq-answer">Yes! All new users start with a Free plan that includes 2 scans per month. You can upgrade to a paid plan at any time.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Can I cancel anytime?</div>
+                <div class="faq-answer">Absolutely! There are no long-term contracts. You can cancel your subscription at any time through the Stripe Customer Portal, and you'll retain access until the end of your billing period.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Do you offer annual billing?</div>
+                <div class="faq-answer">Not yet, but we're planning to add annual billing options with discounts in the future. Stay tuned!</div>
+            </div>
+        </div>
+
+        <a href="dashboard.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : 'https://ai-visibility-tool.onrender.com/api';
+
+        async function selectPlan(planName) {
+            const authToken = localStorage.getItem('authToken');
+
+            if (!authToken) {
+                window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            // Get or prompt for domain
+            let domain = localStorage.getItem('primaryDomain') || prompt('Enter your website domain (e.g., example.com):');
+
+            if (!domain) {
+                alert('Domain is required to continue with checkout');
+                return;
+            }
+
+            // Clean up domain
+            domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+
+            try {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                const response = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        plan: planName,
+                        domain: domain
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create checkout session');
+                }
+
+                // Redirect to Stripe Checkout
+                window.location.href = data.url;
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                console.error('Checkout error:', error);
+                alert('Failed to start checkout: ' + error.message);
+            }
+        }
+
+        // Check if redirected from unauthenticated state
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan');
+
+            if (plan) {
+                // Auto-select plan if specified in URL
+                const authToken = localStorage.getItem('authToken');
+                if (authToken) {
+                    selectPlan(plan);
+                }
+            }
+        });
+    </script>
 
     <!-- AI Support Chat Widget -->
     <script src="support-chat.js"></script>

@@ -39,9 +39,16 @@ class SiteCrawler {
       // Get URLs to crawl
       const urlsToCrawl = await this.getUrlsToCrawl();
       console.log(`[Crawler] Found ${urlsToCrawl.length} URLs to analyze`);
+      console.log(`[Crawler] URLs discovered from sitemap/links:`);
+      urlsToCrawl.forEach((url, idx) => {
+        console.log(`[Crawler]   ${idx + 1}. ${url}`);
+      });
 
       // Crawl each URL
-      for (const url of urlsToCrawl.slice(0, this.options.maxPages)) {
+      const urlsToActuallyCrawl = urlsToCrawl.slice(0, this.options.maxPages);
+      console.log(`[Crawler] Will crawl ${urlsToActuallyCrawl.length} pages (maxPages: ${this.options.maxPages})`);
+
+      for (const url of urlsToActuallyCrawl) {
         try {
           await this.crawlPage(url);
         } catch (error) {
@@ -70,13 +77,24 @@ class SiteCrawler {
     urls.add(this.baseUrl);
 
     // Try to get URLs from sitemap
+    let sitemapDetected = false;
     if (this.options.includeSitemap) {
       const sitemapUrls = await this.fetchSitemapUrls();
-      sitemapUrls.forEach(url => urls.add(url));
+      if (sitemapUrls.length > 0) {
+        sitemapDetected = true;
+        sitemapUrls.forEach(url => urls.add(url));
+        console.log(`[Crawler] ✓ Sitemap detected with ${sitemapUrls.length} URLs`);
+      } else {
+        console.log(`[Crawler] ✗ No sitemap found, will use internal link crawling`);
+      }
     }
+
+    // Store sitemap status for reporting
+    this.sitemapDetected = sitemapDetected;
 
     // If we don't have enough URLs, crawl the base page for internal links
     if (urls.size < this.options.maxPages && this.options.includeInternalLinks) {
+      console.log(`[Crawler] Supplementing with internal links (current: ${urls.size}, target: ${this.options.maxPages})`);
       const internalLinks = await this.fetchInternalLinks(this.baseUrl);
       internalLinks.forEach(url => urls.add(url));
     }
@@ -88,36 +106,90 @@ class SiteCrawler {
       console.log(`[Crawler] Filtered out ${urls.size - filteredUrls.length} XML files from crawl list`);
     }
 
-    return filteredUrls;
+    // CRITICAL FIX: Prioritize and sort URLs deterministically
+    // This ensures consistent page selection across scans
+    const prioritizedUrls = this.prioritizeUrls(filteredUrls);
+
+    console.log(`[Crawler] Final URL list (top ${Math.min(this.options.maxPages, prioritizedUrls.length)} of ${prioritizedUrls.length}):`);
+    prioritizedUrls.slice(0, this.options.maxPages).forEach((url, idx) => {
+      console.log(`  ${idx + 1}. ${url}`);
+    });
+
+    return prioritizedUrls;
   }
 
   /**
-   * Fetch URLs from sitemap.xml
+   * Fetch URLs from sitemap.xml (tries multiple common sitemap locations)
    */
   async fetchSitemapUrls() {
     const sitemapUrls = [];
     const urlObj = new URL(this.baseUrl);
-    const sitemapUrl = `${urlObj.protocol}//${urlObj.host}/sitemap.xml`;
+
+    // Try multiple common sitemap locations (WordPress, Yoast, RankMath, etc.)
+    const sitemapLocations = [
+      'sitemap.xml',
+      'sitemap_index.xml',
+      'sitemap-index.xml',
+      'wp-sitemap.xml',
+      'sitemap1.xml'
+    ];
+
+    let foundSitemap = null;
+    let lastError = null;
+
+    // Try each location until we find one
+    for (const location of sitemapLocations) {
+      const sitemapUrl = `${urlObj.protocol}//${urlObj.host}/${location}`;
+
+      try {
+        console.log(`[Crawler] Trying sitemap: ${sitemapUrl}`);
+
+        // Add cache-busting query parameter to get fresh sitemap
+        const cacheBustUrl = sitemapUrl.includes('?')
+          ? `${sitemapUrl}&_cb=${Date.now()}`
+          : `${sitemapUrl}?_cb=${Date.now()}`;
+
+        const response = await axios.get(cacheBustUrl, {
+          timeout: this.options.timeout,
+          headers: {
+            'User-Agent': this.options.userAgent,
+            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        // Success! Found a sitemap
+        foundSitemap = { url: sitemapUrl, location: location, data: response.data };
+        console.log(`[Crawler] ✓ Found sitemap at: ${location}`);
+        this.detectedSitemapLocation = location;  // Store for reporting
+        break;
+
+      } catch (error) {
+        lastError = error;
+        if (error.response && error.response.status === 404) {
+          console.log(`[Crawler]   Not found: ${location}`);
+        } else {
+          console.log(`[Crawler]   Error: ${error.message}`);
+        }
+        // Continue to next location
+      }
+    }
+
+    // If no sitemap found at any location
+    if (!foundSitemap) {
+      if (lastError && lastError.response && lastError.response.status === 404) {
+        console.warn(`[Crawler] ✗ No sitemap found at any common location`);
+        console.warn(`[Crawler]   Tried: ${sitemapLocations.join(', ')}`);
+        console.warn(`[Crawler]   Tip: Create a sitemap.xml file at your domain root to improve crawl coverage`);
+      } else {
+        console.warn(`[Crawler] ✗ Could not fetch sitemap: ${lastError?.message || 'Unknown error'}`);
+      }
+      return [];
+    }
 
     try {
-      console.log(`[Crawler] Fetching sitemap: ${sitemapUrl}`);
-
-      // Add cache-busting query parameter to get fresh sitemap
-      const cacheBustUrl = sitemapUrl.includes('?')
-        ? `${sitemapUrl}&_cb=${Date.now()}`
-        : `${sitemapUrl}?_cb=${Date.now()}`;
-
-      const response = await axios.get(cacheBustUrl, {
-        timeout: this.options.timeout,
-        headers: {
-          'User-Agent': this.options.userAgent,
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-
-      const xml = response.data;
+      const xml = foundSitemap.data;
 
       // Check if this is a sitemap index (WordPress style with nested sitemaps)
       if (xml.includes('<sitemapindex')) {
@@ -164,7 +236,7 @@ class SiteCrawler {
       return this.prioritizeUrls(sitemapUrls);
 
     } catch (error) {
-      console.warn(`[Crawler] Could not fetch sitemap:`, error.message);
+      console.warn(`[Crawler] ✗ Error parsing sitemap: ${error.message}`);
       return [];
     }
   }
@@ -311,6 +383,17 @@ class SiteCrawler {
       const extractor = new ContentExtractor(url, this.options);
       const evidence = await extractor.extract();
 
+      // Log FAQ extraction results for this page
+      const faqCount = evidence.content?.faqs?.length || 0;
+      if (faqCount > 0) {
+        console.log(`[Crawler] ✓ Found ${faqCount} FAQs on ${url}`);
+        evidence.content.faqs.forEach((faq, idx) => {
+          console.log(`[Crawler]     FAQ ${idx + 1}: ${faq.question.substring(0, 80)}...`);
+        });
+      } else {
+        console.log(`[Crawler] ✗ No FAQs found on ${url}`);
+      }
+
       this.pageEvidences.push({
         url,
         evidence,
@@ -336,6 +419,8 @@ class SiteCrawler {
       siteUrl: this.baseUrl,
       pageCount: this.pageEvidences.length,
       pages: this.pageEvidences,
+      sitemapDetected: this.sitemapDetected || false,
+      sitemapLocation: this.detectedSitemapLocation || null,  // Which sitemap file was found
 
       // Site-wide metrics for scoring
       siteMetrics: {

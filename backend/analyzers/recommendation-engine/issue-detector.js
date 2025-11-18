@@ -81,7 +81,10 @@ const ISSUE_THRESHOLDS = {
   // Trust & Authority (12%)
   trustAuthority: {
     authorBiosScore: 60,                 // Below 60/100 = missing author info
-    certificationsScore: 55,             // Below 55/100 = no certifications
+    certificationsScore: 55,             // Below 55/100 = no certifications (legacy)
+    professionalCertifications: 55,      // Below 55/100 = missing industry certifications
+    teamCredentials: 45,                 // Below 45/100 = team lacks documented credentials
+    industryMemberships: 40,             // Below 40/100 = no industry associations shown
     domainAuthorityScore: 60,            // Below 60/100 = low authority
     thoughtLeadershipScore: 60,          // Below 60/100 = weak thought leadership
     thirdPartyProfilesScore: 55          // Below 55/100 = no social proof
