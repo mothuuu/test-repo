@@ -702,11 +702,69 @@ function dismiss(id) {
 let currentSkipRecommendation = null;
 let currentCompleteRecommendation = null;
 
+// Helper function to calculate days between two dates
+function daysSince(dateString) {
+    if (!dateString) return null;
+    const startDate = new Date(dateString);
+    const today = new Date();
+    const diffTime = today - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+// Function to check if a recommendation can be skipped
+function canSkipRecommendation(rec) {
+    // If recommendation is not started yet, it can always be skipped
+    if (rec.status === 'not-started') {
+        return { canSkip: true };
+    }
+
+    // If recommendation is in progress, check 5-day waiting period
+    if (rec.status === 'in-progress' && rec.startedDate) {
+        const days = daysSince(rec.startedDate);
+        const daysRemaining = 5 - days;
+
+        if (daysRemaining > 0) {
+            // Calculate the date when skip will be available
+            const availableDate = new Date(rec.startedDate);
+            availableDate.setDate(availableDate.getDate() + 5);
+
+            return {
+                canSkip: false,
+                daysRemaining: daysRemaining,
+                availableDate: availableDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            };
+        }
+    }
+
+    return { canSkip: true };
+}
+
 function openSkipModal(recommendationId, title, impact) {
+    const rec = recommendations.find(r => r.id === recommendationId);
+    if (!rec) return;
+
+    const skipCheck = canSkipRecommendation(rec);
+
+    if (!skipCheck.canSkip) {
+        // Show "cannot skip yet" modal
+        document.getElementById('cannot-skip-modal-title').textContent = title;
+        const daysText = skipCheck.daysRemaining === 1 ? '1 day' : `${skipCheck.daysRemaining} days`;
+        document.getElementById('days-remaining').textContent = daysText;
+        document.getElementById('skip-available-date').textContent = skipCheck.availableDate;
+        document.getElementById('cannot-skip-modal').style.display = 'flex';
+        return;
+    }
+
+    // Show regular skip modal
     currentSkipRecommendation = recommendationId;
     document.getElementById('skip-modal-title').textContent = title;
     document.getElementById('skip-modal-impact').textContent = impact;
     document.getElementById('skip-modal').style.display = 'flex';
+}
+
+function closeCannotSkipModal() {
+    document.getElementById('cannot-skip-modal').style.display = 'none';
 }
 
 function closeSkipModal() {
