@@ -285,43 +285,87 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
   // Set next replacement date (5 days from now)
   const nextReplacementDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
 
-  await db.query(
-    `INSERT INTO user_progress (
-      user_id, scan_id,
-      total_recommendations, active_recommendations,
-      completed_recommendations, verified_recommendations,
-      current_batch, last_unlock_date, unlocks_today,
-      site_wide_total, site_wide_completed, site_wide_active,
-      page_specific_total, page_specific_completed,
-      site_wide_complete,
-      batch_1_unlock_date, batch_2_unlock_date,
-      batch_3_unlock_date, batch_4_unlock_date,
-      total_batches,
-      next_replacement_date, target_active_count
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
-    [
-      userId,
-      scanId,
-      totalRecs, // Total
-      totalActiveRecs, // Active (site-wide + page-specific)
-      0, // Completed
-      0, // Verified
-      1, // Current batch
-      limitedSiteWide.length, // Site-wide total
-      0, // Site-wide completed
-      siteWideActive, // Site-wide active
-      pageSpecificTotal, // Page-specific total
-      0, // Page-specific completed
-      false, // Site-wide not complete yet
-      batch1Date, // Batch 1 unlock date (now)
-      totalBatches >= 2 ? batch2Date : null, // Batch 2 unlock date
-      totalBatches >= 3 ? batch3Date : null, // Batch 3 unlock date
-      totalBatches >= 4 ? batch4Date : null, // Batch 4 unlock date
-      totalBatches, // Total number of batches
-      nextReplacementDate, // Next replacement date (+5 days)
-      5 // Target active count (always 5 for DIY)
-    ]
-  );
+  // Try to insert with new columns, fall back to old schema if migration not run
+  try {
+    await db.query(
+      `INSERT INTO user_progress (
+        user_id, scan_id,
+        total_recommendations, active_recommendations,
+        completed_recommendations, verified_recommendations,
+        current_batch, last_unlock_date, unlocks_today,
+        site_wide_total, site_wide_completed, site_wide_active,
+        page_specific_total, page_specific_completed,
+        site_wide_complete,
+        batch_1_unlock_date, batch_2_unlock_date,
+        batch_3_unlock_date, batch_4_unlock_date,
+        total_batches,
+        next_replacement_date, target_active_count
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+      [
+        userId,
+        scanId,
+        totalRecs, // Total
+        totalActiveRecs, // Active (site-wide + page-specific)
+        0, // Completed
+        0, // Verified
+        1, // Current batch
+        limitedSiteWide.length, // Site-wide total
+        0, // Site-wide completed
+        siteWideActive, // Site-wide active
+        pageSpecificTotal, // Page-specific total
+        0, // Page-specific completed
+        false, // Site-wide not complete yet
+        batch1Date, // Batch 1 unlock date (now)
+        totalBatches >= 2 ? batch2Date : null, // Batch 2 unlock date
+        totalBatches >= 3 ? batch3Date : null, // Batch 3 unlock date
+        totalBatches >= 4 ? batch4Date : null, // Batch 4 unlock date
+        totalBatches, // Total number of batches
+        nextReplacementDate, // Next replacement date (+5 days)
+        5 // Target active count (always 5 for DIY)
+      ]
+    );
+  } catch (insertError) {
+    // If new columns don't exist (migration not run), use old schema
+    if (insertError.code === '42703') { // Column does not exist
+      console.log('   ⚠️  Using legacy user_progress schema (migration not run)');
+      await db.query(
+        `INSERT INTO user_progress (
+          user_id, scan_id,
+          total_recommendations, active_recommendations,
+          completed_recommendations, verified_recommendations,
+          current_batch, last_unlock_date, unlocks_today,
+          site_wide_total, site_wide_completed, site_wide_active,
+          page_specific_total, page_specific_completed,
+          site_wide_complete,
+          batch_1_unlock_date, batch_2_unlock_date,
+          batch_3_unlock_date, batch_4_unlock_date,
+          total_batches
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [
+          userId,
+          scanId,
+          totalRecs,
+          totalActiveRecs,
+          0, // Completed
+          0, // Verified
+          1, // Current batch
+          limitedSiteWide.length,
+          0, // Site-wide completed
+          siteWideActive,
+          pageSpecificTotal,
+          0, // Page-specific completed
+          false,
+          batch1Date,
+          totalBatches >= 2 ? batch2Date : null,
+          totalBatches >= 3 ? batch3Date : null,
+          totalBatches >= 4 ? batch4Date : null,
+          totalBatches
+        ]
+      );
+    } else {
+      throw insertError; // Re-throw other errors
+    }
+  }
 
   console.log(`   ✅ Progress tracking initialized with ${totalBatches} batch${totalBatches > 1 ? 'es' : ''}`);
   console.log(`   📊 Recommendations saved:`);
