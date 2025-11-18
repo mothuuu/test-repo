@@ -128,7 +128,9 @@ const recommendations = [
         status: "not-started",
         priority: "medium",
         impact: 12,
-        estimatedTime: "40 minutes"
+        estimatedTime: "40 minutes",
+        // Example: User clicked Skip 2 days ago
+        firstSkipAttempt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
     {
         id: 9,
@@ -167,7 +169,9 @@ const recommendations = [
         status: "not-started",
         priority: "low",
         impact: 8,
-        estimatedTime: "15 minutes"
+        estimatedTime: "15 minutes",
+        // Example: User clicked Skip 6 days ago - should be able to skip now
+        firstSkipAttempt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
     {
         id: 12,
@@ -714,29 +718,34 @@ function daysSince(dateString) {
 
 // Function to check if a recommendation can be skipped
 function canSkipRecommendation(rec) {
-    // If recommendation is not started yet, it can always be skipped
-    if (rec.status === 'not-started') {
-        return { canSkip: true };
+    // Check if user has clicked skip before - use firstSkipAttempt date
+    // If not, we'll set it when they click Skip for the first time
+    if (!rec.firstSkipAttempt) {
+        // First time clicking Skip - start the 5-day countdown
+        return {
+            canSkip: false,
+            daysRemaining: 5,
+            isFirstAttempt: true
+        };
     }
 
-    // If recommendation is in progress, check 5-day waiting period
-    if (rec.status === 'in-progress' && rec.startedDate) {
-        const days = daysSince(rec.startedDate);
-        const daysRemaining = 5 - days;
+    // User has clicked Skip before, check how many days have passed
+    const days = daysSince(rec.firstSkipAttempt);
+    const daysRemaining = 5 - days;
 
-        if (daysRemaining > 0) {
-            // Calculate the date when skip will be available
-            const availableDate = new Date(rec.startedDate);
-            availableDate.setDate(availableDate.getDate() + 5);
+    if (daysRemaining > 0) {
+        // Still need to wait more days
+        const availableDate = new Date(rec.firstSkipAttempt);
+        availableDate.setDate(availableDate.getDate() + 5);
 
-            return {
-                canSkip: false,
-                daysRemaining: daysRemaining,
-                availableDate: availableDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-            };
-        }
+        return {
+            canSkip: false,
+            daysRemaining: daysRemaining,
+            availableDate: availableDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        };
     }
 
+    // 5 days have passed, user can now skip
     return { canSkip: true };
 }
 
@@ -744,19 +753,34 @@ function openSkipModal(recommendationId, title, impact) {
     const rec = recommendations.find(r => r.id === recommendationId);
     if (!rec) return;
 
+    // Set firstSkipAttempt if this is the first time user clicks Skip
+    if (!rec.firstSkipAttempt) {
+        rec.firstSkipAttempt = new Date().toISOString().split('T')[0]; // Store as YYYY-MM-DD
+    }
+
     const skipCheck = canSkipRecommendation(rec);
 
     if (!skipCheck.canSkip) {
-        // Show "cannot skip yet" modal
+        // Show "cannot skip yet" modal with countdown
         document.getElementById('cannot-skip-modal-title').textContent = title;
         const daysText = skipCheck.daysRemaining === 1 ? '1 day' : `${skipCheck.daysRemaining} days`;
         document.getElementById('days-remaining').textContent = daysText;
-        document.getElementById('skip-available-date').textContent = skipCheck.availableDate;
+
+        // Calculate and show the available date if not first attempt
+        if (!skipCheck.isFirstAttempt && skipCheck.availableDate) {
+            document.getElementById('skip-available-date').textContent = skipCheck.availableDate;
+        } else {
+            // First attempt - calculate date
+            const availableDate = new Date();
+            availableDate.setDate(availableDate.getDate() + 5);
+            document.getElementById('skip-available-date').textContent = availableDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
         document.getElementById('cannot-skip-modal').style.display = 'flex';
         return;
     }
 
-    // Show regular skip modal
+    // 5 days have passed - show regular skip modal
     currentSkipRecommendation = recommendationId;
     document.getElementById('skip-modal-title').textContent = title;
     document.getElementById('skip-modal-impact').textContent = impact;

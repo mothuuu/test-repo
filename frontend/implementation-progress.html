@@ -596,6 +596,205 @@
             z-index: 1000;
         }
 
+        .xeo-modal {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .xeo-modal-header {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .xeo-modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .xeo-modal-body {
+            padding: 2rem;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+
+        .modal-item-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-item-info h4 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .modal-impact {
+            color: var(--gray-600);
+            margin: 0;
+        }
+
+        .modal-impact span {
+            font-weight: 700;
+            color: var(--purple);
+        }
+
+        .modal-description {
+            color: var(--gray-700);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(125, 65, 165, 0.05);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-label span {
+            color: var(--gray-700);
+        }
+
+        .modal-textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+
+        .modal-textarea:focus {
+            outline: none;
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(125, 65, 165, 0.1);
+        }
+
+        .reminder-options {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .reminder-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--gray-300);
+            background: var(--white);
+            color: var(--gray-700);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reminder-btn:hover {
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+
+        .reminder-btn.active {
+            background: var(--purple);
+            color: var(--white);
+            border-color: var(--purple);
+        }
+
+        .reminder-preview {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .xeo-modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 2px solid var(--gray-200);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(125, 65, 165, 0.4);
+            transform: translateY(-2px);
+        }
+
         .modal-content {
             background: white;
             border-radius: 12px;
@@ -1014,7 +1213,7 @@
     <div id="cannot-skip-modal" class="xeo-modal-overlay" style="display: none;">
         <div class="xeo-modal">
             <div class="xeo-modal-header">
-                <h3>⏸️ Cannot Skip Yet</h3>
+                <h3>⏸️ Skip This Recommendation</h3>
                 <button class="modal-close" onclick="closeCannotSkipModal()">×</button>
             </div>
 
@@ -1025,27 +1224,27 @@
 
                 <div class="modal-section">
                     <p style="color: var(--gray-700); line-height: 1.6; margin-bottom: 1rem;">
-                        To ensure you give recommendations a fair try before skipping them, you must wait <strong>5 days</strong> after starting work on a recommendation before you can skip it.
+                        To ensure you give recommendations a fair try before skipping them, you must wait <strong>5 days</strong> after clicking the Skip button before you can skip it.
                     </p>
                     <div id="skip-countdown" style="background: linear-gradient(135deg, rgba(125, 65, 165, 0.1), rgba(236, 72, 153, 0.1)); padding: 1.5rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--purple); margin-bottom: 0.5rem;" id="days-remaining">3 days</div>
-                        <div style="color: var(--gray-600); font-size: 0.875rem;">until you can skip this recommendation</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--purple); margin-bottom: 0.5rem;" id="days-remaining">5 days</div>
+                        <div style="color: var(--gray-600); font-size: 0.875rem;" id="skip-countdown-message">until you can skip this recommendation</div>
                         <div style="margin-top: 1rem; color: var(--gray-500); font-size: 0.875rem;">
-                            Available to skip on: <strong id="skip-available-date" style="color: var(--gray-700);">May 23, 2025</strong>
+                            Available to skip on: <strong id="skip-available-date" style="color: var(--gray-700);">---</strong>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-alert" style="background: rgba(59, 130, 246, 0.1); border-color: #3b82f6;">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <div class="modal-alert" style="background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; padding: 1rem; border-radius: 8px; display: flex; gap: 0.75rem; align-items: start; margin-bottom: 1rem;">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="flex-shrink: 0; color: #3b82f6;">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
-                    <p><strong>Tip:</strong> Use this time to make progress! You can add progress notes and track your work. If you're truly stuck, you'll be able to skip after the waiting period.</p>
+                    <p style="margin: 0; color: var(--gray-700);"><strong>Tip:</strong> Use this time to give it a try! If you're truly stuck after 5 days, you'll be able to skip this recommendation.</p>
                 </div>
             </div>
 
             <div class="xeo-modal-footer">
-                <button class="btn-primary" onclick="closeCannotSkipModal()">Got It</button>
+                <button class="btn-primary" onclick="closeCannotSkipModal()" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Got It</button>
             </div>
         </div>
     </div>
