@@ -1476,6 +1476,231 @@ function showConfirmModal(title, message) {
     });
 }
 
+// Show detailed "Mark as Implemented" modal
+function showImplementedModal() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px;';
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 35px; border-radius: 12px; max-width: 550px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: auto;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <span style="font-size: 32px;">✅</span>
+                    <h3 style="font-size: 24px; font-weight: 700; color: #2d3748; margin: 0;">Mark as Complete</h3>
+                </div>
+
+                <p style="color: #4a5568; margin-bottom: 25px; line-height: 1.6;">
+                    Congratulations on implementing this recommendation! Please confirm the following to track your progress:
+                </p>
+
+                <div style="margin-bottom: 25px;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" id="implCheckbox" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 600; flex: 1;">I have implemented this recommendation</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" id="testedCheckbox" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 600; flex: 1;">I have tested the implementation</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" id="validatedCheckbox" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 600; flex: 1;">I have validated the results</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                        Implementation Notes (Optional)
+                    </label>
+                    <textarea id="implNotes" placeholder="Share details about your implementation, challenges faced, or results observed..."
+                        style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px; color: #2d3748; resize: vertical; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#00B9DA'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="cancelBtn" style="padding: 12px 24px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='white'">
+                        Cancel
+                    </button>
+                    <button id="confirmBtn" style="padding: 12px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        Mark as Complete
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const implCheckbox = modal.querySelector('#implCheckbox');
+        const testedCheckbox = modal.querySelector('#testedCheckbox');
+        const validatedCheckbox = modal.querySelector('#validatedCheckbox');
+        const implNotes = modal.querySelector('#implNotes');
+        const confirmBtn = modal.querySelector('#confirmBtn');
+        const cancelBtn = modal.querySelector('#cancelBtn');
+
+        confirmBtn.onclick = () => {
+            if (!implCheckbox.checked) {
+                showNotification('Please confirm that you have implemented the recommendation.', 'warning');
+                return;
+            }
+
+            const data = {
+                implemented: implCheckbox.checked,
+                tested: testedCheckbox.checked,
+                validated: validatedCheckbox.checked,
+                notes: implNotes.value.trim()
+            };
+            modal.remove();
+            resolve(data);
+        };
+
+        cancelBtn.onclick = () => {
+            modal.remove();
+            resolve(null);
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        };
+    });
+}
+
+// Show detailed "Skip Recommendation" modal
+function showSkipModal() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px;';
+
+        modal.innerHTML = `
+            <div style="background: white; padding: 35px; border-radius: 12px; max-width: 550px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: auto;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <span style="font-size: 32px;">⏸️</span>
+                    <h3 style="font-size: 24px; font-weight: 700; color: #2d3748; margin: 0;">Skip Recommendation</h3>
+                </div>
+
+                <p style="color: #4a5568; margin-bottom: 25px; line-height: 1.6;">
+                    This recommendation will be moved to your "Skipped" tab. Please help us understand why:
+                </p>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 12px;">
+                        Reason for Skipping
+                    </label>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="not_relevant" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Not relevant to my business</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="already_done" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Already implemented</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="too_complex" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Too complex to implement now</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="resource_constraints" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Lack of resources/budget</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="low_priority" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Low priority for now</span>
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #f7fafc; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">
+                            <input type="checkbox" class="skip-reason" value="other" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: #2d3748; font-weight: 500; flex: 1;">Other reason</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                        Additional Notes (Optional)
+                    </label>
+                    <textarea id="skipNotes" placeholder="Add any additional context or plans for future implementation..."
+                        style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px; color: #2d3748; resize: vertical; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#00B9DA'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+                </div>
+
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+                        <strong>Note:</strong> Skipped recommendations will appear in your "Skipped" tab and won't count toward your active recommendations.
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="cancelBtn" style="padding: 12px 24px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='white'">
+                        Cancel
+                    </button>
+                    <button id="confirmBtn" style="padding: 12px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(100, 116, 139, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        Skip Recommendation
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const reasonCheckboxes = modal.querySelectorAll('.skip-reason');
+        const skipNotes = modal.querySelector('#skipNotes');
+        const confirmBtn = modal.querySelector('#confirmBtn');
+        const cancelBtn = modal.querySelector('#cancelBtn');
+
+        confirmBtn.onclick = () => {
+            const selectedReasons = Array.from(reasonCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (selectedReasons.length === 0) {
+                showNotification('Please select at least one reason for skipping.', 'warning');
+                return;
+            }
+
+            const data = {
+                reasons: selectedReasons,
+                notes: skipNotes.value.trim()
+            };
+            modal.remove();
+            resolve(data);
+        };
+
+        cancelBtn.onclick = () => {
+            modal.remove();
+            resolve(null);
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        };
+    });
+}
+
 // Make functions globally accessible
 window.copyCode = copyCode;
 window.copySchemaCode = copySchemaCode;
@@ -1488,13 +1713,11 @@ window.markImplemented = async function(recId) {
         return;
     }
 
-    const confirmed = await showConfirmModal(
-        'Mark as Implemented',
-        'Mark this recommendation as implemented? This will help track your progress and improve future recommendations.'
-    );
+    // Show detailed implementation modal
+    const implementationData = await showImplementedModal();
 
-    if (!confirmed) {
-        return;
+    if (!implementationData) {
+        return; // User cancelled
     }
 
     try {
@@ -1505,7 +1728,8 @@ window.markImplemented = async function(recId) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                status: 'implemented'
+                status: 'implemented',
+                feedback: JSON.stringify(implementationData)
             })
         });
 
@@ -1532,21 +1756,23 @@ window.skipRecommendation = async function(recId) {
         return;
     }
 
-    const confirmed = await showConfirmModal(
-        'Skip Recommendation',
-        'Are you sure you want to skip this recommendation? You can view skipped recommendations in the "Skipped" tab.'
-    );
+    // Show detailed skip modal
+    const skipData = await showSkipModal();
 
-    if (!confirmed) {
-        return;
+    if (!skipData) {
+        return; // User cancelled
     }
 
     try {
         const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/skip`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                skipData: JSON.stringify(skipData)
+            })
         });
 
         const data = await response.json();
