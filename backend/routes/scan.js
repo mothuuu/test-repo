@@ -1196,6 +1196,7 @@ router.post('/:id/recommendation/:recId/skip', authenticateToken, async (req, re
   try {
     const { id: scanId, recId } = req.params;
     const userId = req.userId;
+    const { skipData } = req.body;
 
     // Verify scan belongs to user
     const scanCheck = await db.query(
@@ -1251,13 +1252,14 @@ router.post('/:id/recommendation/:recId/skip', authenticateToken, async (req, re
       });
     }
 
-    // Mark as skipped
+    // Mark as skipped and store skip data
     await db.query(
       `UPDATE scan_recommendations
        SET skipped_at = NOW(),
-           status = 'skipped'
+           status = 'skipped',
+           user_feedback = $3
        WHERE id = $1 AND scan_id = $2`,
-      [recId, scanId]
+      [recId, scanId, skipData || null]
     );
 
     // Update user progress (skipped counts as completed)
