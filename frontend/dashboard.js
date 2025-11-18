@@ -99,6 +99,16 @@ function updateUserInfo() {
         document.getElementById('manageSubscriptionBtn').style.display = 'inline-block';
     }
 
+    // Show scan type selector for DIY/Pro users
+    if (user.plan === 'diy' || user.plan === 'pro') {
+        const scanTypeSelector = document.getElementById('scanTypeSelector');
+        if (scanTypeSelector) {
+            scanTypeSelector.style.display = 'block';
+            // Initialize scan type cards interaction
+            initializeScanTypeCards();
+        }
+    }
+
     // Show waitlist banner for DIY users
     if (user.plan === 'diy') {
         const waitlistBanner = document.getElementById('waitlistBanner');
@@ -431,6 +441,35 @@ function extractRootDomain(urlString) {
     }
 }
 
+// Initialize scan type card selection
+function initializeScanTypeCards() {
+    const cards = document.querySelectorAll('.scan-type-card');
+    const scanTypeInput = document.getElementById('scanType');
+
+    // Set initial selected state (single-page by default)
+    const defaultCard = document.querySelector('.scan-type-card[data-scan-type="single-page"]');
+    if (defaultCard) {
+        defaultCard.classList.add('selected');
+    }
+
+    // Add click handlers
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            cards.forEach(c => c.classList.remove('selected'));
+
+            // Add selected class to clicked card
+            this.classList.add('selected');
+
+            // Update hidden input value
+            const scanType = this.getAttribute('data-scan-type');
+            scanTypeInput.value = scanType;
+
+            console.log('Scan type selected:', scanType);
+        });
+    });
+}
+
 document.getElementById('scanForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -663,10 +702,46 @@ document.getElementById('scanForm').addEventListener('submit', async function(e)
             }
             return;
         }
-        
-        // For DIY/Pro users - go to page selector
-        window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
-        
+
+        // For DIY/Pro users - check scan type
+        const scanType = document.getElementById('scanType').value;
+
+        if (scanType === 'multi-page') {
+            // Multi-page scan: redirect to page selector
+            window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
+        } else {
+            // Single-page scan: perform inline scan
+            const response = await fetch(`${API_BASE_URL}/scan/analyze`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: url,
+                    scanType: 'single-page'
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Scan failed');
+            }
+
+            const data = await response.json();
+            console.log('Scan response:', data);
+
+            // Redirect to results
+            if (data.scan && data.scan.id) {
+                window.location.href = `results.html?scanId=${data.scan.id}`;
+            } else if (data.scanId) {
+                window.location.href = `results.html?scanId=${data.scanId}`;
+            } else {
+                console.error('No scan ID in response:', data);
+                throw new Error('No scan ID received');
+            }
+        }
+
     } catch (error) {
         console.error('Scan error:', error);
 
