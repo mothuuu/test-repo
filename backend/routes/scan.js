@@ -512,9 +512,38 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
 
-    // Check if any batches should be auto-unlocked based on date
+    // Check if replacement cycle is due (replaces old batch unlock logic)
+    const { checkAndExecuteReplacement } = require('../utils/replacement-engine');
+    let replacementResult = null;
+
+    if (userProgress) {
+      try {
+        replacementResult = await checkAndExecuteReplacement(userId, scanId);
+
+        if (replacementResult.replaced) {
+          console.log(`🔄 Replacement executed: ${replacementResult.replacedCount} recommendations unlocked`);
+          console.log(`   Next replacement: ${replacementResult.nextReplacementDate}`);
+
+          // Refresh user progress after replacement
+          const updatedProgressResult = await db.query(
+            `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+            [userId, scanId]
+          );
+          if (updatedProgressResult.rows.length > 0) {
+            userProgress = updatedProgressResult.rows[0];
+          }
+        } else {
+          console.log(`🔄 Replacement check: ${replacementResult.reason || 'not due yet'}`);
+        }
+      } catch (replacementError) {
+        console.error('⚠️  Replacement check failed:', replacementError.message);
+        // Continue without failing the scan retrieval
+      }
+    }
+
+    // Legacy: Keep old batch unlock logic for backward compatibility (deprecated)
     let batchesUnlocked = 0;
-    if (userProgress && userProgress.total_batches > 0) {
+    if (false && userProgress && userProgress.total_batches > 0) { // Disabled - using replacement engine now
       const now = new Date();
       const batchDates = [
         userProgress.batch_1_unlock_date,
@@ -523,7 +552,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
         userProgress.batch_4_unlock_date
       ];
 
-      // Find which batch should be unlocked based on current date
       let targetBatch = 1;
       for (let i = 0; i < 4; i++) {
         if (batchDates[i] && new Date(batchDates[i]) <= now) {
@@ -531,11 +559,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
         }
       }
 
-      // If we should unlock more batches than currently unlocked
       if (targetBatch > userProgress.current_batch) {
-        console.log(`🔓 Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
+        console.log(`🔓 [DEPRECATED] Auto-unlocking batches ${userProgress.current_batch + 1} to ${targetBatch} for scan ${scanId}`);
 
-        // Calculate how many recommendations to unlock
         const recsPerBatch = 5;
         const currentlyActive = userProgress.active_recommendations || 0;
         const shouldBeActive = Math.min(targetBatch * recsPerBatch, userProgress.total_recommendations);
