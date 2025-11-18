@@ -552,6 +552,8 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
 
             // Attach copy button listeners immediately after adding to DOM
             attachCopyButtonListeners(recCard);
+            // Attach action button listeners (Mark as Implemented, Skip)
+            attachActionButtonListeners(recCard);
         });
     } else if (activeRecs.length === 0) {
         activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
@@ -565,6 +567,8 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
 
             // Attach copy button listeners immediately after adding to DOM
             attachCopyButtonListeners(recCard);
+            // Attach action button listeners (Mark as Implemented, Skip)
+            attachActionButtonListeners(recCard);
         });
     }
 
@@ -638,6 +642,57 @@ function attachCopyButtonListeners(cardElement) {
         };
 
         button.addEventListener('click', button._schemaHandler);
+    });
+}
+
+// Attach action button listeners (Mark as Implemented, Skip)
+function attachActionButtonListeners(cardElement) {
+    console.log('🔘 Attaching action button listeners to card');
+
+    // Find mark implemented buttons
+    const markImplementedButtons = cardElement.querySelectorAll('.mark-implemented-btn');
+    console.log(`   Found ${markImplementedButtons.length} mark implemented buttons in card`);
+
+    markImplementedButtons.forEach((button) => {
+        const recId = button.getAttribute('data-rec-id');
+        console.log(`   Mark Implemented button: rec-id=${recId}`);
+
+        // Remove any existing listener to avoid duplicates
+        button.removeEventListener('click', button._markImplementedHandler);
+
+        // Create and store the handler
+        button._markImplementedHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Mark Implemented button clicked! Rec ID:', recId);
+            await window.markImplemented(recId);
+        };
+
+        // Attach the listener
+        button.addEventListener('click', button._markImplementedHandler);
+    });
+
+    // Find skip buttons
+    const skipButtons = cardElement.querySelectorAll('.skip-rec-btn');
+    console.log(`   Found ${skipButtons.length} skip buttons in card`);
+
+    skipButtons.forEach((button) => {
+        const recId = button.getAttribute('data-rec-id');
+        console.log(`   Skip button: rec-id=${recId}`);
+
+        // Remove any existing listener to avoid duplicates
+        button.removeEventListener('click', button._skipHandler);
+
+        // Create and store the handler
+        button._skipHandler = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Skip button clicked! Rec ID:', recId);
+            await window.skipRecommendation(recId);
+        };
+
+        // Attach the listener
+        button.addEventListener('click', button._skipHandler);
     });
 }
 
@@ -998,11 +1053,11 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                         <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
                     </div>
                 ` : !isSkipped ? `
-                    <button onclick="markImplemented(${rec.id || index})" style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                    <button class="mark-implemented-btn" data-rec-id="${rec.id || index}" style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
                         ✓ Mark as Implemented
                     </button>
                     ${canSkip ? `
-                        <button onclick="skipRecommendation(${rec.id || index})" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                        <button class="skip-rec-btn" data-rec-id="${rec.id || index}" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
                             ⊘ Skip
                         </button>
                     ` : daysUntilSkip > 0 ? `
