@@ -678,7 +678,8 @@ function attachActionButtonListeners(cardElement) {
 
     skipButtons.forEach((button) => {
         const recId = button.getAttribute('data-rec-id');
-        console.log(`   Skip button: rec-id=${recId}`);
+        const daysUntilSkip = parseInt(button.getAttribute('data-days-until-skip') || '0', 10);
+        console.log(`   Skip button: rec-id=${recId}, days-until-skip=${daysUntilSkip}`);
 
         // Remove any existing listener to avoid duplicates
         button.removeEventListener('click', button._skipHandler);
@@ -687,8 +688,8 @@ function attachActionButtonListeners(cardElement) {
         button._skipHandler = async function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🖱️ Skip button clicked! Rec ID:', recId);
-            await window.skipRecommendation(recId);
+            console.log('🖱️ Skip button clicked! Rec ID:', recId, 'Days until skip:', daysUntilSkip);
+            await window.skipRecommendation(recId, daysUntilSkip);
         };
 
         // Attach the listener
@@ -1057,11 +1058,11 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                         ✓ Mark as Implemented
                     </button>
                     ${canSkip ? `
-                        <button class="skip-rec-btn" data-rec-id="${rec.id || index}" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                        <button class="skip-rec-btn" data-rec-id="${rec.id || index}" data-days-until-skip="0" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
                             ⊘ Skip
                         </button>
                     ` : daysUntilSkip > 0 ? `
-                        <button disabled style="padding: 10px 16px; background: #fafbfc; color: #9ca3af; border-radius: 8px; border: none; cursor: not-allowed; font-weight: 600;" title="Skip will be available in ${daysUntilSkip} day${daysUntilSkip > 1 ? 's' : ''}">
+                        <button class="skip-rec-btn" data-rec-id="${rec.id || index}" data-days-until-skip="${daysUntilSkip}" style="padding: 10px 16px; background: #f3f4f6; color: #374151; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
                             ⊘ Skip (${daysUntilSkip}d)
                         </button>
                     ` : ''}
@@ -1534,52 +1535,74 @@ function showImplementedModal() {
 }
 
 // Show detailed "Skip Recommendation" modal
-function showSkipModal() {
+function showSkipModal(daysRemaining = 0) {
     return new Promise((resolve) => {
         const modal = document.createElement('div');
         modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px;';
 
+        const canSkipNow = daysRemaining === 0;
+        const title = canSkipNow ? 'Skip Recommendation' : 'Skip Not Yet Available';
+        const icon = canSkipNow ? '⏸️' : '⏳';
+        const messageText = canSkipNow
+            ? 'Are you sure you want to skip this recommendation? It will be moved to your Dashboard → Implementation Progress section.'
+            : `You can skip this recommendation in <strong>${daysRemaining} day${daysRemaining > 1 ? 's' : ''}</strong>.<br><br>This waiting period helps ensure you've had time to consider implementing the recommendation.`;
+
         modal.innerHTML = `
             <div style="background: white; padding: 35px; border-radius: 12px; max-width: 450px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: auto;">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                    <span style="font-size: 32px;">⏸️</span>
-                    <h3 style="font-size: 24px; font-weight: 700; color: #2d3748; margin: 0;">Skip Recommendation</h3>
+                    <span style="font-size: 32px;">${icon}</span>
+                    <h3 style="font-size: 24px; font-weight: 700; color: #2d3748; margin: 0;">${title}</h3>
                 </div>
 
                 <p style="color: #4a5568; margin-bottom: 30px; line-height: 1.6;">
-                    Are you sure you want to skip this recommendation? It will be moved to your Dashboard → Implementation Progress section.
+                    ${messageText}
                 </p>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button id="cancelBtn" style="padding: 12px 24px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='white'">
-                        Cancel
-                    </button>
-                    <button id="confirmBtn" style="padding: 12px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(100, 116, 139, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                        Skip
-                    </button>
+                    ${canSkipNow ? `
+                        <button id="cancelBtn" style="padding: 12px 24px; border-radius: 8px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='white'">
+                            Cancel
+                        </button>
+                        <button id="confirmBtn" style="padding: 12px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(100, 116, 139, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            Skip
+                        </button>
+                    ` : `
+                        <button id="closeBtn" style="padding: 12px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0, 185, 218, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            Got It
+                        </button>
+                    `}
                 </div>
             </div>
         `;
 
         document.body.appendChild(modal);
 
-        const confirmBtn = modal.querySelector('#confirmBtn');
-        const cancelBtn = modal.querySelector('#cancelBtn');
+        if (canSkipNow) {
+            const confirmBtn = modal.querySelector('#confirmBtn');
+            const cancelBtn = modal.querySelector('#cancelBtn');
 
-        confirmBtn.onclick = () => {
-            const data = {
-                skipped: true
+            confirmBtn.onclick = () => {
+                const data = {
+                    skipped: true
+                };
+                modal.remove();
+                resolve(data);
             };
-            modal.remove();
-            resolve(data);
-        };
 
-        cancelBtn.onclick = () => {
-            modal.remove();
-            resolve(null);
-        };
+            cancelBtn.onclick = () => {
+                modal.remove();
+                resolve(null);
+            };
+        } else {
+            const closeBtn = modal.querySelector('#closeBtn');
+            closeBtn.onclick = () => {
+                modal.remove();
+                resolve(null);
+            };
+        }
 
         modal.onclick = (e) => {
             if (e.target === modal) {
@@ -1637,19 +1660,26 @@ window.markImplemented = async function(recId) {
     }
 }
 
-window.skipRecommendation = async function(recId) {
-    console.log('Skipping recommendation:', recId);
+window.skipRecommendation = async function(recId, daysUntilSkip = 0) {
+    console.log('Skipping recommendation:', recId, 'Days until skip:', daysUntilSkip);
 
     if (!authToken) {
         await showAlertModal('Login Required', 'You must be logged in to skip recommendations.', 'info');
         return;
     }
 
-    // Show detailed skip modal
-    const skipData = await showSkipModal();
+    // Show detailed skip modal with days remaining
+    const skipData = await showSkipModal(daysUntilSkip);
 
     if (!skipData) {
-        return; // User cancelled
+        return; // User cancelled or just acknowledged the countdown
+    }
+
+    // Only proceed with API call if skip is confirmed and allowed
+    if (daysUntilSkip > 0) {
+        // This shouldn't happen since the modal won't return data if days > 0
+        // But keep it as a safety check
+        return;
     }
 
     try {
@@ -1671,8 +1701,13 @@ window.skipRecommendation = async function(recId) {
             // Reload page after 2 seconds to update UI
             setTimeout(() => window.location.reload(), 2000);
         } else {
-            const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
-            await showAlertModal('Cannot Skip Yet', errorMsg, 'warning');
+            // If backend returns error (e.g., days remaining changed), show the actual message
+            if (data.daysRemaining && data.daysRemaining > 0) {
+                await showSkipModal(data.daysRemaining);
+            } else {
+                const errorMsg = data.message ? `${data.error}: ${data.message}` : (data.error || 'Failed to skip recommendation');
+                await showAlertModal('Cannot Skip Yet', errorMsg, 'warning');
+            }
         }
     } catch (error) {
         console.error('Skip error:', error);
