@@ -209,11 +209,24 @@ router.get('/queue', authenticateContentManager, async (req, res) => {
 
     // Get recommendations
     queryParams.push(parseInt(limit), offset);
-    const recsResult = await db.query(`
-      SELECT
-        rc.*,
-        u.email as curator_email,
-        s.url as scan_url,
+
+    // Check if recommendation_feedback table exists first
+    let feedbackTableExists = false;
+    try {
+      const tableCheck = await db.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables
+          WHERE table_name = 'recommendation_feedback'
+        ) as table_exists
+      `);
+      feedbackTableExists = tableCheck.rows[0].table_exists;
+    } catch (error) {
+      console.log('⚠️  Feedback table check failed (non-critical):', error.message);
+      feedbackTableExists = false;
+    }
+
+    // Build query with conditional feedback metrics
+    const feedbackMetrics = feedbackTableExists ? `
         (
           SELECT AVG(rating)::decimal(3,2)
           FROM recommendation_feedback
@@ -230,6 +243,18 @@ router.get('/queue', authenticateContentManager, async (req, res) => {
           FROM recommendation_feedback
           WHERE recommendation_id = rc.recommendation_id
         ) as feedback_count
+    ` : `
+        NULL as avg_rating,
+        0 as helpful_count,
+        0 as feedback_count
+    `;
+
+    const recsResult = await db.query(`
+      SELECT
+        rc.*,
+        u.email as curator_email,
+        s.url as scan_url,
+        ${feedbackMetrics}
       FROM recommendation_curation rc
       LEFT JOIN users u ON u.id = rc.curator_id
       LEFT JOIN scans s ON s.id = rc.scan_id
@@ -639,16 +664,31 @@ router.get('/insights', authenticateContentManager, async (req, res) => {
     `);
 
     // 4. User feedback patterns
-    const feedbackPatterns = await db.query(`
-      SELECT
-        rc.subfactor,
-        AVG(rc.avg_rating)::decimal(3,2) as avg_rating,
-        AVG(rc.helpful_count::float / NULLIF(rc.feedback_count, 0))::decimal(3,2) as helpful_rate
-      FROM recommendation_curation rc
-      WHERE rc.feedback_count >= 5
-      GROUP BY rc.subfactor
-      ORDER BY helpful_rate DESC
-    `);
+    // Only query feedback if recommendation_feedback table exists
+    let feedbackPatterns = { rows: [] };
+    try {
+      const tableCheck = await db.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables
+          WHERE table_name = 'recommendation_feedback'
+        ) as table_exists
+      `);
+
+      if (tableCheck.rows[0].table_exists) {
+        feedbackPatterns = await db.query(`
+          SELECT
+            rf.subfactor,
+            AVG(rf.rating)::decimal(3,2) as avg_rating,
+            ROUND(100.0 * SUM(CASE WHEN rf.helpful = true THEN 1 ELSE 0 END) / COUNT(*), 1) as helpful_rate
+          FROM recommendation_feedback rf
+          GROUP BY rf.subfactor
+          HAVING COUNT(*) >= 5
+          ORDER BY helpful_rate DESC
+        `);
+      }
+    } catch (error) {
+      console.log('⚠️  Feedback patterns query failed (non-critical):', error.message);
+    }
 
     res.json({
       success: true,
