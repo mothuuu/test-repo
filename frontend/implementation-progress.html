@@ -1184,31 +1184,31 @@
                     <label class="modal-label">Why are you skipping this? (Select all that apply)</label>
                     <div class="checkbox-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" value="not-relevant">
+                            <input type="checkbox" id="skip-reason-not-relevant" name="skip-reason" value="not-relevant">
                             <span>Not relevant to my site</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="too-complex">
+                            <input type="checkbox" id="skip-reason-too-complex" name="skip-reason" value="too-complex">
                             <span>Too complex right now</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="later">
+                            <input type="checkbox" id="skip-reason-later" name="skip-reason" value="later">
                             <span>Will do later</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="need-dev">
+                            <input type="checkbox" id="skip-reason-need-dev" name="skip-reason" value="need-dev">
                             <span>Need developer help</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="dependencies">
+                            <input type="checkbox" id="skip-reason-dependencies" name="skip-reason" value="dependencies">
                             <span>Waiting for other dependencies</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="budget">
+                            <input type="checkbox" id="skip-reason-budget" name="skip-reason" value="budget">
                             <span>Budget constraints</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="other">
+                            <input type="checkbox" id="skip-reason-other" name="skip-reason" value="other">
                             <span>Other</span>
                         </label>
                     </div>
@@ -1297,15 +1297,15 @@
                     <label class="modal-label">Before marking as complete, please confirm:</label>
                     <div class="checkbox-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="confirm-implemented" required>
+                            <input type="checkbox" id="confirm-implemented" name="confirm-implemented" required>
                             <span>I've implemented this recommendation on my site</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="confirm-tested" required>
+                            <input type="checkbox" id="confirm-tested" name="confirm-tested" required>
                             <span>I've tested it and verified it's working correctly</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="confirm-validated">
+                            <input type="checkbox" id="confirm-validated" name="confirm-validated">
                             <span>I've validated it using the recommended tools (Optional but recommended)</span>
                         </label>
                     </div>
