@@ -452,14 +452,45 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
-            border: 2px solid var(--gray-300);
-            background: white;
+            border: 2px solid transparent;
+            background: var(--gray-100);
             color: var(--gray-700);
         }
 
+        /* Specific pastel colors for each filter tab */
+        .filter-tab[data-filter="all"] {
+            background: #B3ECF7;
+            color: #0099B8;
+            border-color: #B3ECF7;
+        }
+
+        .filter-tab[data-filter="completed"] {
+            background: #B8DDD9;
+            color: #3D8A85;
+            border-color: #B8DDD9;
+        }
+
+        .filter-tab[data-filter="in-progress"] {
+            background: #D9C0EC;
+            color: #5B2D7A;
+            border-color: #D9C0EC;
+        }
+
+        .filter-tab[data-filter="skipped"] {
+            background: #FCB8DA;
+            color: #D11766;
+            border-color: #FCB8DA;
+        }
+
+        .filter-tab[data-filter="not-started"] {
+            background: #E6F9FD;
+            color: #0099B8;
+            border-color: #E6F9FD;
+        }
+
         .filter-tab:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         .filter-tab.active {
