@@ -146,9 +146,16 @@ function displayResults(scan, quota) {
     }
 
     // Display user mode indicator and notifications (if data available)
+    console.log('🔍 Checking userMode:', scan.userMode);
+    console.log('🔍 Auth token present:', !!authToken);
+    console.log('🔍 User data:', userData);
+
     if (scan.userMode) {
         const recCount = scan.recommendations ? scan.recommendations.length : 0;
+        console.log('✅ Displaying Optimization Mode section with score:', displayScore);
         displayModeIndicator(scan.userMode, displayScore, recCount);
+    } else {
+        console.log('⚠️ No userMode data found in scan response. User must be logged in to see Optimization Mode.');
     }
     if (scan.notifications) {
         displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
