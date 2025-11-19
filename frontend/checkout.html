@@ -291,12 +291,184 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Custom Domain Input Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .modal-header h2 {
+            color: white;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-input-group label {
+            display: block;
+            color: var(--gray-700);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .modal-input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .modal-input-group input:focus {
+            outline: none;
+            border-color: var(--brand-cyan);
+            box-shadow: 0 0 0 4px rgba(0, 185, 218, 0.1);
+        }
+
+        .modal-input-hint {
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-family: inherit;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            color: white;
+        }
+
+        .modal-btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .modal-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .modal-btn-secondary:hover {
+            background: var(--gray-50);
+        }
     </style>
 </head>
 <body>
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Domain Input Modal -->
+    <div id="domainModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Your Domain</h2>
+                <p>We'll use this to set up your AI visibility tracking</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-input-group">
+                    <label for="domainInput">Website Domain</label>
+                    <input
+                        type="text"
+                        id="domainInput"
+                        placeholder="example.com"
+                        autocomplete="off"
+                    />
+                    <div class="modal-input-hint">
+                        Enter your domain without http:// or www (e.g., example.com)
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeDomainModal()">
+                        Cancel
+                    </button>
+                    <button class="modal-btn modal-btn-primary" onclick="submitDomain()">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -436,6 +608,41 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
+        let currentPlan = null;
+
+        function openDomainModal(planName) {
+            currentPlan = planName;
+            const modal = document.getElementById('domainModal');
+            const input = document.getElementById('domainInput');
+
+            modal.classList.add('active');
+            input.value = '';
+            input.focus();
+        }
+
+        function closeDomainModal() {
+            const modal = document.getElementById('domainModal');
+            modal.classList.remove('active');
+            currentPlan = null;
+        }
+
+        async function submitDomain() {
+            const input = document.getElementById('domainInput');
+            const domain = input.value.trim();
+
+            if (!domain) {
+                input.focus();
+                return;
+            }
+
+            // Clean up domain
+            const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+
+            // Close modal and proceed with checkout
+            closeDomainModal();
+            await proceedWithCheckout(currentPlan, cleanDomain);
+        }
+
         async function selectPlan(planName) {
             const authToken = localStorage.getItem('authToken');
 
@@ -444,16 +651,19 @@
                 return;
             }
 
-            // Get or prompt for domain
-            let domain = localStorage.getItem('primaryDomain') || prompt('Enter your website domain (e.g., example.com):');
+            // Get domain from localStorage or show modal
+            const domain = localStorage.getItem('primaryDomain');
 
             if (!domain) {
-                alert('Domain is required to continue with checkout');
+                openDomainModal(planName);
                 return;
             }
 
-            // Clean up domain
-            domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+            await proceedWithCheckout(planName, domain);
+        }
+
+        async function proceedWithCheckout(planName, domain) {
+            const authToken = localStorage.getItem('authToken');
 
             try {
                 document.getElementById('loadingOverlay').style.display = 'flex';
@@ -498,6 +708,29 @@
                     selectPlan(plan);
                 }
             }
+
+            // Add Enter key support for domain input
+            const domainInput = document.getElementById('domainInput');
+            domainInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitDomain();
+                }
+            });
+
+            // Close modal when clicking outside
+            const modal = document.getElementById('domainModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeDomainModal();
+                }
+            });
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeDomainModal();
+                }
+            });
         });
     </script>
 
