@@ -150,6 +150,27 @@
             transform: scale(1.05);
         }
 
+        .competitor-badge {
+            font-size: 0.875rem;
+            color: var(--purple);
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #F3EBFA 0%, #F9F5FD 100%);
+            border: 2px solid var(--purple);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .competitor-badge:hover {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--violet-rich) 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+
         .user-section {
             display: flex;
             align-items: center;
@@ -333,6 +354,100 @@
             color: var(--gray-500);
         }
 
+        /* Personalized Welcome Header */
+        .welcome-header {
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f0f9ff 0%, #fef3f9 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 185, 218, 0.1);
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            font-size: 1rem;
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        /* Prominent Purple Scan Section */
+        .purple-scan-section {
+            background: linear-gradient(135deg, #5E2875 0%, #4A1F5E 100%);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 8px 32px rgba(94, 40, 117, 0.3);
+        }
+
+        .purple-scan-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .purple-scan-section p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .purple-scan-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-scan-primary {
+            background: white;
+            color: var(--violet-deep);
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-scan-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-scan-secondary {
+            background: transparent;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-scan-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
         /* Cards */
         .card {
             background: white;
@@ -368,6 +483,34 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Pastel Stat Card Variants */
+        .stat-card.website-score {
+            background: linear-gradient(135deg, #E6F9FD 0%, #F0FCFF 100%);
+            border-color: var(--cyan);
+        }
+
+        .stat-card.brand-score {
+            background: linear-gradient(135deg, #FEE6F2 0%, #FFF0F8 100%);
+            border-color: var(--pink);
+        }
+
+        .stat-card.pages-tracked {
+            background: linear-gradient(135deg, #F3EBFA 0%, #F9F5FD 100%);
+            border-color: var(--purple);
+        }
+
+        .stat-card.scans-month {
+            background: linear-gradient(135deg, #E8F5F4 0%, #F0FAF9 100%);
+            border-color: var(--teal);
         }
 
         .stat-label {
@@ -679,6 +822,10 @@
 
             .primary-domain-badge {
                 display: none;
+            }
+
+            .competitor-badge {
+                display: none !important;
             }
 
             .user-info {
@@ -1195,6 +1342,10 @@
             <div class="primary-domain-badge" id="primaryDomainBadge" onclick="openDomainModal()">
                 🏠 Not set
             </div>
+            <div class="competitor-badge" id="competitorBadge" onclick="navigateToSection('competitor-overview')">
+                <i class="fas fa-trophy"></i>
+                <span id="competitorCount">0/3 competitors</span>
+            </div>
             <div class="user-section">
                 <div class="user-info">
                     <div class="user-name" id="userName">User</div>
@@ -1312,32 +1463,49 @@
         <main class="main-content" id="mainContent">
             <!-- Dashboard Home Section -->
             <section class="section active" id="dashboard-home">
-                <div class="section-header">
-                    <h1 class="section-title">Dashboard Home</h1>
-                    <p class="section-subtitle">Overview of your AI visibility metrics</p>
+                <!-- Personalized Welcome Header -->
+                <div class="welcome-header">
+                    <h1 class="welcome-title">Welcome back, <span id="userName">User</span> 👋</h1>
+                    <p class="welcome-subtitle">Here's what's happening with your AI visibility today</p>
                 </div>
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <div class="stat-card website-score">
                         <div class="stat-label">Website Score</div>
                         <div class="stat-value" id="dashboardWebsiteScore">--</div>
                         <div class="stat-change" id="dashboardWebsiteChange">--</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card brand-score">
                         <div class="stat-label">Brand Score</div>
                         <div class="stat-value" id="dashboardBrandScore">--</div>
                         <div class="stat-change" id="dashboardBrandChange">Upgrade to Pro</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card pages-tracked">
                         <div class="stat-label">Pages Tracked</div>
                         <div class="stat-value" id="dashboardPagesTracked">0</div>
                         <div class="stat-meta" id="dashboardPagesMeta">Pro Plan</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card scans-month">
                         <div class="stat-label">Scans This Month</div>
                         <div class="stat-value" id="dashboardScansUsed">0/0</div>
                         <div class="stat-meta" id="dashboardScansPercent">0% used</div>
+                    </div>
+                </div>
+
+                <!-- Prominent Purple Scan Section -->
+                <div class="purple-scan-section">
+                    <h2>Start a new scan or view your recent results below</h2>
+                    <p id="scanPlanInfo">Pro plan: Analyze up to 25 pages</p>
+                    <div class="purple-scan-buttons">
+                        <button class="btn-scan-primary" onclick="navigateToSection('start-new-scan')">
+                            <i class="fas fa-search"></i>
+                            Start New Scan
+                        </button>
+                        <button class="btn-scan-secondary" onclick="navigateToSection('scan-history')">
+                            <i class="fas fa-history"></i>
+                            View Recent Scans
+                        </button>
                     </div>
                 </div>
 

@@ -81,7 +81,13 @@ async function initDashboard() {
 
 // Update user info in header
 function updateUserInfo() {
-    document.getElementById('userName').textContent = user.name || user.email.split('@')[0];
+    const displayName = user.name || user.email.split('@')[0];
+
+    // Update both userName elements (header and welcome header)
+    const userNameElements = document.querySelectorAll('#userName');
+    userNameElements.forEach(el => {
+        el.textContent = displayName;
+    });
 
     // Update plan type
     const planNames = {
@@ -90,6 +96,23 @@ function updateUserInfo() {
         pro: 'Pro Plan'
     };
     document.getElementById('userPlan').textContent = planNames[user.plan] || 'Free Plan';
+
+    // Update scan plan info in purple section
+    const scanPlanInfo = document.getElementById('scanPlanInfo');
+    if (scanPlanInfo) {
+        const planLimits = {
+            free: 1,
+            diy: 5,
+            pro: 25
+        };
+        const pageLimit = planLimits[user.plan] || 1;
+        const planDisplayNames = {
+            free: 'Free plan',
+            diy: 'DIY plan',
+            pro: 'Pro plan'
+        };
+        scanPlanInfo.textContent = `${planDisplayNames[user.plan] || 'Free plan'}: Analyze up to ${pageLimit} pages`;
+    }
 
     // Primary domain badge
     const primaryDomainBadge = document.getElementById('primaryDomainBadge');
@@ -101,8 +124,62 @@ function updateUserInfo() {
         primaryDomainBadge.title = 'Primary domain will be set on first scan';
     }
 
+    // Update competitor count badge
+    updateCompetitorBadge();
+
     // Update tier-based locking
     updateFeatureLocking();
+}
+
+// Update competitor count badge
+async function updateCompetitorBadge() {
+    const competitorBadge = document.getElementById('competitorBadge');
+    if (!competitorBadge) return;
+
+    const competitorLimits = {
+        free: 0,
+        diy: 2,
+        pro: 3
+    };
+
+    const competitorLimit = competitorLimits[user.plan] || 0;
+
+    try {
+        // Fetch competitor data from API
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE_URL}/competitors`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const competitorCount = data.competitors ? data.competitors.length : 0;
+            const competitorCountElement = document.getElementById('competitorCount');
+            if (competitorCountElement) {
+                competitorCountElement.textContent = `${competitorCount}/${competitorLimit} competitors`;
+            }
+        } else {
+            // If API call fails, just show the limit
+            const competitorCountElement = document.getElementById('competitorCount');
+            if (competitorCountElement) {
+                competitorCountElement.textContent = `0/${competitorLimit} competitors`;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching competitor count:', error);
+        // Fallback to showing limit only
+        const competitorCountElement = document.getElementById('competitorCount');
+        if (competitorCountElement) {
+            competitorCountElement.textContent = `0/${competitorLimit} competitors`;
+        }
+    }
+
+    // Hide badge if free plan
+    if (competitorLimit === 0) {
+        competitorBadge.style.display = 'none';
+    } else {
+        competitorBadge.style.display = 'flex';
+    }
 }
 
 // Update feature locking based on user plan
