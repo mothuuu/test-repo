@@ -521,18 +521,18 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
             <div class="mb-6 border-b border-gray-200">
                 <div class="flex gap-4">
                     <button onclick="switchTab('active')" id="tab-active"
-                            class="tab-button px-6 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">
+                            class="tab-button px-6 py-3 font-semibold border-b-2 tab-active-bg rounded-t-lg">
                         Active (${displayRecs.length})
                     </button>
                     ${implementedRecs.length > 0 ? `
                     <button onclick="switchTab('implemented')" id="tab-implemented"
-                            class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
+                            class="tab-button px-6 py-3 font-semibold tab-inactive rounded-t-lg">
                         ✓ Implemented (${implementedRecs.length})
                     </button>
                     ` : ''}
                     ${skippedRecs.length > 0 ? `
                     <button onclick="switchTab('skipped')" id="tab-skipped"
-                            class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
+                            class="tab-button px-6 py-3 font-semibold tab-inactive rounded-t-lg">
                         Skipped (${skippedRecs.length})
                     </button>
                     ` : ''}
@@ -727,16 +727,25 @@ function attachActionButtonListeners(cardElement) {
 
 // Tab switching function
 function switchTab(tabName) {
-    // Update tab button styles
+    // Update tab button styles - remove all color classes first
     document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('border-blue-600', 'text-blue-600');
-        btn.classList.add('text-gray-500');
+        btn.classList.remove('tab-active-bg', 'tab-implemented-bg', 'tab-skipped-bg', 'border-blue-600', 'text-blue-600', 'text-gray-500');
+        btn.classList.add('tab-inactive');
     });
 
+    // Apply the appropriate background class based on which tab is selected
     const activeTabBtn = document.getElementById(`tab-${tabName}`);
     if (activeTabBtn) {
-        activeTabBtn.classList.remove('text-gray-500');
-        activeTabBtn.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
+        activeTabBtn.classList.remove('tab-inactive');
+
+        // Apply specific pastel background based on tab type
+        if (tabName === 'active') {
+            activeTabBtn.classList.add('tab-active-bg', 'border-b-2');
+        } else if (tabName === 'implemented') {
+            activeTabBtn.classList.add('tab-implemented-bg', 'border-b-2');
+        } else if (tabName === 'skipped') {
+            activeTabBtn.classList.add('tab-skipped-bg', 'border-b-2');
+        }
     }
 
     // Hide all tab contents
