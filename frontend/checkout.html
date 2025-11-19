@@ -291,12 +291,225 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Custom Domain Input Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .modal-header h2 {
+            color: white;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-input-group label {
+            display: block;
+            color: var(--gray-700);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .modal-input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .modal-input-group input:focus {
+            outline: none;
+            border-color: var(--brand-cyan);
+            box-shadow: 0 0 0 4px rgba(0, 185, 218, 0.1);
+        }
+
+        .modal-input-hint {
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-family: inherit;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-pink) 100%);
+            color: white;
+        }
+
+        .modal-btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 185, 218, 0.4);
+        }
+
+        .modal-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+        }
+
+        .modal-btn-secondary:hover {
+            background: var(--gray-50);
+        }
     </style>
 </head>
 <body>
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Domain Input Modal -->
+    <div id="domainModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Your Domain</h2>
+                <p>We'll use this to set up your AI visibility tracking</p>
+            </div>
+            <div class="modal-body">
+                <div class="modal-input-group">
+                    <label for="domainInput">Website Domain</label>
+                    <input
+                        type="text"
+                        id="domainInput"
+                        placeholder="example.com"
+                        autocomplete="off"
+                    />
+                    <div class="modal-input-hint">
+                        Enter your domain without http:// or www (e.g., example.com)
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeDomainModal()">
+                        Cancel
+                    </button>
+                    <button class="modal-btn modal-btn-primary" onclick="submitDomain()">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Downgrade Confirmation Modal -->
+    <div id="downgradeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Downgrade to Free Plan?</h2>
+                <p>Please confirm your plan change</p>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1.5rem; color: var(--gray-700); line-height: 1.6;">
+                    You will be downgraded to the <strong>Free plan (2 scans/month)</strong>. Your current subscription will be cancelled and changes will take effect immediately.
+                </p>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeDowngradeModal()">
+                        Cancel
+                    </button>
+                    <button class="modal-btn modal-btn-primary" onclick="confirmDowngrade()">
+                        Confirm Downgrade
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal (for success/error messages) -->
+    <div id="messageModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h2 id="messageModalTitle">Message</h2>
+                <p id="messageModalSubtitle"></p>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText" style="margin-bottom: 1.5rem; color: var(--gray-700); line-height: 1.6;"></p>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-primary" onclick="closeMessageModal()" style="width: 100%;">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -306,6 +519,24 @@
         </div>
 
         <div class="plans-grid">
+            <!-- Free Plan -->
+            <div class="plan-card">
+                <div class="plan-name">Free</div>
+                <div class="plan-tagline">Try it out, no credit card needed</div>
+                <div class="plan-price">$0<span>/mo</span></div>
+                <div class="plan-billing">Forever free • No credit card required</div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check-circle"></i><span>2 scans per month</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Homepage only</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Basic visibility score</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Simple recommendations</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Email support</span></li>
+                </ul>
+                <button class="plan-btn plan-btn-secondary" onclick="selectPlan('free')">
+                    Start Free
+                </button>
+            </div>
+
             <!-- DIY Plan -->
             <div class="plan-card">
                 <div class="plan-name">DIY</div>
@@ -436,6 +667,74 @@
             ? 'http://localhost:3001/api'
             : 'https://ai-visibility-tool.onrender.com/api';
 
+        let currentPlan = null;
+
+        function openDomainModal(planName) {
+            currentPlan = planName;
+            const modal = document.getElementById('domainModal');
+            const input = document.getElementById('domainInput');
+
+            modal.classList.add('active');
+            input.value = '';
+            input.focus();
+        }
+
+        function closeDomainModal() {
+            const modal = document.getElementById('domainModal');
+            modal.classList.remove('active');
+            currentPlan = null;
+        }
+
+        async function submitDomain() {
+            const input = document.getElementById('domainInput');
+            const domain = input.value.trim();
+
+            if (!domain) {
+                input.focus();
+                return;
+            }
+
+            // Clean up domain
+            const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+
+            // Close modal and proceed with checkout
+            closeDomainModal();
+            await proceedWithCheckout(currentPlan, cleanDomain);
+        }
+
+        function showMessage(title, message, subtitle = '', isSuccess = true) {
+            const modal = document.getElementById('messageModal');
+            const titleEl = document.getElementById('messageModalTitle');
+            const subtitleEl = document.getElementById('messageModalSubtitle');
+            const textEl = document.getElementById('messageModalText');
+
+            titleEl.textContent = title;
+            subtitleEl.textContent = subtitle;
+            textEl.innerHTML = message;
+
+            modal.classList.add('active');
+        }
+
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.remove('active');
+        }
+
+        function openDowngradeModal() {
+            const modal = document.getElementById('downgradeModal');
+            modal.classList.add('active');
+        }
+
+        function closeDowngradeModal() {
+            const modal = document.getElementById('downgradeModal');
+            modal.classList.remove('active');
+        }
+
+        async function confirmDowngrade() {
+            closeDowngradeModal();
+            await downgradeToFree();
+        }
+
         async function selectPlan(planName) {
             const authToken = localStorage.getItem('authToken');
 
@@ -444,16 +743,77 @@
                 return;
             }
 
-            // Get or prompt for domain
-            let domain = localStorage.getItem('primaryDomain') || prompt('Enter your website domain (e.g., example.com):');
-
-            if (!domain) {
-                alert('Domain is required to continue with checkout');
+            // Handle free plan selection - show confirmation modal
+            if (planName === 'free') {
+                openDowngradeModal();
                 return;
             }
 
-            // Clean up domain
-            domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+            // Get domain from localStorage or show modal
+            const domain = localStorage.getItem('primaryDomain');
+
+            if (!domain) {
+                openDomainModal(planName);
+                return;
+            }
+
+            await proceedWithCheckout(planName, domain);
+        }
+
+        async function downgradeToFree() {
+            const authToken = localStorage.getItem('authToken');
+
+            try {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                // Call API to cancel subscription
+                const response = await fetch(`${API_BASE_URL}/subscription/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // If no active subscription, user is already on free plan
+                    if (data.error && data.error.includes('No active subscription')) {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        showMessage('Already on Free Plan', 'You are already on the Free plan.', 'No changes needed');
+                        setTimeout(() => {
+                            closeMessageModal();
+                            window.location.href = 'dashboard.html';
+                        }, 2000);
+                        return;
+                    }
+                    throw new Error(data.error || 'Failed to downgrade to free plan');
+                }
+
+                document.getElementById('loadingOverlay').style.display = 'none';
+
+                // Show success message and redirect to dashboard
+                const periodEndDate = data.periodEnd ? new Date(data.periodEnd * 1000).toLocaleDateString() : '';
+                const message = periodEndDate
+                    ? `Your subscription will be cancelled on <strong>${periodEndDate}</strong>. After that, you'll be on the Free plan with 2 scans per month.`
+                    : 'Your subscription has been cancelled. You will be downgraded to the Free plan at the end of your billing period.';
+
+                showMessage('Subscription Cancelled', message, 'Redirecting to dashboard...');
+
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 3000);
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                console.error('Downgrade error:', error);
+                showMessage('Downgrade Failed', error.message, 'Please try again');
+            }
+        }
+
+        async function proceedWithCheckout(planName, domain) {
+            const authToken = localStorage.getItem('authToken');
 
             try {
                 document.getElementById('loadingOverlay').style.display = 'flex';
@@ -482,7 +842,7 @@
             } catch (error) {
                 document.getElementById('loadingOverlay').style.display = 'none';
                 console.error('Checkout error:', error);
-                alert('Failed to start checkout: ' + error.message);
+                showMessage('Checkout Failed', error.message, 'Please try again');
             }
         }
 
@@ -498,6 +858,53 @@
                     selectPlan(plan);
                 }
             }
+
+            // Add Enter key support for domain input
+            const domainInput = document.getElementById('domainInput');
+            domainInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitDomain();
+                }
+            });
+
+            // Close domain modal when clicking outside
+            const modal = document.getElementById('domainModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeDomainModal();
+                }
+            });
+
+            // Close downgrade modal when clicking outside
+            const downgradeModalEl = document.getElementById('downgradeModal');
+            downgradeModalEl.addEventListener('click', (e) => {
+                if (e.target === downgradeModalEl) {
+                    closeDowngradeModal();
+                }
+            });
+
+            // Close message modal when clicking outside
+            const messageModalEl = document.getElementById('messageModal');
+            messageModalEl.addEventListener('click', (e) => {
+                if (e.target === messageModalEl) {
+                    closeMessageModal();
+                }
+            });
+
+            // Close modals on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (modal.classList.contains('active')) {
+                        closeDomainModal();
+                    }
+                    if (downgradeModalEl.classList.contains('active')) {
+                        closeDowngradeModal();
+                    }
+                    if (messageModalEl.classList.contains('active')) {
+                        closeMessageModal();
+                    }
+                }
+            });
         });
     </script>
 
