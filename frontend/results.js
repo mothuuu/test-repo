@@ -495,9 +495,10 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         container.appendChild(countdownTimer);
     }
 
-    // Separate active and skipped recommendations
-    const activeRecs = recommendations.filter(rec => !rec.skipped_at && rec.unlock_state !== 'locked');
-    const skippedRecs = recommendations.filter(rec => rec.skipped_at);
+    // Separate active, implemented, and skipped recommendations
+    const implementedRecs = recommendations.filter(rec => rec.implemented_at || rec.status === 'implemented');
+    const activeRecs = recommendations.filter(rec => !rec.skipped_at && !rec.implemented_at && rec.status !== 'implemented' && rec.unlock_state !== 'locked');
+    const skippedRecs = recommendations.filter(rec => rec.skipped_at && !rec.implemented_at);
     const lockedRecs = recommendations.filter(rec => rec.unlock_state === 'locked');
 
     // Determine how many active recommendations to show based on tier
@@ -514,8 +515,8 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         displayRecs = activeRecs;
     }
 
-    // Create tab interface if there are skipped recommendations
-    if (skippedRecs.length > 0) {
+    // Create tab interface if there are skipped or implemented recommendations
+    if (skippedRecs.length > 0 || implementedRecs.length > 0) {
         const tabsHTML = `
             <div class="mb-6 border-b border-gray-200">
                 <div class="flex gap-4">
@@ -523,23 +524,33 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
                             class="tab-button px-6 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">
                         Active (${displayRecs.length})
                     </button>
+                    ${implementedRecs.length > 0 ? `
+                    <button onclick="switchTab('implemented')" id="tab-implemented"
+                            class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
+                        ✓ Implemented (${implementedRecs.length})
+                    </button>
+                    ` : ''}
+                    ${skippedRecs.length > 0 ? `
                     <button onclick="switchTab('skipped')" id="tab-skipped"
                             class="tab-button px-6 py-3 font-semibold text-gray-500 hover:text-gray-700">
                         Skipped (${skippedRecs.length})
                     </button>
+                    ` : ''}
                 </div>
             </div>
             <div id="tab-content-active" class="tab-content"></div>
-            <div id="tab-content-skipped" class="tab-content hidden"></div>
+            ${implementedRecs.length > 0 ? '<div id="tab-content-implemented" class="tab-content hidden"></div>' : ''}
+            ${skippedRecs.length > 0 ? '<div id="tab-content-skipped" class="tab-content hidden"></div>' : ''}
         `;
         container.innerHTML = tabsHTML;
     }
 
-    // Get containers for active and skipped
+    // Get containers for active, implemented, and skipped
     const activeContainer = document.getElementById('tab-content-active') || container;
+    const implementedContainer = document.getElementById('tab-content-implemented');
     const skippedContainer = document.getElementById('tab-content-skipped');
 
-    if (displayRecs.length === 0 && skippedRecs.length === 0) {
+    if (displayRecs.length === 0 && skippedRecs.length === 0 && implementedRecs.length === 0) {
         activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No recommendations available for this scan.</p>';
         return;
     }
@@ -556,7 +567,24 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
             attachActionButtonListeners(recCard);
         });
     } else if (activeRecs.length === 0) {
-        activeContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No active recommendations. Check the Skipped tab.</p>';
+        const otherTabs = [];
+        if (implementedRecs.length > 0) otherTabs.push('Implemented');
+        if (skippedRecs.length > 0) otherTabs.push('Skipped');
+        const message = otherTabs.length > 0
+            ? `No active recommendations. Check the ${otherTabs.join(' and ')} tab${otherTabs.length > 1 ? 's' : ''}.`
+            : 'No active recommendations.';
+        activeContainer.innerHTML = `<p class="text-gray-500 text-center py-8">${message}</p>`;
+    }
+
+    // Display implemented recommendations
+    if (implementedContainer && implementedRecs.length > 0) {
+        implementedRecs.forEach((rec, index) => {
+            const recCard = createRecommendationCard(rec, index, userTier, false);
+            implementedContainer.appendChild(recCard);
+
+            // Attach copy button listeners immediately after adding to DOM
+            attachCopyButtonListeners(recCard);
+        });
     }
 
     // Display skipped recommendations
