@@ -178,18 +178,68 @@
         }
 
         .user-info {
+            padding: 0.75rem 1.25rem;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 50%, var(--pink) 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 185, 218, 0.2);
+            min-width: 140px;
             text-align: right;
+            position: relative;
+        }
+
+        .user-info::before {
+            content: '⚡';
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .user-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 185, 218, 0.4);
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 50%, var(--purple) 100%);
+        }
+
+        .user-info:hover::before {
+            opacity: 1;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.2); }
+        }
+
+        .user-info:active {
+            transform: translateY(0);
         }
 
         .user-name {
-            font-weight: 600;
-            color: var(--gray-800);
+            font-weight: 700;
+            color: var(--white);
             font-size: 0.875rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .user-name::after {
+            content: '⚙️';
+            font-size: 0.75rem;
+            opacity: 0.8;
         }
 
         .user-plan {
             font-size: 0.75rem;
-            color: var(--gray-500);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
         }
 
         .logout-btn {
@@ -829,7 +879,24 @@
             }
 
             .user-info {
+                padding: 0.5rem 0.75rem;
+                min-width: auto;
+            }
+
+            .user-info::before {
                 display: none;
+            }
+
+            .user-name {
+                font-size: 0.75rem;
+            }
+
+            .user-name::after {
+                font-size: 0.65rem;
+            }
+
+            .user-plan {
+                font-size: 0.65rem;
             }
 
             /* Subscription section mobile responsive */
@@ -1347,7 +1414,7 @@
                 <span id="competitorCount">0/3 competitors</span>
             </div>
             <div class="user-section">
-                <div class="user-info">
+                <div class="user-info" onclick="openStripePortal()" title="Click to manage your subscription">
                     <div class="user-name" id="userName">User</div>
                     <div class="user-plan" id="userPlan">Free Plan</div>
                 </div>
