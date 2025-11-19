@@ -147,7 +147,8 @@ function displayResults(scan, quota) {
 
     // Display user mode indicator and notifications (if data available)
     if (scan.userMode) {
-        displayModeIndicator(scan.userMode, displayScore);
+        const recCount = scan.recommendations ? scan.recommendations.length : 0;
+        displayModeIndicator(scan.userMode, displayScore, recCount);
     }
     if (scan.notifications) {
         displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
@@ -2489,59 +2490,62 @@ function displayTimeline(historicalTimeline) {
 /**
  * Display user mode indicator (Optimization vs Elite)
  */
-function displayModeIndicator(userMode, currentScore) {
+function displayModeIndicator(userMode, currentScore, recommendationsCount = 0) {
     const container = document.createElement('div');
     container.id = 'mode-indicator';
     container.className = 'mb-6';
 
     const isElite = userMode.current_mode === 'elite';
-    const modeColor = isElite ? 'from-purple-600 to-indigo-600' : 'from-blue-600 to-cyan-600';
     const modeIcon = isElite ? '👑' : '🚀';
     const modeTitle = isElite ? 'Elite Maintenance Mode' : 'Optimization Mode';
     const modeDescription = isElite
         ? 'You\'ve achieved elite status! Focus on maintaining your high score and staying ahead of competitors.'
         : 'Keep improving! Reach 850+ to unlock Elite mode with competitive tracking.';
 
-    // Calculate progress to Elite mode (if in optimization)
-    let progressSection = '';
+    // Calculate stats for optimization mode
+    let statsSection = '';
     if (!isElite && currentScore) {
         const progress = Math.min((currentScore / 850) * 100, 100);
         const remaining = Math.max(850 - currentScore, 0);
-        progressSection = `
-            <div class="mt-4 pt-4 border-t border-white/20">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-white">Progress to Elite Mode</span>
-                    <span class="text-lg font-bold text-white">${Math.round(progress)}%</span>
+
+        statsSection = `
+            <div class="stat-item">
+                <div class="stat-value">${Math.round(progress)}%</div>
+                <div class="stat-label">Progress to Elite Mode</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
-                <div class="w-full bg-white/20 rounded-full h-3 mb-2">
-                    <div class="bg-white h-3 rounded-full transition-all duration-500 shadow-lg" style="width: ${progress}%"></div>
-                </div>
-                ${remaining > 0 ? `
-                    <p class="text-sm text-white/90">
-                        <span class="font-semibold">${remaining}</span> points needed to reach Elite Mode (850+)
-                    </p>
-                ` : ''}
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-value">${remaining} points</div>
+                <div class="stat-label">Needed to reach Elite Mode (850+)</div>
+            </div>
+
+            <div class="stat-item highlight">
+                <div class="stat-value">${recommendationsCount} actionable improvement${recommendationsCount !== 1 ? 's' : ''}</div>
+                <div class="stat-label">to boost your AI visibility</div>
             </div>
         `;
     }
 
     container.innerHTML = `
-        <div class="bg-gradient-to-r ${modeColor} text-white rounded-lg shadow-lg overflow-hidden">
-            <div class="p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <div class="flex items-start gap-4 flex-1">
-                        <span class="text-5xl" style="line-height: 1;">${modeIcon}</span>
-                        <div class="flex-1">
-                            <h3 class="text-2xl font-bold mb-2">${modeTitle}</h3>
-                            <p class="text-white/90 text-base leading-relaxed">${modeDescription}</p>
-                        </div>
-                    </div>
-                    <div class="text-right bg-white/10 rounded-lg px-6 py-4 min-w-[140px]">
-                        <div class="text-4xl font-bold mb-1">${currentScore}</div>
-                        <div class="text-sm text-white/90 font-medium">Current Score</div>
-                    </div>
+        <div class="optimization-status-card">
+            <div class="optimization-header">
+                <div class="optimization-icon">${modeIcon}</div>
+                <div class="optimization-title-section">
+                    <h3 class="optimization-mode-title">${modeTitle}</h3>
+                    <p class="optimization-subtitle">${modeDescription}</p>
                 </div>
-                ${progressSection}
+            </div>
+
+            <div class="optimization-stats">
+                <div class="stat-item primary-stat">
+                    <div class="stat-number">${currentScore}</div>
+                    <div class="stat-label">Current Score</div>
+                </div>
+
+                ${statsSection}
             </div>
         </div>
     `;
