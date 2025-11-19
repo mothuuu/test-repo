@@ -479,9 +479,10 @@ router.get('/portal', authenticateToken, async (req, res) => {
     );
 
     if (result.rows.length === 0 || !result.rows[0].stripe_customer_id) {
-      console.error('❌ No Stripe customer ID found for user:', userId);
-      return res.status(404).json({
-        error: 'No subscription found'
+      console.log('ℹ️ No Stripe customer ID - redirecting to checkout page');
+      // User is on free plan, redirect them to choose a plan
+      return res.json({
+        url: `${process.env.FRONTEND_URL}/checkout.html`
       });
     }
 
