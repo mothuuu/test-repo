@@ -512,6 +512,29 @@
         </div>
     </div>
 
+    <!-- Coming Soon Modal -->
+    <div id="comingSoonModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Coming Soon</h2>
+                <p>This plan will be available soon</p>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1.5rem; color: var(--gray-700); line-height: 1.6;">
+                    We're working hard to bring this plan to you. Please check back soon or start with our <strong>DIY plan</strong> for immediate access.
+                </p>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeComingSoonModal()">
+                        Close
+                    </button>
+                    <button class="modal-btn modal-btn-primary" onclick="selectPlan('diy')">
+                        Try DIY Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>Choose Your Plan</h1>
@@ -720,6 +743,16 @@
             modal.classList.remove('active');
         }
 
+        function openComingSoonModal() {
+            const modal = document.getElementById('comingSoonModal');
+            modal.classList.add('active');
+        }
+
+        function closeComingSoonModal() {
+            const modal = document.getElementById('comingSoonModal');
+            modal.classList.remove('active');
+        }
+
         function openDowngradeModal() {
             const modal = document.getElementById('downgradeModal');
             modal.classList.add('active');
@@ -733,6 +766,41 @@
         async function confirmDowngrade() {
             closeDowngradeModal();
             await downgradeToFree();
+        }
+
+        async function openStripePortal() {
+            const authToken = localStorage.getItem('authToken');
+
+            if (!authToken) {
+                window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            try {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                const response = await fetch(`${API_BASE_URL}/subscription/portal`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to open Stripe portal');
+                }
+
+                // Redirect to Stripe portal
+                window.location.href = data.url;
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                console.error('Portal error:', error);
+                showMessage('Portal Access Failed', error.message, 'Please try again');
+            }
         }
 
         async function selectPlan(planName) {
@@ -749,6 +817,19 @@
                 return;
             }
 
+            // Handle DIY plan - redirect to Stripe portal
+            if (planName === 'diy') {
+                await openStripePortal();
+                return;
+            }
+
+            // Handle Pro, Enterprise, Agency plans - show coming soon modal
+            if (planName === 'pro' || planName === 'enterprise' || planName === 'agency') {
+                openComingSoonModal();
+                return;
+            }
+
+            // Fallback for any other plans (shouldn't reach here)
             // Get domain from localStorage or show modal
             const domain = localStorage.getItem('primaryDomain');
 
@@ -891,6 +972,14 @@
                 }
             });
 
+            // Close coming soon modal when clicking outside
+            const comingSoonModalEl = document.getElementById('comingSoonModal');
+            comingSoonModalEl.addEventListener('click', (e) => {
+                if (e.target === comingSoonModalEl) {
+                    closeComingSoonModal();
+                }
+            });
+
             // Close modals on Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -902,6 +991,9 @@
                     }
                     if (messageModalEl.classList.contains('active')) {
                         closeMessageModal();
+                    }
+                    if (comingSoonModalEl.classList.contains('active')) {
+                        closeComingSoonModal();
                     }
                 }
             });
