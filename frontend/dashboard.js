@@ -183,21 +183,6 @@ function updateFeatureLocking() {
     const isPro = user.plan === 'pro';
     const isDiyPlus = user.plan === 'diy' || isPro;
 
-    // Scheduled Scans - Pro+ only
-    const scheduledScansLocked = document.getElementById('scheduledScansLocked');
-    const scheduledScansUnlocked = document.getElementById('scheduledScansUnlocked');
-    const scheduledScansNav = document.querySelector('[data-section="scheduled-scans"]');
-
-    if (isPro) {
-        if (scheduledScansLocked) scheduledScansLocked.style.display = 'none';
-        if (scheduledScansUnlocked) scheduledScansUnlocked.style.display = 'block';
-        scheduledScansNav?.classList.remove('locked');
-    } else {
-        if (scheduledScansLocked) scheduledScansLocked.style.display = 'flex';
-        if (scheduledScansUnlocked) scheduledScansUnlocked.style.display = 'none';
-        scheduledScansNav?.classList.add('locked');
-    }
-
     // Brand Visibility Index - Pro+ only
     const brandVisibilityLocked = document.getElementById('brandVisibilityLocked');
     const brandVisibilityUnlocked = document.getElementById('brandVisibilityUnlocked');
