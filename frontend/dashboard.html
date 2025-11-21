@@ -2425,58 +2425,15 @@
                             </thead>
                             <tbody id="billingHistoryTable">
                                 <tr>
-                                    <td>Dec 15, 2025</td>
-                                    <td>$149.00</td>
-                                    <td><span class="badge badge-good">Paid</span></td>
-                                    <td>
-                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_001')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                            <i class="fas fa-download"></i>
-                                            Download PDF
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nov 15, 2025</td>
-                                    <td>$149.00</td>
-                                    <td><span class="badge badge-good">Paid</span></td>
-                                    <td>
-                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_002')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                            <i class="fas fa-download"></i>
-                                            Download PDF
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Oct 15, 2025</td>
-                                    <td>$149.00</td>
-                                    <td><span class="badge badge-good">Paid</span></td>
-                                    <td>
-                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_003')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                            <i class="fas fa-download"></i>
-                                            Download PDF
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Sep 15, 2025</td>
-                                    <td>$149.00</td>
-                                    <td><span class="badge badge-good">Paid</span></td>
-                                    <td>
-                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_004')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                            <i class="fas fa-download"></i>
-                                            Download PDF
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Aug 15, 2025</td>
-                                    <td>$149.00</td>
-                                    <td><span class="badge badge-good">Paid</span></td>
-                                    <td>
-                                        <button class="btn btn-ghost" onclick="downloadInvoice('inv_005')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                            <i class="fas fa-download"></i>
-                                            Download PDF
-                                        </button>
+                                    <td colspan="4">
+                                        <div class="empty-state">
+                                            <div class="empty-icon">💳</div>
+                                            <div class="empty-text">View your complete billing history and invoices in the Stripe Portal</div>
+                                            <button class="btn btn-primary" onclick="openStripePortal()" style="margin-top: 1rem;">
+                                                <i class="fas fa-external-link-alt" style="margin-right: 0.5rem;"></i>
+                                                Open Stripe Portal
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
