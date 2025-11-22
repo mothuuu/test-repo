@@ -1491,11 +1491,6 @@
                         <span>Quick Wins</span>
                         <span class="badge" id="quickWinsCount">0</span>
                     </div>
-                    <div class="nav-item" data-section="implementation-progress">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Implementation Progress</span>
-                        <span class="tier-badge-sidebar">PRO</span>
-                    </div>
                 </div>
 
                 <div class="nav-section">
@@ -2038,83 +2033,6 @@
                     <div class="empty-state">
                         <div class="empty-icon">⚡</div>
                         <div class="empty-text">No quick wins available</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Implementation Progress Section -->
-            <section class="section" id="implementation-progress">
-                <div class="section-header">
-                    <h1 class="section-title">Implementation Progress</h1>
-                    <p class="section-subtitle">Track your recommendation implementation and measure impact</p>
-                </div>
-
-                <!-- Locked State -->
-                <div class="locked-overlay" id="implementationProgressLocked">
-                    <div class="locked-content">
-                        <div class="locked-icon">🔒</div>
-                        <h2 class="locked-title">Unlock Implementation Progress Tracking</h2>
-                        <p class="locked-text">Upgrade to Pro to track your recommendation implementation, measure impact, and accelerate your AI visibility improvements</p>
-                        <button class="btn btn-primary" onclick="window.location.href='checkout.html?plan=pro'">
-                            Upgrade to Pro - $99/mo
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Unlocked State (shown for Pro+) -->
-                <div id="implementationProgressUnlocked" style="display: none;">
-                    <!-- Progress Overview Stats -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Recommendations</div>
-                            <div class="stat-value" id="totalRecommendations">0</div>
-                            <div class="stat-meta">actionable items</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Implemented</div>
-                            <div class="stat-value" style="color: var(--good-green);" id="implementedCount">0</div>
-                            <div class="stat-meta" id="implementedPercentage">0% complete</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">In Progress</div>
-                            <div class="stat-value" style="color: var(--warning-yellow);" id="inProgressCount">0</div>
-                            <div class="stat-meta">being worked on</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Estimated Impact</div>
-                            <div class="stat-value" style="color: var(--cyan);" id="estimatedImpact">+0</div>
-                            <div class="stat-meta">points when complete</div>
-                        </div>
-                    </div>
-
-                    <!-- Progress Timeline -->
-                    <div class="card">
-                        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Implementation Timeline</h3>
-                        <div id="implementationTimeline">
-                            <div class="empty-state">
-                                <div class="empty-icon">📊</div>
-                                <div class="empty-text">No implementation data yet. Start implementing recommendations to see your progress.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Implementation List -->
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="font-size: 1.25rem; font-weight: 700;">Your Recommendations</h3>
-                            <div class="filter-buttons">
-                                <button class="filter-btn active" data-filter="all">All</button>
-                                <button class="filter-btn" data-filter="pending">Pending</button>
-                                <button class="filter-btn" data-filter="in-progress">In Progress</button>
-                                <button class="filter-btn" data-filter="completed">Completed</button>
-                            </div>
-                        </div>
-                        <div id="implementationList">
-                            <div class="empty-state">
-                                <div class="empty-icon">✓</div>
-                                <div class="empty-text">No recommendations available</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
