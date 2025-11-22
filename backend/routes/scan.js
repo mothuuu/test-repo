@@ -1465,6 +1465,17 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
     console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
+    // Add industry prompt if certification data was detected without user-selected industry
+    let industryPrompt = null;
+    if (!userIndustry && v5Results.certificationData && v5Results.certificationData.industry === 'Generic') {
+      industryPrompt = {
+        message: "💡 Set your industry in settings for tailored certification recommendations",
+        actionUrl: "/settings.html#industry",
+        actionLabel: "Set Industry"
+      };
+      console.log(`💡 Industry prompt added (using Generic certification library)`);
+    }
+
     return {
       totalScore,
       categories,
@@ -1472,6 +1483,7 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
       faq: recommendationResults.data.faq || null,
       upgrade: recommendationResults.data.upgrade || null,
       industry: v5Results.industry || 'General',
+      industryPrompt: industryPrompt, // UI prompt to set industry
       detailedAnalysis: {
         url,
         scannedAt: new Date().toISOString(),
