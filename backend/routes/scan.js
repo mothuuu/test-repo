@@ -32,12 +32,8 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// Plan limits
-const PLAN_LIMITS = {
-  free: { scansPerMonth: 2, pagesPerScan: 1, competitorScans: 0 },
-  diy: { scansPerMonth: 25, pagesPerScan: 5, competitorScans: 2 },
-  pro: { scansPerMonth: 50, pagesPerScan: 25, competitorScans: 10 }
-};
+// Plan limits imported from middleware (single source of truth)
+const { PLAN_LIMITS } = require('../middleware/usageLimits');
 
 // V5 Rubric Category Weights
 const V5_WEIGHTS = {
@@ -182,7 +178,28 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     }
 
     const user = userResult.rows[0];
-    const planLimits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.free;
+    const planLimits = PLAN_LIMITS[user.plan];
+
+    // Defensive guard: Ensure plan is valid
+    if (!planLimits) {
+      console.error(`⚠️ CRITICAL: Invalid plan detected for user ${userId}: "${user.plan}"`);
+
+      // Log to database for monitoring
+      await db.query(
+        'INSERT INTO usage_logs (user_id, action, metadata) VALUES ($1, $2, $3)',
+        [userId, 'invalid_plan_detected', JSON.stringify({
+          invalidPlan: user.plan,
+          timestamp: new Date().toISOString()
+        })]
+      );
+
+      // Return error instead of silently downgrading
+      return res.status(500).json({
+        error: 'Invalid plan configuration',
+        message: 'Your account has an invalid plan. Please contact support.',
+        supportEmail: 'support@yourapp.com'
+      });
+    }
 
     // Log user's industry preference if set
     if (user.industry) {

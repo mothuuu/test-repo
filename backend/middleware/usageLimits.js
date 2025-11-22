@@ -4,6 +4,7 @@ const PLAN_LIMITS = {
   free: {
     scansPerMonth: 2,
     pagesPerScan: 1, // Homepage only
+    competitorScans: 0,
     multiPageScan: false,
     pageSelection: false,
     competitorAnalysis: false,
@@ -16,6 +17,7 @@ const PLAN_LIMITS = {
   diy: {
     scansPerMonth: 25, // Reasonable limit for DIY users
     pagesPerScan: 5, // Homepage + 4 additional pages
+    competitorScans: 2,
     multiPageScan: true,
     pageSelection: true, // KEY FEATURE: User chooses which pages
     competitorAnalysis: false,
@@ -28,6 +30,7 @@ const PLAN_LIMITS = {
   pro: {
     scansPerMonth: 50,
     pagesPerScan: 25,
+    competitorScans: 10,
     multiPageScan: true,
     pageSelection: true,
     competitorAnalysis: true,
@@ -56,7 +59,23 @@ async function checkScanLimit(req, res, next) {
     const userId = req.user.id;
     const userPlan = req.user.plan || 'free';
     const limits = PLAN_LIMITS[userPlan];
-    
+
+    // Defensive guard: Ensure plan is valid
+    if (!limits) {
+      console.error(`⚠️ CRITICAL: Invalid plan detected for user ${userId}: "${userPlan}"`);
+      await db.query(
+        'INSERT INTO usage_logs (user_id, action, metadata) VALUES ($1, $2, $3)',
+        [userId, 'invalid_plan_detected', JSON.stringify({
+          invalidPlan: userPlan,
+          timestamp: new Date().toISOString()
+        })]
+      );
+      return res.status(500).json({
+        error: 'Invalid plan configuration',
+        message: 'Your account has an invalid plan. Please contact support.'
+      });
+    }
+
     // Check if user exceeded monthly limit
     if (req.user.scans_used_this_month >= limits.scansPerMonth) {
       const upgradeMessage = getUpgradeMessage(userPlan);
@@ -106,7 +125,16 @@ function checkFeatureAccess(feature) {
     }
 
     const limits = PLAN_LIMITS[req.user.plan];
-    
+
+    // Defensive guard: Ensure plan is valid
+    if (!limits) {
+      console.error(`⚠️ CRITICAL: Invalid plan detected for user ${req.user.id}: "${req.user.plan}"`);
+      return res.status(500).json({
+        error: 'Invalid plan configuration',
+        message: 'Your account has an invalid plan. Please contact support.'
+      });
+    }
+
     if (!limits[feature]) {
       const requiredPlan = getRequiredPlan(feature);
       return res.status(403).json({
