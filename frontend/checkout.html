@@ -432,6 +432,131 @@
         .modal-btn-secondary:hover {
             background: var(--gray-50);
         }
+
+        /* Agency Plan Box */
+        .agency-box {
+            background: linear-gradient(135deg, #4A1F5E 0%, #5E2875 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 24px rgba(74, 31, 94, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .agency-info {
+            flex-shrink: 0;
+        }
+
+        .agency-info .plan-name {
+            color: white;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .agency-info .plan-tagline {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agency-info .plan-price {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .agency-info .plan-price span {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .agency-info .plan-billing {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+        }
+
+        .agency-features {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem 2rem;
+            list-style: none;
+        }
+
+        .agency-features li {
+            color: white;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .agency-features li i {
+            color: #00B9DA;
+            font-size: 1.1rem;
+        }
+
+        .agency-cta {
+            flex-shrink: 0;
+        }
+
+        .agency-btn {
+            background: white;
+            color: #4A1F5E;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .agency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .agency-box {
+                flex-direction: column;
+                text-align: center;
+                padding: 2rem;
+            }
+
+            .agency-features {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .agency-cta .agency-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .agency-box {
+                padding: 1.5rem;
+            }
+
+            .agency-features {
+                grid-template-columns: 1fr;
+            }
+
+            .agency-info .plan-name {
+                font-size: 1.5rem;
+            }
+
+            .agency-info .plan-price {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -564,17 +689,15 @@
             <!-- DIY Plan -->
             <div class="plan-card featured">
                 <div class="plan-name">DIY</div>
-                <div class="plan-tagline">Most popular for solopreneurs</div>
+                <div class="plan-tagline">For solopreneurs & small teams</div>
                 <div class="plan-price">$29<span>/mo</span></div>
                 <div class="plan-billing">Billed monthly • Cancel anytime</div>
                 <ul class="plan-features">
-                    <li><i class="fas fa-check-circle"></i><span>10 scans per month</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Homepage + 4 pages (5 total)</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Page-level TODO lists</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Progress tracking</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Basic JSON-LD export</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Combined recommendations</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Email support</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>25 scans per month</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Up to 5 pages of the same domain</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Website Visibility Index (full)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Copy-paste code snippets</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Competitor scanning</span></li>
                 </ul>
                 <button class="plan-btn plan-btn-primary" onclick="selectPlan('diy')">
                     Get Started
@@ -585,19 +708,14 @@
             <div class="plan-card">
                 <div class="plan-name">Pro</div>
                 <div class="plan-tagline">For growing businesses</div>
-                <div class="plan-price">$99<span>/mo</span></div>
+                <div class="plan-price">$149<span>/mo</span></div>
                 <div class="plan-billing">Billed monthly • Cancel anytime</div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check-circle"></i><span>50 scans per month</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Up to 25 pages per scan</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Brand Visibility Index</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Competitor benchmarking (3 domains)</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Outside-in crawl (PR, reviews, social)</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Advanced JSON-LD pack</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Knowledge Graph fields</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Live dashboard & analytics</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>PDF export</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Priority email support</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Up to 25 pages of the same domain</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Website Visibility Index (full) & Brand Visibility Index (Lite)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Copy-paste code snippets</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>3 competitor analyses</span></li>
                 </ul>
                 <button class="plan-btn plan-btn-secondary" onclick="selectPlan('pro')">
                     Get Started
@@ -607,26 +725,45 @@
             <!-- Enterprise Plan -->
             <div class="plan-card">
                 <div class="plan-name">Enterprise</div>
-                <div class="plan-tagline">For growing companies</div>
-                <div class="plan-price">$249<span>/mo</span></div>
+                <div class="plan-tagline">For enterprise & mid-market companies</div>
+                <div class="plan-price">$499<span>/mo</span></div>
                 <div class="plan-billing">Billed monthly • Cancel anytime</div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check-circle"></i><span>200 scans per month</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Track 100 pages per domain</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Monitor 10 competitors</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Media & social monitoring</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Thought leadership tracking</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>White-label reports</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>API access</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Team members (up to 5)</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Dedicated account manager</span></li>
-                    <li><i class="fas fa-check-circle"></i><span>Priority phone support</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Up to 100 pages of the same domain</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Website Visibility Index (full) & Brand Visibility Index (Full)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>10 competitor analyses</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Advanced AI monitoring (50+ queries)</span></li>
+                    <li><i class="fas fa-check-circle"></i><span>Media & social tracking</span></li>
                 </ul>
                 <button class="plan-btn plan-btn-secondary" onclick="selectPlan('enterprise')">
                     Get Started
                 </button>
             </div>
 
+        </div>
+
+        <!-- Agency Plan Box -->
+        <div class="agency-box">
+            <div class="agency-info">
+                <div class="plan-name">Agency</div>
+                <div class="plan-tagline">For marketing agencies & consultants</div>
+                <div class="plan-price">$499<span>/mo</span></div>
+                <div class="plan-billing">Billed monthly • Cancel anytime</div>
+            </div>
+            <ul class="agency-features">
+                <li><i class="fas fa-check-circle"></i><span>10 client domains</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Dedicated account manager</span></li>
+                <li><i class="fas fa-check-circle"></i><span>50 scans per domain/month</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Priority support</span></li>
+                <li><i class="fas fa-check-circle"></i><span>White-label reports</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Custom onboarding</span></li>
+            </ul>
+            <div class="agency-cta">
+                <button class="agency-btn" onclick="selectPlan('agency')">
+                    Contact Sales
+                </button>
+            </div>
         </div>
 
         <div class="faq-section">
