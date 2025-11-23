@@ -808,7 +808,10 @@
         let currentPlan = null;
 
         function openDomainModal(planName) {
+            console.log('📝 openDomainModal called with plan:', planName);
             currentPlan = planName;
+            console.log('✅ currentPlan set to:', currentPlan);
+
             const modal = document.getElementById('domainModal');
             const input = document.getElementById('domainInput');
 
@@ -835,9 +838,16 @@
             // Clean up domain
             const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
 
+            // Save plan before closing modal (closeDomainModal resets currentPlan to null)
+            const selectedPlan = currentPlan;
+
+            console.log('📋 submitDomain called');
+            console.log('Selected plan:', selectedPlan);
+            console.log('Cleaned domain:', cleanDomain);
+
             // Close modal and proceed with checkout
             closeDomainModal();
-            await proceedWithCheckout(currentPlan, cleanDomain);
+            await proceedWithCheckout(selectedPlan, cleanDomain);
         }
 
         function showMessage(title, message, subtitle = '', isSuccess = true) {
@@ -919,21 +929,26 @@
         }
 
         async function selectPlan(planName) {
+            console.log('🎯 selectPlan called with:', planName);
+
             const authToken = localStorage.getItem('authToken');
 
             if (!authToken) {
+                console.log('❌ No auth token, redirecting to login');
                 window.location.href = 'auth.html?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
 
             // Handle free plan selection - show confirmation modal
             if (planName === 'free') {
+                console.log('➡️ Free plan selected, opening downgrade modal');
                 openDowngradeModal();
                 return;
             }
 
             // Handle Pro, Enterprise, Agency plans - show coming soon modal
             if (planName === 'pro' || planName === 'enterprise' || planName === 'agency') {
+                console.log('➡️ ' + planName + ' plan selected, opening coming soon modal');
                 openComingSoonModal();
                 return;
             }
@@ -941,12 +956,15 @@
             // Handle DIY plan - create Stripe checkout session
             // Get domain from localStorage or show modal
             const domain = localStorage.getItem('primaryDomain');
+            console.log('📍 Primary domain from localStorage:', domain);
 
             if (!domain) {
+                console.log('➡️ No domain found, opening domain modal for plan:', planName);
                 openDomainModal(planName);
                 return;
             }
 
+            console.log('➡️ Domain found, proceeding directly to checkout');
             await proceedWithCheckout(planName, domain);
         }
 
