@@ -18,7 +18,7 @@ body {
   top: 0;
   bottom: 0;
   width: 260px;
-  background: linear-gradient(180deg, var(--violet-deep) 0%, var(--violet-rich) 100%);
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
   padding: 30px 20px;
   overflow-y: auto;
   z-index: 1000;
@@ -184,13 +184,32 @@ body {
 }
 
 .metric-card {
-  background: var(--white);
   padding: 25px;
   border-radius: 16px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
   transition: all 0.3s;
+}
+
+/* Total Users - Blue/Cyan */
+.metric-card:nth-child(1) {
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+}
+
+/* Monthly Revenue - Yellow/Gold */
+.metric-card:nth-child(2) {
+  background: linear-gradient(135deg, #FEF9C3 0%, #FDE68A 100%);
+}
+
+/* Scans This Month - Light Gray */
+.metric-card:nth-child(3) {
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+}
+
+/* Churn Rate - Pink/Rose */
+.metric-card:nth-child(4) {
+  background: linear-gradient(135deg, #FFE4E6 0%, #FECDD3 100%);
 }
 
 .metric-card:hover {
