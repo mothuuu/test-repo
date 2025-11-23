@@ -89,7 +89,8 @@ function updateUserInfo() {
     const planNames = {
         free: 'Free Plan',
         diy: 'DIY Plan',
-        pro: 'Pro Plan'
+        pro: 'Pro Plan',
+        enterprise: 'Enterprise Plan'
     };
     document.getElementById('userPlan').textContent = planNames[user.plan] || 'Free Plan';
 
@@ -99,13 +100,15 @@ function updateUserInfo() {
         const planLimits = {
             free: 1,
             diy: 5,
-            pro: 25
+            pro: 25,
+            enterprise: 100
         };
         const pageLimit = planLimits[user.plan] || 1;
         const planDisplayNames = {
             free: 'Free plan',
             diy: 'DIY plan',
-            pro: 'Pro plan'
+            pro: 'Pro plan',
+            enterprise: 'Enterprise plan'
         };
         scanPlanInfo.textContent = `${planDisplayNames[user.plan] || 'Free plan'}: Analyze up to ${pageLimit} pages`;
     }
@@ -135,7 +138,8 @@ async function updateCompetitorBadge() {
     const competitorLimits = {
         free: 0,
         diy: 2,
-        pro: 3
+        pro: 3,
+        enterprise: 10
     };
 
     const competitorLimit = competitorLimits[user.plan] || 0;
@@ -228,7 +232,8 @@ function updateQuota() {
     const planLimits = {
         free: { primary: 2, competitor: 0, pages: 1 },
         diy: { primary: 25, competitor: 2, pages: 5 },
-        pro: { primary: 50, competitor: 10, pages: 25 }
+        pro: { primary: 50, competitor: 3, pages: 25 },
+        enterprise: { primary: 200, competitor: 10, pages: 100 }
     };
 
     const limits = planLimits[user.plan] || planLimits.free;
@@ -843,13 +848,13 @@ async function loadSubscriptionData() {
             },
             diy: {
                 name: 'DIY Plan',
-                price: '$49/month',
+                price: '$29/month',
                 features: [
                     '25 scans per month',
-                    'Track up to 5 pages',
-                    'Competitor comparison (2)',
-                    'PDF exports',
-                    'Email support'
+                    'Up to 5 pages of the same domain',
+                    'Website Visibility Index (full)',
+                    'Copy-paste code snippets',
+                    'Competitor scanning'
                 ],
                 scansLimit: 25,
                 pagesLimit: 5,
@@ -860,16 +865,29 @@ async function loadSubscriptionData() {
                 price: '$149/month',
                 features: [
                     '50 scans per month',
-                    'Track up to 25 pages',
-                    'AI Discoverability tracking',
-                    'Brand Visibility Index',
-                    'Compare 3 competitors',
-                    'PDF & CSV exports',
-                    'Priority email support'
+                    'Up to 25 pages of the same domain',
+                    'Website Visibility Index (full) & Brand Visibility Index (Lite)',
+                    'Copy-paste code snippets',
+                    '3 competitor analyses'
                 ],
                 scansLimit: 50,
                 pagesLimit: 25,
                 competitorsLimit: 3
+            },
+            enterprise: {
+                name: 'Enterprise Plan',
+                price: '$499/month',
+                features: [
+                    '200 scans per month',
+                    'Up to 100 pages of the same domain',
+                    'Website Visibility Index (full) & Brand Visibility Index (Full)',
+                    '10 competitor analyses',
+                    'Advanced AI monitoring (50+ queries)',
+                    'Media & social tracking'
+                ],
+                scansLimit: 200,
+                pagesLimit: 100,
+                competitorsLimit: 10
             }
         };
 
@@ -953,14 +971,87 @@ let selectedPlanForChange = null;
 function openChangePlanModal() {
     document.getElementById('changePlanModal').style.display = 'flex';
 
+    // Hide the dynamic note initially
+    document.getElementById('planChangeNote').style.display = 'none';
+
+    // Plan hierarchy for comparison
+    const planRanks = {
+        free: 0,
+        diy: 1,
+        pro: 2,
+        enterprise: 3
+    };
+
+    // Show current plan badge
+    const currentPlanRank = planRanks[user.plan] || 0;
+
     // Setup plan selection handlers
     document.querySelectorAll('.plan-option').forEach(option => {
+        const planType = option.dataset.plan;
+
+        // Remove any existing current badges
+        const existingBadge = option.querySelector('.current-badge, #proCurrentBadge, #diyCurrentBadge, #enterpriseCurrentBadge');
+        if (existingBadge) {
+            existingBadge.style.display = 'none';
+        }
+
+        // Show CURRENT badge on user's current plan
+        if (planType === user.plan) {
+            // For Pro plan, show the badge
+            if (planType === 'pro') {
+                const proBadge = document.getElementById('proCurrentBadge');
+                if (proBadge) proBadge.style.display = 'inline-block';
+            } else {
+                // For other plans, add badge dynamically
+                const header = option.querySelector('div[style*="font-weight: 700"]');
+                if (header && !header.querySelector('.current-badge')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'current-badge';
+                    badge.style.cssText = 'font-size: 0.625rem; background: var(--brand-cyan); color: white; padding: 0.25rem 0.5rem; border-radius: 10px; font-weight: 700; margin-left: 0.5rem;';
+                    badge.textContent = 'CURRENT';
+                    header.appendChild(badge);
+                }
+            }
+        }
+
         option.addEventListener('click', function() {
             // Remove selected from all
             document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
             // Add selected to clicked
             this.classList.add('selected');
             selectedPlanForChange = this.dataset.plan;
+
+            // Show/hide dynamic note based on upgrade or downgrade
+            const selectedPlanRank = planRanks[selectedPlanForChange] || 0;
+            const noteDiv = document.getElementById('planChangeNote');
+            const noteText = document.getElementById('planChangeNoteText');
+
+            if (selectedPlanForChange === user.plan) {
+                // Same plan - hide note
+                noteDiv.style.display = 'none';
+            } else if (selectedPlanRank > currentPlanRank) {
+                // Upgrading
+                noteDiv.style.display = 'block';
+                noteText.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Note:</strong> Plan changes are pro-rated. You\'ll be credited for unused time on your current plan.';
+            } else {
+                // Downgrading
+                noteDiv.style.display = 'block';
+
+                // Calculate renewal date (example: 30 days from now)
+                const renewalDate = new Date();
+                renewalDate.setDate(renewalDate.getDate() + 30);
+                const formattedDate = renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                const planDisplayNames = {
+                    free: 'Free',
+                    diy: 'DIY',
+                    pro: 'Pro',
+                    enterprise: 'Enterprise'
+                };
+                const currentPlanName = planDisplayNames[user.plan] || 'current';
+
+                noteText.innerHTML = `📅 <strong>Your access continues until: ${formattedDate}</strong><br>You won't be charged again, and you can keep using ${currentPlanName} features until this date.`;
+            }
         });
     });
 }
@@ -985,8 +1076,9 @@ async function confirmPlanChange() {
 
     const planNames = {
         free: 'Free Plan',
-        diy: 'DIY Plan ($49/month)',
-        pro: 'Pro Plan ($149/month)'
+        diy: 'DIY Plan ($29/month)',
+        pro: 'Pro Plan ($149/month)',
+        enterprise: 'Enterprise Plan ($499/month)'
     };
 
     const confirmed = await showXeoConfirm(
@@ -1023,6 +1115,18 @@ function openCancelSubscriptionModal() {
     renewalDate.setDate(renewalDate.getDate() + 30);
     document.getElementById('cancelAccessUntilDate').textContent =
         renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Update current plan name in the cancel message
+    const planDisplayNames = {
+        free: 'Free',
+        diy: 'DIY',
+        pro: 'Pro',
+        enterprise: 'Enterprise'
+    };
+    const cancelCurrentPlanName = document.getElementById('cancelCurrentPlanName');
+    if (cancelCurrentPlanName) {
+        cancelCurrentPlanName.textContent = planDisplayNames[user.plan] || 'Pro';
+    }
 
     document.getElementById('cancelSubscriptionModal').style.display = 'flex';
 }
@@ -1098,15 +1202,15 @@ async function loadBillingData() {
             },
             diy: {
                 name: 'DIY Plan',
-                price: '$49/month',
+                price: '$29/month',
                 features: [
-                    '10 scans per month',
-                    'Track up to 5 pages',
-                    'Competitor comparison (2)',
-                    'PDF exports',
-                    'Email support'
+                    '25 scans per month',
+                    'Up to 5 pages of the same domain',
+                    'Website Visibility Index (full)',
+                    'Copy-paste code snippets',
+                    'Competitor scanning'
                 ],
-                scansLimit: 10,
+                scansLimit: 25,
                 pagesLimit: 5,
                 competitorsLimit: 2
             },
@@ -1115,14 +1219,29 @@ async function loadBillingData() {
                 price: '$149/month',
                 features: [
                     '50 scans per month',
-                    'Track up to 25 pages',
-                    'AI Discoverability tracking',
-                    'Compare 3 competitors',
-                    'Priority support'
+                    'Up to 25 pages of the same domain',
+                    'Website Visibility Index (full) & Brand Visibility Index (Lite)',
+                    'Copy-paste code snippets',
+                    '3 competitor analyses'
                 ],
                 scansLimit: 50,
                 pagesLimit: 25,
                 competitorsLimit: 3
+            },
+            enterprise: {
+                name: 'Enterprise Plan',
+                price: '$499/month',
+                features: [
+                    '200 scans per month',
+                    'Up to 100 pages of the same domain',
+                    'Website Visibility Index (full) & Brand Visibility Index (Full)',
+                    '10 competitor analyses',
+                    'Advanced AI monitoring (50+ queries)',
+                    'Media & social tracking'
+                ],
+                scansLimit: 200,
+                pagesLimit: 100,
+                competitorsLimit: 10
             }
         };
 
