@@ -83,20 +83,54 @@ async function initDashboard() {
 function updateUserInfo() {
     const displayName = user.name || user.email.split('@')[0];
 
-    // Update both userName elements (header and welcome header)
-    const userNameElements = document.querySelectorAll('#userName');
-    userNameElements.forEach(el => {
-        el.textContent = displayName;
-    });
+    // Update header userName
+    const headerUserName = document.getElementById('userName');
+    if (headerUserName) {
+        headerUserName.textContent = displayName;
+    }
 
-    // Update plan type
+    // Update welcome section userName
+    const welcomeUserName = document.getElementById('welcomeUserName');
+    if (welcomeUserName) {
+        welcomeUserName.textContent = displayName;
+    }
+
+    // Update plan badge in welcome section
     const planNames = {
         free: 'Free Plan',
         diy: 'DIY Plan',
         pro: 'Pro Plan',
         enterprise: 'Enterprise Plan'
     };
-    document.getElementById('userPlan').textContent = planNames[user.plan] || 'Free Plan';
+    const planBadge = document.getElementById('planBadge');
+    if (planBadge) {
+        planBadge.textContent = planNames[user.plan] || 'Free Plan';
+    }
+
+    // Update scans remaining in welcome section
+    const scansRemaining = document.getElementById('scansRemaining');
+    if (scansRemaining && user.scans_used_this_month !== undefined) {
+        const planLimits = {
+            free: 2,
+            diy: 25,
+            pro: 50,
+            enterprise: 200
+        };
+        const limit = planLimits[user.plan] || 2;
+        const remaining = Math.max(0, limit - user.scans_used_this_month);
+        scansRemaining.textContent = `${remaining} of ${limit} scans`;
+    }
+
+    // Show/hide upgrade button based on plan
+    const upgradeBtn = document.getElementById('upgradeBtn');
+    if (upgradeBtn) {
+        // Hide upgrade button for paid plans
+        if (user.plan === 'diy' || user.plan === 'pro' || user.plan === 'enterprise') {
+            upgradeBtn.classList.add('hidden');
+        } else {
+            upgradeBtn.classList.remove('hidden');
+        }
+    }
 
     // Update scan plan info in purple section
     const scanPlanInfo = document.getElementById('scanPlanInfo');
