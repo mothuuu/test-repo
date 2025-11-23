@@ -2490,6 +2490,38 @@
         </div>
     </div>
 
+    <!-- Coming Soon Modal for Pro & Enterprise -->
+    <div id="comingSoonModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 550px; padding: 0; overflow: hidden;">
+            <!-- Header with Gradient -->
+            <div style="background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); padding: 2rem; text-align: center; border-radius: 20px 20px 0 0;">
+                <h2 style="color: white; font-size: 1.75rem; font-weight: 700; margin: 0 0 0.5rem 0;">
+                    Coming Soon
+                </h2>
+                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin: 0;">
+                    This plan will be available soon
+                </p>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 2rem; background: white; border-radius: 0 0 20px 20px;">
+                <p style="color: #374151; font-size: 1rem; line-height: 1.6; margin: 0 0 2rem 0;">
+                    We're working hard to bring this plan to you. Please check back soon or start with our <strong>DIY plan</strong> for immediate access.
+                </p>
+
+                <!-- Buttons -->
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" style="flex: 1; padding: 0.875rem 2rem; border: 2px solid #E5E7EB; color: #374151; font-weight: 600; border-radius: 8px;" onclick="closeComingSoonModal()">
+                        Close
+                    </button>
+                    <button class="btn btn-primary" style="flex: 1; padding: 0.875rem 2rem; background: linear-gradient(135deg, #00B9DA 0%, #f31c7e 100%); color: white; font-weight: 600; border-radius: 8px; border: none;" onclick="selectDiyPlan()">
+                        Try DIY Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="dashboard.js" defer></script>
     <script src="support-chat.js"></script>
 </body>
