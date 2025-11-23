@@ -1248,26 +1248,59 @@ function closeCancelSubscriptionModal() {
 
 async function confirmCancelSubscription() {
     try {
+        closeCancelSubscriptionModal();
         showLoading();
 
-        // In production, this would call the backend API
-        // For now, we'll redirect to Stripe Portal for cancellation
-        hideLoading();
-        closeCancelSubscriptionModal();
+        console.log('🚫 Cancelling subscription via API...');
 
-        const confirmed = await showXeoConfirm(
-            'Redirect to Stripe',
-            'To complete your cancellation, you will be redirected to the Stripe Customer Portal where you can securely cancel your subscription.\n\nWould you like to continue?'
-        );
-
-        if (confirmed) {
-            openStripePortal();
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            throw new Error('Not authenticated');
         }
+
+        // Call the backend API to cancel the subscription
+        const response = await fetch(`${API_BASE_URL}/subscription/cancel`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Cancel response status:', response.status);
+
+        const data = await response.json();
+        console.log('Cancel response data:', data);
+
+        hideLoading();
+
+        if (!response.ok) {
+            // If no active subscription, user is already on free plan
+            if (data.error && data.error.includes('No active subscription')) {
+                await showXeoAlert(
+                    'Already on Free Plan',
+                    'You are already on the Free plan. No active subscription to cancel.'
+                );
+                return;
+            }
+            throw new Error(data.error || 'Failed to cancel subscription');
+        }
+
+        // Show success message with period end date
+        const periodEndDate = data.periodEnd ? new Date(data.periodEnd * 1000).toLocaleDateString() : '';
+        const message = periodEndDate
+            ? `Your subscription has been cancelled and will end on ${periodEndDate}.\n\nAfter that, you'll be on the Free plan with 2 scans per month.`
+            : 'Your subscription has been cancelled. You will be downgraded to the Free plan at the end of your billing period.';
+
+        await showXeoAlert('Subscription Cancelled', message);
+
+        // Refresh billing data to show updated status
+        await loadBillingData();
 
     } catch (error) {
         hideLoading();
-        console.error('Cancellation error:', error);
-        showXeoAlert('Error', `Unable to process cancellation: ${error.message}`);
+        console.error('❌ Cancellation error:', error);
+        await showXeoAlert('Cancellation Failed', `Unable to cancel subscription: ${error.message}\n\nPlease try again or contact support.`);
     }
 }
 
