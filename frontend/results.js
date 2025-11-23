@@ -1022,8 +1022,8 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
         <div class="rec-body">
             ${(finding || impact) ? `
                 <div class="rec-description">
-                    ${finding ? `<p><strong>🔍 Finding:</strong> ${finding}</p>` : ''}
-                    ${impact ? `<p style="margin-top: ${finding ? '15px' : '0'};"><strong>💡 Why It Matters:</strong> ${impact}</p>` : ''}
+                    ${finding ? `<p><strong>🔍 Finding:</strong> ${renderMarkdown(finding)}</p>` : ''}
+                    ${impact ? `<p style="margin-top: ${finding ? '15px' : '0'};"><strong>💡 Why It Matters:</strong> ${renderMarkdown(impact)}</p>` : ''}
                 </div>
             ` : ''}
 
