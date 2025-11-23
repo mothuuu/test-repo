@@ -932,19 +932,13 @@
                 return;
             }
 
-            // Handle DIY plan - redirect to Stripe portal
-            if (planName === 'diy') {
-                await openStripePortal();
-                return;
-            }
-
             // Handle Pro, Enterprise, Agency plans - show coming soon modal
             if (planName === 'pro' || planName === 'enterprise' || planName === 'agency') {
                 openComingSoonModal();
                 return;
             }
 
-            // Fallback for any other plans (shouldn't reach here)
+            // Handle DIY plan - create Stripe checkout session
             // Get domain from localStorage or show modal
             const domain = localStorage.getItem('primaryDomain');
 
