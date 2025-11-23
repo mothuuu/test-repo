@@ -747,6 +747,11 @@ document.addEventListener('click', function(event) {
     if (changeDomainModal && event.target === changeDomainModal) {
         closeDomainModal();
     }
+
+    const comingSoonModal = document.getElementById('comingSoonModal');
+    if (comingSoonModal && event.target === comingSoonModal) {
+        closeComingSoonModal();
+    }
 });
 
 // Loading helpers
@@ -949,17 +954,6 @@ async function loadSubscriptionData() {
             quotaResetElement.textContent = `Resets in ${daysUntilReset} days (${resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})`;
         }
 
-        // For free plan users, show placeholder payment info (if these elements exist)
-        const cardInfoElement = document.getElementById('billingCardInfo');
-        const cardExpiryElement = document.getElementById('billingCardExpiry');
-        const billingAddressElement = document.getElementById('billingBillingAddress');
-
-        if (user.plan === 'free') {
-            if (cardInfoElement) cardInfoElement.textContent = 'No payment method on file';
-            if (cardExpiryElement) cardExpiryElement.textContent = 'Upgrade to add payment method';
-            if (billingAddressElement) billingAddressElement.textContent = 'No billing address';
-        }
-
     } catch (error) {
         console.error('Error loading subscription data:', error);
     }
@@ -1074,6 +1068,19 @@ async function confirmPlanChange() {
         return;
     }
 
+    // FIX FOR MODAL STACKING: Close the change plan modal FIRST
+    closeChangePlanModal();
+
+    // Wait brief moment for modal close animation
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Check if selected plan is Pro or Enterprise - show "Coming Soon" modal
+    if (selectedPlanForChange === 'pro' || selectedPlanForChange === 'enterprise') {
+        document.getElementById('comingSoonModal').style.display = 'flex';
+        return;
+    }
+
+    // For DIY plan - proceed with plan change
     const planNames = {
         free: 'Free Plan',
         diy: 'DIY Plan ($29/month)',
@@ -1086,7 +1093,11 @@ async function confirmPlanChange() {
         `Are you sure you want to change to ${planNames[selectedPlanForChange]}?\n\nChanges will be pro-rated and take effect immediately.`
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+        // If user cancels, reopen the change plan modal
+        openChangePlanModal();
+        return;
+    }
 
     try {
         showLoading();
@@ -1094,7 +1105,6 @@ async function confirmPlanChange() {
         // In production, this would call the backend API
         // For now, we'll show a message to use Stripe Portal
         hideLoading();
-        closeChangePlanModal();
         showXeoAlert('Plan Change', 'Please use the Stripe Portal to change your plan. This ensures secure payment processing and immediate activation.');
 
         // Optionally open Stripe Portal
@@ -1158,27 +1168,6 @@ async function confirmCancelSubscription() {
         console.error('Cancellation error:', error);
         showXeoAlert('Error', `Unable to process cancellation: ${error.message}`);
     }
-}
-
-async function downloadInvoice(invoiceId) {
-    try {
-        showLoading();
-
-        // In production, this would fetch the invoice from the backend
-        // For now, we'll show a message
-        hideLoading();
-        showXeoAlert('Download Invoice', 'Invoice downloads are available through the Stripe Customer Portal.\n\nClick "View All Invoices" or "Manage in Stripe Portal" to access your invoices.');
-
-    } catch (error) {
-        hideLoading();
-        console.error('Download error:', error);
-        showXeoAlert('Error', `Unable to download invoice: ${error.message}`);
-    }
-}
-
-function viewAllInvoices() {
-    // Redirect to Stripe Portal for full invoice history
-    openStripePortal();
 }
 
 // Load billing page data
@@ -1305,6 +1294,35 @@ async function loadBillingData() {
 
     } catch (error) {
         console.error('Error loading billing data:', error);
+    }
+}
+
+// Coming Soon Modal Functions
+function closeComingSoonModal() {
+    document.getElementById('comingSoonModal').style.display = 'none';
+}
+
+async function selectDiyPlan() {
+    // Close coming soon modal
+    closeComingSoonModal();
+
+    // Wait brief moment
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Set selected plan to DIY
+    selectedPlanForChange = 'diy';
+
+    // Open change plan modal with DIY pre-selected
+    openChangePlanModal();
+
+    // Pre-select DIY plan
+    const diyOption = document.querySelector('.plan-option[data-plan="diy"]');
+    if (diyOption) {
+        document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
+        diyOption.classList.add('selected');
+
+        // Trigger the selection logic to show the upgrade note
+        diyOption.click();
     }
 }
 
