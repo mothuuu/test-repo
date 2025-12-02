@@ -281,7 +281,19 @@ async function migrateAdminSystem() {
     `);
     console.log('✅ Indexes created');
 
-    // 9. Create triggers for updated_at
+    // 9. Create function and triggers for updated_at
+    // First create the function if it doesn't exist
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION update_updated_at_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ language 'plpgsql';
+    `);
+    console.log('✅ update_updated_at_column function created');
+
     await pool.query(`
       DROP TRIGGER IF EXISTS update_admin_sessions_last_activity ON admin_sessions;
       CREATE TRIGGER update_admin_sessions_last_activity
