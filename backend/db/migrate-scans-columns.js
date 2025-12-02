@@ -2,10 +2,12 @@ require('dotenv').config();
 const db = require('./database');
 
 async function addMissingScanColumns() {
-  console.log('🔄 Adding missing columns to scans table...\n');
+  console.log('🔄 Adding missing columns to scans and scan_recommendations tables...\n');
 
   try {
-    // Add all potentially missing columns to scans table
+    // ==========================================
+    // SCANS TABLE
+    // ==========================================
     await db.query(`
       DO $$
       BEGIN
@@ -188,13 +190,239 @@ async function addMissingScanColumns() {
       END $$;
     `);
 
-    console.log('✅ All missing columns added to scans table');
+    console.log('✅ Scans table columns updated');
+
+    // ==========================================
+    // SCAN_RECOMMENDATIONS TABLE
+    // ==========================================
+
+    // First create the table if it doesn't exist
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS scan_recommendations (
+        id SERIAL PRIMARY KEY,
+        scan_id INTEGER NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
+        category VARCHAR(100),
+        recommendation_text TEXT,
+        priority VARCHAR(20) DEFAULT 'medium',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ scan_recommendations table exists');
+
+    // Add all potentially missing columns
+    await db.query(`
+      DO $$
+      BEGIN
+        -- estimated_impact
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='estimated_impact'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN estimated_impact INTEGER;
+          RAISE NOTICE 'Added estimated_impact column';
+        END IF;
+
+        -- estimated_effort
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='estimated_effort'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN estimated_effort VARCHAR(50);
+          RAISE NOTICE 'Added estimated_effort column';
+        END IF;
+
+        -- action_steps
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='action_steps'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN action_steps JSONB;
+          RAISE NOTICE 'Added action_steps column';
+        END IF;
+
+        -- findings
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='findings'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN findings TEXT;
+          RAISE NOTICE 'Added findings column';
+        END IF;
+
+        -- code_snippet
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='code_snippet'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN code_snippet TEXT;
+          RAISE NOTICE 'Added code_snippet column';
+        END IF;
+
+        -- unlock_state
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='unlock_state'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN unlock_state VARCHAR(20) DEFAULT 'locked';
+          RAISE NOTICE 'Added unlock_state column';
+        END IF;
+
+        -- batch_number
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='batch_number'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN batch_number INTEGER DEFAULT 1;
+          RAISE NOTICE 'Added batch_number column';
+        END IF;
+
+        -- unlocked_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='unlocked_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN unlocked_at TIMESTAMP;
+          RAISE NOTICE 'Added unlocked_at column';
+        END IF;
+
+        -- recommendation_type
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='recommendation_type'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN recommendation_type VARCHAR(50);
+          RAISE NOTICE 'Added recommendation_type column';
+        END IF;
+
+        -- page_url
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='page_url'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN page_url TEXT;
+          RAISE NOTICE 'Added page_url column';
+        END IF;
+
+        -- skip_enabled_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='skip_enabled_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN skip_enabled_at TIMESTAMP;
+          RAISE NOTICE 'Added skip_enabled_at column';
+        END IF;
+
+        -- impact_description
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='impact_description'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN impact_description TEXT;
+          RAISE NOTICE 'Added impact_description column';
+        END IF;
+
+        -- customized_implementation
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='customized_implementation'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN customized_implementation TEXT;
+          RAISE NOTICE 'Added customized_implementation column';
+        END IF;
+
+        -- ready_to_use_content
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='ready_to_use_content'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN ready_to_use_content TEXT;
+          RAISE NOTICE 'Added ready_to_use_content column';
+        END IF;
+
+        -- implementation_notes
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='implementation_notes'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN implementation_notes JSONB;
+          RAISE NOTICE 'Added implementation_notes column';
+        END IF;
+
+        -- quick_wins
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='quick_wins'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN quick_wins JSONB;
+          RAISE NOTICE 'Added quick_wins column';
+        END IF;
+
+        -- validation_checklist
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='validation_checklist'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN validation_checklist JSONB;
+          RAISE NOTICE 'Added validation_checklist column';
+        END IF;
+
+        -- status
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='status'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN status VARCHAR(50) DEFAULT 'pending';
+          RAISE NOTICE 'Added status column';
+        END IF;
+
+        -- implemented_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='implemented_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN implemented_at TIMESTAMP;
+          RAISE NOTICE 'Added implemented_at column';
+        END IF;
+
+        -- user_feedback
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='user_feedback'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN user_feedback TEXT;
+          RAISE NOTICE 'Added user_feedback column';
+        END IF;
+
+        -- user_rating
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='user_rating'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN user_rating INTEGER;
+          RAISE NOTICE 'Added user_rating column';
+        END IF;
+
+        -- updated_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='updated_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+          RAISE NOTICE 'Added updated_at column';
+        END IF;
+
+      END $$;
+    `);
+
+    console.log('✅ scan_recommendations table columns updated');
 
     // Create indexes if they don't exist
     await db.query(`
       CREATE INDEX IF NOT EXISTS idx_scans_status ON scans(status);
       CREATE INDEX IF NOT EXISTS idx_scans_user_created ON scans(user_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_scans_domain ON scans(extracted_domain);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_scan_id ON scan_recommendations(scan_id);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_category ON scan_recommendations(category);
     `);
     console.log('✅ Indexes created');
 
@@ -214,7 +442,7 @@ async function addMissingScanColumns() {
     `);
     console.log('✅ Set default status for existing scans');
 
-    console.log('\n🎉 Scans table migration complete!');
+    console.log('\n🎉 Scans and scan_recommendations migration complete!');
     process.exit(0);
 
   } catch (error) {
