@@ -13,14 +13,36 @@ async function authenticateToken(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get fresh user data with all necessary fields (including role for admin access)
-    const result = await db.query(
-      `SELECT id, email, name, role, plan, email_verified, scans_used_this_month,
-              competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
-              stripe_customer_id, industry, industry_custom, created_at, last_login
-       FROM users WHERE id = $1`,
-      [decoded.userId]
-    );
+    // Get fresh user data - query without role first for compatibility
+    // Role column may not exist in all database instances
+    let result;
+    try {
+      result = await db.query(
+        `SELECT id, email, name, role, plan, email_verified, scans_used_this_month,
+                competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
+                stripe_customer_id, industry, industry_custom, created_at, last_login
+         FROM users WHERE id = $1`,
+        [decoded.userId]
+      );
+    } catch (dbError) {
+      // If role column doesn't exist, query without it
+      if (dbError.code === '42703') { // column does not exist
+        console.log('Role column not found, querying without it');
+        result = await db.query(
+          `SELECT id, email, name, plan, email_verified, scans_used_this_month,
+                  competitor_scans_used_this_month, primary_domain, primary_domain_changed_at,
+                  stripe_customer_id, industry, industry_custom, created_at, last_login
+           FROM users WHERE id = $1`,
+          [decoded.userId]
+        );
+        // Add default role
+        if (result.rows.length > 0) {
+          result.rows[0].role = 'user';
+        }
+      } else {
+        throw dbError;
+      }
+    }
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'User not found' });
@@ -46,15 +68,31 @@ async function authenticateTokenOptional(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const result = await db.query(
-      'SELECT id, email, role, plan, scans_used_this_month FROM users WHERE id = $1',
-      [decoded.userId]
-    );
-    
+    let result;
+    try {
+      result = await db.query(
+        'SELECT id, email, role, plan, scans_used_this_month FROM users WHERE id = $1',
+        [decoded.userId]
+      );
+    } catch (dbError) {
+      // If role column doesn't exist, query without it
+      if (dbError.code === '42703') {
+        result = await db.query(
+          'SELECT id, email, plan, scans_used_this_month FROM users WHERE id = $1',
+          [decoded.userId]
+        );
+        if (result.rows.length > 0) {
+          result.rows[0].role = 'user';
+        }
+      } else {
+        throw dbError;
+      }
+    }
+
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'User not found' });
     }
-    
+
     req.user = result.rows[0];
     next();
   } catch (error) {
