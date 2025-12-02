@@ -22,25 +22,33 @@ async function initDashboard() {
     // Check authentication
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
+        console.log('Dashboard: No auth token found, redirecting to auth');
         window.location.href = 'auth.html';
         return;
     }
 
     try {
+        console.log('Dashboard: Fetching user data from', API_BASE_URL);
         // Fetch user data
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
 
+        console.log('Dashboard: /auth/me response status:', response.status);
+
         if (!response.ok) {
-            throw new Error('Not authenticated');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Dashboard: /auth/me failed:', response.status, errorData);
+            throw new Error(errorData.error || 'Not authenticated');
         }
 
         const data = await response.json();
         user = data.user;
+        console.log('Dashboard: User loaded, email_verified:', user.email_verified);
 
         // Check email verification
         if (!user.email_verified) {
+            console.log('Dashboard: Email not verified, redirecting to verify.html');
             window.location.href = 'verify.html';
             return;
         }
@@ -72,7 +80,9 @@ async function initDashboard() {
         hideLoading();
 
     } catch (error) {
-        console.error('Dashboard init error:', error);
+        console.error('Dashboard init error:', error.message);
+        console.error('Dashboard: Full error:', error);
+        console.log('Dashboard: Clearing auth and redirecting to auth.html');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = 'auth.html';
