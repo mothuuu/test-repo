@@ -208,6 +208,22 @@ const RECOMMENDATION_TEMPLATES = {
     typicalTimeToFix: "15–20 minutes",
     difficulty: "Easy",
     estimatedGain: 14
+  },
+  pillarPagesScore: {
+    title: "Create Comprehensive Pillar Page Structure",
+    impactArea: "AI Search Readiness & Topic Authority",
+    whyItMatters: "Pillar pages establish topical authority by providing comprehensive coverage of a subject. AI assistants prioritize pages with 1500+ words, multiple sections, and clear content hierarchy when citing sources.",
+    typicalTimeToFix: "2–4 hours",
+    difficulty: "Medium",
+    estimatedGain: 15
+  },
+  snippetFormatScore: {
+    title: "Optimize Content for Featured Snippets",
+    impactArea: "Voice Search & AI Answer Extraction",
+    whyItMatters: "Content formatted for snippets (bullet lists, numbered steps, tables, concise paragraphs of 40-60 words) is 3x more likely to be extracted and cited by AI assistants and voice search.",
+    typicalTimeToFix: "1–2 hours",
+    difficulty: "Easy",
+    estimatedGain: 12
   }
 };
 
@@ -489,11 +505,28 @@ async function customizeLibraryRecommendation(libraryRec, issue, _scanEvidence, 
 // GPT path (used for non-deterministic copy)
 // -----------------------------------------
 
+// Generate context-aware fallback whyItMatters based on category and subfactor
+function getContextualWhyItMatters(category, subfactor) {
+  const categoryDescriptions = {
+    'AI Readability & Multimodal': 'Readable, multimodal content helps AI assistants understand and cite your information. Pages optimized for AI comprehension see 40-60% more citations.',
+    'AI Search Readiness': 'AI search engines prioritize pages that demonstrate topical authority and comprehensive coverage. Improving this score increases your visibility in AI-powered search results.',
+    'Content Freshness': 'Fresh, regularly updated content signals relevance to AI systems. Pages with visible update dates and current information are prioritized in AI-generated answers.',
+    'Content Structure': 'Well-structured content with clear headings, lists, and semantic markup makes it easier for AI to extract and cite specific information from your page.',
+    'Speed & UX': 'Fast-loading pages with good user experience are favored by AI systems when selecting sources to cite. Performance issues can reduce your AI visibility.',
+    'Technical Setup': 'Proper technical configuration (schema markup, meta tags, crawlability) helps AI systems understand and trust your content for citations.',
+    'Trust & Authority': 'Trust signals like certifications, credentials, and authoritative content are weighted heavily by AI systems when determining which sources to cite.',
+    'Voice Optimization': 'Voice-optimized content with conversational patterns and snippet-friendly formatting is more likely to be selected for voice search and AI assistant responses.'
+  };
+
+  return categoryDescriptions[category] ||
+    `Optimizing your ${subfactor.replace(/Score$/, '').replace(/([A-Z])/g, ' $1').trim().toLowerCase()} improves how AI assistants understand and cite your content, directly impacting your visibility in AI-powered search.`;
+}
+
 async function generateWithChatGPT(issue, scanEvidence, tier, industry) {
   const template = RECOMMENDATION_TEMPLATES[issue.subfactor] || {
-    title: `Improve ${issue.subfactor}`,
+    title: `Improve ${issue.subfactor.replace(/Score$/, '').replace(/([A-Z])/g, ' $1').trim()}`,
     impactArea: issue.category,
-    whyItMatters: "This affects your AI visibility.",
+    whyItMatters: getContextualWhyItMatters(issue.category, issue.subfactor),
     typicalTimeToFix: "Varies",
     difficulty: "Medium",
     estimatedGain: 10
@@ -1332,7 +1365,7 @@ function makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industr
   const { profile, facts } = normalizeEvidence(scanEvidence);
 
   // Extract scannability metrics
-  const wordCount = scanEvidence.content?.word_count || 0;
+  const wordCount = scanEvidence.content?.wordCount || 0;
   const paragraphs = scanEvidence.content?.paragraphs || [];
   const headings = {
     h1: scanEvidence.content?.headings?.h1 || [],
@@ -1344,7 +1377,7 @@ function makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industr
   const avgWordsPerHeading = totalHeadings > 0 ? Math.round(wordCount / totalHeadings) : wordCount;
 
   // Find long paragraphs (>150 words)
-  const longParagraphs = paragraphs.filter(p => p.length > 150);
+  const longParagraphs = paragraphs.filter(p => p.split(/\s+/).length > 150);
 
   // Detect lists/bullets
   const hasBullets = /<ul|<ol|<li/i.test(scanEvidence.html);
@@ -2397,7 +2430,7 @@ function makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry
   const pageTitle = scanEvidence.metadata?.title || 'Your Page';
 
   // Extract readability metrics from scanEvidence
-  const wordCount = scanEvidence.content?.word_count || 0;
+  const wordCount = scanEvidence.content?.wordCount || 0;
   const paragraphs = scanEvidence.content?.paragraphs || [];
   const sentences = scanEvidence.content?.sentences || [];
   const avgSentenceLength = sentences.length > 0 ? Math.round(wordCount / sentences.length) : 0;
@@ -2767,7 +2800,7 @@ function makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industr
   const pageTitle = scanEvidence.metadata?.title || 'Your Page';
 
   // Extract content metrics from scanEvidence
-  const wordCount = scanEvidence.content?.word_count || 0;
+  const wordCount = scanEvidence.content?.wordCount || 0;
   const headings = scanEvidence.content?.headings || {};
   const totalHeadings = (headings.h2 || []).length + (headings.h3 || []).length + (headings.h4 || []).length;
   const paragraphs = scanEvidence.content?.paragraphs || [];
@@ -5411,9 +5444,9 @@ ${ogImg ? `<meta name="twitter:image" content="${ogImg}">` : ''}`;
 
 function generateSmartTemplate(issue, scanEvidence, _tier, _industry) {
   const tpl = RECOMMENDATION_TEMPLATES[issue.subfactor] || {
-    title: `Improve ${issue.subfactor}`,
+    title: `Improve ${issue.subfactor.replace(/Score$/, '').replace(/([A-Z])/g, ' $1').trim()}`,
     impactArea: issue.category,
-    whyItMatters: "This affects your AI visibility.",
+    whyItMatters: getContextualWhyItMatters(issue.category, issue.subfactor),
     typicalTimeToFix: "Varies",
     difficulty: "Medium",
     estimatedGain: 10
@@ -5706,6 +5739,50 @@ function generateContextAwareSteps(issue, scanEvidence) {
     ];
   }
 
+  // Pillar Pages - comprehensive topic coverage
+  if (subfactor === 'pillarPagesScore') {
+    const h2Count = scanEvidence.content?.headings?.h2?.length || 0;
+    const listCount = scanEvidence.content?.lists?.length || 0;
+    const currentWords = scanEvidence.content?.wordCount || 0;
+    const wordGap = Math.max(0, 1500 - currentWords);
+
+    return [
+      currentWords < 1500
+        ? `Expand your content from ${currentWords} to at least 1,500 words (add ~${wordGap} more words).`
+        : `Your page has ${currentWords} words which is good - focus on structure improvements.`,
+      h2Count < 5
+        ? `Add more H2 section headings - you have ${h2Count}, aim for at least 5 to organize comprehensive coverage.`
+        : `Good heading structure with ${h2Count} H2s - ensure each covers a distinct subtopic.`,
+      listCount < 3
+        ? `Add more bulleted or numbered lists - you have ${listCount}, aim for at least 3 for scannability.`
+        : `Good list usage with ${listCount} lists - ensure they summarize key points.`,
+      'Use semantic HTML5 elements like <main> and <article> to wrap your content.',
+      'Link to related subtopic pages to build a topic cluster architecture.',
+      'Re-scan to verify your pillar page score improves above 60.'
+    ];
+  }
+
+  // Snippet Format - voice-friendly content formatting
+  if (subfactor === 'snippetFormatScore') {
+    const listCount = scanEvidence.content?.lists?.length || 0;
+    const tableCount = scanEvidence.content?.tables?.length || 0;
+    const paragraphs = scanEvidence.content?.paragraphs || [];
+
+    return [
+      'Add concise answer paragraphs (40-60 words) that directly answer common questions.',
+      listCount < 3
+        ? `Add more bulleted lists - you have ${listCount}, aim for 3+ with 5-8 items each for snippet eligibility.`
+        : `Good list count (${listCount}) - ensure lists are well-formatted with clear, concise items.`,
+      tableCount < 1
+        ? 'Add a comparison table or data table - tables are highly snippet-eligible and easy for AI to parse.'
+        : `Good table usage (${tableCount}) - ensure tables have clear headers and structured data.`,
+      'Format step-by-step instructions as numbered lists (1, 2, 3...).',
+      'Create FAQ sections with short, direct answers (40-60 words per answer).',
+      'Use definition patterns: "X is [definition]" format for key terms.',
+      'Re-scan to verify your snippet format score improves above 70.'
+    ];
+  }
+
   // Videos/Captions
   if (subfactor === 'captionsTranscriptsScore' || subfactor === 'videoTranscripts') {
     const videoCount = scanEvidence.media?.videoCount || 0;
@@ -5729,14 +5806,21 @@ function generateContextAwareSteps(issue, scanEvidence) {
     ];
   }
 
-  // Generic fallback - still helpful
+  // Generic fallback - make it user-friendly with no internal variable names
+  // Convert subfactor to readable format (e.g., "pillarPagesScore" -> "pillar pages")
+  const readableSubfactor = subfactor
+    .replace(/Score$/, '')
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .toLowerCase();
+
   return [
-    `Open the relevant page/template for ${domain}.`,
-    `Review current ${subfactor} implementation against best practices.`,
-    'Make necessary changes based on the recommendations above.',
-    'Validate changes with automated tools (validators, analyzers).',
-    'Re-run the scan to verify score improvement.',
-    'Monitor impact on AI visibility over 2-4 weeks.'
+    `Review the specific findings above to understand what needs improvement on ${domain}.`,
+    `Check your page content and structure against the AI optimization best practices for ${readableSubfactor}.`,
+    'Make the recommended changes to improve your content format and structure.',
+    'Use online validators and analyzers to verify your technical implementation.',
+    'Re-run the scan to confirm your score has improved.',
+    'Monitor your AI visibility metrics over 2-4 weeks to measure impact.'
   ];
 }
 
