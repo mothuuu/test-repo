@@ -963,25 +963,51 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // ============================================
 router.get('/list/recent', authenticateToken, async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
 
-    const result = await db.query(
-      `SELECT
-        id, url, status, total_score, rubric_version,
-        page_count, industry, domain_type, extracted_domain,
-        ai_readability_score, ai_search_readiness_score,
-        content_freshness_score, content_structure_score,
-        speed_ux_score, technical_setup_score,
-        trust_authority_score, voice_optimization_score,
-        created_at, completed_at
-       FROM scans
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
-    );
+    // Try full query first, fall back to basic query if columns don't exist
+    let result;
+    try {
+      result = await db.query(
+        `SELECT
+          id, url, status, total_score, rubric_version,
+          page_count, industry, domain_type, extracted_domain,
+          ai_readability_score, ai_search_readiness_score,
+          content_freshness_score, content_structure_score,
+          speed_ux_score, technical_setup_score,
+          trust_authority_score, voice_optimization_score,
+          created_at, completed_at
+         FROM scans
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
+      );
+    } catch (dbError) {
+      if (dbError.code === '42703') { // column does not exist
+        console.log('Some scan columns missing, using basic query');
+        result = await db.query(
+          `SELECT
+            id, url, score as total_score, industry, page_count, created_at
+           FROM scans
+           WHERE user_id = $1
+           ORDER BY created_at DESC
+           LIMIT $2 OFFSET $3`,
+          [userId, limit, offset]
+        );
+        // Add default values for missing columns
+        result.rows = result.rows.map(row => ({
+          ...row,
+          status: 'completed',
+          rubric_version: 'V5',
+          completed_at: row.created_at
+        }));
+      } else {
+        throw dbError;
+      }
+    }
 
     const countResult = await db.query(
       'SELECT COUNT(*) as total FROM scans WHERE user_id = $1',
