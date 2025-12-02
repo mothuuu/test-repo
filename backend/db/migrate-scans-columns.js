@@ -187,6 +187,69 @@ async function addMissingScanColumns() {
           RAISE NOTICE 'Added comparison_data column';
         END IF;
 
+        -- FAQ Schema (JSONB for storing FAQ structured data)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='faq_schema'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN faq_schema JSONB;
+          RAISE NOTICE 'Added faq_schema column';
+        END IF;
+
+        -- Industry column
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='industry'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN industry VARCHAR(100);
+          RAISE NOTICE 'Added industry column';
+        END IF;
+
+        -- Page count
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='page_count'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN page_count INTEGER DEFAULT 1;
+          RAISE NOTICE 'Added page_count column';
+        END IF;
+
+        -- Score column (legacy)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='score'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN score INTEGER;
+          RAISE NOTICE 'Added score column';
+        END IF;
+
+        -- Scan data (legacy JSONB)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='scan_data'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN scan_data JSONB;
+          RAISE NOTICE 'Added scan_data column';
+        END IF;
+
+        -- Pages scanned (legacy)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='pages_scanned'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN pages_scanned INTEGER;
+          RAISE NOTICE 'Added pages_scanned column';
+        END IF;
+
+        -- Created at (if missing)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scans' AND column_name='created_at'
+        ) THEN
+          ALTER TABLE scans ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+          RAISE NOTICE 'Added created_at column';
+        END IF;
+
       END $$;
     `);
 
