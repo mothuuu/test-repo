@@ -156,7 +156,7 @@ const RECOMMENDATION_TEMPLATES = {
   structuredDataScore: {
     title: "Implement Structured Data Schema",
     impactArea: "AI Understanding & Rich Results",
-    whyItMatters: "Structured data tells AI assistants exactly what your content is about, increasing citation chances by 3–5x.",
+    whyItMatters: "Your website doesn't have the behind-the-scenes code that tells AI who you are, what you do, and where you're located. Without this, AI assistants have to guess — and they often guess wrong or skip you entirely.",
     typicalTimeToFix: "1–2 hours",
     difficulty: "Easy",
     estimatedGain: 18
@@ -164,7 +164,7 @@ const RECOMMENDATION_TEMPLATES = {
   faqScore: {
     title: "Add FAQ Schema Markup",
     impactArea: "Voice Search & Featured Snippets",
-    whyItMatters: "FAQ schema helps your answers surface in AI-generated results and voice search.",
+    whyItMatters: "Adding a Frequently Asked Questions section helps AI assistants find quick answers on your site. When someone asks ChatGPT a question you've already answered on your website, it's more likely to recommend you.",
     typicalTimeToFix: "1–2 hours",
     difficulty: "Easy",
     estimatedGain: 12
@@ -172,7 +172,7 @@ const RECOMMENDATION_TEMPLATES = {
   altTextScore: {
     title: "Complete Image Alt Text Coverage",
     impactArea: "Multimodal AI & Accessibility",
-    whyItMatters: "Alt text enables AI to understand and reference your images in multimodal search.",
+    whyItMatters: "Your images are missing descriptions that tell AI what they show. AI assistants can now 'see' images, so when your photos have good descriptions, AI can recommend you for visual searches too.",
     typicalTimeToFix: "1–2 hours",
     difficulty: "Easy",
     estimatedGain: 8
@@ -180,7 +180,7 @@ const RECOMMENDATION_TEMPLATES = {
   openGraphScore: {
     title: "Add Open Graph & Twitter Card meta tags",
     impactArea: "Social Sharing & Entity Cards",
-    whyItMatters: "Ensures rich previews across social/AI surfaces and better CTR from shares.",
+    whyItMatters: "When people share your website on social media or messaging apps, it looks plain or broken instead of showing a nice preview with your image and description. This makes your links look less professional and trustworthy.",
     typicalTimeToFix: "15–30 minutes",
     difficulty: "Easy",
     estimatedGain: 8
@@ -188,7 +188,7 @@ const RECOMMENDATION_TEMPLATES = {
   professionalCertifications: {
     title: "Display Industry Certifications",
     impactArea: "Trust & Authority (E-E-A-T)",
-    whyItMatters: "Professional certifications demonstrate expertise, compliance, and industry standards. AI systems heavily weight these trust signals when citing sources.",
+    whyItMatters: "AI assistants look for proof that your business is qualified and trustworthy. Displaying your certifications, licenses, and credentials helps AI confidently recommend you over competitors who don't show this proof.",
     typicalTimeToFix: "20–30 minutes",
     difficulty: "Easy",
     estimatedGain: 22
@@ -196,7 +196,7 @@ const RECOMMENDATION_TEMPLATES = {
   teamCredentials: {
     title: "Add Team Member Credentials",
     impactArea: "Expertise & Authority (E-E-A-T)",
-    whyItMatters: "Documenting team expertise with Person schema and credentials boosts E-E-A-T signals. AI systems look for verifiable expertise when determining source authority.",
+    whyItMatters: "AI assistants want to know there are real, qualified people behind your business. Adding team bios with credentials and experience helps AI trust your expertise and recommend you for industry-specific questions.",
     typicalTimeToFix: "1–2 hours",
     difficulty: "Medium",
     estimatedGain: 18
@@ -204,7 +204,7 @@ const RECOMMENDATION_TEMPLATES = {
   industryMemberships: {
     title: "Display Industry Memberships & Associations",
     impactArea: "Authority Network & Trust",
-    whyItMatters: "Industry memberships demonstrate active participation in professional communities. These network signals strengthen your authority and credibility with AI systems.",
+    whyItMatters: "Being part of professional associations shows you're an active, respected member of your industry. AI assistants see this as a trust signal and are more likely to recommend businesses that show they're connected to their professional community.",
     typicalTimeToFix: "15–20 minutes",
     difficulty: "Easy",
     estimatedGain: 14
@@ -212,7 +212,7 @@ const RECOMMENDATION_TEMPLATES = {
   pillarPagesScore: {
     title: "Create Comprehensive Pillar Page Structure",
     impactArea: "AI Search Readiness & Topic Authority",
-    whyItMatters: "Pillar pages establish topical authority by providing comprehensive coverage of a subject. AI assistants prioritize pages with 1500+ words, multiple sections, and clear content hierarchy when citing sources.",
+    whyItMatters: "Your website doesn't have an in-depth page that fully explains what you do. AI assistants like ChatGPT prefer to recommend businesses that have detailed, well-organized pages about their main services — think of it like a complete guide that covers all the basics in one place.",
     typicalTimeToFix: "2–4 hours",
     difficulty: "Medium",
     estimatedGain: 15
@@ -220,7 +220,7 @@ const RECOMMENDATION_TEMPLATES = {
   snippetFormatScore: {
     title: "Optimize Content for Featured Snippets",
     impactArea: "Voice Search & AI Answer Extraction",
-    whyItMatters: "Content formatted for snippets (bullet lists, numbered steps, tables, concise paragraphs of 40-60 words) is 3x more likely to be extracted and cited by AI assistants and voice search.",
+    whyItMatters: "AI assistants look for content that's easy to scan — like bullet points, numbered lists, and FAQ sections. When your page is formatted this way, AI can quickly pull answers from it and recommend you to users.",
     typicalTimeToFix: "1–2 hours",
     difficulty: "Easy",
     estimatedGain: 12
@@ -508,18 +508,18 @@ async function customizeLibraryRecommendation(libraryRec, issue, _scanEvidence, 
 // Generate context-aware fallback whyItMatters based on category and subfactor
 function getContextualWhyItMatters(category, subfactor) {
   const categoryDescriptions = {
-    'AI Readability & Multimodal': 'Readable, multimodal content helps AI assistants understand and cite your information. Pages optimized for AI comprehension see 40-60% more citations.',
-    'AI Search Readiness': 'AI search engines prioritize pages that demonstrate topical authority and comprehensive coverage. Improving this score increases your visibility in AI-powered search results.',
-    'Content Freshness': 'Fresh, regularly updated content signals relevance to AI systems. Pages with visible update dates and current information are prioritized in AI-generated answers.',
-    'Content Structure': 'Well-structured content with clear headings, lists, and semantic markup makes it easier for AI to extract and cite specific information from your page.',
-    'Speed & UX': 'Fast-loading pages with good user experience are favored by AI systems when selecting sources to cite. Performance issues can reduce your AI visibility.',
-    'Technical Setup': 'Proper technical configuration (schema markup, meta tags, crawlability) helps AI systems understand and trust your content for citations.',
-    'Trust & Authority': 'Trust signals like certifications, credentials, and authoritative content are weighted heavily by AI systems when determining which sources to cite.',
-    'Voice Optimization': 'Voice-optimized content with conversational patterns and snippet-friendly formatting is more likely to be selected for voice search and AI assistant responses.'
+    'AI Readability & Multimodal': 'When your content is easy to read and includes described images, AI assistants can better understand what you offer. This means they\'re more likely to recommend you when people ask questions related to your business.',
+    'AI Search Readiness': 'AI assistants like ChatGPT prefer websites that thoroughly explain their services. When your pages are comprehensive and well-organized, you\'re more likely to show up when potential customers ask AI for recommendations.',
+    'Content Freshness': 'AI assistants prefer websites that are regularly updated. If your content looks outdated, AI may skip you for a competitor who seems more current and active.',
+    'Content Structure': 'When your content is organized with clear headings and bullet points, AI can easily find and share specific answers from your site. Messy formatting makes it harder for AI to recommend you.',
+    'Speed & UX': 'If your website is slow, AI assistants may not fully read it — and visitors will leave before they contact you. Faster pages get read, indexed, and recommended more often.',
+    'Technical Setup': 'The behind-the-scenes setup of your website helps AI understand who you are and what you do. Getting this right means AI assistants can accurately describe your business to potential customers.',
+    'Trust & Authority': 'AI assistants look for signs that your business is real and trustworthy — like an About page, team photos, contact info, and reviews. The more proof you show, the more confident AI is in recommending you.',
+    'Voice Optimization': 'When people ask Siri, Alexa, or Google Assistant questions, they want quick, clear answers. Formatting your content for voice search makes it more likely AI will read your answer out loud to potential customers.'
   };
 
   return categoryDescriptions[category] ||
-    `Optimizing your ${subfactor.replace(/Score$/, '').replace(/([A-Z])/g, ' $1').trim().toLowerCase()} improves how AI assistants understand and cite your content, directly impacting your visibility in AI-powered search.`;
+    `Improving this helps AI assistants like ChatGPT and Google understand your business better, making them more likely to recommend you to potential customers.`;
 }
 
 async function generateWithChatGPT(issue, scanEvidence, tier, industry) {
@@ -1012,22 +1012,16 @@ No on-page FAQ content or FAQPage schema detected on ${domain}. This limits how 
   if (usingActualContent) {
     // User has FAQs, impact is about optimization
     if (!hasFAQSchema) {
-      impactText = `Adding FAQPage schema to your existing ${faqCount} FAQs will help AI assistants cite your content in voice search results and answer engines like ChatGPT and Perplexity. This structured data markup makes your expertise machine-readable.`;
+      impactText = `You already have ${faqCount} FAQs on your page — great! But AI assistants can't easily find them yet. Adding a simple code snippet (FAQ schema) makes your answers visible to ChatGPT, Google, and voice assistants like Siri and Alexa.`;
     } else {
-      impactText = `Your FAQ implementation is complete. Continue monitoring and updating FAQs based on actual customer questions from support tickets and sales calls. Consider distributing FAQs across multiple pages for broader topic coverage.`;
+      impactText = `Your FAQ setup looks good! To keep improving, add new questions based on what customers actually ask you in emails, calls, or support tickets. Real customer questions are gold for AI visibility.`;
     }
   } else {
-    // User has no FAQs, use template impact
-    let faqLib = loadFAQLibrary(detectedIndustry);
-    if (!faqLib) {
-      faqLib = FAQ_LIBRARIES[detectedIndustry] || FAQ_LIBRARIES.General;
-    }
-    impactText = faqLib.impact;
+    // User has no FAQs, use simple impact message
+    impactText = `Adding a FAQ section is one of the fastest ways to get recommended by AI. When someone asks ChatGPT a question you've answered on your website, you're much more likely to show up as a recommendation.`;
   }
 
-  const impact = `Impact: High | +${Math.max(8, Math.round(issue.gap * 0.7))}-${Math.max(15, Math.round(issue.gap * 0.95))} pts potential
-
-${impactText}`;
+  const impact = `${impactText}`;
 
   // Action steps vary based on what exists
   let actionSteps;
@@ -1177,14 +1171,7 @@ Your page contains ${totalImages} image${totalImages === 1 ? '' : 's'}:
 ${missingAltCount > 0 ? `Images without alt text cannot be understood by AI assistants, screen readers, or search engines. This reduces your content's accessibility and discoverability.` : `Great job! All your images have alt text. Make sure the descriptions are meaningful and descriptive.`}`;
 
   // Build Impact
-  const impact = `Impact: ${missingAltCount > 5 ? 'High' : missingAltCount > 0 ? 'Medium' : 'Low'} | +${Math.max(5, Math.round(issue.gap * 0.7))} to +${Math.max(10, Math.round(issue.gap))} pts potential
-
-Alt text serves three critical purposes:
-• **AI Understanding:** ChatGPT, Perplexity, and other AI assistants can reference your images in answers
-• **Accessibility:** Screen readers can describe images to visually impaired users
-• **SEO:** Search engines index alt text for image search results
-
-Missing alt text means AI systems skip your visual content entirely, reducing citation opportunities.`;
+  const impact = `Your images are like silent salespeople — but without descriptions, AI can't see them. When you add alt text, you're telling AI assistants like ChatGPT what's in each photo. This means they can include your images when answering questions, and people searching for images can find you too.`;
 
   // Build Action Steps
   const actionSteps = [
@@ -1395,14 +1382,7 @@ function makeProgrammaticScannabilityRecommendation(issue, scanEvidence, industr
 ${avgWordsPerHeading > 300 ? `Your content has large sections without headings. AI assistants prefer content broken into clear, scannable sections with descriptive headings every 150-250 words.` : `Your content structure is reasonable, but optimizing scannability will improve AI comprehension and user engagement.`}`;
 
   // Build Impact
-  const impact = `Impact: Medium | +${Math.max(8, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
-
-Scannable content helps AI assistants:
-• **Extract answers faster:** Clear headings signal what each section covers
-• **Cite specific points:** Bullet points are easier to reference than dense paragraphs
-• **Understand hierarchy:** Proper H2/H3 structure shows content organization
-
-Well-structured content gets cited more frequently because AI can quickly find relevant information.`;
+  const impact = `Long blocks of text are hard for both people and AI to read. When you break up your content with headings, bullet points, and short paragraphs, AI can quickly find and share the most helpful parts. Think of it like making your content easier to skim — the clearer it is, the more likely AI will recommend it.`;
 
   // Build Action Steps
   const actionSteps = [
@@ -1559,14 +1539,7 @@ ${videoCount > 0 ? `**Video Content Detected:**
 ${!hasTranscripts ? `Without transcripts, AI assistants cannot index or reference your video content. Search engines skip video content entirely unless transcripts are provided.` : `You have some transcript content, but ensure all videos have complete, properly formatted transcripts for maximum AI visibility.`}` : `No video content detected on this page. This recommendation will apply when you add video content.`}`;
 
   // Build Impact
-  const impact = `Impact: ${videoCount > 0 && !hasTranscripts ? 'High' : 'Medium'} | +${Math.max(6, Math.round(issue.gap * 0.6))} to +${Math.max(12, Math.round(issue.gap))} pts potential
-
-Video transcripts unlock AI visibility in three ways:
-• **AI Citations:** ChatGPT and Perplexity can reference specific quotes from your videos
-• **Search Indexing:** Google indexes transcript text for traditional and video search
-• **Accessibility:** Screen readers and deaf/hard-of-hearing users can access video content
-
-Without transcripts, your video content is invisible to AI systems - regardless of how valuable the information is.`;
+  const impact = `AI assistants can't watch your videos — they can only read text. Without transcripts, all the valuable information in your videos is invisible to ChatGPT, Google, and other AI tools. Adding transcripts is like giving AI a written copy of everything you said, so it can recommend your content to people who ask related questions.`;
 
   // Build Action Steps
   const actionSteps = [
@@ -1816,15 +1789,7 @@ You appear to have IndexNow implemented. Verify that:
 • All major search engines (Bing, Yandex) are receiving notifications`}`;
 
   // Build Impact
-  const impact = `Impact: Medium | +${Math.max(5, Math.round(issue.gap * 0.5))} to +${Math.max(10, Math.round(issue.gap))} pts potential
-
-IndexNow provides instant indexing benefits:
-• **Immediate Discovery:** Search engines notified within seconds of content updates
-• **Faster Rankings:** New content can rank within hours instead of days/weeks
-• **API Efficiency:** One API call notifies multiple search engines simultaneously
-• **Competitive Advantage:** Your content gets indexed before competitors using traditional crawling
-
-For news sites, blogs, or frequently updated content, IndexNow can dramatically accelerate visibility.`;
+  const impact = `When you update your website, search engines might not notice for days or even weeks. IndexNow is like sending a text message to Google and Bing saying "Hey, I just updated this page!" — so they can check it right away. This is especially helpful if you regularly add new content or make important updates.`;
 
   // Build Action Steps
   const actionSteps = [
@@ -2045,19 +2010,7 @@ function makeProgrammaticGeoContentRecommendation(issue, scanEvidence, industry)
     : `Your page has minimal geographic content (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Answer engines like ChatGPT, Perplexity, and Google's AI Overviews prioritize businesses with clear service areas and location-specific value propositions.`;
 
   // Build impact description
-  const impact = `**Why Location Content Matters for AEO:**
-
-Answer engines need explicit geographic signals to recommend your business for location-specific queries. Without clear service areas:
-
-- **Local intent queries miss you**: "AI marketing services in Toronto" won't surface your business
-- **Answer engines can't verify relevance**: ChatGPT/Perplexity won't cite you for regional queries
-- **Schema validation fails**: Missing \`areaServed\` schema prevents rich result eligibility
-- **Multi-market queries exclude you**: "US vs Canada providers" comparisons won't include you
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.7)} points** on Location & Geographic Content score
-- **+15-25%** visibility in location-qualified answer engine responses
-- **Improved entity clarity**: Helps AI understand your market scope`;
+  const impact = `When someone asks AI "Who offers this service in my city?" — AI needs to know where you operate. Right now, your website doesn't clearly state your service areas, so AI assistants might skip you for local searches. Adding clear location information helps you show up when nearby customers are looking for exactly what you offer.`;
 
   // Build action steps
   const actionSteps = [
@@ -2458,19 +2411,7 @@ function makeProgrammaticReadabilityRecommendation(issue, scanEvidence, industry
   const finding = `Your content has readability challenges that limit AI comprehension (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${longSentencePct > 0 ? `${longSentencePct}% of sentences exceed 25 words, ` : ''}Average sentence length: ${avgSentenceLength} words. Answer engines like ChatGPT and Perplexity prioritize clear, concise content that directly answers user questions.`;
 
   // Build impact description
-  const impact = `**Why Readability Matters for AEO:**
-
-Clear, scannable content increases the likelihood that AI will extract and cite your information. Complex sentences and jargon create barriers:
-
-- **AI extraction fails**: Long sentences confuse semantic parsing, reducing citation chances
-- **User intent mismatch**: Jargon-heavy copy doesn't match how users ask questions
-- **Answer engine preference**: ChatGPT/Perplexity favor content written at 8th-10th grade reading level
-- **Voice search incompatibility**: Complex phrasing doesn't match conversational queries
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.6)} points** on Readability & Clarity score
-- **+20-30%** better AI extraction and citation rates
-- **Improved user engagement**: Lower bounce rates, longer session duration`;
+  const impact = `AI assistants prefer content that's easy to understand — like you're explaining something to a friend. When your writing uses short sentences and avoids jargon, AI can better understand your message and share it with people who ask related questions. Simpler writing = more AI recommendations.`;
 
   // Build action steps
   const actionSteps = [
@@ -2830,19 +2771,7 @@ function makeProgrammaticContentDepthRecommendation(issue, scanEvidence, industr
     : `Your page has adequate length (${wordCount.toLocaleString()} words) but may lack depth in key areas (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). ${!hasExamples ? 'Missing concrete examples. ' : ''}${!hasData ? 'Missing data/statistics. ' : ''}${!hasQuestions ? 'Missing question-based headings for AEO.' : ''}`;
 
   // Build impact description
-  const impact = `**Why Content Depth Matters for AEO:**
-
-Comprehensive, example-rich content significantly increases AI citation likelihood. Thin content fails to establish topical authority:
-
-- **AI requires context**: ChatGPT/Perplexity need ${MIN_WORDS}+ words to extract nuanced answers
-- **Topical authority signals**: Answer engines prioritize pages that thoroughly cover a subject
-- **Entity density matters**: More relevant entities (people, places, concepts) = better AI understanding
-- **Example-driven trust**: Concrete examples and data points increase citation confidence
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.65)} points** on Content Depth score
-- **+25-40%** citation rate in answer engine responses
-- **Better topical coverage**: AI understands your expertise breadth`;
+  const impact = `AI assistants trust detailed, thorough content more than thin pages. When you provide real examples, data, and comprehensive explanations, AI sees you as an expert worth recommending. Short, surface-level content often gets overlooked for more helpful resources.`;
 
   // Build action steps
   const actionSteps = [
@@ -3279,19 +3208,7 @@ function makeProgrammaticHeadingHierarchyRecommendation(issue, scanEvidence, ind
     : `Your page has adequate heading structure (${h2Count} H2s, ${h3Count} H3s) but could improve for AEO (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Only ${questionHeadingPct}% of headings are question-based. Converting headings to questions increases AI extraction by 30-40%.`;
 
   // Build impact description
-  const impact = `**Why Heading Hierarchy Matters for AEO:**
-
-Proper heading structure helps AI systems understand your content organization and extract specific answers. Poor hierarchy confuses semantic parsing:
-
-- **AI needs clear structure**: Answer engines use H1-H3 hierarchy to understand content relationships
-- **Question-based headings win**: Headings as questions directly match user queries ("How does X work?")
-- **Semantic extraction**: Proper hierarchy tells AI which content answers which question
-- **Featured snippet eligibility**: Google AI Overviews prioritize well-structured question-answer content
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.6)} points** on Heading Structure score
-- **+30-40%** better question-answer extraction by AI
-- **Improved topic clustering**: Better AI understanding of content themes`;
+  const impact = `Headings are like a table of contents for AI. When your page is organized with clear headings (especially ones that are questions), AI can quickly find the answer it needs and share it with users. Messy or missing headings make it harder for AI to understand what your page is about.`;
 
   // Build action steps
   const actionSteps = [
@@ -3672,19 +3589,7 @@ The tool successfully detected your sitemap and is using it to analyze your site
     : `Your site is missing an XML sitemap (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Without a sitemap, search engines and AI crawlers have difficulty discovering all your pages, reducing visibility in answer engines like ChatGPT, Perplexity, and Google AI Overviews.`;
 
   // Build impact description
-  const impact = `**Why XML Sitemaps Matter for AEO:**
-
-Sitemaps help search engines and AI systems discover and index your content efficiently:
-
-- **Faster discovery**: New content appears in AI answer engines 2-5x faster
-- **Complete indexing**: Ensures all pages (not just linked ones) get crawled
-- **Priority signals**: Tells crawlers which pages matter most
-- **AI training data**: Better indexed pages → more likely to be AI training sources
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.7)} points** on XML Sitemap score
-- **+30-50%** faster indexing for new/updated content
-- **Better AI coverage**: More pages available for answer engine citations`;
+  const impact = `A sitemap is like a map of your website for search engines and AI. Without one, Google and AI assistants might miss some of your pages entirely. With a sitemap, you're telling them "Here's everything important on my site — please read it all!"`;
 
   // Build action steps
   const actionSteps = [
@@ -3968,19 +3873,7 @@ function makeProgrammaticRobotsTxtRecommendation(issue, scanEvidence, industry) 
     ? `Your robots.txt exists but is missing sitemap reference (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Adding your sitemap URL helps crawlers discover content faster.`
     : `Your robots.txt is configured but may need optimization (Score: ${issue.currentScore}/100, Target: ${issue.threshold}).`;
 
-  const impact = `**Why Robots.txt Matters for AEO:**
-
-Proper robots.txt configuration ensures AI crawlers can access and index your content:
-
-- **Crawler guidance**: Tells search engines and AI bots what to crawl
-- **Sitemap discovery**: Points crawlers to your sitemap for efficient indexing
-- **Resource optimization**: Prevents crawling of admin/duplicate pages
-- **AI training access**: Ensures your content is available for AI model training
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.6)} points** on Robots.txt score
-- **Better crawl efficiency**: Crawlers focus on important pages
-- **Faster indexing**: Sitemap reference speeds up discovery`;
+  const impact = `The robots.txt file is like a "Welcome" sign for search engines and AI. It tells them which parts of your site they can read. If it's missing or misconfigured, Google and AI assistants might not be able to access your content at all — meaning they can't recommend you.`;
 
   const actionSteps = [
     hasRobotsTxt ? 'Review existing robots.txt for issues' : 'Create robots.txt file in site root',
@@ -4225,19 +4118,7 @@ function makeProgrammaticHttpsRecommendation(issue, scanEvidence, industry) {
     ? `Your SSL certificate expires in ${sslExpiry} days (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Renew soon to avoid downtime and trust issues.`
     : `Your site uses HTTPS (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may need optimization for better security posture.`;
 
-  const impact = `**Why HTTPS Matters for AEO:**
-
-HTTPS is a foundational trust signal for search engines and AI systems:
-
-- **Search ranking factor**: Google penalizes non-HTTPS sites
-- **Browser warnings**: Chrome/Firefox flag HTTP sites as "Not Secure"
-- **AI training exclusion**: Many AI models exclude insecure sites from training data
-- **User trust**: Visitors bounce from sites showing security warnings
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.8)} points** on HTTPS Security score
-- **Required for indexing**: Some AI crawlers skip non-HTTPS sites entirely
-- **Trust signals**: SSL certificate = legitimacy indicator for answer engines`;
+  const impact = `HTTPS is the secure version of your website address (the lock icon in browsers). Without it, browsers show a "Not Secure" warning that scares visitors away. AI assistants also see this as a red flag — they're less likely to recommend websites that aren't secure.`;
 
   const actionSteps = [
     !hasHttps ? 'Obtain SSL certificate (free from Let\'s Encrypt)' : 'Verify SSL certificate is valid and up-to-date',
@@ -4528,19 +4409,7 @@ function makeProgrammaticCrawlAccessibilityRecommendation(issue, scanEvidence, i
     ? `Your page has crawl accessibility issues (Score: ${issue.currentScore}/100, Target: ${issue.threshold}). Detected: ${crawlIssues.join(', ')}. These prevent search engines and AI crawlers from fully accessing and indexing your content.`
     : `Your page is generally crawlable (Score: ${issue.currentScore}/100, Target: ${issue.threshold}), but may have minor accessibility issues affecting AI visibility.`;
 
-  const impact = `**Why Crawl Accessibility Matters for AEO:**
-
-If crawlers can't access your content, you're invisible to search engines and AI systems:
-
-- **Indexing blocked**: noindex prevents page from appearing in search results and AI training
-- **Link equity lost**: nofollow prevents crawlers from following links
-- **JS rendering issues**: AI crawlers may not execute JavaScript, missing content
-- **Broken links**: 404s signal poor site quality, reducing trust scores
-
-**Estimated Impact:**
-- **+${Math.round(issue.gap * 0.7)} points** on Crawl Accessibility score
-- **Full indexing**: Ensures AI can access all public content
-- **Better link graph**: Proper crawling strengthens site authority`;
+  const impact = `Something on your website is blocking search engines and AI from reading your content. It's like having a locked door — even if you have great information inside, AI can't see it or recommend it. Fixing these issues lets AI fully access and understand your website.`;
 
   const actionSteps = [
     hasNoIndex ? 'Remove noindex meta tag (unless intentional)' : 'Verify no accidental noindex tags',
@@ -5117,12 +4986,7 @@ async function makeProgrammaticQuestionHeadingsRecommendation(issue, scanEvidenc
   const potentialGainMin = Math.max(8, Math.round(issue.gap * 0.6));
   const potentialGainMax = Math.max(12, Math.round(issue.gap * 0.9));
 
-  const impact = `Impact: High | +${potentialGainMin} to +${potentialGainMax} pts potential
-
-AI assistants prioritize pages that mirror how users ask questions. Shifting remaining static headings into natural-language questions will:
-• Strengthen your content's eligibility for AI citations and "People Also Ask" features
-• Raise your Direct Answer Structure and Entity Clarity metrics
-• Improve user scannability and dwell time by matching reading rhythm to question-and-answer flow`;
+  const impact = `People ask AI questions like "How do I..." or "What is the best way to..." When your headings are written as questions (not just topic labels), AI can match them directly to what people are asking. This makes you much more likely to be the answer AI recommends.`;
 
   // Build action steps
   const actionSteps = [
@@ -5930,7 +5794,7 @@ function coerceRecommendation(rec, template, issue) {
     rec.finding = `Your ${issue.subfactor} score is ${issue.currentScore}/100; improvements are needed to reach ${issue.threshold}/100.`;
   }
   if (!rec.impact || rec.impact.length < 20) {
-    rec.impact = template.whyItMatters || 'This affects your AI visibility.';
+    rec.impact = template.whyItMatters || 'Improving this helps AI assistants like ChatGPT and Google understand your business better, making them more likely to recommend you to potential customers.';
   }
   if (!Array.isArray(rec.actionSteps) || rec.actionSteps.length === 0) {
     rec.actionSteps = [
