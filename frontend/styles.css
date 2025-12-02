@@ -1048,13 +1048,14 @@ body {
     justify-content: center;
 }
 
-/* Optimization Status Card */
+/* Optimization Status Card - Xeo Brand Styling */
 .optimization-status-card {
-    background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink-light) 100%);
-    border: 3px solid var(--purple);
+    background: linear-gradient(135deg, var(--cyan-light) 0%, var(--purple-light) 100%);
+    border: 3px solid var(--cyan);
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 185, 218, 0.15);
 }
 
 /* Header Section */
@@ -1077,7 +1078,10 @@ body {
 .optimization-mode-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--purple-deep);
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0 0 0.5rem 0;
 }
 
@@ -1105,14 +1109,14 @@ body {
 }
 
 .stat-item:hover {
-    border-color: var(--purple);
-    box-shadow: 0 4px 12px rgba(125, 65, 165, 0.2);
+    border-color: var(--cyan);
+    box-shadow: 0 4px 12px rgba(0, 185, 218, 0.25);
     transform: translateY(-2px);
 }
 
 /* Primary Stat (Current Score) */
 .stat-item.primary-stat {
-    background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
     color: var(--white);
 }
 
@@ -1139,7 +1143,10 @@ body {
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--purple);
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--pink) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
 }
 
@@ -1161,7 +1168,7 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 100%);
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--pink) 100%);
     border-radius: 4px;
     transition: width 0.6s ease;
 }
@@ -1173,11 +1180,20 @@ body {
 }
 
 .stat-item.highlight .stat-value {
-    color: var(--cyan-dark);
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stat-item.highlight .stat-label {
     color: var(--gray-700);
+}
+
+/* Action Text - Purple Accent */
+.action-text {
+    color: var(--purple);
+    font-weight: 600;
 }
 
 /* Responsive Design */
