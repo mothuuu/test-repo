@@ -416,6 +416,178 @@ async function addMissingScanColumns() {
 
     console.log('✅ scan_recommendations table columns updated');
 
+    // ==========================================
+    // PAGE_PRIORITIES TABLE
+    // ==========================================
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS page_priorities (
+        id SERIAL PRIMARY KEY,
+        scan_id INTEGER NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
+        page_url TEXT NOT NULL,
+        priority_rank INTEGER NOT NULL,
+        page_score INTEGER,
+        total_recommendations INTEGER DEFAULT 0,
+        completed_recommendations INTEGER DEFAULT 0,
+        unlocked BOOLEAN DEFAULT false,
+        unlocked_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(scan_id, page_url)
+      )
+    `);
+    console.log('✅ page_priorities table created');
+
+    // ==========================================
+    // USER_PROGRESS TABLE
+    // ==========================================
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS user_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        scan_id INTEGER NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
+        total_recommendations INTEGER DEFAULT 0,
+        active_recommendations INTEGER DEFAULT 0,
+        completed_recommendations INTEGER DEFAULT 0,
+        verified_recommendations INTEGER DEFAULT 0,
+        current_batch INTEGER DEFAULT 1,
+        last_unlock_date DATE,
+        unlocks_today INTEGER DEFAULT 0,
+        next_unlock_available_at TIMESTAMP,
+        completion_streak INTEGER DEFAULT 0,
+        last_activity_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, scan_id)
+      )
+    `);
+    console.log('✅ user_progress table created');
+
+    // Add missing columns to user_progress if table existed before
+    await db.query(`
+      DO $$
+      BEGIN
+        -- site_wide_total
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='site_wide_total'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN site_wide_total INTEGER DEFAULT 0;
+        END IF;
+
+        -- site_wide_completed
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='site_wide_completed'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN site_wide_completed INTEGER DEFAULT 0;
+        END IF;
+
+        -- site_wide_active
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='site_wide_active'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN site_wide_active INTEGER DEFAULT 0;
+        END IF;
+
+        -- page_specific_total
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='page_specific_total'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN page_specific_total INTEGER DEFAULT 0;
+        END IF;
+
+        -- page_specific_completed
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='page_specific_completed'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN page_specific_completed INTEGER DEFAULT 0;
+        END IF;
+
+        -- site_wide_complete
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='site_wide_complete'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN site_wide_complete BOOLEAN DEFAULT false;
+        END IF;
+
+        -- batch_1_unlock_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='batch_1_unlock_date'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN batch_1_unlock_date TIMESTAMP;
+        END IF;
+
+        -- batch_2_unlock_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='batch_2_unlock_date'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN batch_2_unlock_date TIMESTAMP;
+        END IF;
+
+        -- batch_3_unlock_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='batch_3_unlock_date'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN batch_3_unlock_date TIMESTAMP;
+        END IF;
+
+        -- batch_4_unlock_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='batch_4_unlock_date'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN batch_4_unlock_date TIMESTAMP;
+        END IF;
+
+        -- total_batches
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='total_batches'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN total_batches INTEGER DEFAULT 1;
+        END IF;
+
+        -- next_replacement_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='next_replacement_date'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN next_replacement_date TIMESTAMP;
+        END IF;
+
+        -- target_active_count
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='user_progress' AND column_name='target_active_count'
+        ) THEN
+          ALTER TABLE user_progress ADD COLUMN target_active_count INTEGER DEFAULT 5;
+        END IF;
+
+      END $$;
+    `);
+    console.log('✅ user_progress table columns updated');
+
+    // Add page_priority column to scan_recommendations if missing
+    await db.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='page_priority'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN page_priority INTEGER;
+        END IF;
+      END $$;
+    `);
+    console.log('✅ scan_recommendations.page_priority column added');
+
     // Create indexes if they don't exist
     await db.query(`
       CREATE INDEX IF NOT EXISTS idx_scans_status ON scans(status);
@@ -423,6 +595,12 @@ async function addMissingScanColumns() {
       CREATE INDEX IF NOT EXISTS idx_scans_domain ON scans(extracted_domain);
       CREATE INDEX IF NOT EXISTS idx_scan_recommendations_scan_id ON scan_recommendations(scan_id);
       CREATE INDEX IF NOT EXISTS idx_scan_recommendations_category ON scan_recommendations(category);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_type ON scan_recommendations(scan_id, recommendation_type);
+      CREATE INDEX IF NOT EXISTS idx_scan_recommendations_page ON scan_recommendations(scan_id, page_url);
+      CREATE INDEX IF NOT EXISTS idx_page_priorities_scan_id ON page_priorities(scan_id);
+      CREATE INDEX IF NOT EXISTS idx_page_priorities_rank ON page_priorities(scan_id, priority_rank);
+      CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_progress_scan_id ON user_progress(scan_id);
     `);
     console.log('✅ Indexes created');
 
