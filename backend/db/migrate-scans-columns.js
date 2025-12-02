@@ -474,6 +474,195 @@ async function addMissingScanColumns() {
           RAISE NOTICE 'Added updated_at column';
         END IF;
 
+        -- skipped_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='skipped_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN skipped_at TIMESTAMP;
+          RAISE NOTICE 'Added skipped_at column';
+        END IF;
+
+        -- recommendation_mode (diy, done_for_you, elite)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='recommendation_mode'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN recommendation_mode VARCHAR(50);
+          RAISE NOTICE 'Added recommendation_mode column';
+        END IF;
+
+        -- elite_category
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='elite_category'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN elite_category VARCHAR(100);
+          RAISE NOTICE 'Added elite_category column';
+        END IF;
+
+        -- impact_score
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='impact_score'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN impact_score INTEGER;
+          RAISE NOTICE 'Added impact_score column';
+        END IF;
+
+        -- implementation_difficulty
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='implementation_difficulty'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN implementation_difficulty VARCHAR(50);
+          RAISE NOTICE 'Added implementation_difficulty column';
+        END IF;
+
+        -- compounding_effect_score
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='compounding_effect_score'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN compounding_effect_score INTEGER;
+          RAISE NOTICE 'Added compounding_effect_score column';
+        END IF;
+
+        -- industry_relevance_score
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='industry_relevance_score'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN industry_relevance_score INTEGER;
+          RAISE NOTICE 'Added industry_relevance_score column';
+        END IF;
+
+        -- last_refresh_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='last_refresh_date'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN last_refresh_date TIMESTAMP;
+          RAISE NOTICE 'Added last_refresh_date column';
+        END IF;
+
+        -- next_refresh_date
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='next_refresh_date'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN next_refresh_date TIMESTAMP;
+          RAISE NOTICE 'Added next_refresh_date column';
+        END IF;
+
+        -- refresh_cycle_number
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='refresh_cycle_number'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN refresh_cycle_number INTEGER DEFAULT 0;
+          RAISE NOTICE 'Added refresh_cycle_number column';
+        END IF;
+
+        -- implementation_progress
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='implementation_progress'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN implementation_progress INTEGER DEFAULT 0;
+          RAISE NOTICE 'Added implementation_progress column';
+        END IF;
+
+        -- previous_findings
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='previous_findings'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN previous_findings TEXT;
+          RAISE NOTICE 'Added previous_findings column';
+        END IF;
+
+        -- is_partial_implementation
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='is_partial_implementation'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN is_partial_implementation BOOLEAN DEFAULT false;
+          RAISE NOTICE 'Added is_partial_implementation column';
+        END IF;
+
+        -- validation_status
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='validation_status'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN validation_status VARCHAR(50);
+          RAISE NOTICE 'Added validation_status column';
+        END IF;
+
+        -- validation_errors
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='validation_errors'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN validation_errors JSONB;
+          RAISE NOTICE 'Added validation_errors column';
+        END IF;
+
+        -- last_validated_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='last_validated_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN last_validated_at TIMESTAMP;
+          RAISE NOTICE 'Added last_validated_at column';
+        END IF;
+
+        -- affected_pages
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='affected_pages'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN affected_pages JSONB;
+          RAISE NOTICE 'Added affected_pages column';
+        END IF;
+
+        -- pages_implemented
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='pages_implemented'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN pages_implemented JSONB;
+          RAISE NOTICE 'Added pages_implemented column';
+        END IF;
+
+        -- auto_detected_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='auto_detected_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN auto_detected_at TIMESTAMP;
+          RAISE NOTICE 'Added auto_detected_at column';
+        END IF;
+
+        -- archived_at
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='archived_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN archived_at TIMESTAMP;
+          RAISE NOTICE 'Added archived_at column';
+        END IF;
+
+        -- archived_reason
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='archived_reason'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN archived_reason TEXT;
+          RAISE NOTICE 'Added archived_reason column';
+        END IF;
+
       END $$;
     `);
 
