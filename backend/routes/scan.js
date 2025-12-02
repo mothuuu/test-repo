@@ -963,7 +963,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // ============================================
 router.get('/list/recent', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
 
