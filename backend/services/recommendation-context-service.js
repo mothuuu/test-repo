@@ -182,9 +182,10 @@ class RecommendationContextService {
    * @param {Number} scanId - Primary scan ID for this context
    * @param {String} domain - Primary domain
    * @param {Array} pages - Pages scanned
+   * @param {Number} initialScore - Initial scan score (for tracking improvement)
    * @returns {Object} New context
    */
-  async createContext(userId, scanId, domain, pages = []) {
+  async createContext(userId, scanId, domain, pages = [], initialScore = null) {
     const contextKey = this.generateContextKey(userId, domain, pages);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + this.CONTEXT_WINDOW_DAYS);
@@ -197,15 +198,19 @@ class RecommendationContextService {
         domain,
         pages_hash,
         expires_at,
-        is_active
+        is_active,
+        initial_score,
+        latest_score
       )
-      VALUES ($1, $2, $3, $4, $5, $6, true)
+      VALUES ($1, $2, $3, $4, $5, $6, true, $7, $7)
       ON CONFLICT (user_id, context_key)
       DO UPDATE SET
         primary_scan_id = EXCLUDED.primary_scan_id,
         expires_at = EXCLUDED.expires_at,
         is_active = true,
-        updated_at = CURRENT_TIMESTAMP
+        updated_at = CURRENT_TIMESTAMP,
+        initial_score = COALESCE(recommendation_contexts.initial_score, EXCLUDED.initial_score),
+        latest_score = EXCLUDED.latest_score
       RETURNING *
     `, [
       userId,
@@ -213,11 +218,22 @@ class RecommendationContextService {
       scanId,
       this.normalizeDomain(domain),
       this.hashPageSet(pages),
-      expiresAt
+      expiresAt,
+      initialScore
     ]);
+
+    const contextId = result.rows[0].id;
+
+    // Update recommendations with this context_id
+    await this.pool.query(`
+      UPDATE scan_recommendations
+      SET context_id = $1
+      WHERE scan_id = $2 AND context_id IS NULL
+    `, [contextId, scanId]);
 
     console.log(`  📎 Created new context: ${contextKey.substring(0, 8)}...`);
     console.log(`     Primary scan: ${scanId}`);
+    console.log(`     Initial score: ${initialScore || 'N/A'}`);
     console.log(`     Expires: ${expiresAt.toISOString()}`);
 
     return result.rows[0];
@@ -230,7 +246,7 @@ class RecommendationContextService {
    * @param {Number} contextId - Context ID
    * @param {Number} newScanId - New scan ID to link
    */
-  async linkScanToContext(contextId, newScanId) {
+  async linkScanToContext(contextId, newScanId, latestScore = null) {
     await this.pool.query(`
       INSERT INTO context_scan_links (
         context_id,
@@ -240,7 +256,18 @@ class RecommendationContextService {
       ON CONFLICT (context_id, scan_id) DO NOTHING
     `, [contextId, newScanId]);
 
-    console.log(`  🔗 Linked scan ${newScanId} to context ${contextId}`);
+    // Update the context's latest score and calculate change
+    if (latestScore !== null) {
+      await this.pool.query(`
+        UPDATE recommendation_contexts
+        SET latest_score = $1,
+            score_change = $1 - COALESCE(initial_score, $1),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+      `, [latestScore, contextId]);
+    }
+
+    console.log(`  🔗 Linked scan ${newScanId} to context ${contextId}${latestScore ? ` (score: ${latestScore})` : ''}`);
   }
 
   /**

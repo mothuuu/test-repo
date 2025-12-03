@@ -107,18 +107,21 @@ router.post('/:id/mark-complete', authenticateToken, async (req, res) => {
 // POST /api/recommendations/:id/implement
 // Alias for mark-complete - explicit "implement" action
 // This is the preferred endpoint for marking recommendations as implemented
+// Also captures score data for "improved by X points" tracking
 // ============================================
 router.post('/:id/implement', authenticateToken, async (req, res) => {
-  // Forward to mark-complete handler using the same logic
   try {
     const recId = req.params.id;
     const userId = req.user.id;
 
     console.log(`✅ Implementing recommendation ${recId} for user ${userId}`);
 
-    // Verify the recommendation belongs to this user
+    // Verify the recommendation belongs to this user and get score data
     const recCheck = await db.query(
-      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status, s.user_id
+      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status,
+              sr.score_at_creation, sr.source_scan_id, sr.context_id,
+              s.user_id, s.total_score as current_score,
+              s.domain
        FROM scan_recommendations sr
        JOIN scans s ON sr.scan_id = s.id
        WHERE sr.id = $1`,
@@ -149,17 +152,69 @@ router.post('/:id/implement', authenticateToken, async (req, res) => {
       });
     }
 
-    // Update recommendation to implemented
-    // Sets status = 'implemented' so the 5-day refresh cycle can replace it
+    // Get the latest scan score for this domain (for accurate score tracking)
+    const latestScanResult = await db.query(
+      `SELECT id, total_score,
+              ai_readability_score, ai_search_readiness_score,
+              content_freshness_score, content_structure_score,
+              speed_ux_score, technical_setup_score,
+              trust_authority_score, voice_optimization_score
+       FROM scans
+       WHERE user_id = $1 AND domain = $2 AND status = 'completed'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [userId, rec.domain]
+    );
+
+    const latestScore = latestScanResult.rows[0]?.total_score || rec.current_score;
+    const scoreAtCreation = rec.score_at_creation || null;
+    const scoreImprovement = scoreAtCreation ? (latestScore - scoreAtCreation) : null;
+
+    // Update recommendation to implemented WITH score tracking
     await db.query(
       `UPDATE scan_recommendations
        SET unlock_state = 'completed',
            status = 'implemented',
            marked_complete_at = CURRENT_TIMESTAMP,
-           implemented_at = CURRENT_TIMESTAMP
+           implemented_at = CURRENT_TIMESTAMP,
+           score_at_implementation = $2
        WHERE id = $1`,
-      [recId]
+      [recId, latestScore]
     );
+
+    // Record score history (if table exists)
+    try {
+      const categoryScores = latestScanResult.rows[0] ? {
+        aiReadability: latestScanResult.rows[0].ai_readability_score,
+        aiSearchReadiness: latestScanResult.rows[0].ai_search_readiness_score,
+        contentFreshness: latestScanResult.rows[0].content_freshness_score,
+        contentStructure: latestScanResult.rows[0].content_structure_score,
+        speedUX: latestScanResult.rows[0].speed_ux_score,
+        technicalSetup: latestScanResult.rows[0].technical_setup_score,
+        trustAuthority: latestScanResult.rows[0].trust_authority_score,
+        voiceOptimization: latestScanResult.rows[0].voice_optimization_score
+      } : null;
+
+      await db.query(
+        `INSERT INTO recommendation_score_history
+         (recommendation_id, scan_id, context_id, event_type, score_before, score_after, score_delta, category_scores, notes)
+         VALUES ($1, $2, $3, 'implemented', $4, $5, $6, $7, $8)`,
+        [
+          recId,
+          latestScanResult.rows[0]?.id || rec.scan_id,
+          rec.context_id,
+          scoreAtCreation,
+          latestScore,
+          scoreImprovement,
+          categoryScores ? JSON.stringify(categoryScores) : null,
+          scoreImprovement ? `Score ${scoreImprovement >= 0 ? 'improved' : 'changed'} by ${scoreImprovement} points` : null
+        ]
+      );
+      console.log(`   📊 Score history recorded: ${scoreAtCreation || '?'} → ${latestScore} (${scoreImprovement >= 0 ? '+' : ''}${scoreImprovement || 'N/A'})`);
+    } catch (historyError) {
+      // Table might not exist yet - non-critical
+      console.log(`   ⚠️  Score history not recorded (table may not exist)`);
+    }
 
     // Update user_progress counters
     await db.query(
@@ -194,6 +249,18 @@ router.post('/:id/implement', authenticateToken, async (req, res) => {
       success: true,
       message: 'Recommendation marked as implemented',
       recommendationId: recId,
+      scoreTracking: {
+        scoreAtCreation: scoreAtCreation,
+        scoreAtImplementation: latestScore,
+        improvement: scoreImprovement,
+        message: scoreImprovement !== null
+          ? (scoreImprovement > 0
+              ? `Your score improved by ${scoreImprovement} points since this recommendation was created!`
+              : scoreImprovement === 0
+                ? 'Score unchanged - run another scan after implementing to see the impact'
+                : `Score changed by ${scoreImprovement} points`)
+          : 'Run another scan to measure the impact of this implementation'
+      },
       progress: {
         total: progress.total_recommendations || 0,
         active: progress.active_recommendations || 0,
