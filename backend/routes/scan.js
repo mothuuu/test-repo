@@ -441,14 +441,16 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
       }))
     : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
 
-  // Save with hybrid system
+  // Save with hybrid system (pass score for tracking)
   progressInfo = await saveHybridRecommendations(
     scan.id,
     userId,
     url,
     selectedPages,
     scanResult.recommendations,
-    user.plan
+    user.plan,
+    Math.round(scanResult.totalScore),  // Score at creation for tracking
+    null  // Context ID will be set after context creation
   );
 }
 
@@ -457,12 +459,13 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
       const contextService = new RecommendationContextService(db.pool);
 
       if (shouldReuseRecommendations && activeContext) {
-        // Link this scan to the existing context
-        await contextService.linkScanToContext(activeContext.contextId, scan.id);
+        // Link this scan to the existing context (pass latest score for tracking)
+        await contextService.linkScanToContext(activeContext.contextId, scan.id, Math.round(scanResult.totalScore));
         console.log(`📎 Scan ${scan.id} linked to existing context (expires: ${activeContext.expiresAt})`);
       } else if (!shouldReuseRecommendations && scanResult.recommendations && scanResult.recommendations.length > 0) {
         // Create new context for this scan (it has the primary recommendations)
-        await contextService.createContext(userId, scan.id, scanDomain, pages || []);
+        // Pass the initial score for "improved by X points" tracking
+        await contextService.createContext(userId, scan.id, scanDomain, pages || [], Math.round(scanResult.totalScore));
         console.log(`📎 New recommendation context created for scan ${scan.id}`);
       }
     }
