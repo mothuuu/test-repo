@@ -19,6 +19,14 @@ const crypto = require('crypto');
 const { Pool } = require('pg');
 
 class RecommendationContextService {
+  // Lazy-load RefreshCycleService to avoid circular dependency
+  _getRefreshCycleService() {
+    if (!this._refreshCycleService) {
+      const RefreshCycleService = require('./refresh-cycle-service');
+      this._refreshCycleService = new RefreshCycleService(this.pool);
+    }
+    return this._refreshCycleService;
+  }
   constructor(pool) {
     this.pool = pool || new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -292,11 +300,15 @@ class RecommendationContextService {
   /**
    * Check if recommendation generation should be skipped for this scan
    *
+   * Also checks refresh cycle status:
+   * - If next_cycle_date is in the future → reuse current recommendations
+   * - If next_cycle_date is due → process refresh cycle first, then reuse
+   *
    * @param {Number} userId - User ID
    * @param {String} domain - Primary domain
    * @param {Array} pages - Pages scanned
    * @param {Boolean} isCompetitorScan - Whether this is a competitor scan
-   * @returns {Object} { shouldSkip: boolean, activeContext?: object }
+   * @returns {Object} { shouldSkip: boolean, activeContext?: object, refreshProcessed?: boolean }
    */
   async shouldSkipRecommendationGeneration(userId, domain, pages = [], isCompetitorScan = false) {
     // Never skip for competitor scans
@@ -307,10 +319,49 @@ class RecommendationContextService {
     const activeContext = await this.findActiveContext(userId, domain, pages, isCompetitorScan);
 
     if (activeContext) {
+      // ALSO check refresh cycle status for this context's primary scan
+      let refreshProcessed = false;
+
+      try {
+        const refreshService = this._getRefreshCycleService();
+        const refreshStatus = await refreshService.getRefreshStatus(userId, activeContext.primaryScanId);
+
+        if (refreshStatus) {
+          const now = new Date();
+          const nextRefreshDate = new Date(refreshStatus.nextRefreshDate);
+
+          if (nextRefreshDate <= now) {
+            // Refresh cycle is due! Process it before reusing recommendations
+            console.log(`  🔄 Refresh cycle due for context (scan ${activeContext.primaryScanId})`);
+            console.log(`     next_cycle_date: ${refreshStatus.nextRefreshDate}`);
+
+            const refreshResult = await refreshService.processRefreshCycle(userId, activeContext.primaryScanId);
+
+            if (refreshResult.replaced > 0) {
+              console.log(`     ✓ Replaced ${refreshResult.replaced} recommendations`);
+              console.log(`     ✓ Next refresh: ${refreshResult.nextRefreshDate}`);
+            } else {
+              console.log(`     ✓ No replacements needed (cycle extended)`);
+            }
+
+            refreshProcessed = true;
+          } else {
+            // Refresh not due yet - just log status
+            console.log(`  🔄 Refresh cycle status: ${refreshStatus.daysUntilRefresh} days until next refresh`);
+          }
+        } else {
+          console.log(`  ⚠️ No refresh cycle found for context scan ${activeContext.primaryScanId}`);
+        }
+      } catch (refreshError) {
+        console.error(`  ⚠️ Refresh cycle check failed (continuing with reuse):`, refreshError.message);
+        // Don't fail the context check if refresh processing fails
+      }
+
       return {
         shouldSkip: true,
         reason: 'active_context_exists',
-        activeContext
+        activeContext,
+        refreshProcessed
       };
     }
 
