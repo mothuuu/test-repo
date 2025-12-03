@@ -9,89 +9,205 @@ const NotificationService = require('../services/notification-service');
 
 // ============================================
 // POST /api/recommendations/:id/mark-complete
-// Mark a recommendation as completed
+// Mark a recommendation as implemented (completed)
+// This sets both unlock_state and status so the 5-day refresh cycle
+// can properly replace it with a new recommendation.
 // ============================================
 router.post('/:id/mark-complete', authenticateToken, async (req, res) => {
   try {
     const recId = req.params.id;
     const userId = req.user.id;
-    
-    console.log(`📝 Marking recommendation ${recId} as complete for user ${userId}`);
-    
+
+    console.log(`📝 Marking recommendation ${recId} as implemented for user ${userId}`);
+
     // Verify the recommendation belongs to this user
     const recCheck = await db.query(
-      `SELECT sr.id, sr.scan_id, sr.unlock_state, s.user_id 
+      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status, s.user_id
        FROM scan_recommendations sr
        JOIN scans s ON sr.scan_id = s.id
        WHERE sr.id = $1`,
       [recId]
     );
-    
+
     if (recCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Recommendation not found' });
     }
-    
+
     const rec = recCheck.rows[0];
-    
+
     if (rec.user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    
+
     if (rec.unlock_state !== 'active') {
-      return res.status(400).json({ 
-        error: 'Can only mark active recommendations as complete' 
+      return res.status(400).json({
+        error: 'Can only mark active recommendations as implemented'
       });
     }
-    
-    // Update recommendation to completed
+
+    // Update recommendation to implemented
+    // NOTE: We set BOTH unlock_state AND status so the refresh cycle sees it
     await db.query(
-      `UPDATE scan_recommendations 
+      `UPDATE scan_recommendations
        SET unlock_state = 'completed',
-           marked_complete_at = CURRENT_TIMESTAMP
+           status = 'implemented',
+           marked_complete_at = CURRENT_TIMESTAMP,
+           implemented_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [recId]
     );
-    
-    // Update user_progress
+
+    // Update user_progress - increment both completed and implemented counters
     await db.query(
-      `UPDATE user_progress 
+      `UPDATE user_progress
        SET completed_recommendations = completed_recommendations + 1,
+           recommendations_implemented = COALESCE(recommendations_implemented, 0) + 1,
            active_recommendations = active_recommendations - 1,
            last_activity_date = CURRENT_DATE
        WHERE scan_id = $1`,
       [rec.scan_id]
     );
-    
-    console.log(`   ✅ Recommendation marked complete`);
-    
+
+    console.log(`   ✅ Recommendation marked as implemented (status + unlock_state updated)`);
+
     // Get updated progress
     const progressResult = await db.query(
-      `SELECT 
-        total_recommendations, 
-        active_recommendations, 
+      `SELECT
+        total_recommendations,
+        active_recommendations,
         completed_recommendations,
+        recommendations_implemented,
         verified_recommendations
-       FROM user_progress 
+       FROM user_progress
        WHERE scan_id = $1`,
       [rec.scan_id]
     );
-    
+
     const progress = progressResult.rows[0];
-    
+
     res.json({
       success: true,
-      message: 'Recommendation marked as complete',
+      message: 'Recommendation marked as implemented',
       progress: {
         total: progress.total_recommendations,
         active: progress.active_recommendations,
         completed: progress.completed_recommendations,
+        implemented: progress.recommendations_implemented,
         verified: progress.verified_recommendations
       }
     });
-    
+
   } catch (error) {
     console.error('❌ Mark complete error:', error);
-    res.status(500).json({ error: 'Failed to mark recommendation as complete' });
+    res.status(500).json({ error: 'Failed to mark recommendation as implemented' });
+  }
+});
+
+// ============================================
+// POST /api/recommendations/:id/implement
+// Alias for mark-complete - explicit "implement" action
+// This is the preferred endpoint for marking recommendations as implemented
+// ============================================
+router.post('/:id/implement', authenticateToken, async (req, res) => {
+  // Forward to mark-complete handler using the same logic
+  try {
+    const recId = req.params.id;
+    const userId = req.user.id;
+
+    console.log(`✅ Implementing recommendation ${recId} for user ${userId}`);
+
+    // Verify the recommendation belongs to this user
+    const recCheck = await db.query(
+      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status, s.user_id
+       FROM scan_recommendations sr
+       JOIN scans s ON sr.scan_id = s.id
+       WHERE sr.id = $1`,
+      [recId]
+    );
+
+    if (recCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+
+    const rec = recCheck.rows[0];
+
+    if (rec.user_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized to modify this recommendation' });
+    }
+
+    // Check if already implemented
+    if (rec.status === 'implemented') {
+      return res.status(400).json({
+        error: 'Recommendation is already marked as implemented'
+      });
+    }
+
+    if (rec.unlock_state !== 'active') {
+      return res.status(400).json({
+        error: 'Can only implement active recommendations',
+        currentState: rec.unlock_state
+      });
+    }
+
+    // Update recommendation to implemented
+    // Sets status = 'implemented' so the 5-day refresh cycle can replace it
+    await db.query(
+      `UPDATE scan_recommendations
+       SET unlock_state = 'completed',
+           status = 'implemented',
+           marked_complete_at = CURRENT_TIMESTAMP,
+           implemented_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [recId]
+    );
+
+    // Update user_progress counters
+    await db.query(
+      `UPDATE user_progress
+       SET completed_recommendations = completed_recommendations + 1,
+           recommendations_implemented = COALESCE(recommendations_implemented, 0) + 1,
+           active_recommendations = GREATEST(0, active_recommendations - 1),
+           last_activity_date = CURRENT_DATE
+       WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    console.log(`   ✅ Recommendation ${recId} implemented successfully`);
+
+    // Get updated progress
+    const progressResult = await db.query(
+      `SELECT
+        total_recommendations,
+        active_recommendations,
+        completed_recommendations,
+        recommendations_implemented,
+        recommendations_skipped,
+        verified_recommendations
+       FROM user_progress
+       WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    const progress = progressResult.rows[0] || {};
+
+    res.json({
+      success: true,
+      message: 'Recommendation marked as implemented',
+      recommendationId: recId,
+      progress: {
+        total: progress.total_recommendations || 0,
+        active: progress.active_recommendations || 0,
+        completed: progress.completed_recommendations || 0,
+        implemented: progress.recommendations_implemented || 0,
+        skipped: progress.recommendations_skipped || 0,
+        verified: progress.verified_recommendations || 0
+      },
+      note: 'This recommendation will be replaced with a new one after the 5-day refresh cycle'
+    });
+
+  } catch (error) {
+    console.error('❌ Implement recommendation error:', error);
+    res.status(500).json({ error: 'Failed to implement recommendation' });
   }
 });
 
