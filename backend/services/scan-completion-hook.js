@@ -15,6 +15,7 @@ const ModeTransitionService = require('./mode-transition-service');
 const RefreshCycleService = require('./refresh-cycle-service');
 const ImpactScoreCalculator = require('./impact-score-calculator');
 const EliteRecommendationGenerator = require('./elite-recommendation-generator');
+const RecommendationContextService = require('./recommendation-context-service');
 
 class ScanCompletionHook {
   constructor(pool) {
@@ -30,32 +31,81 @@ class ScanCompletionHook {
    * @param {Number} userId - User ID
    * @param {Number} scanId - Completed scan ID
    * @param {Object} scanResults - Scan results object
+   * @param {Object} scanMeta - Optional metadata { domain, pages, isCompetitorScan }
    */
-  async onScanComplete(userId, scanId, scanResults) {
+  async onScanComplete(userId, scanId, scanResults, scanMeta = {}) {
     console.log(`\n🔗 Running scan completion hook for scan ${scanId}...`);
 
+    const { domain, pages = [], isCompetitorScan = false } = scanMeta;
+
     try {
-      // 1. Record score history
+      // 1. Record score history (ALWAYS runs - score should update on every scan)
       await this.recordScoreHistory(userId, scanId, scanResults);
 
-      // 2. Check for mode transition
+      // 2. Check for mode transition (ALWAYS runs)
       await this.checkModeTransition(userId, scanId, scanResults);
 
-      // 3. Run auto-detection (if previous scan exists)
+      // 3. Run auto-detection (ALWAYS runs - checks for implementations)
       await this.runAutoDetection(userId, scanId);
 
-      // 4. Calculate impact scores for recommendations
-      await this.calculateImpactScores(userId, scanId, scanResults);
+      // 4. CHECK FOR ACTIVE RECOMMENDATION CONTEXT
+      // If user has scanned this same domain/pages within 5 days,
+      // reuse existing recommendations instead of generating new ones
+      const contextService = new RecommendationContextService(this.pool);
+      const contextCheck = await contextService.shouldSkipRecommendationGeneration(
+        userId,
+        domain || scanResults.domain || scanResults.url,
+        pages,
+        isCompetitorScan
+      );
 
-      // 5. Generate Elite mode recommendations if needed
-      await this.generateEliteRecommendations(userId, scanId, scanResults);
+      if (contextCheck.shouldSkip && contextCheck.activeContext) {
+        // REUSE EXISTING RECOMMENDATIONS
+        console.log('  📎 Active recommendation context found - reusing existing recommendations');
+        console.log(`     Context expires: ${contextCheck.activeContext.expiresAt}`);
+        console.log(`     Primary scan: ${contextCheck.activeContext.primaryScanId}`);
 
-      // 6. Initialize or check refresh cycle
-      await this.initializeRefreshCycle(userId, scanId);
+        // Link this scan to the existing context
+        await contextService.linkScanToContext(
+          contextCheck.activeContext.contextId,
+          scanId
+        );
+
+        // Copy recommendation references to this scan (so queries work)
+        await contextService.copyRecommendationReferences(
+          contextCheck.activeContext.primaryScanId,
+          scanId
+        );
+
+        console.log('     ✓ Scan linked to existing recommendation set');
+        console.log('     ✓ Skipping recommendation generation (within 5-day window)');
+
+      } else {
+        // GENERATE NEW RECOMMENDATIONS
+        console.log('  📎 No active context - generating new recommendations');
+
+        // 5. Calculate impact scores for recommendations
+        await this.calculateImpactScores(userId, scanId, scanResults);
+
+        // 6. Generate Elite mode recommendations if needed
+        await this.generateEliteRecommendations(userId, scanId, scanResults);
+
+        // 7. Initialize refresh cycle for this scan
+        await this.initializeRefreshCycle(userId, scanId);
+
+        // 8. Create new recommendation context
+        if (domain && !isCompetitorScan) {
+          await contextService.createContext(userId, scanId, domain, pages);
+        }
+      }
 
       console.log(`✅ Scan completion hook finished successfully\n`);
 
-      return { success: true };
+      return {
+        success: true,
+        reusedContext: contextCheck.shouldSkip,
+        contextInfo: contextCheck.activeContext || null
+      };
 
     } catch (error) {
       console.error('❌ Scan completion hook failed:', error);
