@@ -203,9 +203,13 @@ async function runTests() {
   console.log('CLEANUP');
   console.log('─'.repeat(50));
 
-  // Clean up test data
+  // Clean up test data (order matters due to foreign keys)
+  await pool.query('DELETE FROM recommendation_replacements WHERE scan_id = $1', [testScanId]);
+  await pool.query('DELETE FROM recommendation_score_history WHERE scan_id = $1', [testScanId]);
+  await pool.query('DELETE FROM scan_recommendation_links WHERE scan_id = $1', [testScanId]);
   await pool.query('DELETE FROM scan_recommendations WHERE scan_id = $1', [testScanId]);
   await pool.query('DELETE FROM recommendation_refresh_cycles WHERE scan_id = $1', [testScanId]);
+  await pool.query('DELETE FROM context_scan_links WHERE scan_id = $1', [testScanId]);
   await pool.query('DELETE FROM recommendation_contexts WHERE primary_scan_id = $1', [testScanId]);
   await pool.query('DELETE FROM scans WHERE id = $1', [testScanId]);
 
