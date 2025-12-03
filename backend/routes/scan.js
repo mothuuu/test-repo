@@ -6,6 +6,7 @@ const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-he
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
 const UsageTrackerService = require('../services/usage-tracker-service');
+const RecommendationContextService = require('../services/recommendation-context-service');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -303,15 +304,62 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       console.log(`🎯 User recommendation mode: ${currentMode}`);
     }
 
+    // CHECK FOR ACTIVE RECOMMENDATION CONTEXT (5-day window)
+    // If user has scanned this same domain/pages within 5 days,
+    // reuse existing recommendations instead of generating new ones.
+    let activeContext = null;
+    let shouldReuseRecommendations = false;
+
+    if (!isCompetitorScan) {
+      const contextService = new RecommendationContextService(db.pool);
+      const contextCheck = await contextService.shouldSkipRecommendationGeneration(
+        userId,
+        scanDomain,
+        pages || [],
+        isCompetitorScan
+      );
+
+      if (contextCheck.shouldSkip && contextCheck.activeContext) {
+        activeContext = contextCheck.activeContext;
+        shouldReuseRecommendations = true;
+        console.log(`📎 Active recommendation context found (within 5-day window)`);
+        console.log(`   Primary scan: ${activeContext.primaryScanId}`);
+        console.log(`   Expires: ${activeContext.expiresAt}`);
+        console.log(`   → Will reuse existing recommendations instead of generating new ones`);
+      } else {
+        console.log(`📎 No active context - will generate new recommendations`);
+      }
+    }
+
     // Perform appropriate scan type
     let scanResult;
     if (isCompetitorScan) {
       // Lightweight competitor scan (scores only, no recommendations)
       console.log(`🔍 Performing lightweight competitor scan (scores only)`);
       scanResult = await performCompetitorScan(url);
+    } else if (shouldReuseRecommendations && activeContext) {
+      // Scan with REUSED recommendations (within 5-day window)
+      // Perform scoring only, then fetch existing recommendations
+      console.log(`🔄 Performing scan with reused recommendations (5-day context active)`);
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode, true);
+
+      // Fetch existing recommendations from primary scan
+      const existingRecs = await db.query(`
+        SELECT * FROM scan_recommendations
+        WHERE scan_id = $1
+          AND unlock_state IN ('active', 'locked')
+          AND status NOT IN ('archived')
+        ORDER BY impact_score DESC
+      `, [activeContext.primaryScanId]);
+
+      // Attach existing recommendations to scan result
+      scanResult.recommendations = existingRecs.rows;
+      scanResult.reusedFromContext = true;
+      scanResult.primaryScanId = activeContext.primaryScanId;
+      console.log(`   ✓ Reused ${existingRecs.rows.length} recommendations from scan ${activeContext.primaryScanId}`);
     } else {
-      // Full V5 rubric scan with recommendations (mode-aware)
-      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode);
+      // Full V5 rubric scan with NEW recommendations (mode-aware)
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode, false);
     }
 
     // Validate scan result structure
@@ -400,6 +448,21 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     user.plan
   );
 }
+
+    // 📎 MANAGE RECOMMENDATION CONTEXT (5-day persistence)
+    if (!isCompetitorScan) {
+      const contextService = new RecommendationContextService(db.pool);
+
+      if (shouldReuseRecommendations && activeContext) {
+        // Link this scan to the existing context
+        await contextService.linkScanToContext(activeContext.contextId, scan.id);
+        console.log(`📎 Scan ${scan.id} linked to existing context (expires: ${activeContext.expiresAt})`);
+      } else if (!shouldReuseRecommendations && scanResult.recommendations && scanResult.recommendations.length > 0) {
+        // Create new context for this scan (it has the primary recommendations)
+        await contextService.createContext(userId, scan.id, scanDomain, pages || []);
+        console.log(`📎 New recommendation context created for scan ${scan.id}`);
+      }
+    }
 
     // 🔥 Save FAQ schema if available (DIY tier only)
     if (scanResult.faq && scanResult.faq.length > 0) {
@@ -1539,9 +1602,12 @@ function transformV5ToSubfactors(v5Categories) {
   return subfactors;
 }
 
-async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null, mode = 'optimization') {
+async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null, mode = 'optimization', skipRecommendationGeneration = false) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
   console.log(`🎯 Recommendation mode: ${mode}`);
+  if (skipRecommendationGeneration) {
+    console.log(`📎 Recommendation generation will be SKIPPED (reusing from active context)`);
+  }
 
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
@@ -1594,22 +1660,39 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
 
     console.log(`🏢 Industry for recommendations: ${finalIndustry} (${industrySource})`);
 
-    // Step 2: Generate recommendations based on mode
-    console.log('🤖 Generating recommendations...');
+    // Step 2: Generate recommendations based on mode (UNLESS skipped for context reuse)
+    let recommendationResults = null;
 
-    const recommendationResults = await generateCompleteRecommendations(
-      {
-        v5Scores: subfactorScores,
-        scanEvidence: scanEvidence
-      },
-      plan,
-      finalIndustry,
-      userProgress, // Pass userProgress for progressive unlock
-      mode // Pass mode for strategy selection
-    );
+    if (skipRecommendationGeneration) {
+      // Skip recommendation generation - will be fetched from existing context
+      console.log('📎 Skipping recommendation generation (active context will provide recommendations)');
+      recommendationResults = {
+        data: {
+          recommendations: [], // Will be populated from context
+          faq: null,
+          upgrade: null
+        },
+        summary: null
+      };
+    } else {
+      // Generate new recommendations
+      console.log('🤖 Generating recommendations...');
+
+      recommendationResults = await generateCompleteRecommendations(
+        {
+          v5Scores: subfactorScores,
+          scanEvidence: scanEvidence
+        },
+        plan,
+        finalIndustry,
+        userProgress, // Pass userProgress for progressive unlock
+        mode // Pass mode for strategy selection
+      );
+
+      console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
+    }
 
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
-    console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
     // Add industry prompt if certification data was detected without user-selected industry
     let industryPrompt = null;
