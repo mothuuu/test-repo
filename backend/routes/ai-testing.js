@@ -5,6 +5,7 @@ const { authenticateToken, authenticateTokenOptional } = require('../middleware/
 const { checkScanLimit } = require('../middleware/usageLimits');
 const db = require('../db/database');
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
+const UsageTrackerService = require('../services/usage-tracker-service');
 
 /* eslint-disable no-console */
 const express = require('express');
@@ -1014,14 +1015,11 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
           upgrade: pageLimit < 5 ? 'Upgrade to DIY for 5 pages per scan' : 'Upgrade to Pro for 25 pages per scan'
         });
       }
-      
-      // Increment usage
-      await db.query(
-        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-        [req.user.id]
-      );
+
+      // NOTE: We do NOT increment here anymore.
+      // Increment happens AFTER successful scan to prevent counting failed scans.
     }
-    
+
     // Run analysis with plan-appropriate page count
     const { combinedHtml, discovery, origin, pagesFetched, sampledUrls } = 
       await fetchMultiPageSample(url, userPlan, pages);
@@ -1031,18 +1029,24 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
 
     // Save scan with page tracking
     await db.query(
-      `INSERT INTO scans (user_id, url, score, industry, scan_data, pages_scanned, page_count) 
+      `INSERT INTO scans (user_id, url, score, industry, scan_data, pages_scanned, page_count)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
-        req.user?.id || null, 
-        url, 
-        analysis.scores.total, 
-        analysis.industry.key, 
+        req.user?.id || null,
+        url,
+        analysis.scores.total,
+        analysis.industry.key,
         JSON.stringify(analysis),
         JSON.stringify(sampledUrls),
         pagesFetched
       ]
     );
+
+    // Increment scan usage AFTER successful scan (for logged-in users only)
+    // Using central UsageTrackerService to prevent double-counting
+    if (req.user) {
+      await UsageTrackerService.incrementScanUsage(req.user.id, 'primary');
+    }
 
     return res.json({
       success: true,

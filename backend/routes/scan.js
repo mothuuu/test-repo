@@ -5,6 +5,7 @@ const db = require('../db/database');
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
+const UsageTrackerService = require('../services/usage-tracker-service');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -337,17 +338,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     console.log('✅ Scan result validation passed');
 
     // Increment appropriate scan count AFTER successful scan
-    if (isCompetitorScan) {
-      await db.query(
-        'UPDATE users SET competitor_scans_used_this_month = competitor_scans_used_this_month + 1 WHERE id = $1',
-        [userId]
-      );
-    } else {
-      await db.query(
-        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-        [userId]
-      );
-    }
+    // Using central UsageTrackerService to prevent double-counting
+    const scanType = isCompetitorScan ? 'competitor' : 'primary';
+    await UsageTrackerService.incrementScanUsage(userId, scanType);
 
     // Update scan record with results
     // NOTE: Round scores to integers since DB columns are INTEGER type
