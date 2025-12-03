@@ -325,6 +325,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
         console.log(`📎 Active recommendation context found (within 5-day window)`);
         console.log(`   Primary scan: ${activeContext.primaryScanId}`);
         console.log(`   Expires: ${activeContext.expiresAt}`);
+        if (contextCheck.refreshProcessed) {
+          console.log(`   ✓ Refresh cycle processed - implemented/skipped recs replaced`);
+        }
         console.log(`   → Will reuse existing recommendations instead of generating new ones`);
       } else {
         console.log(`📎 No active context - will generate new recommendations`);
