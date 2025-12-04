@@ -57,8 +57,10 @@ function classifyRecommendation(rec) {
  * @param {array} selectedPages - Array of page URLs with priorities
  * @param {array} recommendations - All recommendations from scan
  * @param {string} userPlan - User's plan (free, diy, pro)
+ * @param {number} scanScore - Current scan score (for score tracking)
+ * @param {number} contextId - Context ID for 5-day window tracking (optional)
  */
-async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages, recommendations, userPlan) {
+async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages, recommendations, userPlan, scanScore = null, contextId = null) {
   console.log(`💾 Saving hybrid recommendations for scan ${scanId}...`);
   
   // Separate site-wide and page-specific recommendations
@@ -142,8 +144,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         estimated_impact, estimated_effort, action_steps, findings, code_snippet,
         unlock_state, batch_number, unlocked_at,
         recommendation_type, page_url, skip_enabled_at, impact_description,
-        customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+        customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
+        score_at_creation, source_scan_id, context_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
       [
         scanId,
         rec.category || 'General',
@@ -165,11 +168,14 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
         rec.readyToUseContent || null,  // NEW: Ready-to-use content
         rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
         rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
-        rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
+        rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null,  // NEW: Validation checklist
+        scanScore,  // Score at creation for tracking improvement
+        scanId,     // Source scan ID (same as scan_id for new recs)
+        contextId   // Context ID for 5-day window linking
       ]
     );
   }
-  
+
   console.log(`   ✅ Saved ${siteWideActive} active, ${siteWideLocked} locked site-wide`);
   
   // Save page-specific recommendations
@@ -220,8 +226,9 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           estimated_impact, estimated_effort, action_steps, findings, code_snippet,
           unlock_state, batch_number, unlocked_at, skip_enabled_at,
           recommendation_type, page_url, page_priority, impact_description,
-          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
+          score_at_creation, source_scan_id, context_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
         [
           scanId,
           rec.category || 'General',
@@ -244,7 +251,10 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
           rec.readyToUseContent || null,  // NEW: Ready-to-use content
           rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
           rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
-          rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null  // NEW: Validation checklist
+          rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null,  // NEW: Validation checklist
+          scanScore,  // Score at creation for tracking improvement
+          scanId,     // Source scan ID (same as scan_id for new recs)
+          contextId   // Context ID for 5-day window linking
         ]
       );
       pageSpecificTotal++;

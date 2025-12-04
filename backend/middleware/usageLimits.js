@@ -77,6 +77,9 @@ async function checkScanLimit(req, res, next) {
     }
 
     // Check if user exceeded monthly limit
+    // NOTE: We only CHECK here, we do NOT increment.
+    // Incrementing happens in the scan route AFTER a successful scan.
+    // This prevents double-counting and ensures failed scans aren't counted.
     if (req.user.scans_used_this_month >= limits.scansPerMonth) {
       const upgradeMessage = getUpgradeMessage(userPlan);
 
@@ -88,6 +91,7 @@ async function checkScanLimit(req, res, next) {
       });
     }
 
+    // Pass limits to the route handler (no increment here!)
     req.planLimits = limits;
     next();
   } catch (error) {

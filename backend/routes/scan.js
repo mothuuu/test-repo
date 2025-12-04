@@ -5,9 +5,8 @@ const db = require('../db/database');
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
-const { computePageSetHash } = require('../utils/page-context');
-const RefreshCycleService = require('../services/refresh-cycle-service');
-const UsageTracker = require('../utils/usage-tracker');
+const UsageTrackerService = require('../services/usage-tracker-service');
+const RecommendationContextService = require('../services/recommendation-context-service');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -356,15 +355,65 @@ router.post('/analyze', authenticateToken, async (req, res) => {
       console.log(`🎯 User recommendation mode: ${currentMode}`);
     }
 
+    // CHECK FOR ACTIVE RECOMMENDATION CONTEXT (5-day window)
+    // If user has scanned this same domain/pages within 5 days,
+    // reuse existing recommendations instead of generating new ones.
+    let activeContext = null;
+    let shouldReuseRecommendations = false;
+
+    if (!isCompetitorScan) {
+      const contextService = new RecommendationContextService(db.pool);
+      const contextCheck = await contextService.shouldSkipRecommendationGeneration(
+        userId,
+        scanDomain,
+        pages || [],
+        isCompetitorScan
+      );
+
+      if (contextCheck.shouldSkip && contextCheck.activeContext) {
+        activeContext = contextCheck.activeContext;
+        shouldReuseRecommendations = true;
+        console.log(`📎 Active recommendation context found (within 5-day window)`);
+        console.log(`   Primary scan: ${activeContext.primaryScanId}`);
+        console.log(`   Expires: ${activeContext.expiresAt}`);
+        if (contextCheck.refreshProcessed) {
+          console.log(`   ✓ Refresh cycle processed - implemented/skipped recs replaced`);
+        }
+        console.log(`   → Will reuse existing recommendations instead of generating new ones`);
+      } else {
+        console.log(`📎 No active context - will generate new recommendations`);
+      }
+    }
+
     // Perform appropriate scan type
     let scanResult;
     if (isCompetitorScan) {
       // Lightweight competitor scan (scores only, no recommendations)
       console.log(`🔍 Performing lightweight competitor scan (scores only)`);
       scanResult = await performCompetitorScan(url);
+    } else if (shouldReuseRecommendations && activeContext) {
+      // Scan with REUSED recommendations (within 5-day window)
+      // Perform scoring only, then fetch existing recommendations
+      console.log(`🔄 Performing scan with reused recommendations (5-day context active)`);
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode, true);
+
+      // Fetch existing recommendations from primary scan
+      const existingRecs = await db.query(`
+        SELECT * FROM scan_recommendations
+        WHERE scan_id = $1
+          AND unlock_state IN ('active', 'locked')
+          AND status NOT IN ('archived')
+        ORDER BY impact_score DESC
+      `, [activeContext.primaryScanId]);
+
+      // Attach existing recommendations to scan result
+      scanResult.recommendations = existingRecs.rows;
+      scanResult.reusedFromContext = true;
+      scanResult.primaryScanId = activeContext.primaryScanId;
+      console.log(`   ✓ Reused ${existingRecs.rows.length} recommendations from scan ${activeContext.primaryScanId}`);
     } else {
-      // Full V5 rubric scan with recommendations (mode-aware)
-      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode);
+      // Full V5 rubric scan with NEW recommendations (mode-aware)
+      scanResult = await performV5Scan(url, user.plan, pages, userProgress, user.industry, currentMode, false);
     }
 
     // Validate scan result structure
@@ -391,7 +440,9 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     console.log('✅ Scan result validation passed');
 
     // Increment appropriate scan count AFTER successful scan
-    await usageTracker.incrementUsage(userId, { isCompetitor: isCompetitorScan });
+    // Using central UsageTrackerService to prevent double-counting
+    const scanType = isCompetitorScan ? 'competitor' : 'primary';
+    await UsageTrackerService.incrementScanUsage(userId, scanType);
 
     // Update scan record with results
     // NOTE: Round scores to integers since DB columns are INTEGER type
@@ -432,67 +483,43 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
     // Skip saving recommendations for competitor scans
 let progressInfo = null;
-let activeRecommendations = null;
-let refreshCycle = null;
-if (!isCompetitorScan) {
-  if (shouldReuseRecommendations && contextScanId) {
-    if (reusableContext.cycle_due) {
-      try {
-        await refreshService.processRefreshCycle(userId, contextScanId);
-      } catch (refreshError) {
-        console.error('⚠️  Refresh cycle processing failed:', refreshError.message);
+if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0) {
+  // Prepare page priorities from request
+  const selectedPages = pages && pages.length > 0
+    ? pages.map((pageUrl, index) => ({
+        url: pageUrl,
+        priority: index + 1 // First page = priority 1, etc.
+      }))
+    : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
+
+  // Save with hybrid system (pass score for tracking)
+  progressInfo = await saveHybridRecommendations(
+    scan.id,
+    userId,
+    url,
+    selectedPages,
+    scanResult.recommendations,
+    user.plan,
+    Math.round(scanResult.totalScore),  // Score at creation for tracking
+    null  // Context ID will be set after context creation
+  );
+}
+
+    // 📎 MANAGE RECOMMENDATION CONTEXT (5-day persistence)
+    if (!isCompetitorScan) {
+      const contextService = new RecommendationContextService(db.pool);
+
+      if (shouldReuseRecommendations && activeContext) {
+        // Link this scan to the existing context (pass latest score for tracking)
+        await contextService.linkScanToContext(activeContext.contextId, scan.id, Math.round(scanResult.totalScore));
+        console.log(`📎 Scan ${scan.id} linked to existing context (expires: ${activeContext.expiresAt})`);
+      } else if (!shouldReuseRecommendations && scanResult.recommendations && scanResult.recommendations.length > 0) {
+        // Create new context for this scan (it has the primary recommendations)
+        // Pass the initial score for "improved by X points" tracking
+        await contextService.createContext(userId, scan.id, scanDomain, pages || [], Math.round(scanResult.totalScore));
+        console.log(`📎 New recommendation context created for scan ${scan.id}`);
       }
     }
-
-    const recResult = await db.query(
-      `SELECT id, category, recommendation_text, priority, estimated_impact, estimated_effort, status,
-              action_steps, findings, code_snippet, unlock_state, batch_number, unlocked_at, page_url,
-              implementation_notes, quick_wins, validation_checklist, impact_description
-       FROM scan_recommendations
-       WHERE scan_id = $1 AND unlock_state = 'active' AND (status IS NULL OR status = 'active')
-       ORDER BY impact_score DESC NULLS LAST, id
-       LIMIT 5`,
-      [contextScanId]
-    );
-    activeRecommendations = recResult.rows;
-
-    const progressResult = await db.query(
-      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
-      [userId, contextScanId]
-    );
-    progressInfo = progressResult.rows[0] || null;
-
-    const cycleResult = await db.query(
-      `SELECT * FROM recommendation_refresh_cycles WHERE user_id = $1 AND scan_id = $2 ORDER BY cycle_number DESC LIMIT 1`,
-      [userId, contextScanId]
-    );
-    refreshCycle = cycleResult.rows[0] || null;
-  } else if (scanResult.recommendations && scanResult.recommendations.length > 0) {
-    // Prepare page priorities from request
-    const selectedPages = pages && pages.length > 0
-      ? pages.map((pageUrl, index) => ({
-          url: pageUrl,
-          priority: index + 1 // First page = priority 1, etc.
-        }))
-      : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
-
-    // Save with hybrid system
-    progressInfo = await saveHybridRecommendations(
-      scan.id,
-      userId,
-      url,
-      selectedPages,
-      scanResult.recommendations,
-      user.plan
-    );
-
-    try {
-      refreshCycle = await refreshService.initializeRefreshCycle(userId, scan.id);
-    } catch (cycleError) {
-      console.error('⚠️  Failed to initialize refresh cycle:', cycleError.message);
-    }
-  }
-}
 
     // 🔥 Save FAQ schema if available (DIY tier only)
     if (scanResult.faq && scanResult.faq.length > 0) {
@@ -1645,9 +1672,12 @@ function transformV5ToSubfactors(v5Categories) {
   return subfactors;
 }
 
-async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null, mode = 'optimization') {
+async function performV5Scan(url, plan, pages = null, userProgress = null, userIndustry = null, mode = 'optimization', skipRecommendationGeneration = false) {
   console.log('🔬 Starting V5 rubric analysis for:', url);
   console.log(`🎯 Recommendation mode: ${mode}`);
+  if (skipRecommendationGeneration) {
+    console.log(`📎 Recommendation generation will be SKIPPED (reusing from active context)`);
+  }
 
   try {
     // Step 1: Create V5 Rubric Engine instance and run analysis
@@ -1700,22 +1730,39 @@ async function performV5Scan(url, plan, pages = null, userProgress = null, userI
 
     console.log(`🏢 Industry for recommendations: ${finalIndustry} (${industrySource})`);
 
-    // Step 2: Generate recommendations based on mode
-    console.log('🤖 Generating recommendations...');
+    // Step 2: Generate recommendations based on mode (UNLESS skipped for context reuse)
+    let recommendationResults = null;
 
-    const recommendationResults = await generateCompleteRecommendations(
-      {
-        v5Scores: subfactorScores,
-        scanEvidence: scanEvidence
-      },
-      plan,
-      finalIndustry,
-      userProgress, // Pass userProgress for progressive unlock
-      mode // Pass mode for strategy selection
-    );
+    if (skipRecommendationGeneration) {
+      // Skip recommendation generation - will be fetched from existing context
+      console.log('📎 Skipping recommendation generation (active context will provide recommendations)');
+      recommendationResults = {
+        data: {
+          recommendations: [], // Will be populated from context
+          faq: null,
+          upgrade: null
+        },
+        summary: null
+      };
+    } else {
+      // Generate new recommendations
+      console.log('🤖 Generating recommendations...');
+
+      recommendationResults = await generateCompleteRecommendations(
+        {
+          v5Scores: subfactorScores,
+          scanEvidence: scanEvidence
+        },
+        plan,
+        finalIndustry,
+        userProgress, // Pass userProgress for progressive unlock
+        mode // Pass mode for strategy selection
+      );
+
+      console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
+    }
 
     console.log(`✅ V5 scan complete. Total score: ${totalScore}/100 (${finalIndustry})`);
-    console.log(`📊 Generated ${recommendationResults.data.recommendations.length} recommendations`);
 
     // Add industry prompt if certification data was detected without user-selected industry
     let industryPrompt = null;

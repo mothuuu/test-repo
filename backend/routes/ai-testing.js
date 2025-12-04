@@ -4,7 +4,7 @@
 const { authenticateToken, authenticateTokenOptional } = require('../middleware/auth');
 const db = require('../db/database');
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
-const UsageTracker = require('../utils/usage-tracker');
+const UsageTrackerService = require('../services/usage-tracker-service');
 
 /* eslint-disable no-console */
 const express = require('express');
@@ -1015,9 +1015,11 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
           upgrade: pageLimit < 5 ? 'Upgrade to DIY for 5 pages per scan' : 'Upgrade to Pro for 25 pages per scan'
         });
       }
-      
+
+      // NOTE: We do NOT increment here anymore.
+      // Increment happens AFTER successful scan to prevent counting failed scans.
     }
-    
+
     // Run analysis with plan-appropriate page count
     const { combinedHtml, discovery, origin, pagesFetched, sampledUrls } = 
       await fetchMultiPageSample(url, userPlan, pages);
@@ -1040,8 +1042,10 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
       ]
     );
 
+    // Increment scan usage AFTER successful scan (for logged-in users only)
+    // Using central UsageTrackerService to prevent double-counting
     if (req.user) {
-      await usageTracker.incrementUsage(req.user.id, { isCompetitor: false });
+      await UsageTrackerService.incrementScanUsage(req.user.id, 'primary');
     }
 
     return res.json({

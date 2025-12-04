@@ -9,89 +9,272 @@ const NotificationService = require('../services/notification-service');
 
 // ============================================
 // POST /api/recommendations/:id/mark-complete
-// Mark a recommendation as completed
+// Mark a recommendation as implemented (completed)
+// This sets both unlock_state and status so the 5-day refresh cycle
+// can properly replace it with a new recommendation.
 // ============================================
 router.post('/:id/mark-complete', authenticateToken, async (req, res) => {
   try {
     const recId = req.params.id;
     const userId = req.user.id;
-    
-    console.log(`📝 Marking recommendation ${recId} as complete for user ${userId}`);
-    
+
+    console.log(`📝 Marking recommendation ${recId} as implemented for user ${userId}`);
+
     // Verify the recommendation belongs to this user
     const recCheck = await db.query(
-      `SELECT sr.id, sr.scan_id, sr.unlock_state, s.user_id 
+      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status, s.user_id
        FROM scan_recommendations sr
        JOIN scans s ON sr.scan_id = s.id
        WHERE sr.id = $1`,
       [recId]
     );
-    
+
     if (recCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Recommendation not found' });
     }
-    
+
     const rec = recCheck.rows[0];
-    
+
     if (rec.user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
-    
+
     if (rec.unlock_state !== 'active') {
-      return res.status(400).json({ 
-        error: 'Can only mark active recommendations as complete' 
+      return res.status(400).json({
+        error: 'Can only mark active recommendations as implemented'
       });
     }
-    
-    // Update recommendation to completed
+
+    // Update recommendation to implemented
+    // NOTE: We set BOTH unlock_state AND status so the refresh cycle sees it
     await db.query(
-      `UPDATE scan_recommendations 
+      `UPDATE scan_recommendations
        SET unlock_state = 'completed',
-           marked_complete_at = CURRENT_TIMESTAMP
+           status = 'implemented',
+           marked_complete_at = CURRENT_TIMESTAMP,
+           implemented_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [recId]
     );
-    
-    // Update user_progress
+
+    // Update user_progress - increment both completed and implemented counters
     await db.query(
-      `UPDATE user_progress 
+      `UPDATE user_progress
        SET completed_recommendations = completed_recommendations + 1,
+           recommendations_implemented = COALESCE(recommendations_implemented, 0) + 1,
            active_recommendations = active_recommendations - 1,
            last_activity_date = CURRENT_DATE
        WHERE scan_id = $1`,
       [rec.scan_id]
     );
-    
-    console.log(`   ✅ Recommendation marked complete`);
-    
+
+    console.log(`   ✅ Recommendation marked as implemented (status + unlock_state updated)`);
+
     // Get updated progress
     const progressResult = await db.query(
-      `SELECT 
-        total_recommendations, 
-        active_recommendations, 
+      `SELECT
+        total_recommendations,
+        active_recommendations,
         completed_recommendations,
+        recommendations_implemented,
         verified_recommendations
-       FROM user_progress 
+       FROM user_progress
        WHERE scan_id = $1`,
       [rec.scan_id]
     );
-    
+
     const progress = progressResult.rows[0];
-    
+
     res.json({
       success: true,
-      message: 'Recommendation marked as complete',
+      message: 'Recommendation marked as implemented',
       progress: {
         total: progress.total_recommendations,
         active: progress.active_recommendations,
         completed: progress.completed_recommendations,
+        implemented: progress.recommendations_implemented,
         verified: progress.verified_recommendations
       }
     });
-    
+
   } catch (error) {
     console.error('❌ Mark complete error:', error);
-    res.status(500).json({ error: 'Failed to mark recommendation as complete' });
+    res.status(500).json({ error: 'Failed to mark recommendation as implemented' });
+  }
+});
+
+// ============================================
+// POST /api/recommendations/:id/implement
+// Alias for mark-complete - explicit "implement" action
+// This is the preferred endpoint for marking recommendations as implemented
+// Also captures score data for "improved by X points" tracking
+// ============================================
+router.post('/:id/implement', authenticateToken, async (req, res) => {
+  try {
+    const recId = req.params.id;
+    const userId = req.user.id;
+
+    console.log(`✅ Implementing recommendation ${recId} for user ${userId}`);
+
+    // Verify the recommendation belongs to this user and get score data
+    const recCheck = await db.query(
+      `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status,
+              sr.score_at_creation, sr.source_scan_id, sr.context_id,
+              s.user_id, s.total_score as current_score,
+              s.domain
+       FROM scan_recommendations sr
+       JOIN scans s ON sr.scan_id = s.id
+       WHERE sr.id = $1`,
+      [recId]
+    );
+
+    if (recCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+
+    const rec = recCheck.rows[0];
+
+    if (rec.user_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized to modify this recommendation' });
+    }
+
+    // Check if already implemented
+    if (rec.status === 'implemented') {
+      return res.status(400).json({
+        error: 'Recommendation is already marked as implemented'
+      });
+    }
+
+    if (rec.unlock_state !== 'active') {
+      return res.status(400).json({
+        error: 'Can only implement active recommendations',
+        currentState: rec.unlock_state
+      });
+    }
+
+    // Get the latest scan score for this domain (for accurate score tracking)
+    const latestScanResult = await db.query(
+      `SELECT id, total_score,
+              ai_readability_score, ai_search_readiness_score,
+              content_freshness_score, content_structure_score,
+              speed_ux_score, technical_setup_score,
+              trust_authority_score, voice_optimization_score
+       FROM scans
+       WHERE user_id = $1 AND domain = $2 AND status = 'completed'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [userId, rec.domain]
+    );
+
+    const latestScore = latestScanResult.rows[0]?.total_score || rec.current_score;
+    const scoreAtCreation = rec.score_at_creation || null;
+    const scoreImprovement = scoreAtCreation ? (latestScore - scoreAtCreation) : null;
+
+    // Update recommendation to implemented WITH score tracking
+    await db.query(
+      `UPDATE scan_recommendations
+       SET unlock_state = 'completed',
+           status = 'implemented',
+           marked_complete_at = CURRENT_TIMESTAMP,
+           implemented_at = CURRENT_TIMESTAMP,
+           score_at_implementation = $2
+       WHERE id = $1`,
+      [recId, latestScore]
+    );
+
+    // Record score history (if table exists)
+    try {
+      const categoryScores = latestScanResult.rows[0] ? {
+        aiReadability: latestScanResult.rows[0].ai_readability_score,
+        aiSearchReadiness: latestScanResult.rows[0].ai_search_readiness_score,
+        contentFreshness: latestScanResult.rows[0].content_freshness_score,
+        contentStructure: latestScanResult.rows[0].content_structure_score,
+        speedUX: latestScanResult.rows[0].speed_ux_score,
+        technicalSetup: latestScanResult.rows[0].technical_setup_score,
+        trustAuthority: latestScanResult.rows[0].trust_authority_score,
+        voiceOptimization: latestScanResult.rows[0].voice_optimization_score
+      } : null;
+
+      await db.query(
+        `INSERT INTO recommendation_score_history
+         (recommendation_id, scan_id, context_id, event_type, score_before, score_after, score_delta, category_scores, notes)
+         VALUES ($1, $2, $3, 'implemented', $4, $5, $6, $7, $8)`,
+        [
+          recId,
+          latestScanResult.rows[0]?.id || rec.scan_id,
+          rec.context_id,
+          scoreAtCreation,
+          latestScore,
+          scoreImprovement,
+          categoryScores ? JSON.stringify(categoryScores) : null,
+          scoreImprovement ? `Score ${scoreImprovement >= 0 ? 'improved' : 'changed'} by ${scoreImprovement} points` : null
+        ]
+      );
+      console.log(`   📊 Score history recorded: ${scoreAtCreation || '?'} → ${latestScore} (${scoreImprovement >= 0 ? '+' : ''}${scoreImprovement || 'N/A'})`);
+    } catch (historyError) {
+      // Table might not exist yet - non-critical
+      console.log(`   ⚠️  Score history not recorded (table may not exist)`);
+    }
+
+    // Update user_progress counters
+    await db.query(
+      `UPDATE user_progress
+       SET completed_recommendations = completed_recommendations + 1,
+           recommendations_implemented = COALESCE(recommendations_implemented, 0) + 1,
+           active_recommendations = GREATEST(0, active_recommendations - 1),
+           last_activity_date = CURRENT_DATE
+       WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    console.log(`   ✅ Recommendation ${recId} implemented successfully`);
+
+    // Get updated progress
+    const progressResult = await db.query(
+      `SELECT
+        total_recommendations,
+        active_recommendations,
+        completed_recommendations,
+        recommendations_implemented,
+        recommendations_skipped,
+        verified_recommendations
+       FROM user_progress
+       WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    const progress = progressResult.rows[0] || {};
+
+    res.json({
+      success: true,
+      message: 'Recommendation marked as implemented',
+      recommendationId: recId,
+      scoreTracking: {
+        scoreAtCreation: scoreAtCreation,
+        scoreAtImplementation: latestScore,
+        improvement: scoreImprovement,
+        message: scoreImprovement !== null
+          ? (scoreImprovement > 0
+              ? `Your score improved by ${scoreImprovement} points since this recommendation was created!`
+              : scoreImprovement === 0
+                ? 'Score unchanged - run another scan after implementing to see the impact'
+                : `Score changed by ${scoreImprovement} points`)
+          : 'Run another scan to measure the impact of this implementation'
+      },
+      progress: {
+        total: progress.total_recommendations || 0,
+        active: progress.active_recommendations || 0,
+        completed: progress.completed_recommendations || 0,
+        implemented: progress.recommendations_implemented || 0,
+        skipped: progress.recommendations_skipped || 0,
+        verified: progress.verified_recommendations || 0
+      },
+      note: 'This recommendation will be replaced with a new one after the 5-day refresh cycle'
+    });
+
+  } catch (error) {
+    console.error('❌ Implement recommendation error:', error);
+    res.status(500).json({ error: 'Failed to implement recommendation' });
   }
 });
 
