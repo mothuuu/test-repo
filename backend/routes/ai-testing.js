@@ -10,7 +10,7 @@ const UsageTrackerService = require('../services/usage-tracker-service');
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-const usageTracker = new UsageTracker(db);
+const usageTracker = new UsageTrackerService(db);
 
 // Import enhanced industries configuration
 const { INDUSTRIES, KEYWORD_WEIGHTS } = require('../config/industries');
