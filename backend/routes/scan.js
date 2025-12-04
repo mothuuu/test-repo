@@ -643,7 +643,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
         categoryWeights: V5_WEIGHTS, // Include weights for display
-        recommendations: activeRecommendations || scanResult.recommendations || [],
+        recommendations: scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
         created_at: scan.created_at,
