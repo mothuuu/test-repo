@@ -930,6 +930,20 @@ async function addMissingScanColumns() {
     `);
     console.log('✅ user_recommendation_mode index created');
 
+    // ==========================================
+    // LANDING_PAGE_CONTENT TABLE (CMS)
+    // ==========================================
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS landing_page_content (
+        id SERIAL PRIMARY KEY,
+        section_key VARCHAR(100) UNIQUE NOT NULL,
+        content JSONB,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_by INTEGER REFERENCES users(id)
+      )
+    `);
+    console.log('✅ landing_page_content table created');
+
     console.log('\n🎉 Scans and scan_recommendations migration complete!');
     process.exit(0);
 
