@@ -663,6 +663,24 @@ async function addMissingScanColumns() {
           RAISE NOTICE 'Added archived_reason column';
         END IF;
 
+        -- subfactor (required for validation engine)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='subfactor'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN subfactor VARCHAR(100);
+          RAISE NOTICE 'Added subfactor column';
+        END IF;
+
+        -- marked_complete_at (required for validation engine)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='marked_complete_at'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN marked_complete_at TIMESTAMP;
+          RAISE NOTICE 'Added marked_complete_at column';
+        END IF;
+
       END $$;
     `);
 
@@ -871,6 +889,46 @@ async function addMissingScanColumns() {
       WHERE status IS NULL
     `);
     console.log('✅ Set default status for existing scans');
+
+    // ==========================================
+    // USER_RECOMMENDATION_MODE TABLE
+    // ==========================================
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS user_recommendation_mode (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        scan_id INTEGER REFERENCES scans(id) ON DELETE CASCADE,
+
+        -- Current mode
+        current_mode VARCHAR(20) DEFAULT 'optimization',
+        current_score INTEGER,
+
+        -- Mode transition tracking
+        previous_mode VARCHAR(20),
+        transitioned_at TIMESTAMP,
+        transition_reason TEXT,
+
+        -- Elite mode settings
+        elite_activated_at TIMESTAMP,
+        elite_features_enabled JSONB DEFAULT '{"competitive_tracking": true, "citation_tracking": true, "trend_alerts": true}'::jsonb,
+
+        -- Tracking
+        mode_changes_count INTEGER DEFAULT 0,
+        last_mode_check TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        UNIQUE(user_id)
+      )
+    `);
+    console.log('✅ user_recommendation_mode table created');
+
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_mode_user_id
+        ON user_recommendation_mode(user_id);
+    `);
+    console.log('✅ user_recommendation_mode index created');
 
     console.log('\n🎉 Scans and scan_recommendations migration complete!');
     process.exit(0);
