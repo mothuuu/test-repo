@@ -312,7 +312,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     });
 
     const contextScanId = reusableContext?.scan_id;
-    const shouldReuseRecommendations = Boolean(contextScanId);
+    let shouldReuseRecommendations = Boolean(contextScanId);
 
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
@@ -359,7 +359,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // If user has scanned this same domain/pages within 5 days,
     // reuse existing recommendations instead of generating new ones.
     let activeContext = null;
-    let shouldReuseRecommendations = false;
+    // Note: shouldReuseRecommendations already declared above based on contextScanId
 
     if (!isCompetitorScan) {
       const contextService = new RecommendationContextService(db.pool);
