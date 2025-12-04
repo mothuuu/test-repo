@@ -648,6 +648,76 @@ router.post('/:id/skip', authenticateToken, async (req, res) => {
 });
 
 // ============================================
+// POST /api/recommendations/:id/implement
+// Manually mark a recommendation as implemented
+// ============================================
+router.post('/:id/implement', authenticateToken, async (req, res) => {
+  try {
+    const recId = req.params.id;
+    const userId = req.user.id;
+
+    console.log(`✅ Implementing recommendation ${recId} for user ${userId}`);
+
+    const recCheck = await db.query(
+      `SELECT sr.id, sr.scan_id, sr.status, s.user_id
+       FROM scan_recommendations sr
+       JOIN scans s ON sr.scan_id = s.id
+       WHERE sr.id = $1`,
+      [recId]
+    );
+
+    if (recCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+
+    const rec = recCheck.rows[0];
+
+    if (rec.user_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    if (rec.status === 'implemented') {
+      return res.json({ success: true, message: 'Recommendation already implemented' });
+    }
+
+    // Update recommendation to implemented
+    await db.query(
+      `UPDATE scan_recommendations
+       SET status = 'implemented',
+           implemented_at = COALESCE(implemented_at, CURRENT_TIMESTAMP)
+       WHERE id = $1`,
+      [recId]
+    );
+
+    // Update user_progress
+    await db.query(
+      `UPDATE user_progress
+       SET recommendations_implemented = recommendations_implemented + 1,
+           active_recommendations = GREATEST(active_recommendations - 1, 0),
+           last_activity_date = CURRENT_DATE
+       WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    const progressResult = await db.query(
+      `SELECT total_recommendations, active_recommendations, completed_recommendations,
+              recommendations_implemented, recommendations_skipped
+       FROM user_progress WHERE scan_id = $1`,
+      [rec.scan_id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Recommendation marked as implemented',
+      progress: progressResult.rows[0] || null
+    });
+  } catch (error) {
+    console.error('❌ Implement recommendation error:', error);
+    res.status(500).json({ error: 'Failed to implement recommendation' });
+  }
+});
+
+// ============================================
 // POST /api/recommendations/refresh/:scanId
 // Manually trigger refresh cycle for a scan
 // ============================================

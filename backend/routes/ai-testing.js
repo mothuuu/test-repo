@@ -2,7 +2,6 @@
 // Express router for AI Readiness / AEO analysis (V5 rubric)
 
 const { authenticateToken, authenticateTokenOptional } = require('../middleware/auth');
-const { checkScanLimit } = require('../middleware/usageLimits');
 const db = require('../db/database');
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
 const UsageTrackerService = require('../services/usage-tracker-service');
@@ -11,6 +10,7 @@ const UsageTrackerService = require('../services/usage-tracker-service');
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const usageTracker = new UsageTracker(db);
 
 // Import enhanced industries configuration
 const { INDUSTRIES, KEYWORD_WEIGHTS } = require('../config/industries');
@@ -985,7 +985,7 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
 
     const userPlan = req.user?.plan || 'free';
     
-    // For logged-in users, check and increment scan limit
+    // For logged-in users, check scan limit
     if (req.user) {
       const limits = PLAN_LIMITS[userPlan];
       const scanLimit = limits?.scansPerMonth || 2;
