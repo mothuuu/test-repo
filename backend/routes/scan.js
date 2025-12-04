@@ -64,7 +64,7 @@ async function findReusableScanContext({ userId, domain, pageSetHash, withinDays
        AND s.domain_type = 'primary'
        AND s.status = 'completed'
        AND s.pages_analyzed ->> 'page_set_hash' = $3
-       AND s.completed_at >= NOW() - INTERVAL '$4 days'
+       AND s.completed_at >= NOW() - INTERVAL '1 day' * $4
      ORDER BY s.completed_at DESC
      LIMIT 1`,
     [userId, domain, pageSetHash, withinDays]
