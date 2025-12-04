@@ -7,6 +7,7 @@ const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extracto
 const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
 const UsageTrackerService = require('../services/usage-tracker-service');
 const RecommendationContextService = require('../services/recommendation-context-service');
+const RefreshCycleService = require('../services/refresh-cycle-service');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -38,7 +39,7 @@ const authenticateToken = (req, res, next) => {
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
 
 const refreshService = new RefreshCycleService();
-const usageTracker = new UsageTracker(db);
+const usageTracker = new UsageTrackerService(db);
 
 // V5 Rubric Category Weights
 const V5_WEIGHTS = {
