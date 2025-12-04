@@ -79,7 +79,7 @@ async function checkScanLimit(req, res, next) {
     // Check if user exceeded monthly limit
     if (req.user.scans_used_this_month >= limits.scansPerMonth) {
       const upgradeMessage = getUpgradeMessage(userPlan);
-      
+
       return res.status(403).json({
         error: 'Scan limit reached',
         message: `You've used ${req.user.scans_used_this_month}/${limits.scansPerMonth} scans this month.`,
@@ -87,13 +87,7 @@ async function checkScanLimit(req, res, next) {
         upgrade: upgradeMessage
       });
     }
-    
-    // Increment usage
-    await db.query(
-      'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-      [userId]
-    );
-    
+
     req.planLimits = limits;
     next();
   } catch (error) {

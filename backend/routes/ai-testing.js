@@ -2,14 +2,15 @@
 // Express router for AI Readiness / AEO analysis (V5 rubric)
 
 const { authenticateToken, authenticateTokenOptional } = require('../middleware/auth');
-const { checkScanLimit } = require('../middleware/usageLimits');
 const db = require('../db/database');
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
+const UsageTracker = require('../utils/usage-tracker');
 
 /* eslint-disable no-console */
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const usageTracker = new UsageTracker(db);
 
 // Import enhanced industries configuration
 const { INDUSTRIES, KEYWORD_WEIGHTS } = require('../config/industries');
@@ -984,7 +985,7 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
 
     const userPlan = req.user?.plan || 'free';
     
-    // For logged-in users, check and increment scan limit
+    // For logged-in users, check scan limit
     if (req.user) {
       const limits = PLAN_LIMITS[userPlan];
       const scanLimit = limits?.scansPerMonth || 2;
@@ -1015,11 +1016,6 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
         });
       }
       
-      // Increment usage
-      await db.query(
-        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-        [req.user.id]
-      );
     }
     
     // Run analysis with plan-appropriate page count
@@ -1031,18 +1027,22 @@ router.post('/analyze-website', authenticateTokenOptional, async (req, res) => {
 
     // Save scan with page tracking
     await db.query(
-      `INSERT INTO scans (user_id, url, score, industry, scan_data, pages_scanned, page_count) 
+      `INSERT INTO scans (user_id, url, score, industry, scan_data, pages_scanned, page_count)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
-        req.user?.id || null, 
-        url, 
-        analysis.scores.total, 
-        analysis.industry.key, 
+        req.user?.id || null,
+        url,
+        analysis.scores.total,
+        analysis.industry.key,
         JSON.stringify(analysis),
         JSON.stringify(sampledUrls),
         pagesFetched
       ]
     );
+
+    if (req.user) {
+      await usageTracker.incrementUsage(req.user.id, { isCompetitor: false });
+    }
 
     return res.json({
       success: true,

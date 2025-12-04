@@ -19,7 +19,9 @@ const MODE_THRESHOLDS = {
  * @param {number} totalScore - Current total score
  * @returns {Object} Mode information and transition details
  */
-async function checkAndUpdateMode(userId, scanId, totalScore) {
+const PAID_PLANS = new Set(['diy', 'pro', 'premium', 'agency', 'enterprise']);
+
+async function checkAndUpdateMode(userId, scanId, totalScore, plan = 'free') {
   console.log(`[Mode] Checking mode for user ${userId}, score: ${totalScore}`);
 
   try {
@@ -39,7 +41,9 @@ async function checkAndUpdateMode(userId, scanId, totalScore) {
     let notification = null;
     let modeChanged = false;
 
-    if (totalScore >= MODE_THRESHOLDS.ELITE_ENTRY && previousMode === 'optimization') {
+    const planEligibleForElite = PAID_PLANS.has((plan || '').toLowerCase());
+
+    if (totalScore >= MODE_THRESHOLDS.ELITE_ENTRY && planEligibleForElite && previousMode === 'optimization') {
       // Transition to Elite mode
       targetMode = 'elite';
       transitionReason = 'score_threshold_reached';
@@ -58,10 +62,10 @@ async function checkAndUpdateMode(userId, scanId, totalScore) {
 
       console.log(`[Mode] 🎉 User ${userId} entering ELITE mode (score: ${totalScore})`);
 
-    } else if (totalScore < MODE_THRESHOLDS.ELITE_EXIT && previousMode === 'elite') {
+    } else if ((totalScore < MODE_THRESHOLDS.ELITE_EXIT || !planEligibleForElite) && previousMode === 'elite') {
       // Transition back to Optimization mode
       targetMode = 'optimization';
-      transitionReason = 'score_dropped_below_threshold';
+      transitionReason = planEligibleForElite ? 'score_dropped_below_threshold' : 'plan_not_eligible';
       modeChanged = true;
 
       notification = {
@@ -71,7 +75,7 @@ async function checkAndUpdateMode(userId, scanId, totalScore) {
 
       console.log(`[Mode] ⚠️  User ${userId} returning to OPTIMIZATION mode (score: ${totalScore})`);
 
-    } else if (totalScore >= MODE_THRESHOLDS.ELITE_ENTRY) {
+    } else if (totalScore >= MODE_THRESHOLDS.ELITE_ENTRY && planEligibleForElite) {
       // Already in or should be in Elite mode
       targetMode = 'elite';
     } else {

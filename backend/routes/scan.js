@@ -5,6 +5,9 @@ const db = require('../db/database');
 const { saveHybridRecommendations } = require('../utils/hybrid-recommendation-helper');
 const { extractRootDomain, isPrimaryDomain } = require('../utils/domain-extractor');
 const { calculateScanComparison, getHistoricalTimeline } = require('../utils/scan-comparison');
+const { computePageSetHash } = require('../utils/page-context');
+const RefreshCycleService = require('../services/refresh-cycle-service');
+const UsageTracker = require('../utils/usage-tracker');
 
 // ============================================
 // 🚀 IMPORT REAL ENGINES (NEW!)
@@ -35,6 +38,9 @@ const authenticateToken = (req, res, next) => {
 // Plan limits imported from middleware (single source of truth)
 const { PLAN_LIMITS } = require('../middleware/usageLimits');
 
+const refreshService = new RefreshCycleService();
+const usageTracker = new UsageTracker(db);
+
 // V5 Rubric Category Weights
 const V5_WEIGHTS = {
   aiReadability: 0.10,           // 10%
@@ -46,6 +52,31 @@ const V5_WEIGHTS = {
   trustAuthority: 0.12,          // 12%
   voiceOptimization: 0.12        // 12%
 };
+
+async function findReusableScanContext({ userId, domain, pageSetHash, withinDays = 5 }) {
+  const candidateResult = await db.query(
+    `SELECT s.id as scan_id, rrc.next_cycle_date, rrc.cycle_number, rrc.cycle_start_date
+     FROM scans s
+     JOIN recommendation_refresh_cycles rrc ON rrc.scan_id = s.id AND rrc.user_id = s.user_id
+     WHERE s.user_id = $1
+       AND s.domain = $2
+       AND s.domain_type = 'primary'
+       AND s.status = 'completed'
+       AND s.pages_analyzed ->> 'page_set_hash' = $3
+       AND s.completed_at >= NOW() - INTERVAL '$4 days'
+     ORDER BY s.completed_at DESC
+     LIMIT 1`,
+    [userId, domain, pageSetHash, withinDays]
+  );
+
+  if (candidateResult.rows.length === 0) return null;
+
+  const candidate = candidateResult.rows[0];
+  const nextCycleDate = candidate.next_cycle_date ? new Date(candidate.next_cycle_date) : null;
+  const cycleDue = nextCycleDate ? nextCycleDate <= new Date() : true;
+
+  return { ...candidate, cycle_due: cycleDue };
+}
 
 // ============================================
 // POST /api/scan/guest - Guest scan (no auth)
@@ -272,16 +303,39 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
     console.log(`🔍 Authenticated scan for user ${userId} (${user.plan}) - ${url} [${domainType}]`);
 
+    const { pageSetHash, normalizedPages } = computePageSetHash(url, pages || []);
+
+    const reusableContext = await findReusableScanContext({
+      userId,
+      domain: scanDomain,
+      pageSetHash,
+      withinDays: 5
+    });
+
+    const contextScanId = reusableContext?.scan_id;
+    const shouldReuseRecommendations = Boolean(contextScanId);
+
     // Create scan record with status 'processing'
     const scanRecord = await db.query(
       `INSERT INTO scans (
-        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain, domain
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        user_id, url, status, page_count, rubric_version, domain_type, extracted_domain, domain, pages_analyzed, recommendations
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id, url, status, created_at`,
-      [userId, url, 'processing', pageCount, 'V5', domainType, scanDomain, scanDomain]
+      [
+        userId,
+        url,
+        'processing',
+        pageCount,
+        'V5',
+        domainType,
+        scanDomain,
+        scanDomain,
+        JSON.stringify({ pages: normalizedPages, page_set_hash: pageSetHash }),
+        contextScanId ? JSON.stringify({ context_scan_id: contextScanId, page_set_hash: pageSetHash }) : null
+      ]
     );
 
-    const scan = scanRecord.rows[0];
+    scan = scanRecord.rows[0];
 
     // Get existing user progress for this scan (if any) - only for primary domain scans
     let userProgress = null;
@@ -337,17 +391,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     console.log('✅ Scan result validation passed');
 
     // Increment appropriate scan count AFTER successful scan
-    if (isCompetitorScan) {
-      await db.query(
-        'UPDATE users SET competitor_scans_used_this_month = competitor_scans_used_this_month + 1 WHERE id = $1',
-        [userId]
-      );
-    } else {
-      await db.query(
-        'UPDATE users SET scans_used_this_month = scans_used_this_month + 1 WHERE id = $1',
-        [userId]
-      );
-    }
+    await usageTracker.incrementUsage(userId, { isCompetitor: isCompetitorScan });
 
     // Update scan record with results
     // NOTE: Round scores to integers since DB columns are INTEGER type
@@ -388,24 +432,66 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
     // Skip saving recommendations for competitor scans
 let progressInfo = null;
-if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0) {
-  // Prepare page priorities from request
-  const selectedPages = pages && pages.length > 0
-    ? pages.map((pageUrl, index) => ({
-        url: pageUrl,
-        priority: index + 1 // First page = priority 1, etc.
-      }))
-    : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
+let activeRecommendations = null;
+let refreshCycle = null;
+if (!isCompetitorScan) {
+  if (shouldReuseRecommendations && contextScanId) {
+    if (reusableContext.cycle_due) {
+      try {
+        await refreshService.processRefreshCycle(userId, contextScanId);
+      } catch (refreshError) {
+        console.error('⚠️  Refresh cycle processing failed:', refreshError.message);
+      }
+    }
 
-  // Save with hybrid system
-  progressInfo = await saveHybridRecommendations(
-    scan.id,
-    userId,
-    url,
-    selectedPages,
-    scanResult.recommendations,
-    user.plan
-  );
+    const recResult = await db.query(
+      `SELECT id, category, recommendation_text, priority, estimated_impact, estimated_effort, status,
+              action_steps, findings, code_snippet, unlock_state, batch_number, unlocked_at, page_url,
+              implementation_notes, quick_wins, validation_checklist, impact_description
+       FROM scan_recommendations
+       WHERE scan_id = $1 AND unlock_state = 'active' AND (status IS NULL OR status = 'active')
+       ORDER BY impact_score DESC NULLS LAST, id
+       LIMIT 5`,
+      [contextScanId]
+    );
+    activeRecommendations = recResult.rows;
+
+    const progressResult = await db.query(
+      `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
+      [userId, contextScanId]
+    );
+    progressInfo = progressResult.rows[0] || null;
+
+    const cycleResult = await db.query(
+      `SELECT * FROM recommendation_refresh_cycles WHERE user_id = $1 AND scan_id = $2 ORDER BY cycle_number DESC LIMIT 1`,
+      [userId, contextScanId]
+    );
+    refreshCycle = cycleResult.rows[0] || null;
+  } else if (scanResult.recommendations && scanResult.recommendations.length > 0) {
+    // Prepare page priorities from request
+    const selectedPages = pages && pages.length > 0
+      ? pages.map((pageUrl, index) => ({
+          url: pageUrl,
+          priority: index + 1 // First page = priority 1, etc.
+        }))
+      : [{ url: url, priority: 1 }]; // Just main URL if no pages specified
+
+    // Save with hybrid system
+    progressInfo = await saveHybridRecommendations(
+      scan.id,
+      userId,
+      url,
+      selectedPages,
+      scanResult.recommendations,
+      user.plan
+    );
+
+    try {
+      refreshCycle = await refreshService.initializeRefreshCycle(userId, scan.id);
+    } catch (cycleError) {
+      console.error('⚠️  Failed to initialize refresh cycle:', cycleError.message);
+    }
+  }
 }
 
     // 🔥 Save FAQ schema if available (DIY tier only)
@@ -440,7 +526,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     if (!isCompetitorScan) {
       try {
         const { checkAndUpdateMode } = require('../utils/mode-manager');
-        modeInfo = await checkAndUpdateMode(userId, scan.id, scanResult.totalScore);
+        modeInfo = await checkAndUpdateMode(userId, scan.id, scanResult.totalScore, user.plan);
 
         if (modeInfo.modeChanged) {
           console.log(`🎯 Mode changed: ${modeInfo.previousMode} → ${modeInfo.currentMode} (score: ${modeInfo.currentScore})`);
@@ -528,7 +614,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         categories: scanResult.categories,
         categoryBreakdown: scanResult.categories, // Frontend expects this field name
         categoryWeights: V5_WEIGHTS, // Include weights for display
-        recommendations: scanResult.recommendations || [],
+        recommendations: activeRecommendations || scanResult.recommendations || [],
         faq: (!isCompetitorScan && scanResult.faq) ? scanResult.faq : null,
         upgrade: scanResult.upgrade || null,
         created_at: scan.created_at,
@@ -545,6 +631,8 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
         }
       },
       mode: !isCompetitorScan ? modeInfo : null, // Mode information for primary domain scans
+      refreshCycle,
+      progress: progressInfo,
       message: isCompetitorScan
         ? `Competitor scan complete. Scores only - recommendations not available for competitor domains.`
         : null
@@ -584,7 +672,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         content_freshness_score, content_structure_score,
         speed_ux_score, technical_setup_score,
         trust_authority_score, voice_optimization_score,
-        industry, page_count, pages_analyzed,
+        industry, page_count, pages_analyzed, recommendations,
         detailed_analysis, faq_schema, created_at, completed_at,
         domain, extracted_domain, domain_type
        FROM scans
@@ -597,6 +685,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const scan = result.rows[0];
+    let contextScanId = scan.id;
+    if (scan.recommendations) {
+      try {
+        const recMeta = typeof scan.recommendations === 'string'
+          ? JSON.parse(scan.recommendations)
+          : scan.recommendations;
+        contextScanId = recMeta?.context_scan_id || scan.id;
+      } catch (parseError) {
+        contextScanId = scan.id;
+      }
+    }
 
     // Get recommendations
     const recResult = await db.query(
@@ -611,7 +710,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
        FROM scan_recommendations
        WHERE scan_id = $1
        ORDER BY priority DESC, estimated_impact DESC`,
-      [scanId]
+      [contextScanId]
     );
 
     // Get user progress (for DIY progressive unlock)
@@ -628,10 +727,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
         total_batches
        FROM user_progress
        WHERE user_id = $1 AND scan_id = $2`,
-      [userId, scanId]
+      [userId, contextScanId]
     );
 
-    const userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
+    let userProgress = progressResult.rows.length > 0 ? progressResult.rows[0] : null;
 
     // Check if replacement cycle is due (replaces old batch unlock logic)
     const { checkAndExecuteReplacement } = require('../utils/replacement-engine');
@@ -639,7 +738,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     if (userProgress) {
       try {
-        replacementResult = await checkAndExecuteReplacement(userId, scanId);
+        replacementResult = await checkAndExecuteReplacement(userId, contextScanId);
 
         if (replacementResult.replaced) {
           console.log(`🔄 Replacement executed: ${replacementResult.replacedCount} recommendations unlocked`);
@@ -648,7 +747,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
           // Refresh user progress after replacement
           const updatedProgressResult = await db.query(
             `SELECT * FROM user_progress WHERE user_id = $1 AND scan_id = $2`,
-            [userId, scanId]
+            [userId, contextScanId]
           );
           if (updatedProgressResult.rows.length > 0) {
             userProgress = updatedProgressResult.rows[0];
@@ -843,7 +942,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
          WHERE user_id = $1 AND scan_id = $2
          ORDER BY cycle_number DESC
          LIMIT 1`,
-        [userId, scanId]
+        [userId, contextScanId]
       );
       if (cycleResult.rows.length > 0) {
         currentCycle = cycleResult.rows[0];
