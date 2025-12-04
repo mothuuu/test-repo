@@ -552,6 +552,7 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
 
     // 🎯 Check and update recommendation mode (Phase 4: Score-Based Mode Transition)
     let modeInfo = null;
+    let refreshCycle = null; // Will be populated by refresh cycle service if applicable
     if (!isCompetitorScan) {
       try {
         const { checkAndUpdateMode } = require('../utils/mode-manager');
