@@ -681,6 +681,33 @@ async function addMissingScanColumns() {
           RAISE NOTICE 'Added marked_complete_at column';
         END IF;
 
+        -- score_at_creation (for tracking score improvement)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='score_at_creation'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN score_at_creation INTEGER;
+          RAISE NOTICE 'Added score_at_creation column';
+        END IF;
+
+        -- source_scan_id (for recommendation reuse tracking)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='source_scan_id'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN source_scan_id INTEGER REFERENCES scans(id);
+          RAISE NOTICE 'Added source_scan_id column';
+        END IF;
+
+        -- context_id (for 5-day recommendation context linking)
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name='scan_recommendations' AND column_name='context_id'
+        ) THEN
+          ALTER TABLE scan_recommendations ADD COLUMN context_id INTEGER;
+          RAISE NOTICE 'Added context_id column';
+        END IF;
+
       END $$;
     `);
 
