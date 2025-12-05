@@ -93,16 +93,18 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
   
   console.log(`   📄 Will save ${recsPerPage} recommendations per page (${pagesWithRecs.length} page(s))`);
 
-  // Determine initial active count based on plan
+  // Determine initial active count based on plan (case-insensitive comparison)
+  const planLower = (userPlan || '').toLowerCase();
   let initialActive;
-  if (userPlan === 'free') {
+  if (planLower === 'free') {
     initialActive = 3;  // Free: Top 3 recommendations
-  } else if (userPlan === 'diy') {
+  } else if (planLower === 'diy') {
     initialActive = 5;  // DIY: First 5, then progressive unlock
-  } else if (userPlan === 'pro') {
-    initialActive = 999; // Pro: All recommendations active immediately
+  } else if (planLower === 'pro' || planLower === 'enterprise' || planLower === 'agency') {
+    initialActive = 999; // Pro/Enterprise/Agency: All recommendations active immediately
   } else {
     initialActive = 0;   // Guest: No recommendations
+    console.warn(`⚠️ Unknown plan "${userPlan}" - defaulting to 0 active recommendations`);
   }
 
   console.log(`   🔓 Initial active recommendations for ${userPlan} tier: ${initialActive}`);
@@ -137,43 +139,51 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
 
     if (unlockState === 'active') siteWideActive++;
     if (unlockState === 'locked') siteWideLocked++;
-    
-    await db.query(
-      `INSERT INTO scan_recommendations (
-        scan_id, category, recommendation_text, priority,
-        estimated_impact, estimated_effort, action_steps, findings, code_snippet,
-        unlock_state, batch_number, unlocked_at,
-        recommendation_type, page_url, skip_enabled_at, impact_description,
-        customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
-        score_at_creation, source_scan_id, context_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
-      [
-        scanId,
-        rec.category || 'General',
-        rec.title || rec.recommendation_text || rec.recommendation,  // Save short title
-        rec.priority,
-        rec.estimatedScoreGain || 0,
-        rec.difficulty || 'medium',
-        rec.actionSteps ? JSON.stringify(rec.actionSteps) : null,
-        rec.finding || null,
-        rec.codeSnippet || null,
-        unlockState,
-        batchNumber,
-        unlockedAt,
-        'site-wide',
-        null, // No specific page URL
-        skipEnabledAt,
-        rec.impact || null,  // Add impact description
-        rec.customizedImplementation || null,  // NEW: Customized before/after
-        rec.readyToUseContent || null,  // NEW: Ready-to-use content
-        rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
-        rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
-        rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null,  // NEW: Validation checklist
-        scanScore,  // Score at creation for tracking improvement
-        scanId,     // Source scan ID (same as scan_id for new recs)
-        contextId   // Context ID for 5-day window linking
-      ]
-    );
+
+    // Get recommendation text with proper fallback chain
+    const recText = rec.title || rec.recommendation_text || rec.recommendation || 'Recommendation';
+
+    try {
+      await db.query(
+        `INSERT INTO scan_recommendations (
+          scan_id, category, recommendation_text, priority,
+          estimated_impact, estimated_effort, action_steps, findings, code_snippet,
+          unlock_state, batch_number, unlocked_at,
+          recommendation_type, page_url, skip_enabled_at, impact_description,
+          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
+          score_at_creation, source_scan_id, context_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
+        [
+          scanId,
+          rec.category || 'General',
+          recText,  // Save recommendation text with fallback
+          rec.priority || rec.priorityScore || 50,
+          rec.estimatedScoreGain || rec.estimated_impact || 0,
+          rec.difficulty || rec.estimated_effort || 'medium',
+          rec.actionSteps || rec.action_steps ? JSON.stringify(rec.actionSteps || rec.action_steps) : null,
+          rec.finding || rec.findings || null,
+          rec.codeSnippet || rec.code_snippet || null,
+          unlockState,
+          batchNumber,
+          unlockedAt,
+          'site-wide',
+          null, // No specific page URL
+          skipEnabledAt,
+          rec.impact || rec.impact_description || null,
+          rec.customizedImplementation || rec.customized_implementation || null,
+          rec.readyToUseContent || rec.ready_to_use_content || null,
+          rec.implementationNotes || rec.implementation_notes ? JSON.stringify(rec.implementationNotes || rec.implementation_notes) : null,
+          rec.quickWins || rec.quick_wins ? JSON.stringify(rec.quickWins || rec.quick_wins) : null,
+          rec.validationChecklist || rec.validation_checklist ? JSON.stringify(rec.validationChecklist || rec.validation_checklist) : null,
+          scanScore,
+          scanId,
+          contextId
+        ]
+      );
+    } catch (insertError) {
+      console.error(`❌ Failed to insert site-wide recommendation ${i}:`, insertError.message);
+      // Continue with other recommendations even if one fails
+    }
   }
 
   console.log(`   ✅ Saved ${siteWideActive} active, ${siteWideLocked} locked site-wide`);
@@ -200,64 +210,61 @@ async function saveHybridRecommendations(scanId, userId, mainUrl, selectedPages,
       if (unlockState === 'active') pageSpecificActive++;
       if (unlockState === 'locked') pageSpecificLocked++;
 
-      // DEBUG: Log ALL page-specific recommendations
+      // Get recommendation text with proper fallback chain (handles both fresh and DB row formats)
+      const recText = rec.title || rec.recommendation_text || rec.recommendation || 'Recommendation';
+
+      // DEBUG: Log page-specific recommendations
       console.log('📦 PAGE-SPECIFIC Recommendation being saved:', {
-        title: rec.title?.substring(0, 50),
+        title: recText?.substring(0, 50),
         category: rec.category,
-        subfactor: rec.subfactor,
         globalIndex,
         batchNumber,
-        unlockState,
-        hasCustomizedImplementation: !!rec.customizedImplementation,
-        hasReadyToUseContent: !!rec.readyToUseContent,
-        hasImplementationNotes: !!rec.implementationNotes,
-        hasQuickWins: !!rec.quickWins,
-        hasValidationChecklist: !!rec.validationChecklist,
-        customizedImplLength: rec.customizedImplementation?.length || 0,
-        readyToUseLength: rec.readyToUseContent?.length || 0,
-        implementationNotesLength: Array.isArray(rec.implementationNotes) ? rec.implementationNotes.length : 0,
-        quickWinsLength: Array.isArray(rec.quickWins) ? rec.quickWins.length : 0,
-        validationChecklistLength: Array.isArray(rec.validationChecklist) ? rec.validationChecklist.length : 0
+        unlockState
       });
 
-      await db.query(
-        `INSERT INTO scan_recommendations (
-          scan_id, category, recommendation_text, priority,
-          estimated_impact, estimated_effort, action_steps, findings, code_snippet,
-          unlock_state, batch_number, unlocked_at, skip_enabled_at,
-          recommendation_type, page_url, page_priority, impact_description,
-          customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
-          score_at_creation, source_scan_id, context_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
-        [
-          scanId,
-          rec.category || 'General',
-          rec.title || rec.recommendation_text || rec.recommendation,  // Save short title
-          rec.priority,
-          rec.estimatedScoreGain || 0,
-          rec.difficulty || 'medium',
-          rec.actionSteps ? JSON.stringify(rec.actionSteps) : null,
-          rec.finding || null,
-          rec.codeSnippet || null,
-          unlockState, // Calculate based on global index
-          batchNumber, // Calculate based on global index
-          unlockedAt,
-          skipEnabledAt,
-          'page-specific',
-          page.url,
-          page.priority || 1,
-          rec.impact || null,  // Add impact description
-          rec.customizedImplementation || null,  // NEW: Customized before/after
-          rec.readyToUseContent || null,  // NEW: Ready-to-use content
-          rec.implementationNotes ? JSON.stringify(rec.implementationNotes) : null,  // NEW: Implementation notes
-          rec.quickWins ? JSON.stringify(rec.quickWins) : null,  // NEW: Quick wins
-          rec.validationChecklist ? JSON.stringify(rec.validationChecklist) : null,  // NEW: Validation checklist
-          scanScore,  // Score at creation for tracking improvement
-          scanId,     // Source scan ID (same as scan_id for new recs)
-          contextId   // Context ID for 5-day window linking
-        ]
-      );
-      pageSpecificTotal++;
+      try {
+        await db.query(
+          `INSERT INTO scan_recommendations (
+            scan_id, category, recommendation_text, priority,
+            estimated_impact, estimated_effort, action_steps, findings, code_snippet,
+            unlock_state, batch_number, unlocked_at, skip_enabled_at,
+            recommendation_type, page_url, page_priority, impact_description,
+            customized_implementation, ready_to_use_content, implementation_notes, quick_wins, validation_checklist,
+            score_at_creation, source_scan_id, context_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
+          [
+            scanId,
+            rec.category || 'General',
+            recText,  // Save recommendation text with fallback
+            rec.priority || rec.priorityScore || 50,
+            rec.estimatedScoreGain || rec.estimated_impact || 0,
+            rec.difficulty || rec.estimated_effort || 'medium',
+            rec.actionSteps || rec.action_steps ? JSON.stringify(rec.actionSteps || rec.action_steps) : null,
+            rec.finding || rec.findings || null,
+            rec.codeSnippet || rec.code_snippet || null,
+            unlockState,
+            batchNumber,
+            unlockedAt,
+            skipEnabledAt,
+            'page-specific',
+            page.url,
+            page.priority || 1,
+            rec.impact || rec.impact_description || null,
+            rec.customizedImplementation || rec.customized_implementation || null,
+            rec.readyToUseContent || rec.ready_to_use_content || null,
+            rec.implementationNotes || rec.implementation_notes ? JSON.stringify(rec.implementationNotes || rec.implementation_notes) : null,
+            rec.quickWins || rec.quick_wins ? JSON.stringify(rec.quickWins || rec.quick_wins) : null,
+            rec.validationChecklist || rec.validation_checklist ? JSON.stringify(rec.validationChecklist || rec.validation_checklist) : null,
+            scanScore,
+            scanId,
+            contextId
+          ]
+        );
+        pageSpecificTotal++;
+      } catch (insertError) {
+        console.error(`❌ Failed to insert page-specific recommendation:`, insertError.message);
+        // Continue with other recommendations even if one fails
+      }
     }
     
     // Create page_priorities entry
