@@ -116,6 +116,16 @@ router.post('/:id/implement', authenticateToken, async (req, res) => {
 
     console.log(`✅ Implementing recommendation ${recId} for user ${userId}`);
 
+    // Check if user is on Free plan (not allowed to implement)
+    const userPlanCheck = await db.query('SELECT plan FROM users WHERE id = $1', [userId]);
+    if (userPlanCheck.rows[0]?.plan === 'free') {
+      return res.status(403).json({
+        error: 'Upgrade required',
+        message: 'Upgrade to DIY to mark recommendations as implemented',
+        upgrade: { plan: 'diy', url: '/checkout.html?plan=diy' }
+      });
+    }
+
     // Verify the recommendation belongs to this user and get score data
     const recCheck = await db.query(
       `SELECT sr.id, sr.scan_id, sr.unlock_state, sr.status,
@@ -567,6 +577,16 @@ router.post('/:id/skip', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     console.log(`⏭️ Skipping recommendation ${recId} for user ${userId}`);
+
+    // Check if user is on Free plan (not allowed to skip)
+    const userPlanCheck = await db.query('SELECT plan FROM users WHERE id = $1', [userId]);
+    if (userPlanCheck.rows[0]?.plan === 'free') {
+      return res.status(403).json({
+        error: 'Upgrade required',
+        message: 'Upgrade to DIY to skip recommendations',
+        upgrade: { plan: 'diy', url: '/checkout.html?plan=diy' }
+      });
+    }
 
     // Verify the recommendation belongs to this user
     const recCheck = await db.query(

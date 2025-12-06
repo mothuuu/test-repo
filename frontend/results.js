@@ -1054,13 +1054,17 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                 </div>
             ` : ''}
 
-            <div style="padding-top: 20px; border-top: 2px solid #f0f4f8; display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="padding-top: 20px; border-top: 2px solid #f0f4f8; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                 ${isImplemented ? `
                     <div style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                         <span>✓</span>
                         <span>Implemented on ${new Date(rec.implemented_at).toLocaleDateString()}</span>
                     </div>
-                ` : !isSkipped ? `
+                ` : isSkipped ? `
+                    <div style="padding: 10px 16px; background: #e5e7eb; color: #4b5563; border-radius: 8px; font-weight: 600;">
+                        ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
+                    </div>
+                ` : userPlan !== 'free' ? `
                     <button class="mark-implemented-btn" data-rec-id="${rec.id || index}" style="padding: 10px 16px; background: #d1fae5; color: #065f46; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: background 0.3s;">
                         ✓ Mark as Implemented
                     </button>
@@ -1074,9 +1078,9 @@ function createRecommendationCard(rec, index, userPlan, isSkipped = false) {
                         </button>
                     ` : ''}
                 ` : `
-                    <div style="padding: 10px 16px; background: #e5e7eb; color: #4b5563; border-radius: 8px; font-weight: 600;">
-                        ⊘ Skipped on ${new Date(rec.skipped_at).toLocaleDateString()}
-                    </div>
+                    <a href="/checkout.html?plan=diy" style="padding: 10px 16px; background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>🔓</span> Upgrade to DIY to track progress →
+                    </a>
                 `}
             </div>
 
