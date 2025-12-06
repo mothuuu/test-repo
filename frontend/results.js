@@ -1724,14 +1724,13 @@ window.markImplemented = async function(recId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/recommendation/${recId}/feedback`, {
+        const response = await fetch(`${API_BASE_URL}/recommendations/${recId}/implement`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                status: 'implemented',
                 feedback: JSON.stringify(implementationData)
             })
         });
