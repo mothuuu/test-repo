@@ -656,17 +656,6 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
         });
     }
 
-    // Show DIY unlock button if applicable (only in active tab)
-    if (userTier === 'diy' && userProgress) {
-        const activeCount = userProgress.active_recommendations || 5;
-        const totalCount = userProgress.total_recommendations || recommendations.length;
-        const canUnlockMore = userProgress.unlocks_today < 5 && activeCount < totalCount;
-
-        if (activeCount < totalCount) {
-            displayUnlockButton(activeCount, totalCount, canUnlockMore, userProgress);
-        }
-    }
-
     // Show upgrade message if free tier (only in active tab)
     if (userTier === 'free' && recommendations.length > 3) {
         const upgradeMsg = document.createElement('div');
@@ -813,83 +802,6 @@ function switchTab(tabName) {
     const selectedContent = document.getElementById(`tab-content-${tabName}`);
     if (selectedContent) {
         selectedContent.classList.remove('hidden');
-    }
-}
-
-// Display unlock button for DIY users
-function displayUnlockButton(activeCount, totalCount, canUnlockMore, userProgress) {
-    const container = document.getElementById('recommendationsList');
-    const remaining = totalCount - activeCount;
-    const toUnlock = Math.min(5, remaining);
-
-    const unlockCard = document.createElement('div');
-    unlockCard.className = 'mt-6 p-8 bg-gradient-to-r from-cyan-50 to-purple-50 rounded-lg border-2 border-cyan-300 text-center';
-
-    if (canUnlockMore) {
-        unlockCard.innerHTML = `
-            <div class="text-5xl mb-4">🎁</div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">Unlock ${toUnlock} More Recommendations</h3>
-            <p class="text-gray-700 mb-4">
-                You've unlocked ${activeCount} of ${totalCount} recommendations.
-                Unlock ${toUnlock} more today to keep improving your AI visibility!
-            </p>
-            <p class="text-sm text-gray-600 mb-4">
-                Daily unlocks: ${userProgress.unlocks_today || 0}/5 used today
-            </p>
-            <button onclick="unlockMoreRecommendations()"
-                    class="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-full text-lg hover:shadow-xl transition-all transform hover:scale-105">
-                Unlock ${toUnlock} More Recommendations →
-            </button>
-        `;
-    } else {
-        // Daily limit reached
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        unlockCard.innerHTML = `
-            <div class="text-5xl mb-4">⏰</div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">Daily Unlock Limit Reached</h3>
-            <p class="text-gray-700 mb-4">
-                You've unlocked ${activeCount} of ${totalCount} recommendations.
-                You've used all 5 daily unlocks. Come back tomorrow to unlock more!
-            </p>
-            <p class="text-sm text-purple-600 font-semibold">
-                Next unlock available: ${tomorrow.toLocaleDateString()} at midnight
-            </p>
-        `;
-    }
-
-    container.appendChild(unlockCard);
-}
-
-// Unlock more recommendations (DIY tier)
-async function unlockMoreRecommendations() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/scan/${scanId}/unlock`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            // Show success message
-            await showAlertModal(
-                'Success!',
-                `${data.message}\n\nYou now have ${data.progress.active_recommendations} recommendations unlocked!`,
-                'success'
-            );
-            // Reload page to show new recommendations
-            window.location.reload();
-        } else {
-            await showAlertModal('Error', data.error || 'Failed to unlock recommendations', 'error');
-        }
-    } catch (error) {
-        console.error('Unlock error:', error);
-        await showAlertModal('Error', 'Failed to unlock recommendations. Please try again.', 'error');
     }
 }
 
