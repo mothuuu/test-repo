@@ -33,7 +33,18 @@ class RecommendationContextService {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     });
 
-    this.CONTEXT_WINDOW_DAYS = 5;
+    // Plan-aware context window durations
+    this.DEFAULT_CONTEXT_WINDOW_DAYS = 5;  // DIY/Pro: 5-day cycle
+    this.FREE_CONTEXT_WINDOW_DAYS = 30;    // Free: 30-day cycle
+  }
+
+  /**
+   * Get context window duration based on plan
+   * @param {String} plan - User's plan (free, diy, pro, etc.)
+   * @returns {Number} Context window in days
+   */
+  getContextWindowDays(plan) {
+    return plan === 'free' ? this.FREE_CONTEXT_WINDOW_DAYS : this.DEFAULT_CONTEXT_WINDOW_DAYS;
   }
 
   /**
@@ -183,12 +194,17 @@ class RecommendationContextService {
    * @param {String} domain - Primary domain
    * @param {Array} pages - Pages scanned
    * @param {Number} initialScore - Initial scan score (for tracking improvement)
+   * @param {String} userPlan - User's plan (free, diy, pro) for context duration
    * @returns {Object} New context
    */
-  async createContext(userId, scanId, domain, pages = [], initialScore = null) {
+  async createContext(userId, scanId, domain, pages = [], initialScore = null, userPlan = 'diy') {
     const contextKey = this.generateContextKey(userId, domain, pages);
+    const contextWindowDays = this.getContextWindowDays(userPlan);
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + this.CONTEXT_WINDOW_DAYS);
+    expiresAt.setDate(expiresAt.getDate() + contextWindowDays);
+
+    console.log(`📎 Creating context with ${contextWindowDays}-day window (plan: ${userPlan})`);
+    console.log(`   Expires: ${expiresAt.toISOString()}`);
 
     const result = await this.pool.query(`
       INSERT INTO recommendation_contexts (

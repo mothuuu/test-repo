@@ -306,11 +306,14 @@ router.post('/analyze', authenticateToken, async (req, res) => {
 
     const { pageSetHash, normalizedPages } = computePageSetHash(url, pages || []);
 
+    // Free users get 30-day context window, paid users get 5-day
+    const contextWindowDays = user.plan === 'free' ? 30 : 5;
+
     const reusableContext = await findReusableScanContext({
       userId,
       domain: scanDomain,
       pageSetHash,
-      withinDays: 5
+      withinDays: contextWindowDays
     });
 
     const contextScanId = reusableContext?.scan_id;
@@ -527,7 +530,8 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
       } else if (!shouldReuseRecommendations && scanResult.recommendations && scanResult.recommendations.length > 0) {
         // Create new context for this scan (it has the primary recommendations)
         // Pass the initial score for "improved by X points" tracking
-        await contextService.createContext(userId, scan.id, scanDomain, pages || [], Math.round(scanResult.totalScore));
+        // Pass user plan for plan-specific context duration (Free=30 days, DIY/Pro=5 days)
+        await contextService.createContext(userId, scan.id, scanDomain, pages || [], Math.round(scanResult.totalScore), user.plan);
         console.log(`📎 New recommendation context created for scan ${scan.id}`);
       }
     }
