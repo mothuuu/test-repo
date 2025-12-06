@@ -1082,6 +1082,146 @@
                 font-size: 2rem;
             }
         }
+
+        /* ===== Pill-Style Tabs ===== */
+        .tabs-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-pill-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-pill:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Active Tab - Selected (Cyan to Purple Gradient) */
+        .tab-pill-active {
+            background: linear-gradient(135deg, #00B9DA 0%, #7D41A5 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 185, 218, 0.35);
+        }
+
+        .tab-pill-active:hover {
+            box-shadow: 0 6px 16px rgba(0, 185, 218, 0.45);
+        }
+
+        .tab-pill-active .tab-pill-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Implemented Tab - Selected (Green Gradient) */
+        .tab-pill-active-implemented {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .tab-pill-active-implemented:hover {
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+        }
+
+        .tab-pill-active-implemented .tab-pill-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        .tab-pill-active-implemented .tab-pill-icon {
+            color: white;
+        }
+
+        /* Skipped Tab - Selected (Purple Gradient) */
+        .tab-pill-active-skipped {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+        }
+
+        .tab-pill-active-skipped:hover {
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.45);
+        }
+
+        .tab-pill-active-skipped .tab-pill-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Inactive Tab State */
+        .tab-pill-inactive {
+            background: #F3F4F6;
+            color: #4B5563;
+        }
+
+        .tab-pill-inactive:hover {
+            background: #E5E7EB;
+        }
+
+        .tab-pill-inactive .tab-pill-icon {
+            color: #10B981;
+        }
+
+        .tab-pill-inactive .tab-pill-count-active {
+            background: #E0E7FF;
+            color: #4F46E5;
+        }
+
+        .tab-pill-inactive .tab-pill-count-implemented {
+            background: #D1FAE5;
+            color: #059669;
+        }
+
+        .tab-pill-inactive .tab-pill-count-skipped {
+            background: #EDE9FE;
+            color: #7C3AED;
+        }
+
+        /* Tab Elements */
+        .tab-pill-icon {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .tab-pill-text {
+            font-weight: 600;
+        }
+
+        .tab-pill-count {
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .tab-pill {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+            .tabs-pill-group {
+                gap: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>

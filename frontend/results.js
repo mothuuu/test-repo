@@ -574,22 +574,26 @@ function displayRecommendations(recommendations, userTier, userProgress, nextBat
     // Create tab interface if there are skipped or implemented recommendations
     if (skippedRecs.length > 0 || implementedRecs.length > 0) {
         const tabsHTML = `
-            <div class="mb-6 border-b border-gray-200">
-                <div class="flex gap-4">
+            <div class="tabs-container mb-6">
+                <div class="tabs-pill-group">
                     <button onclick="switchTab('active')" id="tab-active"
-                            class="tab-button px-6 py-3 font-semibold border-b-2 tab-active-bg rounded-t-lg">
-                        Active (${displayRecs.length})
+                            class="tab-pill tab-pill-active">
+                        <span class="tab-pill-text">Active</span>
+                        <span class="tab-pill-count tab-pill-count-active">${displayRecs.length}</span>
                     </button>
                     ${implementedRecs.length > 0 ? `
                     <button onclick="switchTab('implemented')" id="tab-implemented"
-                            class="tab-button px-6 py-3 font-semibold tab-inactive rounded-t-lg">
-                        ✓ Implemented (${implementedRecs.length})
+                            class="tab-pill tab-pill-inactive">
+                        <span class="tab-pill-icon">✓</span>
+                        <span class="tab-pill-text">Implemented</span>
+                        <span class="tab-pill-count tab-pill-count-implemented">${implementedRecs.length}</span>
                     </button>
                     ` : ''}
                     ${skippedRecs.length > 0 ? `
                     <button onclick="switchTab('skipped')" id="tab-skipped"
-                            class="tab-button px-6 py-3 font-semibold tab-inactive rounded-t-lg">
-                        Skipped (${skippedRecs.length})
+                            class="tab-pill tab-pill-inactive">
+                        <span class="tab-pill-text">Skipped</span>
+                        <span class="tab-pill-count tab-pill-count-skipped">${skippedRecs.length}</span>
                     </button>
                     ` : ''}
                 </div>
@@ -772,24 +776,24 @@ function attachActionButtonListeners(cardElement) {
 
 // Tab switching function
 function switchTab(tabName) {
-    // Update tab button styles - remove all color classes first
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('tab-active-bg', 'tab-implemented-bg', 'tab-skipped-bg', 'border-blue-600', 'text-blue-600', 'text-gray-500');
-        btn.classList.add('tab-inactive');
+    // Update tab button styles - reset all to inactive
+    document.querySelectorAll('.tab-pill').forEach(btn => {
+        btn.classList.remove('tab-pill-active', 'tab-pill-active-implemented', 'tab-pill-active-skipped');
+        btn.classList.add('tab-pill-inactive');
     });
 
-    // Apply the appropriate background class based on which tab is selected
+    // Apply the appropriate active class based on which tab is selected
     const activeTabBtn = document.getElementById(`tab-${tabName}`);
     if (activeTabBtn) {
-        activeTabBtn.classList.remove('tab-inactive');
+        activeTabBtn.classList.remove('tab-pill-inactive');
 
-        // Apply specific pastel background based on tab type
+        // Apply specific active style based on tab type
         if (tabName === 'active') {
-            activeTabBtn.classList.add('tab-active-bg', 'border-b-2');
+            activeTabBtn.classList.add('tab-pill-active');
         } else if (tabName === 'implemented') {
-            activeTabBtn.classList.add('tab-implemented-bg', 'border-b-2');
+            activeTabBtn.classList.add('tab-pill-active-implemented');
         } else if (tabName === 'skipped') {
-            activeTabBtn.classList.add('tab-skipped-bg', 'border-b-2');
+            activeTabBtn.classList.add('tab-pill-active-skipped');
         }
     }
 
