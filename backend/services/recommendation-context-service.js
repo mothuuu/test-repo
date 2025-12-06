@@ -199,11 +199,21 @@ class RecommendationContextService {
    */
   async createContext(userId, scanId, domain, pages = [], initialScore = null, userPlan = 'diy') {
     const contextKey = this.generateContextKey(userId, domain, pages);
-    const contextWindowDays = this.getContextWindowDays(userPlan);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + contextWindowDays);
 
-    console.log(`📎 Creating context with ${contextWindowDays}-day window (plan: ${userPlan})`);
+    // Calculate expiry based on plan
+    let expiresAt;
+    if (userPlan === 'free') {
+      // Free users: expire at end of current calendar month
+      const now = new Date();
+      expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      console.log(`📎 Creating context with calendar month expiry (plan: free)`);
+    } else {
+      // DIY/Pro: rolling 5 days
+      const contextWindowDays = this.getContextWindowDays(userPlan);
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + contextWindowDays);
+      console.log(`📎 Creating context with ${contextWindowDays}-day window (plan: ${userPlan})`);
+    }
     console.log(`   Expires: ${expiresAt.toISOString()}`);
 
     const result = await this.pool.query(`
