@@ -725,6 +725,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const scan = result.rows[0];
     let contextScanId = scan.id;
+
+    // First, check if scan.recommendations JSON has context_scan_id (old system)
     if (scan.recommendations) {
       try {
         const recMeta = typeof scan.recommendations === 'string'
@@ -733,6 +735,27 @@ router.get('/:id', authenticateToken, async (req, res) => {
         contextScanId = recMeta?.context_scan_id || scan.id;
       } catch (parseError) {
         contextScanId = scan.id;
+      }
+    }
+
+    // If no context_scan_id found in JSON, check context_scan_links table (new system)
+    if (contextScanId === scan.id) {
+      try {
+        const contextLinkResult = await db.query(`
+          SELECT rc.primary_scan_id
+          FROM context_scan_links csl
+          JOIN recommendation_contexts rc ON csl.context_id = rc.id
+          WHERE csl.scan_id = $1
+          LIMIT 1
+        `, [scanId]);
+
+        if (contextLinkResult.rows.length > 0 && contextLinkResult.rows[0].primary_scan_id) {
+          contextScanId = contextLinkResult.rows[0].primary_scan_id;
+          console.log(`📎 Scan ${scanId} linked to context, using primary scan ${contextScanId} for recommendations`);
+        }
+      } catch (contextError) {
+        // Table might not exist yet, continue with current scan id
+        console.log(`⚠️ Context lookup failed (table may not exist): ${contextError.message}`);
       }
     }
 
