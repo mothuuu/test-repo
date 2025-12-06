@@ -909,7 +909,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
        FROM scan_recommendations
        WHERE scan_id = $1
        ORDER BY batch_number, priority DESC, impact_score DESC NULLS LAST, estimated_impact DESC`,
-      [scanId]
+      [contextScanId]
     );
 
     // Calculate next batch unlock info
