@@ -485,7 +485,7 @@ router.post('/analyze', authenticateToken, async (req, res) => {
     // 🔥 Save recommendations with HYBRID SYSTEM (NEW!)
     // Skip saving recommendations for competitor scans
 let progressInfo = null;
-if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0) {
+if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendations.length > 0 && !scanResult.reusedFromContext) {
   // Prepare page priorities from request
   const selectedPages = pages && pages.length > 0
     ? pages.map((pageUrl, index) => ({
@@ -505,6 +505,15 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     Math.round(scanResult.totalScore),  // Score at creation for tracking
     null  // Context ID will be set after context creation
   );
+
+  // Initialize refresh cycle for this new scan
+  try {
+    await refreshService.initializeRefreshCycle(userId, scan.id);
+    console.log(`🔄 Refresh cycle initialized for scan ${scan.id}`);
+  } catch (refreshError) {
+    console.error('⚠️ Failed to initialize refresh cycle:', refreshError.message);
+    // Don't fail the scan if refresh cycle fails
+  }
 }
 
     // 📎 MANAGE RECOMMENDATION CONTEXT (5-day persistence)
