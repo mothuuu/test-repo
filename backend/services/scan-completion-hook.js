@@ -90,12 +90,19 @@ class ScanCompletionHook {
         // 6. Generate Elite mode recommendations if needed
         await this.generateEliteRecommendations(userId, scanId, scanResults);
 
-        // 7. Initialize refresh cycle for this scan
-        await this.initializeRefreshCycle(userId, scanId);
+        // 7. Initialize refresh cycle for paid users only (Free users don't need refresh cycles)
+        const userResult = await this.pool.query('SELECT plan FROM users WHERE id = $1', [userId]);
+        const userPlan = userResult.rows[0]?.plan || 'free';
+
+        if (userPlan !== 'free') {
+          await this.initializeRefreshCycle(userId, scanId);
+        } else {
+          console.log(`  ⏭️ Skipping refresh cycle for Free user ${userId}`);
+        }
 
         // 8. Create new recommendation context
         if (domain && !isCompetitorScan) {
-          await contextService.createContext(userId, scanId, domain, pages);
+          await contextService.createContext(userId, scanId, domain, pages, null, userPlan);
         }
       }
 

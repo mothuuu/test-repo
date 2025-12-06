@@ -509,13 +509,17 @@ if (!isCompetitorScan && scanResult.recommendations && scanResult.recommendation
     null  // Context ID will be set after context creation
   );
 
-  // Initialize refresh cycle for this new scan
-  try {
-    await refreshService.initializeRefreshCycle(userId, scan.id);
-    console.log(`🔄 Refresh cycle initialized for scan ${scan.id}`);
-  } catch (refreshError) {
-    console.error('⚠️ Failed to initialize refresh cycle:', refreshError.message);
-    // Don't fail the scan if refresh cycle fails
+  // Initialize refresh cycle for paid users only (Free users don't need refresh cycles)
+  if (user.plan !== 'free') {
+    try {
+      await refreshService.initializeRefreshCycle(userId, scan.id);
+      console.log(`🔄 Refresh cycle initialized for scan ${scan.id}`);
+    } catch (refreshError) {
+      console.error('⚠️ Failed to initialize refresh cycle:', refreshError.message);
+      // Don't fail the scan if refresh cycle fails
+    }
+  } else {
+    console.log(`⏭️ Skipping refresh cycle for Free user ${userId}`);
   }
 }
 
