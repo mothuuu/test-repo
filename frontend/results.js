@@ -208,9 +208,11 @@ function displayResults(scan, quota) {
     if (scan.notifications) {
         displayNotificationCenter(scan.notifications, scan.unreadNotificationCount || 0);
     }
-    if (scan.currentCycle) {
-        displayRefreshCycle(scan.currentCycle);
-    }
+    // Removed: displayRefreshCycle is now redundant since refresh cycle info
+    // is displayed inside the styled Optimization Mode section (displayModeIndicator)
+    // if (scan.currentCycle) {
+    //     displayRefreshCycle(scan.currentCycle);
+    // }
     if (scan.recentDetections && scan.recentDetections.length > 0) {
         displayAutoDetections(scan.recentDetections);
     }
