@@ -695,7 +695,7 @@ function startNewScan() {
 
     // For free users - scan homepage immediately
     if (user.plan === 'free') {
-        showLoading();
+        showScanProgress();
         fetch(`${API_BASE_URL}/scan/analyze`, {
             method: 'POST',
             headers: {
@@ -709,7 +709,7 @@ function startNewScan() {
         })
         .then(response => response.json())
         .then(data => {
-            hideLoading();
+            hideScanProgress();
             if (data.scan && data.scan.id) {
                 window.location.href = `results.html?scanId=${data.scan.id}`;
             } else if (data.scanId) {
@@ -717,7 +717,7 @@ function startNewScan() {
             }
         })
         .catch(error => {
-            hideLoading();
+            hideScanProgress();
             console.error('Scan error:', error);
             showXeoAlert('Scan Failed', 'Failed to start scan. Please try again.');
         });
@@ -730,7 +730,7 @@ function startNewScan() {
         window.location.href = `page-selector.html?domain=${encodeURIComponent(url)}`;
     } else {
         // Single-page scan: perform inline scan
-        showLoading();
+        showScanProgress();
         fetch(`${API_BASE_URL}/scan/analyze`, {
             method: 'POST',
             headers: {
@@ -744,7 +744,7 @@ function startNewScan() {
         })
         .then(response => response.json())
         .then(data => {
-            hideLoading();
+            hideScanProgress();
             if (data.scan && data.scan.id) {
                 window.location.href = `results.html?scanId=${data.scan.id}`;
             } else if (data.scanId) {
@@ -754,7 +754,7 @@ function startNewScan() {
             }
         })
         .catch(error => {
-            hideLoading();
+            hideScanProgress();
             console.error('Scan error:', error);
             showXeoAlert('Scan Failed', error.message || 'Failed to start scan. Please try again.');
         });
@@ -865,11 +865,22 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Loading helpers with progress bar animation
-let scanProgressInterval = null;
-
+// Simple page loading helpers (for auth, data fetching)
 function showLoading() {
     const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Scan progress modal helpers (only for actual scans)
+let scanProgressInterval = null;
+
+function showScanProgress() {
+    const overlay = document.getElementById('scanProgressOverlay');
     const progressBar = document.getElementById('scanProgressBar');
 
     if (overlay) {
@@ -894,8 +905,8 @@ function showLoading() {
     }
 }
 
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
+function hideScanProgress() {
+    const overlay = document.getElementById('scanProgressOverlay');
     const progressBar = document.getElementById('scanProgressBar');
 
     // Clear progress interval
