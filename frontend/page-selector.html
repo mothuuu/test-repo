@@ -227,9 +227,83 @@
             padding: 40px 20px;
             color: #999;
         }
+
+        /* Scan Progress Modal */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .scan-progress-modal {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .scan-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .scan-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .scan-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .scan-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #E5E5E5;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .scan-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00B9DA 0%, #7030A0 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .scan-hint {
+            color: #999;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Scan Progress Modal -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="scan-progress-modal">
+            <div class="scan-icon">🔍</div>
+            <h3 class="scan-title">Analyzing Your Website...</h3>
+            <p class="scan-subtitle">Scans usually take between 2-3 minutes</p>
+            <div class="scan-progress-bar">
+                <div id="scanProgressBar" class="scan-progress-fill"></div>
+            </div>
+            <p class="scan-hint">Please wait while we analyze your AI visibility...</p>
+        </div>
+    </div>
     <div class="container">
         <div class="header" style="padding-bottom: 20px;">
             <h1>AI Visibility Score</h1>

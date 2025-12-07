@@ -5,6 +5,56 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 const MAX_PAGES = 5;
 let selectedPages = [];
 let baseDomain = '';
+let scanProgressInterval = null;
+
+// Loading helpers with progress bar animation
+function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    const progressBar = document.getElementById('scanProgressBar');
+
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+
+    // Animate progress bar
+    if (progressBar) {
+        progressBar.style.width = '0%';
+        let progress = 0;
+
+        // Clear any existing interval
+        if (scanProgressInterval) {
+            clearInterval(scanProgressInterval);
+        }
+
+        scanProgressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90; // Stop at 90% until complete
+            progressBar.style.width = progress + '%';
+        }, 500);
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    const progressBar = document.getElementById('scanProgressBar');
+
+    // Clear progress interval
+    if (scanProgressInterval) {
+        clearInterval(scanProgressInterval);
+        scanProgressInterval = null;
+    }
+
+    // Complete progress bar before hiding
+    if (progressBar) {
+        progressBar.style.width = '100%';
+    }
+
+    // Brief delay to show 100% before hiding
+    setTimeout(() => {
+        if (overlay) overlay.style.display = 'none';
+        if (progressBar) progressBar.style.width = '0%';
+    }, 300);
+}
 
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', async () => {
@@ -247,9 +297,10 @@ async function startAnalysis() {
     try {
         analyzeBtn.disabled = true;
         analyzeBtn.innerHTML = '<div class="loading-spinner"></div>Starting analysis...';
-        
+        showLoading();
+
         console.log('Starting scan with pages:', selectedPages);
-        
+
         const response = await fetch(`${API_BASE_URL}/scan/analyze`, {
             method: 'POST',
             headers: {
@@ -262,30 +313,32 @@ async function startAnalysis() {
                 scanType: 'multi-page'
             })
         });
-        
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Analysis failed');
         }
-        
+
         const data = await response.json();
-        
+
         console.log('Scan response:', data);
-        
+
         // FIXED: Backend returns scan.id nested in scan object
         const scanId = data.scan?.id || data.scanId || data.id;
-        
+
         if (scanId) {
+            hideLoading();
             window.location.href = `results.html?scanId=${scanId}`;
         } else {
             console.error('Full response:', data);
             throw new Error('No scan ID received');
         }
-        
+
     } catch (error) {
         console.error('Analysis error:', error);
+        hideLoading();
         showError(error.message || 'Failed to start analysis. Please try again.');
-        
+
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = originalText;
     }
